@@ -166,6 +166,8 @@ class StateBus:
         self.mode_signal = threading.Event()
         self._heartbeat_lock = threading.RLock()
         self._heartbeat_table: dict[str, float] = {}
+        self._dynamic_slots_lock = threading.RLock()
+        self._dynamic_slots: dict[str, LatestSlot[object]] = {}
 
     def publish_observation(self, observation: Observation) -> int:
         version = self.latest_observation.put(observation)
@@ -214,3 +216,19 @@ class StateBus:
         self.shutdown_flag.set()
         self.event_signal.set()
         self.mode_signal.set()
+
+    def register_slot(self, name: str) -> LatestSlot[object]:
+        with self._dynamic_slots_lock:
+            if name in self._dynamic_slots:
+                return self._dynamic_slots[name]
+            slot: LatestSlot[object] = LatestSlot()
+            self._dynamic_slots[name] = slot
+            return slot
+
+    def get_slot(self, name: str) -> LatestSlot[object] | None:
+        with self._dynamic_slots_lock:
+            return self._dynamic_slots.get(name)
+
+    def registered_slot_names(self) -> list[str]:
+        with self._dynamic_slots_lock:
+            return list(self._dynamic_slots.keys())

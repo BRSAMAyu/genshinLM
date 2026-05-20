@@ -2,6 +2,9 @@ from __future__ import annotations
 
 import threading
 from dataclasses import dataclass, field
+from typing import Protocol
+
+import numpy as np
 
 from core.events import Interrupt
 from core.state_bus import StateBus
@@ -9,6 +12,10 @@ from core.timebase import Timebase
 from core.types import FocusState, Observation
 from perception.capture_base import FramePacket, ScreenCapturer
 from perception.viewport import ViewportTransformer
+
+
+class FramePostProcessor(Protocol):
+    def process(self, frame: np.ndarray, observation: Observation, state_bus: StateBus) -> None: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,15 +34,20 @@ class PerceptionPipeline:
         viewport: ViewportTransformer | None = None,
         timebase: Timebase | None = None,
         config: PerceptionPipelineConfig | None = None,
+        post_processors: list[FramePostProcessor] | None = None,
     ) -> None:
         self._capturer = capturer
         self._state_bus = state_bus
         self._viewport = viewport or ViewportTransformer()
         self._timebase = timebase or Timebase()
         self._config = config or PerceptionPipelineConfig()
+        self._post_processors: list[FramePostProcessor] = post_processors or []
         self._stop_event = threading.Event()
         self._thread: threading.Thread | None = None
         self._frame_interval = 1.0 / min(max(self._config.max_fps, 1.0), 60.0)
+
+    def add_post_processor(self, processor: FramePostProcessor) -> None:
+        self._post_processors.append(processor)
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -101,6 +113,11 @@ class PerceptionPipeline:
             stale=latency_ms > self._config.stale_threshold_ms,
         )
         self._state_bus.publish_observation(observation)
+        for pp in self._post_processors:
+            try:
+                pp.process(normalized, observation, self._state_bus)
+            except Exception:
+                pass
         print(
             "[PerceptionPipeline] "
             f"published observation frame_id={packet.frame_id} "

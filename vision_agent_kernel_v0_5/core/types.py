@@ -38,6 +38,7 @@ class Observation:
     visual_triggers: dict[str, bool]
     os_focus: FocusState
     stale: bool = False
+    extensions: dict[str, object] = field(default_factory=dict)
 
 
 @dataclass(slots=True)

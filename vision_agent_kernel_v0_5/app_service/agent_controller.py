@@ -12,8 +12,19 @@ from typing import Any, Literal
 from core.events import Interrupt
 from core.state_bus import StateBus
 from core.timebase import Timebase
+from control.controller_loop import ControllerLoop
 from execution.console_backend import ConsoleInputBackend
 from execution.input_worker import InputWorker
+from orchestration.orchestrator import Orchestrator
+from orchestration.skills import (
+    AcquireTargetSkill,
+    ExecuteVisualActionBlockSkill,
+    RecoverSkill,
+    TrackAndApproachSkill,
+    VerifySuccessSkill,
+)
+from perception.capture_base import CaptureConfig, FramePacket
+from perception.pipeline import PerceptionPipeline, PerceptionPipelineConfig
 from app_service.calibration import CalibrationProfile, CalibrationStore, RoiDefinition
 from app_service.model_manager import ModelManager
 from app_service.product_e2e import ProductE2ERunner
@@ -115,6 +126,11 @@ class AgentController:
         self._intent_parser = IntentParser()
         self._task_spec_builder = TaskSpecBuilder(self._route_selector)
         self._plan_validator = PlanValidator()
+        self._perception: PerceptionPipeline | None = None
+        self._controller: ControllerLoop | None = None
+        self._orchestrator: Orchestrator | None = None
+        self._camera_intent_slot = self._state_bus.register_slot("camera_intent")
+        self._movement_intent_slot = self._state_bus.register_slot("movement_intent")
 
     def start(self) -> AgentStateView:
         with self._lock:
@@ -133,7 +149,7 @@ class AgentController:
             self._release_all_called = False
             if self._thread is None or not self._thread.is_alive():
                 self._thread = threading.Thread(
-                    target=self._run_status_loop,
+                    target=self._run_real_loop,
                     name="app-service-agent-controller",
                     daemon=True,
                 )
@@ -165,6 +181,7 @@ class AgentController:
             self._target_state = "NONE"
             self._progress = 0.0
             self._frustration = 0.0
+            self._shutdown_pipeline()
             if self._worker is not None:
                 self._worker.stop()
             self._release_all_called = True
@@ -546,38 +563,100 @@ class AgentController:
     def product_latest_report(self) -> dict[str, Any]:
         return self._product_e2e.latest_report()
 
-    def _run_status_loop(self) -> None:
-        sequence = [
-            ("LOAD_TASK", "LoadTaskSkill", "ACQUIRING"),
-            ("ENTER_TARGET_REGION", "EnterTargetRegionSkill", "SEARCHING"),
-            ("ACQUIRE_TARGET", "AcquireTargetSkill", "TRACKED"),
-            ("TRACK_AND_APPROACH", "TrackAndApproachSkill", "TRACKED"),
-            ("EXECUTE_VISUAL_ACTION_BLOCK", "ExecuteVisualActionBlockSkill", "CENTERED"),
-            ("VERIFY_SUCCESS", "VerifySuccessSkill", "VERIFIED"),
-            ("COMPLETE", None, "COMPLETE"),
-        ]
-        index = 0
-        while not self._stop_event.is_set():
-            if self._pause_event.is_set():
-                time.sleep(0.2)
-                continue
-            with self._lock:
-                if self._mode != "RUNNING":
-                    break
-                node, skill, target = sequence[min(index, len(sequence) - 1)]
-                self._current_node = node
-                self._current_skill = skill
-                self._target_state = target
-                self._progress = min(1.0, self._progress + 0.08)
-                self._frustration = max(0.0, self._frustration - 2.0)
-                if node == "COMPLETE":
-                    self._mode = "STOPPED"
-                    self._release_all_called = True
-                    if self._worker is not None:
-                        self._worker.stop()
-                    break
-            index += 1
-            time.sleep(0.5)
+    def _run_real_loop(self) -> None:
+        try:
+            capturer = _DemoCapturer(self._timebase)
+            perception = PerceptionPipeline(
+                capturer=capturer,
+                state_bus=self._state_bus,
+                timebase=self._timebase,
+                config=PerceptionPipelineConfig(
+                    max_fps=60.0,
+                    static_visual_triggers={
+                        "target_visible": True,
+                        "in_range_estimated": True,
+                        "action_sequence_completed": True,
+                    },
+                ),
+            )
+            self._perception = perception
+            if self._stop_event.is_set():
+                return
+            controller = ControllerLoop(
+                state_bus=self._state_bus,
+                tick_seconds=1.0 / 30.0,
+            )
+            self._controller = controller
+            if self._stop_event.is_set():
+                return
+            orchestrator = Orchestrator(
+                state_bus=self._state_bus,
+                skills={
+                    "acquire_target": AcquireTargetSkill(self._state_bus, self._timebase),
+                    "track_and_approach": TrackAndApproachSkill(self._state_bus, self._timebase),
+                    "execute_visual_action_block": ExecuteVisualActionBlockSkill(
+                        self._get_or_create_action_executor(),
+                    ),
+                    "verify_success": VerifySuccessSkill(self._state_bus, self._timebase),
+                    "recover": RecoverSkill(self._state_bus, self._timebase),
+                },
+                timebase=self._timebase,
+            )
+            self._orchestrator = orchestrator
+            if self._stop_event.is_set():
+                return
+            perception.start()
+            controller.start()
+            orchestrator.start()
+            while not self._stop_event.is_set():
+                if self._pause_event.is_set():
+                    self._stop_event.wait(0.2)
+                    continue
+                self._sync_state_from_bus()
+                with self._lock:
+                    if self._mode not in {"RUNNING", "PAUSED"}:
+                        break
+                self._stop_event.wait(0.1)
+        finally:
+            self._shutdown_pipeline()
+
+    def _get_or_create_action_executor(self) -> object:
+        from execution.visual_action_block import VisualActionBlockExecutor
+        if self._worker is None or not self._worker.is_alive:
+            self._worker = InputWorker(self._backend, timebase=self._timebase, tick_seconds=0.01)
+            self._worker.start()
+        return VisualActionBlockExecutor(
+            state_bus=self._state_bus,
+            input_worker=self._worker,
+            timebase=self._timebase,
+            wait_chunk_ms=50,
+        )
+
+    def _sync_state_from_bus(self) -> None:
+        current = self._state_bus.current_mode.get()
+        observation = self._state_bus.latest_observation.get()
+        with self._lock:
+            if self._orchestrator is not None:
+                self._current_node = self._orchestrator.state
+            if current:
+                self._target_state = current
+            if observation is not None:
+                track = observation.target_track
+                if track is not None and track.state in {"TRACKED", "COASTING"}:
+                    self._progress = min(1.0, self._progress + 0.02)
+                elif track is None:
+                    self._progress = max(0.0, self._progress - 0.01)
+
+    def _shutdown_pipeline(self) -> None:
+        for component in (self._orchestrator, self._controller, self._perception):
+            if component is not None:
+                try:
+                    component.stop()
+                except (RuntimeError, AttributeError):
+                    pass
+        self._orchestrator = None
+        self._controller = None
+        self._perception = None
 
     def _find_latest_run_id(self) -> str | None:
         runs_dir = self._root / "logs" / "runs"
@@ -587,3 +666,28 @@ class AgentController:
         if not runs:
             return None
         return max(runs, key=lambda path: path.stat().st_mtime).name
+
+
+class _DemoCapturer:
+    def __init__(self, timebase: Timebase) -> None:
+        self._timebase = timebase
+        self._frame_id = 0
+
+    def start(self) -> None:
+        print("[DemoCapturer] started", flush=True)
+
+    def get_latest_frame(self) -> FramePacket:
+        import numpy as np
+        self._frame_id += 1
+        image = np.zeros((360, 640, 3), dtype=np.uint8)
+        x = 40 + (self._frame_id * 8) % 560
+        image[140:220, x : x + 80, 0] = 255
+        return FramePacket(
+            frame_id=self._frame_id,
+            timestamp=self._timebase.now(),
+            image=image,
+            source_size=(640, 360),
+        )
+
+    def stop(self) -> None:
+        print("[DemoCapturer] stopped", flush=True)
