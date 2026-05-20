@@ -13,11 +13,14 @@ from orchestration.graph import COMPLETE, INTERRUPTED, OrchestrationGraph
 from orchestration.orchestrator import Orchestrator
 from orchestration.skills import (
     AcquireTargetSkill,
+    EnterTargetRegionSkill,
     ExecuteVisualActionBlockSkill,
+    LoadTaskSkill,
     RecoverSkill,
     TrackAndApproachSkill,
     VerifySuccessSkill,
 )
+from orchestration.task_spec import TaskSpec
 
 
 def _observation() -> Observation:
@@ -45,6 +48,12 @@ def _orchestrator(state_bus: StateBus, timebase: Timebase, worker: InputWorker) 
     return Orchestrator(
         state_bus=state_bus,
         skills={
+            "load_task": LoadTaskSkill(
+                state_bus,
+                TaskSpec("unit", {}, {}, max_duration_sec=10.0, max_retries=1),
+                timebase,
+            ),
+            "enter_target_region": EnterTargetRegionSkill(state_bus, timebase),
             "acquire_target": AcquireTargetSkill(state_bus, timebase),
             "track_and_approach": TrackAndApproachSkill(state_bus, timebase),
             "execute_visual_action_block": ExecuteVisualActionBlockSkill(executor),
@@ -65,7 +74,7 @@ def test_orchestrator_reaches_complete_on_happy_path() -> None:
 
     worker.start()
     try:
-        for _ in range(6):
+        for _ in range(8):
             orchestrator.run_once()
             if orchestrator.state == COMPLETE:
                 break
@@ -74,7 +83,9 @@ def test_orchestrator_reaches_complete_on_happy_path() -> None:
 
     assert orchestrator.state == COMPLETE
     transitions = orchestrator.transitions_snapshot()
-    assert [transition.next_state for transition in transitions[:5]] == [
+    assert [transition.next_state for transition in transitions[:7]] == [
+        "LOAD_TASK",
+        "ENTER_TARGET_REGION",
         "ACQUIRE_TARGET",
         "TRACK_AND_APPROACH",
         "EXECUTE_VISUAL_ACTION_BLOCK",

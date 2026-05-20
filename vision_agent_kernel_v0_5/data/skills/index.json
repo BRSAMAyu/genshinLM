@@ -1,0 +1,20 @@
+{
+  "skills": [
+    {
+      "skill_id": "demo_product_skill",
+      "name": "Demo Product Skill",
+      "type": "combat",
+      "version": 5,
+      "archived": false,
+      "updated_at": 1779256164.0361996
+    },
+    {
+      "skill_id": "demo_combat_showcase_skill",
+      "name": "Demo Combat Showcase Skill",
+      "type": "combat",
+      "version": 6,
+      "archived": false,
+      "updated_at": 1779256253.3537745
+    }
+  ]
+}

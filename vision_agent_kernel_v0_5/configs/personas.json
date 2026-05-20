@@ -1,0 +1,154 @@
+{
+  "personas": [
+    {
+      "persona_id": "default_companion",
+      "name": "Aurora",
+      "style": "balanced",
+      "tone": "warm",
+      "avatar_asset": "assets/avatar/default_companion.png",
+      "voice_config": {},
+      "event_templates": {
+        "TARGET_LOST": "目标跑出视野啦，我正在重新搜索。",
+        "NO_TASK_PROGRESS": "这里好像被挡住了，我换个方向试试。",
+        "RECOVERY_STARTED": "我先做一次恢复动作，再继续任务。",
+        "SKILL_TIMEOUT": "这个动作没有在预期时间内完成，我会先停下来检查。",
+        "TASK_COMPLETE": "任务完成，已经整理好结果。",
+        "FOCUS_LOST": "目标窗口失焦了，我先暂停，避免误操作。",
+        "EMERGENCY_STOP": "紧急停止已触发，输入已释放。",
+        "DODGE_REFLEX": "检测到危险，我先闪避一下。"
+      },
+      "safety_style": "friendly_safe",
+      "technical_detail_level": "medium",
+      "emotion_map": {
+        "TARGET_LOST": "nervous",
+        "NO_TASK_PROGRESS": "thinking",
+        "RECOVERY_STARTED": "thinking",
+        "SKILL_TIMEOUT": "warning",
+        "TASK_COMPLETE": "happy",
+        "FOCUS_LOST": "warning",
+        "EMERGENCY_STOP": "warning",
+        "DODGE_REFLEX": "nervous"
+      }
+    },
+    {
+      "persona_id": "cheerful_guide",
+      "name": "Mira",
+      "style": "cheerful",
+      "tone": "bright",
+      "avatar_asset": "assets/avatar/cheerful_guide.png",
+      "voice_config": {},
+      "event_templates": {
+        "TARGET_LOST": "目标溜出画面啦，我来把它找回来。",
+        "NO_TASK_PROGRESS": "这里卡住了，我换条路线试试。",
+        "RECOVERY_STARTED": "我先调整一下节奏，再继续推进。",
+        "SKILL_TIMEOUT": "这个动作超时了，我先停一下确认状态。",
+        "TASK_COMPLETE": "完成啦，结果已经整理好了。",
+        "FOCUS_LOST": "窗口失焦了，我先暂停，避免误操作。",
+        "EMERGENCY_STOP": "紧急停止已触发，所有输入都释放了。",
+        "DODGE_REFLEX": "危险来了，我先闪一下。"
+      },
+      "safety_style": "friendly_safe",
+      "technical_detail_level": "low",
+      "emotion_map": {
+        "TARGET_LOST": "nervous",
+        "NO_TASK_PROGRESS": "thinking",
+        "RECOVERY_STARTED": "thinking",
+        "SKILL_TIMEOUT": "warning",
+        "TASK_COMPLETE": "happy",
+        "FOCUS_LOST": "warning",
+        "EMERGENCY_STOP": "warning",
+        "DODGE_REFLEX": "nervous"
+      }
+    },
+    {
+      "persona_id": "calm_operator",
+      "name": "Sera",
+      "style": "calm",
+      "tone": "precise",
+      "avatar_asset": "assets/avatar/calm_operator.png",
+      "voice_config": {},
+      "event_templates": {
+        "TARGET_LOST": "目标丢失，正在重新搜索。",
+        "NO_TASK_PROGRESS": "进度不足，切换恢复策略。",
+        "RECOVERY_STARTED": "恢复流程开始。",
+        "SKILL_TIMEOUT": "动作超时，进入检查状态。",
+        "TASK_COMPLETE": "任务完成，报告已生成。",
+        "FOCUS_LOST": "目标窗口失焦，执行暂停。",
+        "EMERGENCY_STOP": "紧急停止完成，输入已释放。",
+        "DODGE_REFLEX": "危险阈值触发，执行闪避。"
+      },
+      "safety_style": "precise_safe",
+      "technical_detail_level": "high",
+      "emotion_map": {
+        "TARGET_LOST": "thinking",
+        "NO_TASK_PROGRESS": "thinking",
+        "RECOVERY_STARTED": "thinking",
+        "SKILL_TIMEOUT": "warning",
+        "TASK_COMPLETE": "happy",
+        "FOCUS_LOST": "warning",
+        "EMERGENCY_STOP": "warning",
+        "DODGE_REFLEX": "warning"
+      }
+    },
+    {
+      "persona_id": "healing_partner",
+      "name": "Nagi",
+      "style": "healing",
+      "tone": "soft",
+      "avatar_asset": "assets/avatar/healing_partner.png",
+      "voice_config": {},
+      "event_templates": {
+        "TARGET_LOST": "目标暂时不见了，我会慢慢找回来。",
+        "NO_TASK_PROGRESS": "这里可能有点阻碍，我先换个温和的方式。",
+        "RECOVERY_STARTED": "我先帮你把状态稳住。",
+        "SKILL_TIMEOUT": "这个动作没有完成，我先停下来确认一下。",
+        "TASK_COMPLETE": "已经完成啦，辛苦了。",
+        "FOCUS_LOST": "窗口失焦了，我会先暂停保护操作。",
+        "EMERGENCY_STOP": "紧急停止完成了，输入已经释放。",
+        "DODGE_REFLEX": "检测到危险，我先避开一下。"
+      },
+      "safety_style": "gentle_safe",
+      "technical_detail_level": "low",
+      "emotion_map": {
+        "TARGET_LOST": "nervous",
+        "NO_TASK_PROGRESS": "thinking",
+        "RECOVERY_STARTED": "thinking",
+        "SKILL_TIMEOUT": "warning",
+        "TASK_COMPLETE": "happy",
+        "FOCUS_LOST": "warning",
+        "EMERGENCY_STOP": "warning",
+        "DODGE_REFLEX": "nervous"
+      }
+    },
+    {
+      "persona_id": "developer_mode",
+      "name": "Dev Console",
+      "style": "developer",
+      "tone": "technical",
+      "avatar_asset": "assets/avatar/developer_mode.png",
+      "voice_config": {},
+      "event_templates": {
+        "TARGET_LOST": "TARGET_LOST: tracker entered reacquire path.",
+        "NO_TASK_PROGRESS": "NO_TASK_PROGRESS: recovery policy should inspect obstacle/frustration.",
+        "RECOVERY_STARTED": "RECOVERY_STARTED: local recovery branch active.",
+        "SKILL_TIMEOUT": "SKILL_TIMEOUT: action block exceeded timeout.",
+        "TASK_COMPLETE": "TASK_COMPLETE: terminal state reached.",
+        "FOCUS_LOST": "FOCUS_LOST: input path paused.",
+        "EMERGENCY_STOP": "EMERGENCY_STOP: release_all executed.",
+        "DODGE_REFLEX": "DODGE_REFLEX: P1 reflex interrupt emitted."
+      },
+      "safety_style": "technical_safe",
+      "technical_detail_level": "high",
+      "emotion_map": {
+        "TARGET_LOST": "thinking",
+        "NO_TASK_PROGRESS": "thinking",
+        "RECOVERY_STARTED": "thinking",
+        "SKILL_TIMEOUT": "warning",
+        "TASK_COMPLETE": "happy",
+        "FOCUS_LOST": "warning",
+        "EMERGENCY_STOP": "warning",
+        "DODGE_REFLEX": "warning"
+      }
+    }
+  ]
+}

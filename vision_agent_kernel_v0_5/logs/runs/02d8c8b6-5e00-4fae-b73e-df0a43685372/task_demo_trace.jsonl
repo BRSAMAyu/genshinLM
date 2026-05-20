@@ -1,0 +1,14 @@
+{"event":"state_transition","previous_state":"INIT","next_state":"LOAD_TASK","reason":"bootstrapped","timestamp":377098.3768881}
+{"event":"skill_result","result":{"skill_name":"InitBootstrap","status":"SUCCESS","failure_code":null,"started_at":377098.376802,"finished_at":377098.376802,"payload":{}},"timestamp":377098.3770613}
+{"event":"state_transition","previous_state":"LOAD_TASK","next_state":"ENTER_TARGET_REGION","reason":"task_loaded","timestamp":377098.4280837}
+{"event":"skill_result","result":{"skill_name":"LoadTaskSkill","status":"SUCCESS","failure_code":null,"started_at":377098.4279762,"finished_at":377098.4279762,"payload":{"task_id":"demo_visual_target_interaction","max_duration_sec":60.0,"max_retries":1}},"timestamp":377098.4281538}
+{"event":"state_transition","previous_state":"ENTER_TARGET_REGION","next_state":"ACQUIRE_TARGET","reason":"target_region_entered","timestamp":377098.4786211}
+{"event":"skill_result","result":{"skill_name":"EnterTargetRegionSkill","status":"SUCCESS","failure_code":null,"started_at":377098.4785229,"finished_at":377098.4785229,"payload":{"region_entered":true}},"timestamp":377098.4786961}
+{"event":"state_transition","previous_state":"ACQUIRE_TARGET","next_state":"TRACK_AND_APPROACH","reason":"target_acquired","timestamp":377098.529396}
+{"event":"skill_result","result":{"skill_name":"AcquireTargetSkill","status":"SUCCESS","failure_code":null,"started_at":377098.5292936,"finished_at":377098.5292936,"payload":{"frame_id":1}},"timestamp":377098.5295636}
+{"event":"state_transition","previous_state":"TRACK_AND_APPROACH","next_state":"EXECUTE_VISUAL_ACTION_BLOCK","reason":"in_range","timestamp":377098.5801654}
+{"event":"skill_result","result":{"skill_name":"TrackAndApproachSkill","status":"SUCCESS","failure_code":null,"started_at":377098.5800678,"finished_at":377098.5800678,"payload":{"frame_id":1}},"timestamp":377098.5802472}
+{"event":"state_transition","previous_state":"EXECUTE_VISUAL_ACTION_BLOCK","next_state":"VERIFY_SUCCESS","reason":"action_block_success","timestamp":377098.6389875}
+{"event":"skill_result","result":{"skill_name":"demo_visual_action_block","status":"SUCCESS","failure_code":null,"started_at":377098.6386934,"finished_at":377098.6388801,"payload":{"final_ui_state_estimate":{"available":false}}},"timestamp":377098.6390494}
+{"event":"state_transition","previous_state":"VERIFY_SUCCESS","next_state":"COMPLETE","reason":"verified","timestamp":377098.6894501}
+{"event":"skill_result","result":{"skill_name":"VerifySuccessSkill","status":"SUCCESS","failure_code":null,"started_at":377098.6893405,"finished_at":377098.6893405,"payload":{"frame_id":1}},"timestamp":377098.6895273}

@@ -1,0 +1,188 @@
+{
+  "timestamp": 1779252403.4907842,
+  "ok": true,
+  "run_id": "000114f5-f479-4907-83a3-6ab5b6bfbd6a",
+  "checklist": [
+    {
+      "key": "fastapi_health",
+      "label": "FastAPI health",
+      "ok": true,
+      "detail": "local service controller is available"
+    },
+    {
+      "key": "profile_loaded",
+      "label": "Profile loaded",
+      "ok": true,
+      "detail": "{'ok': True, 'profile_id': 'default_1920x1080', 'errors': []}"
+    },
+    {
+      "key": "model_ready",
+      "label": "Model ready",
+      "ok": true,
+      "detail": "backend=ultralytics tracker=botsort.yaml"
+    },
+    {
+      "key": "skill_valid",
+      "label": "Skill valid",
+      "ok": true,
+      "detail": "{'ok': True, 'errors': []}"
+    },
+    {
+      "key": "planner_ready",
+      "label": "Planner ready",
+      "ok": true,
+      "detail": "provider=mock validation=PASS"
+    },
+    {
+      "key": "safety_ready",
+      "label": "Safety ready",
+      "ok": true,
+      "detail": "dry-run default, F9 enabled, safe-window required"
+    },
+    {
+      "key": "active_profile_exists",
+      "label": "Active profile exists",
+      "ok": true,
+      "detail": "{'ok': True, 'profile_id': 'default_1920x1080', 'errors': []}"
+    },
+    {
+      "key": "skill_validate_ok",
+      "label": "Skill validate OK",
+      "ok": true,
+      "detail": "{'ok': True, 'errors': []}"
+    },
+    {
+      "key": "sandbox_validation_ok",
+      "label": "Sandbox validation OK",
+      "ok": true,
+      "detail": "{'ok': True, 'errors': [], 'simulation': 'PASS'}"
+    },
+    {
+      "key": "input_backend_safe",
+      "label": "Input backend safe",
+      "ok": true,
+      "detail": "input_backend=console"
+    },
+    {
+      "key": "telemetry_log_path_created",
+      "label": "Telemetry log path created",
+      "ok": true,
+      "detail": "D:\\Aurora\\vision_agent_kernel_v0_5\\logs\\runs\\000114f5-f479-4907-83a3-6ab5b6bfbd6a\\product_e2e_trace.jsonl"
+    },
+    {
+      "key": "dry_run_passed",
+      "label": "Dry-run passed",
+      "ok": true,
+      "detail": "SUCCESS"
+    },
+    {
+      "key": "report_generated",
+      "label": "Report generated",
+      "ok": true,
+      "detail": "D:\\Aurora\\vision_agent_kernel_v0_5\\logs\\runs\\000114f5-f479-4907-83a3-6ab5b6bfbd6a\\product_e2e_report.md"
+    }
+  ],
+  "selected_profile": "default_1920x1080",
+  "selected_skill": "demo_product_skill",
+  "planner_provider": "mock",
+  "task_validation": {
+    "ok": true,
+    "errors": [],
+    "simulation": "PASS"
+  },
+  "execution_mode": "dry-run",
+  "safety_events": [
+    "dry_run_default_verified",
+    "f9_emergency_stop_enabled",
+    "release_all_called"
+  ],
+  "release_all_called": true,
+  "companion_summary": "任务完成，已经整理好结果。",
+  "confirm_required": false,
+  "error": null,
+  "extra": {
+    "plan": {
+      "ok": true,
+      "provider": "mock",
+      "task_spec": {
+        "task_id": "mock_planned_task",
+        "goal": "complete product demo",
+        "persona_id": "default_companion",
+        "skill_chain": [
+          "demo_product_skill"
+        ],
+        "max_duration_sec": 60,
+        "max_retries": 2,
+        "requires_user_confirmation": true,
+        "input_mode": "dry-run",
+        "tools": [
+          "list_skills",
+          "create_task_spec",
+          "select_skill_chain"
+        ],
+        "graph": {
+          "nodes": [
+            "LOAD_TASK",
+            "ACQUIRE_TARGET",
+            "EXECUTE_SKILL_CHAIN",
+            "VERIFY_SUCCESS",
+            "COMPLETE"
+          ],
+          "edges": [
+            [
+              "LOAD_TASK",
+              "ACQUIRE_TARGET"
+            ],
+            [
+              "ACQUIRE_TARGET",
+              "EXECUTE_SKILL_CHAIN"
+            ],
+            [
+              "EXECUTE_SKILL_CHAIN",
+              "VERIFY_SUCCESS"
+            ],
+            [
+              "VERIFY_SUCCESS",
+              "COMPLETE"
+            ]
+          ]
+        }
+      },
+      "skill_chain": [
+        "demo_product_skill"
+      ],
+      "risks": [
+        "真实执行前必须用户确认",
+        "若目标窗口失焦会暂停"
+      ],
+      "validation": {
+        "ok": true,
+        "errors": [],
+        "simulation": "PASS"
+      }
+    },
+    "dry_run": {
+      "ok": true,
+      "result": {
+        "skill_name": "Demo Product Skill",
+        "status": "SUCCESS",
+        "failure_code": null,
+        "started_at": 1779252403.4876904,
+        "finished_at": 1779252403.4876904,
+        "payload": {
+          "dry_run": true,
+          "logs": [
+            "combo_step_start index=0 step=maintain_lock type=wait_visual_trigger",
+            "wait_visual_trigger trigger=target_visible chunk_ms=100",
+            "combo_step_success index=0 step=maintain_lock",
+            "combo_step_start index=1 step=fallback type=fallback_basic_loop",
+            "fallback_basic_loop available",
+            "combo_step_success index=1 step=fallback"
+          ],
+          "version": 1
+        }
+      }
+    },
+    "chaos": "none"
+  }
+}

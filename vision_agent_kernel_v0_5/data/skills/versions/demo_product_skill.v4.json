@@ -1,0 +1,62 @@
+{
+  "skill_id": "demo_product_skill",
+  "name": "Demo Product Skill",
+  "type": "combat",
+  "version": 4,
+  "metadata": {
+    "source": "product_demo"
+  },
+  "environment_profile": "default_1920x1080",
+  "preconditions": [
+    "require_focus",
+    "target_visible"
+  ],
+  "steps": [
+    {
+      "step_id": "maintain_lock",
+      "type": "wait_visual_trigger",
+      "label": "Maintain target lock",
+      "delay_ms": 0,
+      "timeout_ms": 1000,
+      "interruptible": true,
+      "params": {
+        "trigger": "target_visible",
+        "chunk_ms": 100
+      }
+    },
+    {
+      "step_id": "fallback",
+      "type": "fallback_basic_loop",
+      "label": "Fallback loop",
+      "delay_ms": 0,
+      "timeout_ms": 1000,
+      "interruptible": true,
+      "params": {}
+    }
+  ],
+  "visual_triggers": {
+    "target_visible": {
+      "type": "target_visible"
+    }
+  },
+  "success_criteria": [
+    "visual_action_completed"
+  ],
+  "failure_policy": {
+    "max_retries": 2,
+    "fallback": "pause_and_reacquire"
+  },
+  "cleanup": [
+    {
+      "type": "release_all"
+    }
+  ],
+  "safety": {
+    "dry_run_default": true,
+    "interruptible": true,
+    "require_focus": true,
+    "max_duration_ms": 5000
+  },
+  "archived": false,
+  "updated_at": 1779254915.6884372
+}

@@ -8,7 +8,7 @@ import numpy as np
 from core.events import Interrupt
 from core.state_bus import StateBus
 from core.timebase import Timebase
-from core.types import TargetCandidate
+from core.types import TargetCandidate, TargetTrack
 
 
 @dataclass(frozen=True, slots=True)
@@ -19,6 +19,11 @@ class YoloDetectorConfig:
     device: str | None = None
     half: bool = False
     classes: list[int] | None = None
+    tracker: str = "botsort.yaml"
+
+
+class YoloDetectorUnavailableError(RuntimeError):
+    pass
 
 
 class YoloDetector:
@@ -34,26 +39,46 @@ class YoloDetector:
         self._timebase = timebase or Timebase()
         self._model = model
 
-    def detect(self, frame: np.ndarray, frame_id: int) -> list[TargetCandidate]:
+    def detect(self, frame: np.ndarray, frame_id: int = 0) -> list[TargetCandidate]:
+        model = self._load_model()
+        results = model.predict(
+            frame,
+            conf=self._config.conf_threshold,
+            iou=self._config.iou_threshold,
+            device=self._config.device,
+            half=self._config.half,
+            classes=self._config.classes,
+            verbose=False,
+        )
+        candidates = self._results_to_candidates(results, frame_id)
+        print(
+            "[YoloDetector] "
+            f"frame_id={frame_id} candidates={len(candidates)} "
+            f"conf_threshold={self._config.conf_threshold}",
+            flush=True,
+        )
+        return candidates
+
+    def track(self, frame: np.ndarray, frame_id: int = 0, persist: bool = True) -> list[TargetTrack]:
+        from perception.ultralytics_tracker import UltralyticsResultAdapter
+
+        model = self._load_model()
+        results = model.track(
+            frame,
+            tracker=self._config.tracker,
+            persist=persist,
+            conf=self._config.conf_threshold,
+            iou=self._config.iou_threshold,
+            device=self._config.device,
+            half=self._config.half,
+            classes=self._config.classes,
+            verbose=False,
+        )
+        return UltralyticsResultAdapter().results_to_tracks(results, frame_id=frame_id)
+
+    def safe_detect(self, frame: np.ndarray, frame_id: int = 0) -> list[TargetCandidate]:
         try:
-            model = self._load_model()
-            results = model.predict(
-                frame,
-                conf=self._config.conf_threshold,
-                iou=self._config.iou_threshold,
-                device=self._config.device,
-                half=self._config.half,
-                classes=self._config.classes,
-                verbose=False,
-            )
-            candidates = self._results_to_candidates(results, frame_id)
-            print(
-                "[YoloDetector] "
-                f"frame_id={frame_id} candidates={len(candidates)} "
-                f"conf_threshold={self._config.conf_threshold}",
-                flush=True,
-            )
-            return candidates
+            return self.detect(frame, frame_id)
         except Exception as exc:
             self._publish_error(frame_id=frame_id, exc=exc)
             return []
@@ -64,7 +89,10 @@ class YoloDetector:
         try:
             from ultralytics import YOLO  # type: ignore[import-not-found]
         except ImportError as exc:
-            raise RuntimeError("ultralytics is not installed") from exc
+            raise YoloDetectorUnavailableError(
+                "Ultralytics is not installed. Install it with `pip install ultralytics` "
+                "or use the lightweight test detector fallback."
+            ) from exc
         self._model = YOLO(self._config.model_path)
         print(f"[YoloDetector] loaded model_path={self._config.model_path}", flush=True)
         return self._model

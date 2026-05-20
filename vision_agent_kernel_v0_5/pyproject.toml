@@ -19,6 +19,9 @@ dependencies = [
   "opencv-python>=4.9",
   "pyyaml>=6.0.1",
   "ultralytics>=8.2",
+  "fastapi>=0.111",
+  "uvicorn[standard]>=0.30",
+  "pydantic>=2.7",
 ]
 
 [project.optional-dependencies]
@@ -42,6 +45,7 @@ packages = [
   "orchestration",
   "telemetry",
   "testbed",
+  "app_service",
 ]
 
 [tool.pytest.ini_options]

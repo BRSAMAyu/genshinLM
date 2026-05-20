@@ -1,0 +1,107 @@
+{
+  "ok": true,
+  "checks": [
+    {
+      "key": "python",
+      "label": "Python version",
+      "status": "ok",
+      "detail": "3.12.7"
+    },
+    {
+      "key": "node",
+      "label": "node",
+      "status": "ok",
+      "detail": "v22.20.0"
+    },
+    {
+      "key": "npm",
+      "label": "npm",
+      "status": "ok",
+      "detail": "11.6.2"
+    },
+    {
+      "key": "tauri",
+      "label": "tauri",
+      "status": "warn",
+      "detail": "> vision-agent-shell@0.1.0 tauri"
+    },
+    {
+      "key": "fastapi",
+      "label": "fastapi",
+      "status": "ok",
+      "detail": "available"
+    },
+    {
+      "key": "uvicorn",
+      "label": "uvicorn",
+      "status": "ok",
+      "detail": "available"
+    },
+    {
+      "key": "numpy",
+      "label": "numpy",
+      "status": "ok",
+      "detail": "available"
+    },
+    {
+      "key": "dxcam",
+      "label": "dxcam",
+      "status": "ok",
+      "detail": "available"
+    },
+    {
+      "key": "mss",
+      "label": "mss",
+      "status": "warn",
+      "detail": "not installed"
+    },
+    {
+      "key": "ultralytics",
+      "label": "ultralytics",
+      "status": "warn",
+      "detail": "not installed"
+    },
+    {
+      "key": "torch",
+      "label": "CUDA / torch",
+      "status": "warn",
+      "detail": "not installed"
+    },
+    {
+      "key": "configs/model.yaml",
+      "label": "configs/model.yaml",
+      "status": "ok",
+      "detail": "exists"
+    },
+    {
+      "key": "configs/profiles/index.json",
+      "label": "configs/profiles/index.json",
+      "status": "ok",
+      "detail": "exists"
+    },
+    {
+      "key": "data/skills/index.json",
+      "label": "data/skills/index.json",
+      "status": "ok",
+      "detail": "exists"
+    },
+    {
+      "key": "port",
+      "label": "Port 8765",
+      "status": "ok",
+      "detail": "available"
+    },
+    {
+      "key": "writable",
+      "label": "logs writable",
+      "status": "ok",
+      "detail": "writable"
+    },
+    {
+      "key": "gui_build",
+      "label": "GUI build",
+      "status": "ok",
+      "detail": "built"
+    }
+  ]
+}

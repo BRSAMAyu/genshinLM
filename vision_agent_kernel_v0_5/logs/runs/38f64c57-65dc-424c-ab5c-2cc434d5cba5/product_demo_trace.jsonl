@@ -1,0 +1,7 @@
+{"timestamp": 1779252423.8181062, "event": "persona_selected", "persona": "default_companion", "message": "我先做一次恢复动作，再继续任务。"}
+{"timestamp": 1779252423.8181062, "event": "task_planned", "ok": true, "skill_chain": ["demo_product_skill"]}
+{"timestamp": 1779252423.8181062, "event": "combat_playbook_ready", "ok": true, "nodes": ["maintain_lock", "basic_attack_loop", "dodge_if_danger", "verify_complete"]}
+{"timestamp": 1779252423.8181062, "event": "agent_started", "mode": "RUNNING", "input_backend": "console"}
+{"timestamp": 1779252423.8181062, "event": "danger_evaluated", "danger_score": 1.0, "level": "HIGH", "interrupt": {"priority": 1, "timestamp": 374865.6904697, "code": "DODGE_REFLEX", "source": "combat_reflex", "frame_id": null, "payload": {"danger_score": 1.0, "signals": {"generic_warning_area": 1.0, "projectile_approaching": 1.0, "target_bbox_fast_expand": 0.8, "scripted_testbed_danger": 1.0}}, "recoverable": true, "requires_input_release": false}, "dodge": {"ok": true, "intent": "DODGE", "direction": "right", "lease_ms": 180, "resume": "reacquire_target_or_resume_checkpoint", "consecutive_dodges": 1}}
+{"timestamp": 1779252423.8181062, "event": "skill_dry_run", "ok": true, "status": "SUCCESS"}
+{"timestamp": 1779252423.8181062, "event": "task_complete", "message": "任务完成，已经整理好结果。"}

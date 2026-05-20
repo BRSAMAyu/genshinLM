@@ -1,0 +1,24 @@
+{
+  "profile_id": "default_1920x1080",
+  "window_title": "vision_agent_kernel_v0_5 pseudo3d_scene",
+  "source_resolution": [1920, 1080],
+  "normalized_resolution": [1280, 720],
+  "rois": {
+    "minimap": {
+      "mode": "anchor",
+      "anchor": "top-right",
+      "offset_x_px": -320,
+      "offset_y_px": 16,
+      "width_px": 280,
+      "height_px": 280
+    },
+    "main_view": {
+      "mode": "relative",
+      "x": 0.08,
+      "y": 0.06,
+      "w": 0.84,
+      "h": 0.76
+    }
+  },
+  "created_at": "2026-05-20T00:00:00"
+}

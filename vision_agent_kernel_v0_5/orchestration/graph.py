@@ -7,6 +7,8 @@ from core.types import SkillResult
 
 
 INIT = "INIT"
+LOAD_TASK = "LOAD_TASK"
+ENTER_TARGET_REGION = "ENTER_TARGET_REGION"
 ACQUIRE_TARGET = "ACQUIRE_TARGET"
 TRACK_AND_APPROACH = "TRACK_AND_APPROACH"
 EXECUTE_VISUAL_ACTION_BLOCK = "EXECUTE_VISUAL_ACTION_BLOCK"
@@ -31,7 +33,17 @@ class OrchestrationGraph:
         if status == "CANCELLED":
             return StateTransition(state, RECOVER, f"cancelled:{failure}")
         if state == INIT:
-            return StateTransition(state, ACQUIRE_TARGET, "bootstrapped")
+            return StateTransition(state, LOAD_TASK, "bootstrapped")
+        if state == LOAD_TASK:
+            if status == "SUCCESS":
+                return StateTransition(state, ENTER_TARGET_REGION, "task_loaded")
+            return StateTransition(state, FAILED, failure or "task_load_failed")
+        if state == ENTER_TARGET_REGION:
+            if status == "SUCCESS":
+                return StateTransition(state, ACQUIRE_TARGET, "target_region_entered")
+            if failure == "NO_TASK_PROGRESS":
+                return StateTransition(state, RECOVER, failure)
+            return StateTransition(state, FAILED, failure or "enter_region_failed")
         if state == ACQUIRE_TARGET:
             if status == "SUCCESS":
                 return StateTransition(state, TRACK_AND_APPROACH, "target_acquired")
@@ -57,6 +69,8 @@ class OrchestrationGraph:
         if state == RECOVER:
             if status == "SUCCESS":
                 return StateTransition(state, ACQUIRE_TARGET, "recovered")
+            if failure == "RECOVERY_RETRY":
+                return StateTransition(state, ACQUIRE_TARGET, failure)
             return StateTransition(state, FAILED, failure or "recovery_failed")
         return StateTransition(state, state, "terminal_or_unknown")
 

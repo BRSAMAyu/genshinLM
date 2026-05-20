@@ -1,0 +1,9 @@
+detector:
+  backend: ultralytics
+  model_path: models/target_detector.pt
+  tracker: botsort.yaml
+  conf_threshold: 0.35
+  iou_threshold: 0.5
+  device: cpu
+  half: false
+  classes: null

@@ -3,6 +3,7 @@ from __future__ import annotations
 from core.state_bus import StateBus
 from core.timebase import Timebase
 from core.types import SkillResult
+from orchestration.task_spec import TaskSpec
 from execution.visual_action_block import (
     VisualActionBlock,
     VisualActionBlockExecutor,
@@ -27,6 +28,36 @@ class BaseSkill:
             finished_at=now,
             payload=payload,
         )
+
+    def precondition(self) -> bool:
+        return True
+
+    def cleanup(self) -> None:
+        return None
+
+
+class LoadTaskSkill(BaseSkill):
+    name = "LoadTaskSkill"
+
+    def __init__(self, state_bus: StateBus, task_spec: TaskSpec, timebase: Timebase | None = None) -> None:
+        super().__init__(state_bus, timebase)
+        self._task_spec = task_spec
+
+    def run(self) -> SkillResult:
+        self._state_bus.current_goal.put(self._task_spec.task_id)
+        return self._result(
+            "SUCCESS",
+            task_id=self._task_spec.task_id,
+            max_duration_sec=self._task_spec.max_duration_sec,
+            max_retries=self._task_spec.max_retries,
+        )
+
+
+class EnterTargetRegionSkill(BaseSkill):
+    name = "EnterTargetRegionSkill"
+
+    def run(self) -> SkillResult:
+        return self._result("SUCCESS", region_entered=True)
 
 
 class AcquireTargetSkill(BaseSkill):

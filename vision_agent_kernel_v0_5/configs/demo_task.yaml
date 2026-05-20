@@ -1,0 +1,10 @@
+task_id: demo_visual_target_interaction
+target_profile:
+  class_id: red_block
+  trigger: target_color_green
+success_criteria:
+  action_sequence_completed: true
+max_duration_sec: 60
+max_retries: 1
+failure_policy:
+  on_target_failed: failed

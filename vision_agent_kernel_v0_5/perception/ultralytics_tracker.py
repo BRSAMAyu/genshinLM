@@ -52,7 +52,14 @@ class UltralyticsTracker:
                 half=self._config.half,
                 verbose=False,
             )
-            track = self._results_to_track(results, frame_id=frame_id, timestamp=timestamp)
+            tracks = UltralyticsResultAdapter().results_to_tracks(
+                results,
+                frame_id=frame_id,
+                timestamp=timestamp,
+                previous_track=self._last_track,
+                previous_timestamp=self._last_timestamp,
+            )
+            track = max(tracks, key=lambda item: item.confidence) if tracks else None
             if track is not None:
                 self._last_track = track
                 self._last_timestamp = timestamp
@@ -75,7 +82,10 @@ class UltralyticsTracker:
         try:
             from ultralytics import YOLO  # type: ignore[import-not-found]
         except ImportError as exc:
-            raise RuntimeError("ultralytics is not installed") from exc
+            raise RuntimeError(
+                "Ultralytics is not installed. Install it with `pip install ultralytics` "
+                "or run with the lightweight test detector fallback."
+            ) from exc
         self._model = YOLO(self._config.model_path)
         print(
             "[UltralyticsTracker] "
@@ -199,3 +209,85 @@ class UltralyticsTracker:
                 recoverable=True,
             )
         )
+
+
+class UltralyticsResultAdapter:
+    def results_to_tracks(
+        self,
+        results: Any,
+        frame_id: int,
+        timestamp: float = 0.0,
+        previous_track: TargetTrack | None = None,
+        previous_timestamp: float | None = None,
+    ) -> list[TargetTrack]:
+        if not results:
+            return []
+        result = results[0]
+        boxes = getattr(result, "boxes", None)
+        if boxes is None:
+            return []
+        names = getattr(result, "names", None) or {}
+        tracks: list[TargetTrack] = []
+        for box in boxes:
+            xyxy = self._to_float_list(box.xyxy[0])
+            confidence = float(self._to_float_list(box.conf)[0])
+            class_index = int(self._to_float_list(box.cls)[0])
+            class_id = str(names.get(class_index, class_index)) if isinstance(names, dict) else str(class_index)
+            track_id = self._extract_track_id(box)
+            x1, y1, x2, y2 = xyxy
+            center = ((x1 + x2) / 2.0, (y1 + y2) / 2.0)
+            velocity = self._velocity(track_id, center, timestamp, previous_track, previous_timestamp)
+            identity = 1.0 if track_id != "untracked" else confidence
+            tracks.append(
+                TargetTrack(
+                    track_id=track_id,
+                    class_id=class_id,
+                    state="TRACKED",
+                    bbox_xyxy=(x1, y1, x2, y2),
+                    smoothed_center_px=center,
+                    velocity_px_s=velocity,
+                    confidence=confidence,
+                    identity_confidence=identity,
+                    missing_duration_ms=0.0,
+                    bearing_deg=None,
+                    pitch_deg=None,
+                    estimated_range=None,
+                    last_seen_frame_id=frame_id,
+                )
+            )
+        return tracks
+
+    def _velocity(
+        self,
+        track_id: str,
+        center: tuple[float, float],
+        timestamp: float,
+        previous_track: TargetTrack | None,
+        previous_timestamp: float | None,
+    ) -> tuple[float, float]:
+        if (
+            previous_track is None
+            or previous_timestamp is None
+            or previous_track.track_id != track_id
+            or previous_track.smoothed_center_px is None
+        ):
+            return (0.0, 0.0)
+        dt = max(timestamp - previous_timestamp, 1e-6)
+        previous = previous_track.smoothed_center_px
+        return ((center[0] - previous[0]) / dt, (center[1] - previous[1]) / dt)
+
+    def _extract_track_id(self, box: Any) -> str:
+        track_id = getattr(box, "id", None)
+        if track_id is None:
+            return "untracked"
+        values = self._to_float_list(track_id)
+        return str(int(values[0])) if values else "untracked"
+
+    def _to_float_list(self, value: Any) -> list[float]:
+        if hasattr(value, "detach"):
+            value = value.detach()
+        if hasattr(value, "cpu"):
+            value = value.cpu()
+        if hasattr(value, "numpy"):
+            value = value.numpy()
+        return np.asarray(value, dtype=float).reshape(-1).tolist()

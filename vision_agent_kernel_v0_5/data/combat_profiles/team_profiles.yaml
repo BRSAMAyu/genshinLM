@@ -1,0 +1,9 @@
+teams:
+  - team_id: default_team
+    display_name: Default Sandbox Team
+    members:
+      - abstract_duelist
+      - abstract_support
+    behavior_preference: balanced
+    safety_threshold: 0.75
+    strategy_style: target_lock_with_reflex_evasion

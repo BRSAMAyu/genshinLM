@@ -12,6 +12,8 @@ from orchestration.graph import (
     FAILED,
     INIT,
     INTERRUPTED,
+    ENTER_TARGET_REGION,
+    LOAD_TASK,
     RECOVER,
     TRACK_AND_APPROACH,
     VERIFY_SUCCESS,
@@ -97,6 +99,8 @@ class Orchestrator:
         if state == INIT:
             return self._NoopSkill("InitBootstrap", self._timebase)
         mapping = {
+            LOAD_TASK: "load_task",
+            ENTER_TARGET_REGION: "enter_target_region",
             ACQUIRE_TARGET: "acquire_target",
             TRACK_AND_APPROACH: "track_and_approach",
             EXECUTE_VISUAL_ACTION_BLOCK: "execute_visual_action_block",
@@ -104,6 +108,8 @@ class Orchestrator:
             RECOVER: "recover",
         }
         key = mapping.get(state)
+        if state in {LOAD_TASK, ENTER_TARGET_REGION} and (key is None or key not in self._skills):
+            return self._NoopSkill(state.title().replace("_", ""), self._timebase)
         if key is None or key not in self._skills:
             return self._NoopSkill("UnknownState", self._timebase, status="FAILED", failure_code="UNKNOWN_STATE")
         return self._skills[key]

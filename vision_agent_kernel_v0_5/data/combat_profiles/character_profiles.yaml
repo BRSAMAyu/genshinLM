@@ -1,0 +1,25 @@
+characters:
+  - character_id: abstract_duelist
+    display_name: Custom Duelist
+    role: close_range
+    skill_list:
+      - basic_attack
+      - guarded_dash
+      - recover_stance
+    cooldown:
+      guarded_dash_ms: 1200
+    behavior_preference: balanced
+    safety_threshold: 0.8
+    strategy_style: maintain_lock_then_burst
+  - character_id: abstract_support
+    display_name: Custom Support
+    role: support
+    skill_list:
+      - mark_target
+      - heal_if_low_hp
+      - disengage
+    cooldown:
+      heal_if_low_hp_ms: 5000
+    behavior_preference: conservative
+    safety_threshold: 0.65
+    strategy_style: preserve_hp_and_verify

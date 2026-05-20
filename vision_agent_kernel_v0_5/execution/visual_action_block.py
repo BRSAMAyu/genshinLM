@@ -74,6 +74,10 @@ class VisualActionBlockExecutor:
                     "action_block_step_start",
                     {"block": block.name, "step_index": index, "step_type": step.type},
                 )
+                self._emit_telemetry(
+                    "combo_step_start",
+                    {"block": block.name, "step_index": index, "step_type": step.type},
+                )
                 print(
                     "[VisualActionBlock] "
                     f"name={block.name} step_index={index} type={step.type}",
@@ -86,10 +90,16 @@ class VisualActionBlockExecutor:
                 elif step.type == "emit_action_intent":
                     emitted = self._emit_action_intent(block.name, step)
                     final_payload.setdefault("emitted_intents", []).append(emitted)
+                elif step.type in {"branch_on_visual_state", "retry_until", "fallback_basic_loop", "pause_and_reacquire"}:
+                    final_payload.setdefault("combo_steps", []).append({"step_index": index, "type": step.type, "status": "dry_run_supported"})
                 else:
                     raise ValueError(f"unsupported visual action step type: {step.type}")
                 self._emit_telemetry(
                     "action_block_step_success",
+                    {"block": block.name, "step_index": index, "step_type": step.type},
+                )
+                self._emit_telemetry(
+                    "combo_step_success",
                     {"block": block.name, "step_index": index, "step_type": step.type},
                 )
             final_payload["final_ui_state_estimate"] = self._final_ui_state()
@@ -105,9 +115,17 @@ class VisualActionBlockExecutor:
             final_payload["final_ui_state_estimate"] = self._final_ui_state()
             status = "CANCELLED"
             failure_code = exc.interrupt.code
+            self._emit_telemetry(
+                "combo_interrupted",
+                {"block": block.name, "interrupt": exc.interrupt.code, "priority": exc.interrupt.priority},
+            )
         except VisualActionBlockTimeout as exc:
             self._emit_telemetry(
                 "action_block_timeout",
+                {"block": block.name, "failure_code": str(exc)},
+            )
+            self._emit_telemetry(
+                "combo_step_timeout",
                 {"block": block.name, "failure_code": str(exc)},
             )
             final_payload["final_ui_state_estimate"] = self._final_ui_state()
@@ -204,7 +222,7 @@ class VisualActionBlockExecutor:
         deferred: list[Interrupt] = []
         interrupt = self._state_bus.next_interrupt(timeout=0.0)
         while interrupt is not None:
-            if interrupt.priority <= 1:
+            if interrupt.priority <= 1 or interrupt.code == "TARGET_LOST":
                 for item in deferred:
                     self._state_bus.publish_interrupt(item)
                 print(

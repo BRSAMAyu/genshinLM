@@ -1,0 +1,94 @@
+{
+  "skill_id": "demo_combat_showcase_skill",
+  "name": "Demo Combat Showcase Skill",
+  "type": "combat",
+  "version": 6,
+  "metadata": {
+    "source": "showcase_demo",
+    "smart_authoring": [
+      "danger_guard",
+      "target_visible checkpoint",
+      "resume point"
+    ]
+  },
+  "environment_profile": "default_1920x1080",
+  "preconditions": [
+    "require_focus",
+    "target_visible",
+    "danger_guard"
+  ],
+  "steps": [
+    {
+      "step_id": "maintain_lock",
+      "type": "checkpoint",
+      "label": "Maintain lock",
+      "delay_ms": 0,
+      "timeout_ms": 1000,
+      "interruptible": true,
+      "params": {
+        "checkpoint": "target_visible"
+      }
+    },
+    {
+      "step_id": "attack_if_safe",
+      "type": "branch_on_visual_state",
+      "label": "Attack if safe",
+      "delay_ms": 0,
+      "timeout_ms": 1000,
+      "interruptible": true,
+      "params": {
+        "guard": "danger_score < 0.45"
+      }
+    },
+    {
+      "step_id": "dodge_if_danger",
+      "type": "guard",
+      "label": "Dodge if danger",
+      "delay_ms": 0,
+      "timeout_ms": 1000,
+      "interruptible": true,
+      "params": {
+        "interrupt": "DODGE_REFLEX"
+      }
+    },
+    {
+      "step_id": "fallback_basic_loop",
+      "type": "fallback_basic_loop",
+      "label": "Fallback basic loop",
+      "delay_ms": 0,
+      "timeout_ms": 1000,
+      "interruptible": true,
+      "params": {
+        "resume_from_checkpoint": true
+      }
+    }
+  ],
+  "visual_triggers": {
+    "target_visible": {
+      "type": "target_visible"
+    },
+    "skill_ui_changed": {
+      "type": "ui_state_changed"
+    }
+  },
+  "success_criteria": [
+    "visual_action_completed"
+  ],
+  "failure_policy": {
+    "max_retries": 2,
+    "fallback": "pause_and_reacquire"
+  },
+  "cleanup": [
+    {
+      "type": "release_all"
+    }
+  ],
+  "safety": {
+    "dry_run_default": true,
+    "interruptible": true,
+    "require_focus": true,
+    "max_duration_ms": 8000
+  },
+  "archived": false,
+  "updated_at": 1779256253.3537745
+}

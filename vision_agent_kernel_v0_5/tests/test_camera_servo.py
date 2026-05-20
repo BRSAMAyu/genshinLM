@@ -71,3 +71,30 @@ def test_camera_servo_coasting_predicts_with_velocity() -> None:
     assert tracked_error.yaw_error_deg == 0.0
     assert coasting_error.yaw_error_deg > 0.0
     assert coasting_error.stale
+
+
+def test_camera_servo_invert_yaw_and_pitch_config() -> None:
+    servo = CameraServo(
+        CameraServoConfig(
+            dead_zone_deg=0.0,
+            kp_yaw=1.0,
+            kp_pitch=1.0,
+            invert_yaw=True,
+            invert_pitch=True,
+            smoothing_alpha=1.0,
+            max_yaw_delta=12.0,
+            max_pitch_delta=8.0,
+        )
+    )
+    error = CameraControlError(
+        yaw_error_deg=5.0,
+        pitch_error_deg=-4.0,
+        angular_distance_deg=math.hypot(5.0, -4.0),
+        target_confidence=1.0,
+        stale=False,
+    )
+
+    intent = servo.step(error, dt=0.05)
+
+    assert intent.yaw_delta == -5.0
+    assert intent.pitch_delta == 4.0
