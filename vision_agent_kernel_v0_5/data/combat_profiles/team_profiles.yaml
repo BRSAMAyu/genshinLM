@@ -427,3 +427,132 @@ teams:
       - "Dendro application may be insufficient for pure hyperbloom"
       - "Furina needs fanfare ramp-up time"
       - "Moderate single-target DPS"
+
+  - team_id: international
+    display_name: International (万达国际)
+    members:
+      - tartaglia
+      - xiangling
+      - bennett
+      - kaedehara_kazuha
+    resonance: none
+    recommended_rotation:
+      - "Bennett Q > E (ATK buff, pyro application)"
+      - "Kazuha E > Q (VV shred pyro, buff pyro DMG)"
+      - "Xiangling Q > E (pyronado vaporize)"
+      - "Tartaglia E (enter melee stance, apply hydro for vaporize)"
+      - "Tartaglia melee combo to maintain hydro on enemies"
+      - "Tartaglia Q (melee burst for vaporize nuke)"
+    strengths:
+      - "Tartaglia enables Xiangling to vaporize every pyronado hit"
+      - "Kazuha provides VV shred and pyro DMG buff"
+      - "Extremely high sustained AoE DPS"
+      - "One of the strongest speedrun teams"
+    weaknesses:
+      - "Tartaglia melee stance has cooldown management (avoid overstay)"
+      - "No defensive utility beyond Bennett heal"
+      - "Single-target damage drops if rotation is misaligned"
+
+  - team_id: eula_physical
+    display_name: Eula Physical (优菈物理)
+    members:
+      - eula
+      - raiden_shogun
+      - rosaria
+      - diona
+    resonance: cryo_cryo
+    recommended_rotation:
+      - "Diona E > Q (shield, heal, apply cryo)"
+      - "Rosaria E > Q (apply cryo, crit rate share, physical shred)"
+      - "Raiden E (skill mark for burst DMG bonus)"
+      - "Eula E (hold for Grimheart stacks) > NA combo"
+      - "Eula Q > NA combo (build lightfall sword stacks)"
+      - "Eula Q detonation for massive physical nuke"
+      - "Raiden Q (burst to recover energy for team)"
+    strengths:
+      - "Eula has the highest physical burst damage in the game"
+      - "Cryo resonance + Rosaria provide crit rate and physical shred"
+      - "Raiden solves energy issues and adds superconduct"
+      - "Diona provides shielding and healing"
+    weaknesses:
+      - "Physical damage is weak against physical-resistant enemies"
+      - "Eula burst can miss if enemies move or iframe"
+      - "Energy hungry team, needs good particle management"
+      - "Raiden E does not trigger superconduct off-field reliably"
+
+  - team_id: neuvillette_hypercarry
+    display_name: Neuvillette Hypercarry (那维单核)
+    members:
+      - neuvillette
+      - furina
+      - baizhu
+      - kaedehara_kazuha
+    resonance: none
+    recommended_rotation:
+      - "Furina E > Q (salon members, start fanfare stacking)"
+      - "Baizhu E > Q (heal for fanfare, dendro application)"
+      - "Kazuha E > Q (VV shred hydro, buff hydro DMG)"
+      - "Neuvillette Q (charge sourcewater drops)"
+      - "Neuvillette charged attack (water beam sustained DPS)"
+      - "Baizhu E again to maintain fanfare stacks"
+    strengths:
+      - "Neuvillette charged attack has absurd sustained DPS"
+      - "Furina fanfare provides massive DMG bonus"
+      - "Baizhu heals to stack fanfare and provides interruption resist"
+      - "Very forgiving rotation with few strict timing windows"
+    weaknesses:
+      - "Neuvillette is stationary during charged attack"
+      - "Only hydro damage, struggles against hydro-immune enemies"
+      - "Requires Furina for maximum performance"
+      - "Baizhu's dendro application may interfere in some scenarios"
+
+  - team_id: hu_tao_double_geo
+    display_name: Hu Tao Double Geo (胡桃双岩)
+    members:
+      - hu_tao
+      - xingqiu
+      - zhongli
+      - albedo
+    resonance: geo_geo
+    recommended_rotation:
+      - "Zhongli E hold (shield + elemental shred)"
+      - "Albedo E (solar isotoma for off-field geo damage)"
+      - "Xingqiu E > Q (apply hydro)"
+      - "Hu Tao E > NA/CA combo (paramita papilio vaporize)"
+      - "Hu Tao N2C dash loop for 9 seconds"
+      - "Hu Tao Q before E expires (vape nuke)"
+    strengths:
+      - "Zhongli shield provides comfortable gameplay"
+      - "Geo resonance + Zhongli shred boosts overall damage"
+      - "Albedo off-field geo damage adds free DPS"
+      - "Very safe with consistent single-target DPS"
+    weaknesses:
+      - "Hu Tao needs below 50% HP for max damage"
+      - "Albedo flower can be destroyed by some boss attacks"
+      - "Limited AoE damage capability"
+      - "Geo constructs may not work on all terrain"
+
+  - team_id: furina_vape
+    display_name: Furina Double Hydro Vape (芙宁娜双水蒸发)
+    members:
+      - hu_tao
+      - furina
+      - xingqiu
+      - xianyun
+    resonance: hydro_hydro
+    recommended_rotation:
+      - "Furina E > Q (salon members, fanfare stacks)"
+      - "Xingqiu E > Q (hydro application, damage reduction)"
+      - "Xianyun E > Q (heal for fanfare, plunge buff)"
+      - "Hu Tao E > NA/CA or plunge attacks (vaporize)"
+      - "Xianyun E again for additional healing and fanfare"
+    strengths:
+      - "Furina fanfare provides massive DMG bonus to Hu Tao"
+      - "Double hydro resonance boosts HP for Hu Tao and Furina"
+      - "Xianyun enables plunge cancels for Hu Tao"
+      - "Consistent vaporize with strong sustained DPS"
+    weaknesses:
+      - "Requires managing Furina fanfare ramp-up"
+      - "Xianyun plunge buff has limited duration"
+      - "No geo resonance or Zhongli shield for comfort"
+      - "Higher rotation complexity than traditional Hu Tao teams"

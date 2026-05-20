@@ -47,8 +47,8 @@ characters:
     weapon_type: polearm
     role: burst_dps
     normal_attack_name: Origin
-    e_skill_name: Transcendence: Baleful Omen
-    q_burst_name: Secret Art: Musou Shinsetsu
+    e_skill_name: "Transcendence: Baleful Omen"
+    q_burst_name: "Secret Art: Musou Shinsetsu"
     e_skill_cd_ms: 10000
     q_energy_cost: 90
     q_duration_ms: 7000
@@ -178,8 +178,8 @@ characters:
     weapon_type: sword
     role: healer
     normal_attack_name: Ancient Sword Art
-    e_skill_name: Adeptus Art: Herald of Frost
-    q_burst_name: Adeptus Art: Preserver of Fortune
+    e_skill_name: "Adeptus Art: Herald of Frost"
+    q_burst_name: "Adeptus Art: Preserver of Fortune"
     e_skill_cd_ms: 30000
     q_energy_cost: 80
     q_duration_ms: 15000
@@ -260,9 +260,9 @@ characters:
     element: cryo
     weapon_type: sword
     role: burst_dps
-    normal_attack_name: Kamisato Art: Kabuki
-    e_skill_name: Kamisato Art: Hyouka
-    q_burst_name: Kamisato Art: Soumetsu
+    normal_attack_name: "Kamisato Art: Kabuki"
+    e_skill_name: "Kamisato Art: Hyouka"
+    q_burst_name: "Kamisato Art: Soumetsu"
     e_skill_cd_ms: 10000
     q_energy_cost: 80
     q_duration_ms: 5000
@@ -325,8 +325,8 @@ characters:
     weapon_type: sword
     role: on_field_dps
     normal_attack_name: Abductive Reasoning
-    e_skill_name: Universality: An Elaboration on Form
-    q_burst_name: Particular Field: Fetters of Phenomena
+    e_skill_name: "Universality: An Elaboration on Form"
+    q_burst_name: "Particular Field: Fetters of Phenomena"
     e_skill_cd_ms: 18000
     q_energy_cost: 70
     q_duration_ms: 0
@@ -405,8 +405,8 @@ characters:
     weapon_type: bow
     role: on_field_dps
     normal_attack_name: Cutting Torrent
-    e_skill_name: Foul Legacy: Raging Tide
-    q_burst_name: Havoc: Obliteration
+    e_skill_name: "Foul Legacy: Raging Tide"
+    q_burst_name: "Havoc: Obliteration"
     e_skill_cd_ms: 30000
     q_energy_cost: 60
     q_duration_ms: 0
@@ -469,8 +469,8 @@ characters:
     weapon_type: polearm
     role: on_field_dps
     normal_attack_name: Engraving of the Secret Source
-    e_skill_name: Secret Rite: Chasmic Soulfarer
-    q_burst_name: Sacred Rite: Wolf's Swiftness
+    e_skill_name: "Secret Rite: Chasmic Soulfarer"
+    q_burst_name: "Sacred Rite: Wolf's Swiftness"
     e_skill_cd_ms: 7500
     q_energy_cost: 80
     q_duration_ms: 16000
@@ -502,7 +502,7 @@ characters:
     role: charge_shot_dps
     normal_attack_name: Pinpoint
     e_skill_name: Prop Arrow
-    q_burst_name: Wondrous Trick: Miracle Parade
+    q_burst_name: "Wondrous Trick: Miracle Parade"
     e_skill_cd_ms: 18000
     q_energy_cost: 60
     q_duration_ms: 0
@@ -517,7 +517,7 @@ characters:
     weapon_type: claymore
     role: on_field_dps
     normal_attack_name: The Burning Fiend Within
-    e_skill_name: Canopy Hunter: Walking on the Edge of the Void
+    e_skill_name: "Canopy Hunter: Walking on the Edge of the Void"
     q_burst_name: Hail to the Almighty Dragon-Lord
     e_skill_cd_ms: 18000
     q_energy_cost: 70
@@ -534,7 +534,7 @@ characters:
     role: bloom_enabler
     normal_attack_name: Dance of Samser
     e_skill_name: Dance of Haftkarsvash
-    q_burst_name: Dance of Abzendegi: Distant Dreams, Listening Spring
+    q_burst_name: "Dance of Abzendegi: Distant Dreams, Listening Spring"
     e_skill_cd_ms: 18000
     q_energy_cost: 70
     q_duration_ms: 0
@@ -549,8 +549,8 @@ characters:
     weapon_type: catalyst
     role: on_field_dps
     normal_attack_name: Windforce of Frost Blade
-    e_skill_name: Hanega: Song of the Wind
-    q_burst_name: Kyougen: Five Ceremonial Plays
+    e_skill_name: "Hanega: Song of the Wind"
+    q_burst_name: "Kyougen: Five Ceremonial Plays"
     e_skill_cd_ms: 6000
     q_energy_cost: 60
     q_duration_ms: 0
@@ -664,8 +664,8 @@ characters:
     weapon_type: sword
     role: off_field_dps
     normal_attack_name: Favonius Bladework - Weiss
-    e_skill_name: Abiogenesis: Solar Isotoma
-    q_burst_name: Rite of Progeniture: Tectonic Tide
+    e_skill_name: "Abiogenesis: Solar Isotoma"
+    q_burst_name: "Rite of Progeniture: Tectonic Tide"
     e_skill_cd_ms: 4000
     q_energy_cost: 40
     q_duration_ms: 30000
@@ -679,9 +679,9 @@ characters:
     element: hydro
     weapon_type: sword
     role: on_field_dps
-    normal_attack_name: Kamisato Art: Marobashi
-    e_skill_name: Kamisato Art: Kyouka
-    q_burst_name: Kamisato Art: Suiyuu
+    normal_attack_name: "Kamisato Art: Marobashi"
+    e_skill_name: "Kamisato Art: Kyouka"
+    q_burst_name: "Kamisato Art: Suiyuu"
     e_skill_cd_ms: 12000
     q_energy_cost: 80
     q_duration_ms: 6000
@@ -696,8 +696,8 @@ characters:
     weapon_type: catalyst
     role: off_field_dps
     normal_attack_name: Spiritfox Sin-Eater
-    e_skill_name: Yakan Evocation: Sesshou Sakura
-    q_burst_name: Great Secret Art: Tenko Kenshin
+    e_skill_name: "Yakan Evocation: Sesshou Sakura"
+    q_burst_name: "Great Secret Art: Tenko Kenshin"
     e_skill_cd_ms: 4000
     q_energy_cost: 90
     q_duration_ms: 0
@@ -728,8 +728,8 @@ characters:
     weapon_type: polearm
     role: off_field_dps
     normal_attack_name: Shadow-Hunting Spear
-    e_skill_name: Lumidouce Art: Dawntrial
-    q_burst_name: Lumidouce Art: Emerald Gateway
+    e_skill_name: "Lumidouce Art: Dawntrial"
+    q_burst_name: "Lumidouce Art: Emerald Gateway"
     e_skill_cd_ms: 14000
     q_energy_cost: 50
     q_duration_ms: 0
@@ -793,7 +793,7 @@ characters:
     role: off_field_dps
     normal_attack_name: Weaving Blade
     e_skill_name: Fluttering Hasode
-    q_burst_name: Hiyoku: Twin Blades
+    q_burst_name: "Hiyoku: Twin Blades"
     e_skill_cd_ms: 12000
     q_energy_cost: 50
     q_duration_ms: 0
@@ -808,7 +808,7 @@ characters:
     weapon_type: sword
     role: on_field_dps
     normal_attack_name: Abyssal Blade
-    e_skill_name: Void-Form: Karmic Genesis
+    e_skill_name: "Void-Form: Karmic Genesis"
     q_burst_name: Realm of Dark Rime
     e_skill_cd_ms: 16000
     q_energy_cost: 60
@@ -849,15 +849,15 @@ characters:
     strategy_style: burst_swap
 
   - character_id: arataki_itto
-    display_name: 荒�的�的 一斗
+    display_name: 荒泷一斗
     name_en: Arataki Itto
     rarity: 5
     element: geo
     weapon_type: claymore
     role: on_field_dps
     normal_attack_name: Fight Club Legend
-    e_skill_name: Masatsu Zetsugi: Akaushi Burst!
-    q_burst_name: Royal Descent: Behold, Itto the Evil!
+    e_skill_name: "Masatsu Zetsugi: Akaushi Burst!"
+    q_burst_name: "Royal Descent: Behold, Itto the Evil!"
     e_skill_cd_ms: 10000
     q_energy_cost: 70
     q_duration_ms: 11000
@@ -907,8 +907,8 @@ characters:
     weapon_type: sword
     role: off_field_dps
     normal_attack_name: Guhua Style
-    e_skill_name: Guhua Sword: Fatal Rainscreen
-    q_burst_name: Guhua Sword: Raincutter
+    e_skill_name: "Guhua Sword: Fatal Rainscreen"
+    q_burst_name: "Guhua Sword: Raincutter"
     e_skill_cd_ms: 21000
     q_energy_cost: 80
     q_duration_ms: 15000
@@ -1179,8 +1179,8 @@ characters:
     weapon_type: claymore
     role: support
     normal_attack_name: Demonbane
-    e_skill_name: Spirit Blade: Chonghua's Layered Frost
-    q_burst_name: Spirit Blade: Cloud-Parting Star
+    e_skill_name: "Spirit Blade: Chonghua's Layered Frost"
+    q_burst_name: "Spirit Blade: Cloud-Parting Star"
     e_skill_cd_ms: 15000
     q_energy_cost: 40
     q_duration_ms: 0
@@ -1243,8 +1243,8 @@ characters:
     weapon_type: claymore
     role: healer
     normal_attack_name: Shuumatsuban Ninja Blade
-    e_skill_name: Yoohoo Art: Fuuin Dash
-    q_burst_name: Yoohoo Art: Mujina Flurry
+    e_skill_name: "Yoohoo Art: Fuuin Dash"
+    q_burst_name: "Yoohoo Art: Mujina Flurry"
     e_skill_cd_ms: 6000
     q_energy_cost: 80
     q_duration_ms: 0
@@ -1260,7 +1260,7 @@ characters:
     role: support
     normal_attack_name: Tengu Bowmanship
     e_skill_name: Tengu Stormcall
-    q_burst_name: Subjugation: Koukou Sendou
+    q_burst_name: "Subjugation: Koukou Sendou"
     e_skill_cd_ms: 10000
     q_energy_cost: 80
     q_duration_ms: 0
@@ -1292,7 +1292,7 @@ characters:
     role: support
     normal_attack_name: Ripping Fang Fletching
     e_skill_name: Inuzaka All-Round Defense
-    q_burst_name: Juuga: Forward Unto Victory
+    q_burst_name: "Juuga: Forward Unto Victory"
     e_skill_cd_ms: 10000
     q_energy_cost: 80
     q_duration_ms: 9000
@@ -1339,8 +1339,8 @@ characters:
     weapon_type: polearm
     role: support
     normal_attack_name: Gleaming Spear - Guardian Stance
-    e_skill_name: Sacred Rite: Heron's Sanctum
-    q_burst_name: Sacred Rite: Wagtail's Tide
+    e_skill_name: "Sacred Rite: Heron's Sanctum"
+    q_burst_name: "Sacred Rite: Wagtail's Tide"
     e_skill_cd_ms: 6000
     q_energy_cost: 60
     q_duration_ms: 90000
@@ -1420,7 +1420,7 @@ characters:
     role: shield_support
     normal_attack_name: Disconnected By Kakera
     e_skill_name: Meow-teor Kick
-    q_burst_name: Secret Art: Surprise Dispatch
+    q_burst_name: "Secret Art: Surprise Dispatch"
     e_skill_cd_ms: 8000
     q_energy_cost: 60
     q_duration_ms: 0
@@ -1460,7 +1460,7 @@ characters:
     strategy_style: on_field_dps
 
   - character_id: freminet
-    display_name: 林尼的弟弟
+    display_name: 菲米尼
     name_en: Freminet
     rarity: 4
     element: cryo
@@ -1492,7 +1492,7 @@ characters:
     strategy_style: heal_swap
 
   - character_id: lynette
-    display_name: 林尼的妹妹
+    display_name: 琳妮特
     name_en: Lynette
     rarity: 4
     element: anemo
@@ -1500,7 +1500,7 @@ characters:
     role: support
     normal_attack_name: Rapid Ritesaber
     e_skill_name: Enigmatic Feint
-    q_burst_name: Magic Trick: Astonishing Shift
+    q_burst_name: "Magic Trick: Astonishing Shift"
     e_skill_cd_ms: 12000
     q_energy_cost: 60
     q_duration_ms: 0

@@ -1,404 +1,3626 @@
-# Genshin Impact World Graph - Regions, Waypoints, and Edges
-# Sparkle Project - Vision Agent Kernel v0.5
-
 regions:
-  - region_id: mondstadt
-    name: 蒙德
-    name_en: Mondstadt
-    color_palette: "green_sky_blue"
-    theme: "wind_freedom_anemo"
-    visual_signature: "rolling_green_plains_windmills"
-    element_theme: anemo
-
-  - region_id: liyue
-    name: 璃月
-    name_en: Liyue
-    color_palette: "amber_gold_ochre"
-    theme: "contracts_mountain_geo"
-    visual_signature: "karst_mountains_golden_autumn"
-    element_theme: geo
-
-  - region_id: inazuma
-    name: 稻妻
-    name_en: Inazuma
-    color_palette: "purple_sakura_indigo"
-    theme: "eternity_thunder_electro"
-    visual_signature: "cherry_blossoms_thunder_storms"
-    element_theme: electro
-
-  - region_id: sumeru
-    name: 须弥
-    name_en: Sumeru
-    color_palette: "teal_green_sand"
-    theme: "wisdom_forest_dendro"
-    visual_signature: "giant_rainforest_desert_dunes"
-    element_theme: dendro
-
-  - region_id: fontaine
-    name: 枫丹
-    name_en: Fontaine
-    color_palette: "blue_white_gold"
-    theme: "justice_water_hydro"
-    visual_signature: "art_deco_french_canals_waterfalls"
-    element_theme: hydro
-
-  - region_id: natlan
-    name: 纳塔
-    name_en: Natlan
-    color_palette: "red_orange_volcanic"
-    theme: "war_flame_pyro"
-    visual_signature: "volcanic_plains_dragon_saurians"
-    element_theme: pyro
-
-  - region_id: snezhnaya
-    name: 至冬
-    name_en: Snezhnaya
-    color_palette: "ice_white_steel"
-    theme: "ice_cryoeconomy"
-    visual_signature: "perpetual_snow_industrial_fortress"
-    element_theme: cryo
-
+- region_id: mondstadt
+  name: 蒙德
+  name_en: Mondstadt
+  color_palette: green_sky_blue
+  theme: wind_freedom_anemo
+  visual_signature: rolling_green_plains_windmills
+  element_theme: anemo
+- region_id: liyue
+  name: 璃月
+  name_en: Liyue
+  color_palette: amber_gold_ochre
+  theme: contracts_mountain_geo
+  visual_signature: karst_mountains_golden_autumn
+  element_theme: geo
+- region_id: inazuma
+  name: 稻妻
+  name_en: Inazuma
+  color_palette: purple_sakura_indigo
+  theme: eternity_thunder_electro
+  visual_signature: cherry_blossoms_thunder_storms
+  element_theme: electro
+- region_id: sumeru
+  name: 须弥
+  name_en: Sumeru
+  color_palette: teal_green_sand
+  theme: wisdom_forest_dendro
+  visual_signature: giant_rainforest_desert_dunes
+  element_theme: dendro
+- region_id: fontaine
+  name: 枫丹
+  name_en: Fontaine
+  color_palette: blue_white_gold
+  theme: justice_water_hydro
+  visual_signature: art_deco_french_canals_waterfalls
+  element_theme: hydro
+- region_id: natlan
+  name: 纳塔
+  name_en: Natlan
+  color_palette: red_orange_volcanic
+  theme: war_flame_pyro
+  visual_signature: volcanic_plains_dragon_saurians
+  element_theme: pyro
+- region_id: snezhnaya
+  name: 至冬
+  name_en: Snezhnaya
+  color_palette: ice_white_steel
+  theme: ice_cryoeconomy
+  visual_signature: perpetual_snow_industrial_fortress
+  element_theme: cryo
 waypoints:
-  # ---- Mondstadt ----
-  - waypoint_id: monstadt_city
-    name: 蒙德城
-    position: [2200.0, 200.0, -800.0]
-    region: mondstadt
-    type: statue_of_seven
-
-  - waypoint_id: mondstadt_windrise
-    name: 风起地
-    position: [2600.0, 180.0, -400.0]
-    region: mondstadt
-    type: teleport_waypoint
-
-  - waypoint_id: mondstadt_starsnatch
-    name: 摘星崖
-    position: [3100.0, 250.0, -200.0]
-    region: mondstadt
-    type: teleport_waypoint
-
-  - waypoint_id: mondstadt_wolvendom
-    name: 奔狼领
-    position: [1800.0, 150.0, -1100.0]
-    region: mondstadt
-    type: teleport_waypoint
-
-  - waypoint_id: mondstadt_dragonspine
-    name: 龙脊雪山
-    position: [1200.0, 500.0, -1500.0]
-    region: mondstadt
-    type: statue_of_seven
-
-  # ---- Liyue ----
-  - waypoint_id: liyue_harbor
-    name: 璃月港
-    position: [1600.0, -50.0, -2800.0]
-    region: liyue
-    type: statue_of_seven
-
-  - waypoint_id: liyue_qingce_village
-    name: 轻策庄
-    position: [1200.0, 300.0, -2200.0]
-    region: liyue
-    type: teleport_waypoint
-
-  - waypoint_id: liyue_jueyun_karst
-    name: 绝云间
-    position: [800.0, 600.0, -2600.0]
-    region: liyue
-    type: teleport_waypoint
-
-  - waypoint_id: liyue_mingyun_village
-    name: 明蕴镇
-    position: [2000.0, 100.0, -2400.0]
-    region: liyue
-    type: teleport_waypoint
-
-  - waypoint_id: liyue_domain_talent
-    name: 璃月天赋本
-    position: [1400.0, 200.0, -3000.0]
-    region: liyue
-    type: domain
-
-  # ---- Inazuma ----
-  - waypoint_id: inazuma_narukami
-    name: 稻妻城·鸣神岛
-    position: [-5000.0, 100.0, -2000.0]
-    region: inazuma
-    type: statue_of_seven
-
-  - waypoint_id: inazuma_yashiori
-    name: 八酝岛
-    position: [-5400.0, 50.0, -2400.0]
-    region: inazuma
-    type: teleport_waypoint
-
-  - waypoint_id: inazuma_seirai
-    name: 清籁岛
-    position: [-5800.0, 80.0, -1800.0]
-    region: inazuma
-    type: teleport_waypoint
-
-  # ---- Sumeru ----
-  - waypoint_id: sumeru_city
-    name: 须弥城
-    position: [-2000.0, 400.0, 1500.0]
-    region: sumeru
-    type: statue_of_seven
-
-  - waypoint_id: sumeru_lokapala
-    name: 俱利般地
-    position: [-1600.0, 350.0, 1200.0]
-    region: sumeru
-    type: teleport_waypoint
-
-  - waypoint_id: sumeru_ashavan
-    name: 阿莎梵
-    position: [-2400.0, 300.0, 1800.0]
-    region: sumeru
-    type: teleport_waypoint
-
-  # ---- Fontaine ----
-  - waypoint_id: fontaine_court
-    name: 枫丹廷
-    position: [3500.0, 300.0, 500.0]
-    region: fontaine
-    type: statue_of_seven
-
-  - waypoint_id: fontaine_belleau
-    name: 贝尔岛
-    position: [3800.0, 200.0, 300.0]
-    region: fontaine
-    type: teleport_waypoint
-
-  - waypoint_id: fontaine_research
-    name: 枫丹科学院
-    position: [3200.0, 400.0, 800.0]
-    region: fontaine
-    type: teleport_waypoint
-
-  # ---- Natlan ----
-  - waypoint_id: natlan_stadium
-    name: 纳塔竞技场
-    position: [5000.0, 500.0, -1000.0]
-    region: natlan
-    type: statue_of_seven
-
-  - waypoint_id: natlan_toyac
-    name: 托亚卡温泉
-    position: [5300.0, 400.0, -700.0]
-    region: natlan
-    type: teleport_waypoint
-
-  - waypoint_id: natlan_tequemecan
-    name: 特克梅肯谷
-    position: [4700.0, 600.0, -1300.0]
-    region: natlan
-    type: teleport_waypoint
-
-  # ---- Cross-region ----
-  - waypoint_id: domain_abyss
-    name: 深境螺旋
-    position: [0.0, -999.0, 0.0]
-    region: mondstadt
-    type: domain
-
+- waypoint_id: monstadt_city
+  name: 蒙德城
+  position:
+  - 2200.0
+  - 200.0
+  - -800.0
+  region: mondstadt
+  type: statue_of_seven
+- waypoint_id: mondstadt_windrise
+  name: 风起地
+  position:
+  - 2600.0
+  - 180.0
+  - -400.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mondstadt_starsnatch
+  name: 摘星崖
+  position:
+  - 3100.0
+  - 250.0
+  - -200.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mondstadt_wolvendom
+  name: 奔狼领
+  position:
+  - 1800.0
+  - 150.0
+  - -1100.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mondstadt_dragonspine
+  name: 龙脊雪山
+  position:
+  - 1200.0
+  - 500.0
+  - -1500.0
+  region: mondstadt
+  type: statue_of_seven
+- waypoint_id: mon_favonius_hq
+  name: 骑士团总部
+  position:
+  - 2220.0
+  - 210.0
+  - -790.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_cathedral
+  name: 西风大教堂
+  position:
+  - 2240.0
+  - 240.0
+  - -770.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_angels_share
+  name: 天使的馈赠
+  position:
+  - 2210.0
+  - 205.0
+  - -810.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_adventurers_guild
+  name: 冒险家协会
+  position:
+  - 2190.0
+  - 200.0
+  - -820.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_library
+  name: 骑士团图书馆
+  position:
+  - 2215.0
+  - 215.0
+  - -780.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_good_hunter
+  name: 猎鹿人餐馆
+  position:
+  - 2205.0
+  - 205.0
+  - -800.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_flora_shop
+  name: 花店
+  position:
+  - 2195.0
+  - 205.0
+  - -795.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_main_gate
+  name: 蒙德城正门
+  position:
+  - 2170.0
+  - 195.0
+  - -830.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_bridge_outside
+  name: 蒙德城外桥
+  position:
+  - 2150.0
+  - 190.0
+  - -840.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_windrise_statue
+  name: 风起地·七天神像
+  position:
+  - 2600.0
+  - 180.0
+  - -400.0
+  region: mondstadt
+  type: statue_of_seven
+- waypoint_id: mon_starsnatch_cliff
+  name: 摘星崖悬崖
+  position:
+  - 3150.0
+  - 280.0
+  - -180.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_starsnatch_peak
+  name: 摘星崖顶
+  position:
+  - 3200.0
+  - 320.0
+  - -160.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_cape_oath
+  name: 誓约角
+  position:
+  - 3300.0
+  - 260.0
+  - -250.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_thousand_winds_temple
+  name: 千风神殿
+  position:
+  - 2900.0
+  - 220.0
+  - -600.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_thousand_winds_domain
+  name: 千风神殿·领域
+  position:
+  - 2920.0
+  - 230.0
+  - -580.0
+  region: mondstadt
+  type: domain
+- waypoint_id: mon_dawn_winery
+  name: 晨曦酒庄
+  position:
+  - 1900.0
+  - 200.0
+  - -900.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_dawn_winery_statue
+  name: 晨曦酒庄·七天神像
+  position:
+  - 1850.0
+  - 210.0
+  - -950.0
+  region: mondstadt
+  type: statue_of_seven
+- waypoint_id: mon_cider_lake_north
+  name: 苹果湖北岸
+  position:
+  - 2100.0
+  - 190.0
+  - -750.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_cider_lake_south
+  name: 苹果湖南岸
+  position:
+  - 2100.0
+  - 180.0
+  - -850.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_springvale
+  name: 清泉镇
+  position:
+  - 2000.0
+  - 170.0
+  - -1000.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_springvale_statue
+  name: 清泉镇·七天神像
+  position:
+  - 2050.0
+  - 175.0
+  - -1050.0
+  region: mondstadt
+  type: statue_of_seven
+- waypoint_id: mon_wolvendom_north
+  name: 奔狼领北
+  position:
+  - 1750.0
+  - 160.0
+  - -1050.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_wolvendom_south
+  name: 奔狼领南
+  position:
+  - 1850.0
+  - 140.0
+  - -1150.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_wolvendom_statue
+  name: 奔狼领·七天神像
+  position:
+  - 1780.0
+  - 155.0
+  - -1100.0
+  region: mondstadt
+  type: statue_of_seven
+- waypoint_id: mon_stormterror_lair_entrance
+  name: 风龙废墟入口
+  position:
+  - 1500.0
+  - 300.0
+  - -600.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_stormterror_lair_mid
+  name: 风龙废墟中层
+  position:
+  - 1400.0
+  - 350.0
+  - -550.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_stormterror_lair_top
+  name: 风龙废墟顶层
+  position:
+  - 1350.0
+  - 450.0
+  - -500.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_stormterror_lair_statue
+  name: 风龙废墟·七天神像
+  position:
+  - 1450.0
+  - 320.0
+  - -580.0
+  region: mondstadt
+  type: statue_of_seven
+- waypoint_id: mon_dragonspine_base_camp
+  name: 雪山营地下方
+  position:
+  - 1250.0
+  - 400.0
+  - -1400.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_dragonspine_snow_path
+  name: 覆雪之路
+  position:
+  - 1180.0
+  - 520.0
+  - -1480.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_starglow_cavern
+  name: 星荧洞窟入口
+  position:
+  - 1100.0
+  - 550.0
+  - -1550.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_wyrmrest_valley
+  name: 龙眠谷
+  position:
+  - 1050.0
+  - 580.0
+  - -1450.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_entombed_city
+  name: 雪葬之都
+  position:
+  - 1150.0
+  - 600.0
+  - -1600.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_peak_vindagnyr
+  name: 顶峰·芬德尼尔
+  position:
+  - 1000.0
+  - 700.0
+  - -1550.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_frostbearing_tree
+  name: 忍冬之树
+  position:
+  - 1100.0
+  - 520.0
+  - -1500.0
+  region: mondstadt
+  type: landmark
+- waypoint_id: mon_subzero_valley
+  name: 寒风通道
+  position:
+  - 1080.0
+  - 560.0
+  - -1520.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_dadaupa_gorge
+  name: 达达乌帕谷
+  position:
+  - 2500.0
+  - 160.0
+  - -700.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_guyun_stone_forest_approach
+  name: 孤云阁方向
+  position:
+  - 2300.0
+  - 150.0
+  - -500.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_whispering_woods
+  name: 低语森林
+  position:
+  - 2300.0
+  - 195.0
+  - -750.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: mon_brightcrown_mountain
+  name: 明冠山地
+  position:
+  - 1700.0
+  - 250.0
+  - -650.0
+  region: mondstadt
+  type: teleport_waypoint
+- waypoint_id: liyue_harbor
+  name: 璃月港
+  position:
+  - 1600.0
+  - -50.0
+  - -2800.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_qingce_village
+  name: 轻策庄
+  position:
+  - 1200.0
+  - 300.0
+  - -2200.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_jueyun_karst
+  name: 绝云间
+  position:
+  - 800.0
+  - 600.0
+  - -2600.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_mingyun_village
+  name: 明蕴镇
+  position:
+  - 2000.0
+  - 100.0
+  - -2400.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_domain_talent
+  name: 璃月天赋本
+  position:
+  - 1400.0
+  - 200.0
+  - -3000.0
+  region: liyue
+  type: domain
+- waypoint_id: liyue_harbor_dock
+  name: 璃月港·码头
+  position:
+  - 1650.0
+  - -60.0
+  - -2850.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_chihu_rock
+  name: 翠玦口
+  position:
+  - 1700.0
+  - 0.0
+  - -2750.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_yujing_terrace
+  name: 玉京台
+  position:
+  - 1580.0
+  - 30.0
+  - -2780.0
+  region: liyue
+  type: landmark
+- waypoint_id: liyue_harbor_main_street
+  name: 璃月港·主街
+  position:
+  - 1620.0
+  - -20.0
+  - -2790.0
+  region: liyue
+  type: landmark
+- waypoint_id: liyue_harbor_statue
+  name: 璃月港·七天神像
+  position:
+  - 1560.0
+  - 10.0
+  - -2820.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_mt_tianheng_west
+  name: 天衡山西
+  position:
+  - 1500.0
+  - 100.0
+  - -2900.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_mt_tianheng_east
+  name: 天衡山东
+  position:
+  - 1700.0
+  - 80.0
+  - -2950.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_mt_tianheng_statue
+  name: 天衡山·七天神像
+  position:
+  - 1600.0
+  - 120.0
+  - -2920.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_qingce_village_north
+  name: 轻策庄北
+  position:
+  - 1150.0
+  - 330.0
+  - -2150.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_qingce_village_south
+  name: 轻策庄南
+  position:
+  - 1250.0
+  - 280.0
+  - -2250.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_qingce_village_statue
+  name: 轻策庄·七天神像
+  position:
+  - 1180.0
+  - 310.0
+  - -2180.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_wuwang_hill
+  name: 无妄坡
+  position:
+  - 1100.0
+  - 350.0
+  - -2300.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_wuwang_hill_statue
+  name: 无妄坡·七天神像
+  position:
+  - 1050.0
+  - 370.0
+  - -2280.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_bishui_plain
+  name: 碧水原
+  position:
+  - 1350.0
+  - 200.0
+  - -2300.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_dihua_marsh
+  name: 荻花洲
+  position:
+  - 1500.0
+  - 150.0
+  - -2400.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_dihua_marsh_statue
+  name: 荻花洲·七天神像
+  position:
+  - 1450.0
+  - 160.0
+  - -2380.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_stone_gate
+  name: 石门
+  position:
+  - 1400.0
+  - 200.0
+  - -2100.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_mingyun_village_east
+  name: 明蕴镇东
+  position:
+  - 2050.0
+  - 120.0
+  - -2350.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_mingyun_statue
+  name: 明蕴镇·七天神像
+  position:
+  - 1950.0
+  - 110.0
+  - -2450.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_guyun_stone_forest
+  name: 孤云阁
+  position:
+  - 2200.0
+  - -20.0
+  - -2700.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_guyun_stone_forest_statue
+  name: 孤云阁·七天神像
+  position:
+  - 2250.0
+  - 0.0
+  - -2650.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_mt_aozang
+  name: 奥藏山
+  position:
+  - 900.0
+  - 550.0
+  - -2500.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_jueyun_karst_north
+  name: 绝云间北
+  position:
+  - 750.0
+  - 620.0
+  - -2550.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_jueyun_karst_south
+  name: 绝云间南
+  position:
+  - 850.0
+  - 570.0
+  - -2650.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_jueyun_karst_statue
+  name: 绝云间·七天神像
+  position:
+  - 820.0
+  - 600.0
+  - -2580.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_qingyun_peak
+  name: 庆云顶
+  position:
+  - 700.0
+  - 700.0
+  - -2500.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_qingyun_peak_statue
+  name: 庆云顶·七天神像
+  position:
+  - 720.0
+  - 720.0
+  - -2480.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_huaguang_stone_forest
+  name: 华光林
+  position:
+  - 650.0
+  - 650.0
+  - -2550.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_nantianmen
+  name: 南天门
+  position:
+  - 950.0
+  - 450.0
+  - -2700.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_nantianmen_statue
+  name: 南天门·七天神像
+  position:
+  - 980.0
+  - 470.0
+  - -2680.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_cuijue_slope
+  name: 翠玦坡
+  position:
+  - 1100.0
+  - 350.0
+  - -2600.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_cuijue_slope_statue
+  name: 翠玦坡·七天神像
+  position:
+  - 1130.0
+  - 360.0
+  - -2580.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_lisha
+  name: 璃沙郊
+  position:
+  - 1300.0
+  - 50.0
+  - -3100.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_lingju_pass
+  name: 灵矩关
+  position:
+  - 1150.0
+  - 80.0
+  - -3050.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_lingju_pass_statue
+  name: 灵矩关·七天神像
+  position:
+  - 1120.0
+  - 90.0
+  - -3030.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_dunyu_ruins
+  name: 遁玉陵
+  position:
+  - 1200.0
+  - 100.0
+  - -3000.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_qingxu_pool
+  name: 青墟浦
+  position:
+  - 1350.0
+  - 50.0
+  - -2950.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_mt_hulao
+  name: 桓王山
+  position:
+  - 780.0
+  - 580.0
+  - -2620.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_yaoguang_shoal
+  name: 瑶光滩
+  position:
+  - 1800.0
+  - -30.0
+  - -2600.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_sal_terrae
+  name: 地中之盐
+  position:
+  - 1900.0
+  - 50.0
+  - -2500.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_sal_terrae_statue
+  name: 地中之盐·七天神像
+  position:
+  - 1920.0
+  - 60.0
+  - -2480.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_guili_plains
+  name: 归离原
+  position:
+  - 1650.0
+  - 100.0
+  - -2350.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_guili_plains_statue
+  name: 归离原·七天神像
+  position:
+  - 1620.0
+  - 110.0
+  - -2330.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_luhua_pool
+  name: 渌华池
+  position:
+  - 1400.0
+  - 50.0
+  - -2700.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_tianqiu_valley
+  name: 天遒谷
+  position:
+  - 1050.0
+  - 150.0
+  - -2750.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_tianqiu_valley_statue
+  name: 天遒谷·七天神像
+  position:
+  - 1020.0
+  - 160.0
+  - -2730.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_chasm_surface
+  name: 层岩巨渊·地表
+  position:
+  - 1100.0
+  - 200.0
+  - -3100.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_chasm_underground
+  name: 层岩巨渊·地下
+  position:
+  - 1050.0
+  - -100.0
+  - -3150.0
+  region: liyue
+  type: teleport_waypoint
+- waypoint_id: liyue_chasm_statue
+  name: 层岩巨渊·七天神像
+  position:
+  - 1080.0
+  - 180.0
+  - -3080.0
+  region: liyue
+  type: statue_of_seven
+- waypoint_id: liyue_domain_boss
+  name: 璃月·周本
+  position:
+  - 850.0
+  - 500.0
+  - -2700.0
+  region: liyue
+  type: domain
+- waypoint_id: liyue_domain_weapon
+  name: 璃月·武器本
+  position:
+  - 1350.0
+  - 150.0
+  - -3050.0
+  region: liyue
+  type: domain
+- waypoint_id: inazuma_narukami
+  name: 鸣神岛·七天神像
+  position:
+  - -5000.0
+  - 100.0
+  - -2000.0
+  region: inazuma
+  type: statue_of_seven
+- waypoint_id: ina_inazuma_city
+  name: 稻妻城
+  position:
+  - -4950.0
+  - 120.0
+  - -2050.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_tenshukaku
+  name: 天守阁
+  position:
+  - -4900.0
+  - 180.0
+  - -2100.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_amakane_island
+  name: 甘金岛
+  position:
+  - -4800.0
+  - 80.0
+  - -1950.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_byakko_plain
+  name: 白狐之野
+  position:
+  - -5100.0
+  - 90.0
+  - -1900.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_chinju_forest
+  name: 镇守之森
+  position:
+  - -5250.0
+  - 130.0
+  - -1850.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_mt_yougou
+  name: 影向山
+  position:
+  - -5350.0
+  - 350.0
+  - -1750.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_grand_narukami_shrine
+  name: 影向山山顶·神樱大祓
+  position:
+  - -5400.0
+  - 500.0
+  - -1700.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_konda_village
+  name: 绀田村
+  position:
+  - -5150.0
+  - 100.0
+  - -2150.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_araumi
+  name: 荒海
+  position:
+  - -5300.0
+  - 60.0
+  - -2250.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_kamisato_estate
+  name: 神里屋敷
+  position:
+  - -5050.0
+  - 140.0
+  - -1800.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_ritou
+  name: 离岛
+  position:
+  - -4700.0
+  - 70.0
+  - -2100.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_kujou_encampment
+  name: 九条阵屋
+  position:
+  - -5400.0
+  - 80.0
+  - -2300.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_tatarasuna
+  name: 踏鞴砂
+  position:
+  - -5550.0
+  - 120.0
+  - -2400.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_mikage_furnace
+  name: 御影炉心
+  position:
+  - -5600.0
+  - 200.0
+  - -2350.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_kannazuka_statue
+  name: 神无冢·七天神像
+  position:
+  - -5480.0
+  - 100.0
+  - -2250.0
+  region: inazuma
+  type: statue_of_seven
+- waypoint_id: inazuma_yashiori
+  name: 八酝岛
+  position:
+  - -5400.0
+  - 50.0
+  - -2400.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_musoujin_gorge
+  name: 无想刃峡间
+  position:
+  - -5700.0
+  - 50.0
+  - -2500.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_higi_village
+  name: 柊村
+  position:
+  - -5800.0
+  - 80.0
+  - -2600.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_serpents_head
+  name: 蛇骨之首
+  position:
+  - -5900.0
+  - 100.0
+  - -2550.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_fort_fujitou
+  name: 藤兜砦
+  position:
+  - -5650.0
+  - 70.0
+  - -2650.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_yashiori_statue
+  name: 八酝岛·七天神像
+  position:
+  - -5750.0
+  - 60.0
+  - -2580.0
+  region: inazuma
+  type: statue_of_seven
+- waypoint_id: inazuma_seirai
+  name: 清籁岛
+  position:
+  - -5800.0
+  - 80.0
+  - -1800.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_fort_hiraumi
+  name: 平海砦
+  position:
+  - -6000.0
+  - 50.0
+  - -1850.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_asase_shrine
+  name: 浅濑神社
+  position:
+  - -6100.0
+  - 100.0
+  - -1750.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_koseki_village
+  name: 越石村
+  position:
+  - -6200.0
+  - 60.0
+  - -1900.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_amakumo_peak
+  name: 天云峠
+  position:
+  - -6300.0
+  - 250.0
+  - -1800.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_seirai_statue
+  name: 清籁岛·七天神像
+  position:
+  - -6150.0
+  - 80.0
+  - -1830.0
+  region: inazuma
+  type: statue_of_seven
+- waypoint_id: ina_sangonomiya_shrine
+  name: 珊瑚宫
+  position:
+  - -6400.0
+  - 80.0
+  - -2200.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_bourou_village
+  name: 望泷村
+  position:
+  - -6500.0
+  - 60.0
+  - -2100.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_mouun_shrine
+  name: 曚云神社
+  position:
+  - -6600.0
+  - 100.0
+  - -2300.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_suigetsu_pool
+  name: 水月池
+  position:
+  - -6550.0
+  - 50.0
+  - -2400.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_watatsumi_statue
+  name: 海祇岛·七天神像
+  position:
+  - -6450.0
+  - 70.0
+  - -2250.0
+  region: inazuma
+  type: statue_of_seven
+- waypoint_id: ina_enk_sangonomiya
+  name: 渊下宫·珊瑚宫入口
+  position:
+  - -7000.0
+  - -200.0
+  - -2200.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_dainichi_mikoshi
+  name: 大日神舆
+  position:
+  - -7100.0
+  - -180.0
+  - -2100.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_evernight_temple
+  name: 常夜灵庙
+  position:
+  - -7200.0
+  - -220.0
+  - -2000.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_the_narrows
+  name: 狭间之街
+  position:
+  - -7050.0
+  - -250.0
+  - -2350.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: ina_serpents_bowels
+  name: 蛇肠之路
+  position:
+  - -7150.0
+  - -300.0
+  - -2300.0
+  region: inazuma
+  type: teleport_waypoint
+- waypoint_id: sumeru_city
+  name: 须弥城
+  position:
+  - -2000.0
+  - 400.0
+  - 1500.0
+  region: sumeru
+  type: statue_of_seven
+- waypoint_id: sum_akademiya
+  name: 教令院
+  position:
+  - -1950.0
+  - 420.0
+  - 1450.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_bazaar
+  name: 奥摩斯港集市
+  position:
+  - -2050.0
+  - 380.0
+  - 1550.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_treasures_street
+  name: 宝藏街
+  position:
+  - -1900.0
+  - 390.0
+  - 1580.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_port_ormos
+  name: 奥摩斯港
+  position:
+  - -1800.0
+  - 350.0
+  - 1700.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_avidya_forest
+  name: 道成林
+  position:
+  - -2150.0
+  - 380.0
+  - 1400.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_lost_nursery
+  name: 失落苗圃
+  position:
+  - -2300.0
+  - 400.0
+  - 1350.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_vanarana
+  name: 毗钵耶兰那
+  position:
+  - -2400.0
+  - 420.0
+  - 1300.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_avidya_statue
+  name: 道成林·七天神像
+  position:
+  - -2200.0
+  - 370.0
+  - 1380.0
+  region: sumeru
+  type: statue_of_seven
+- waypoint_id: sumeru_lokapala
+  name: 俱利般地
+  position:
+  - -1600.0
+  - 350.0
+  - 1200.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_gandharva_ville
+  name: 化城郭
+  position:
+  - -1500.0
+  - 340.0
+  - 1150.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_vimara_village
+  name: 维摩庄
+  position:
+  - -1400.0
+  - 330.0
+  - 1100.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_devantaka_mountain
+  name: 提瓦特山
+  position:
+  - -1350.0
+  - 500.0
+  - 1050.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_lokapala_statue
+  name: 俱利般地·七天神像
+  position:
+  - -1550.0
+  - 360.0
+  - 1180.0
+  region: sumeru
+  type: statue_of_seven
+- waypoint_id: sum_mawtiyima_forest
+  name: 无郁稠林
+  position:
+  - -1700.0
+  - 450.0
+  - 1000.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_mawtiyima_statue
+  name: 无郁稠林·七天神像
+  position:
+  - -1750.0
+  - 460.0
+  - 950.0
+  region: sumeru
+  type: statue_of_seven
+- waypoint_id: sumeru_ashavan
+  name: 阿莎梵
+  position:
+  - -2400.0
+  - 300.0
+  - 1800.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_apam_woods
+  name: 阿帕姆丛林
+  position:
+  - -2550.0
+  - 320.0
+  - 1750.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_vissudha_field
+  name: 维萨迪花田
+  position:
+  - -2650.0
+  - 280.0
+  - 1900.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_ashavan_statue
+  name: 阿莎梵·七天神像
+  position:
+  - -2450.0
+  - 310.0
+  - 1850.0
+  region: sumeru
+  type: statue_of_seven
+- waypoint_id: sum_yazadaha_pool
+  name: 耶扎达池
+  position:
+  - -2700.0
+  - 250.0
+  - 2000.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_caravan_ribat
+  name: 喀万驿
+  position:
+  - -2800.0
+  - 200.0
+  - 2100.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_lower_setekh
+  name: 下风蚀地
+  position:
+  - -3000.0
+  - 100.0
+  - 2300.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_lower_setekh_statue
+  name: 下风蚀地·七天神像
+  position:
+  - -3050.0
+  - 110.0
+  - 2350.0
+  region: sumeru
+  type: statue_of_seven
+- waypoint_id: sum_sobek_oasis
+  name: 鳄鱼绿洲
+  position:
+  - -3100.0
+  - 80.0
+  - 2200.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_abdju_pit
+  name: 阿布茹坑
+  position:
+  - -3200.0
+  - 60.0
+  - 2400.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_upper_setekh
+  name: 上风蚀地
+  position:
+  - -3300.0
+  - 120.0
+  - 2500.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_upper_setekh_statue
+  name: 上风蚀地·七天神像
+  position:
+  - -3350.0
+  - 130.0
+  - 2550.0
+  region: sumeru
+  type: statue_of_seven
+- waypoint_id: sum_khemenu_temple
+  name: 赫梅努神庙
+  position:
+  - -3400.0
+  - 90.0
+  - 2600.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_hypostyle_desert
+  name: 列柱沙原
+  position:
+  - -3500.0
+  - 80.0
+  - 2700.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_hypostyle_statue
+  name: 列柱沙原·七天神像
+  position:
+  - -3450.0
+  - 90.0
+  - 2650.0
+  region: sumeru
+  type: statue_of_seven
+- waypoint_id: sum_al_ahmar_qant
+  name: 阿赫玛尔之门
+  position:
+  - -3600.0
+  - 70.0
+  - 2800.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_qusayr_al_inkhida
+  name: 锯木厂遗迹
+  position:
+  - -3700.0
+  - 60.0
+  - 2750.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_dar_al_shifa
+  name: 达尔阿尔希法
+  position:
+  - -3550.0
+  - 100.0
+  - 2900.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_gavireh_lajavard
+  name: 踞石关
+  position:
+  - -3800.0
+  - 150.0
+  - 2600.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_gavireh_statue
+  name: 踞石关·七天神像
+  position:
+  - -3850.0
+  - 160.0
+  - 2650.0
+  region: sumeru
+  type: statue_of_seven
+- waypoint_id: sum_farakhkert
+  name: 法拉赫克特
+  position:
+  - -3900.0
+  - 130.0
+  - 2500.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_temir_mountains
+  name: 铁穆山
+  position:
+  - -3950.0
+  - 200.0
+  - 2400.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: sum_asipattravana_swamp
+  name: 阿斯帕特拉瓦纳沼泽
+  position:
+  - -4000.0
+  - 100.0
+  - 2550.0
+  region: sumeru
+  type: teleport_waypoint
+- waypoint_id: fontaine_court
+  name: 枫丹廷
+  position:
+  - 3500.0
+  - 300.0
+  - 500.0
+  region: fontaine
+  type: statue_of_seven
+- waypoint_id: fontaine_belleau
+  name: 贝尔岛
+  position:
+  - 3800.0
+  - 200.0
+  - 300.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fontaine_research
+  name: 枫丹科学院
+  position:
+  - 3200.0
+  - 400.0
+  - 800.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: natlan_stadium
+  name: 纳塔竞技场
+  position:
+  - 5000.0
+  - 500.0
+  - -1000.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: natlan_toyac
+  name: 托亚卡温泉
+  position:
+  - 5300.0
+  - 400.0
+  - -700.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: natlan_tequemecan
+  name: 特克梅肯谷
+  position:
+  - 4700.0
+  - 600.0
+  - -1300.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: fon_court_plaza
+  name: 枫丹廷·中央广场
+  position:
+  - 3500.0
+  - 300.0
+  - 480.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_fleuve_cendre
+  name: 枫丹廷·灰河
+  position:
+  - 3460.0
+  - 260.0
+  - 520.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_fountain_lucine
+  name: 露景泉
+  position:
+  - 3580.0
+  - 320.0
+  - 440.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_opera_epiclese
+  name: 歌剧院·帕克利索
+  position:
+  - 3620.0
+  - 350.0
+  - 400.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_quartier_lyonnais
+  name: 枫丹廷·莱昂区
+  position:
+  - 3540.0
+  - 310.0
+  - 540.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_aquabus_main
+  name: 枫丹廷·巡轨船站
+  position:
+  - 3520.0
+  - 280.0
+  - 560.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_belleau_statue
+  name: 贝尔岛·七神像
+  position:
+  - 3820.0
+  - 200.0
+  - 280.0
+  region: fontaine
+  type: statue_of_seven
+- waypoint_id: fon_elynas
+  name: 艾利纳斯
+  position:
+  - 3920.0
+  - 220.0
+  - 240.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_poisson
+  name: 普瓦松
+  position:
+  - 4050.0
+  - 180.0
+  - 320.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_marcotte_station
+  name: 马科特站
+  position:
+  - 3700.0
+  - 260.0
+  - 380.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_belleau_west
+  name: 贝尔岛西
+  position:
+  - 3750.0
+  - 210.0
+  - 340.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_beryl_statue
+  name: 贝里地区·七神像
+  position:
+  - 3100.0
+  - 350.0
+  - 700.0
+  region: fontaine
+  type: statue_of_seven
+- waypoint_id: fon_meropide
+  name: 梅洛彼得堡
+  position:
+  - 3050.0
+  - 100.0
+  - 750.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_estaque
+  name: 埃斯塔克
+  position:
+  - 3180.0
+  - 300.0
+  - 780.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_beryl_north
+  name: 贝里地区北
+  position:
+  - 3150.0
+  - 380.0
+  - 820.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_beryl_lake
+  name: 贝里湖
+  position:
+  - 3050.0
+  - 320.0
+  - 680.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_liffey_statue
+  name: 利菲地区·七神像
+  position:
+  - 3400.0
+  - 350.0
+  - 850.0
+  region: fontaine
+  type: statue_of_seven
+- waypoint_id: fon_lumidouce_harbor
+  name: 流明港
+  position:
+  - 3350.0
+  - 280.0
+  - 900.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_loch_urania
+  name: 优瑞尼亚湖
+  position:
+  - 3480.0
+  - 370.0
+  - 880.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_liffey_east
+  name: 利菲地区东
+  position:
+  - 3520.0
+  - 340.0
+  - 820.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_morte_statue
+  name: 莫尔特地区·七神像
+  position:
+  - 3250.0
+  - 300.0
+  - 600.0
+  region: fontaine
+  type: statue_of_seven
+- waypoint_id: fon_weeping_willow
+  name: 哭泣柳树
+  position:
+  - 3300.0
+  - 270.0
+  - 560.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_foggy_forest
+  name: 雾林小径
+  position:
+  - 3200.0
+  - 310.0
+  - 620.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_morte_south
+  name: 莫尔特地区南
+  position:
+  - 3180.0
+  - 280.0
+  - 550.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_research_institute
+  name: 枫丹科学院旧址
+  position:
+  - 3250.0
+  - 420.0
+  - 800.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_new_research_institute
+  name: 新枫丹科学院
+  position:
+  - 3320.0
+  - 440.0
+  - 850.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_erinnyes_statue
+  name: 欧庇克莱歌林区·七神像
+  position:
+  - 3620.0
+  - 280.0
+  - 650.0
+  region: fontaine
+  type: statue_of_seven
+- waypoint_id: fon_erinnyes_east
+  name: 欧庇克莱歌林东
+  position:
+  - 3680.0
+  - 270.0
+  - 680.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_erinnyes_center
+  name: 欧庇克莱歌林中央
+  position:
+  - 3640.0
+  - 300.0
+  - 700.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_aquabus_court
+  name: 枫丹廷·巡轨船终点
+  position:
+  - 3480.0
+  - 290.0
+  - 460.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_court_south
+  name: 枫丹廷南
+  position:
+  - 3470.0
+  - 270.0
+  - 420.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_domain_fountain
+  name: 枫丹秘境·露景泉
+  position:
+  - 3600.0
+  - 330.0
+  - 380.0
+  region: fontaine
+  type: domain
+- waypoint_id: fon_marcotte_hill
+  name: 马科特高地
+  position:
+  - 3740.0
+  - 280.0
+  - 360.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_court_north_gate
+  name: 枫丹廷北门
+  position:
+  - 3540.0
+  - 330.0
+  - 580.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_beryl_east
+  name: 贝里地区东
+  position:
+  - 3200.0
+  - 360.0
+  - 720.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_underwater_belleau
+  name: 贝尔岛水下入口
+  position:
+  - 3880.0
+  - 150.0
+  - 300.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_underwater_court
+  name: 枫丹廷水下出口
+  position:
+  - 3500.0
+  - 200.0
+  - 500.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: nat_stadium_main
+  name: 圣火竞技场主区
+  position:
+  - 5020.0
+  - 520.0
+  - -980.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_stadium_grandmaster
+  name: 竞技场·大团长台
+  position:
+  - 5060.0
+  - 540.0
+  - -1020.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_stadium_south
+  name: 竞技场南门
+  position:
+  - 5000.0
+  - 490.0
+  - -1060.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_scions_village
+  name: 悬木人部落
+  position:
+  - 5150.0
+  - 560.0
+  - -1100.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_scions_north
+  name: 悬木人北
+  position:
+  - 5200.0
+  - 580.0
+  - -1140.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_scions_tree
+  name: 悬木人巨树
+  position:
+  - 5130.0
+  - 600.0
+  - -1060.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_echoes_village
+  name: 回声之子部落
+  position:
+  - 4850.0
+  - 550.0
+  - -1150.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_echoes_cave
+  name: 回声之子洞窟
+  position:
+  - 4800.0
+  - 510.0
+  - -1200.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_echoes_south
+  name: 回声之子南
+  position:
+  - 4820.0
+  - 530.0
+  - -1080.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_springs_village
+  name: 涌流之民部落
+  position:
+  - 5350.0
+  - 450.0
+  - -650.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_springs_hot_spring
+  name: 涌流温泉
+  position:
+  - 5380.0
+  - 430.0
+  - -620.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_springs_east
+  name: 涌流之民东
+  position:
+  - 5420.0
+  - 440.0
+  - -680.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_plenty_village
+  name: 丰饶之民部落
+  position:
+  - 5100.0
+  - 480.0
+  - -800.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_plenty_market
+  name: 丰饶市场
+  position:
+  - 5140.0
+  - 470.0
+  - -780.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_flower_feather_village
+  name: 翎羽之花部落
+  position:
+  - 4900.0
+  - 600.0
+  - -1400.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_flower_feather_nest
+  name: 翎羽之巢
+  position:
+  - 4860.0
+  - 640.0
+  - -1380.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_tequemecan_statue
+  name: 特克梅肯谷·七神像
+  position:
+  - 4650.0
+  - 620.0
+  - -1350.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_tequemecan_south
+  name: 特克梅肯谷南
+  position:
+  - 4680.0
+  - 590.0
+  - -1280.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_toyac_statue
+  name: 托亚卡温泉·七神像
+  position:
+  - 5340.0
+  - 410.0
+  - -680.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_toyac_north
+  name: 托亚卡温泉北
+  position:
+  - 5280.0
+  - 430.0
+  - -720.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_basin_flames
+  name: 无数之焰盆地
+  position:
+  - 4950.0
+  - 570.0
+  - -1250.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_basin_statue
+  name: 无数之焰盆地·七神像
+  position:
+  - 4920.0
+  - 550.0
+  - -1200.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_coatepec_peak
+  name: 库阿特佩克山巅
+  position:
+  - 4600.0
+  - 700.0
+  - -1400.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_coatepec_statue
+  name: 库阿特佩克山·七神像
+  position:
+  - 4550.0
+  - 680.0
+  - -1350.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_ameyalco_waters
+  name: 阿梅亚尔科水域
+  position:
+  - 5250.0
+  - 460.0
+  - -750.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_ameyalco_statue
+  name: 阿梅亚尔科·七神像
+  position:
+  - 5220.0
+  - 450.0
+  - -720.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_ochkanatlan
+  name: 奥奇卡纳特兰
+  position:
+  - 4450.0
+  - 650.0
+  - -1450.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_ochkanatlan_statue
+  name: 奥奇卡纳特兰·七神像
+  position:
+  - 4420.0
+  - 660.0
+  - -1420.0
+  region: natlan
+  type: statue_of_seven
+- waypoint_id: nat_teleportlala
+  name: 传送之丘
+  position:
+  - 5080.0
+  - 500.0
+  - -900.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_mysterious_arrays
+  name: 神秘阵列之地
+  position:
+  - 4780.0
+  - 580.0
+  - -1320.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_domain_natlan
+  name: 纳塔秘境
+  position:
+  - 4950.0
+  - 530.0
+  - -1050.0
+  region: natlan
+  type: domain
+- waypoint_id: sne_capital
+  name: 至冬国都
+  position:
+  - 6000.0
+  - 400.0
+  - 1500.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: sne_harbor
+  name: 至冬港
+  position:
+  - 5950.0
+  - 200.0
+  - 1600.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: sne_palace
+  name: 冰雪宫殿
+  position:
+  - 6050.0
+  - 500.0
+  - 1480.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: sne_factory
+  name: 至冬兵工厂
+  position:
+  - 6100.0
+  - 350.0
+  - 1550.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: sne_frost_forest
+  name: 寒霜森林
+  position:
+  - 5900.0
+  - 300.0
+  - 1400.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: sne_glacier_lake
+  name: 冰川湖
+  position:
+  - 6150.0
+  - 450.0
+  - 1450.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: sne_mountain_pass
+  name: 至冬山口
+  position:
+  - 5850.0
+  - 600.0
+  - 1350.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: sne_outpost
+  name: 极北前哨
+  position:
+  - 6200.0
+  - 500.0
+  - 1600.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: sne_statue
+  name: 至冬·七神像（预留）
+  position:
+  - 6000.0
+  - 420.0
+  - 1520.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: sne_domain
+  name: 至冬秘境（预留）
+  position:
+  - 6080.0
+  - 380.0
+  - 1580.0
+  region: snezhnaya
+  type: unknown
+- waypoint_id: domain_abyss
+  name: 深境螺旋
+  position:
+  - 0.0
+  - -999.0
+  - 0.0
+  region: mondstadt
+  type: domain
 edges:
-  # ---- Mondstadt internal ----
-  - from_id: monstadt_city
-    to_id: mondstadt_windrise
-    cost: 15.0
-    method: walk
-    danger_level: low
-
-  - from_id: mondstadt_windrise
-    to_id: mondstadt_starsnatch
-    cost: 20.0
-    method: walk
-    danger_level: low
-
-  - from_id: monstadt_city
-    to_id: mondstadt_wolvendom
-    cost: 25.0
-    method: walk
-    danger_level: medium
-
-  - from_id: mondstadt_wolvendom
-    to_id: mondstadt_dragonspine
-    cost: 30.0
-    method: walk
-    danger_level: high
-
-  - from_id: monstadt_city
-    to_id: mondstadt_dragonspine
-    cost: 35.0
-    method: walk
-    danger_level: high
-
-  # ---- Mondstadt <-> Liyue ----
-  - from_id: mondstadt_dragonspine
-    to_id: liyue_qingce_village
-    cost: 40.0
-    method: walk
-    danger_level: medium
-
-  - from_id: monstadt_city
-    to_id: liyue_harbor
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  # ---- Liyue internal ----
-  - from_id: liyue_harbor
-    to_id: liyue_qingce_village
-    cost: 20.0
-    method: walk
-    danger_level: low
-
-  - from_id: liyue_qingce_village
-    to_id: liyue_jueyun_karst
-    cost: 25.0
-    method: walk
-    danger_level: medium
-
-  - from_id: liyue_harbor
-    to_id: liyue_mingyun_village
-    cost: 18.0
-    method: walk
-    danger_level: low
-
-  - from_id: liyue_harbor
-    to_id: liyue_domain_talent
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  # ---- Liyue <-> Inazuma (boat/teleport) ----
-  - from_id: liyue_harbor
-    to_id: inazuma_narukami
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  # ---- Inazuma internal ----
-  - from_id: inazuma_narukami
-    to_id: inazuma_yashiori
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  - from_id: inazuma_yashiori
-    to_id: inazuma_seirai
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  - from_id: inazuma_narukami
-    to_id: inazuma_seirai
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  # ---- Liyue <-> Sumeru ----
-  - from_id: liyue_harbor
-    to_id: sumeru_city
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  # ---- Sumeru internal ----
-  - from_id: sumeru_city
-    to_id: sumeru_lokapala
-    cost: 15.0
-    method: walk
-    danger_level: low
-
-  - from_id: sumeru_city
-    to_id: sumeru_ashavan
-    cost: 20.0
-    method: walk
-    danger_level: medium
-
-  - from_id: sumeru_lokapala
-    to_id: sumeru_ashavan
-    cost: 25.0
-    method: walk
-    danger_level: medium
-
-  # ---- Sumeru <-> Fontaine ----
-  - from_id: sumeru_city
-    to_id: fontaine_court
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  # ---- Fontaine internal ----
-  - from_id: fontaine_court
-    to_id: fontaine_belleau
-    cost: 12.0
-    method: walk
-    danger_level: low
-
-  - from_id: fontaine_court
-    to_id: fontaine_research
-    cost: 18.0
-    method: walk
-    danger_level: low
-
-  - from_id: fontaine_belleau
-    to_id: fontaine_research
-    cost: 20.0
-    method: walk
-    danger_level: low
-
-  # ---- Fontaine <-> Natlan ----
-  - from_id: fontaine_court
-    to_id: natlan_stadium
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  # ---- Natlan internal ----
-  - from_id: natlan_stadium
-    to_id: natlan_toyac
-    cost: 15.0
-    method: walk
-    danger_level: medium
-
-  - from_id: natlan_stadium
-    to_id: natlan_tequemecan
-    cost: 20.0
-    method: walk
-    danger_level: high
-
-  - from_id: natlan_toyac
-    to_id: natlan_tequemecan
-    cost: 18.0
-    method: walk
-    danger_level: medium
-
-  # ---- Cross-region shortcuts ----
-  - from_id: monstadt_city
-    to_id: sumeru_city
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  - from_id: monstadt_city
-    to_id: fontaine_court
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  - from_id: monstadt_city
-    to_id: natlan_stadium
-    cost: 3.0
-    method: teleport
-    danger_level: none
-
-  - from_id: domain_abyss
-    to_id: monstadt_city
-    cost: 3.0
-    method: teleport
-    danger_level: none
+- from_id: monstadt_city
+  to_id: mondstadt_windrise
+  cost: 15.0
+  method: walk
+  danger_level: low
+- from_id: mondstadt_windrise
+  to_id: mondstadt_starsnatch
+  cost: 20.0
+  method: walk
+  danger_level: low
+- from_id: monstadt_city
+  to_id: mondstadt_wolvendom
+  cost: 25.0
+  method: walk
+  danger_level: medium
+- from_id: mondstadt_wolvendom
+  to_id: mondstadt_dragonspine
+  cost: 30.0
+  method: walk
+  danger_level: high
+- from_id: monstadt_city
+  to_id: mondstadt_dragonspine
+  cost: 35.0
+  method: walk
+  danger_level: high
+- from_id: monstadt_city
+  to_id: mon_favonius_hq
+  cost: 2.0
+  method: walk
+  danger_level: none
+- from_id: monstadt_city
+  to_id: mon_cathedral
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: monstadt_city
+  to_id: mon_angels_share
+  cost: 2.0
+  method: walk
+  danger_level: none
+- from_id: monstadt_city
+  to_id: mon_adventurers_guild
+  cost: 2.0
+  method: walk
+  danger_level: none
+- from_id: mon_favonius_hq
+  to_id: mon_library
+  cost: 1.0
+  method: walk
+  danger_level: none
+- from_id: monstadt_city
+  to_id: mon_good_hunter
+  cost: 2.0
+  method: walk
+  danger_level: none
+- from_id: monstadt_city
+  to_id: mon_flora_shop
+  cost: 2.0
+  method: walk
+  danger_level: none
+- from_id: monstadt_city
+  to_id: mon_main_gate
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: mon_main_gate
+  to_id: mon_bridge_outside
+  cost: 2.0
+  method: walk
+  danger_level: none
+- from_id: mon_bridge_outside
+  to_id: mon_whispering_woods
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: mon_whispering_woods
+  to_id: mondstadt_windrise
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: mon_windrise_statue
+  to_id: mondstadt_windrise
+  cost: 1.0
+  method: walk
+  danger_level: none
+- from_id: mondstadt_windrise
+  to_id: mon_dadaupa_gorge
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: mon_dadaupa_gorge
+  to_id: mon_guyun_stone_forest_approach
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: mondstadt_starsnatch
+  to_id: mon_starsnatch_cliff
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: mon_starsnatch_cliff
+  to_id: mon_starsnatch_peak
+  cost: 3.0
+  method: walk
+  danger_level: low
+- from_id: mon_starsnatch_cliff
+  to_id: mon_cape_oath
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: mon_starsnatch_cliff
+  to_id: mon_thousand_winds_temple
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: mon_thousand_winds_temple
+  to_id: mon_thousand_winds_domain
+  cost: 2.0
+  method: walk
+  danger_level: none
+- from_id: mon_thousand_winds_temple
+  to_id: monstadt_city
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: monstadt_city
+  to_id: mon_cider_lake_north
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: mon_cider_lake_north
+  to_id: mon_cider_lake_south
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: mon_cider_lake_south
+  to_id: mon_springvale
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: mon_springvale
+  to_id: mon_springvale_statue
+  cost: 2.0
+  method: walk
+  danger_level: none
+- from_id: mon_springvale
+  to_id: mon_dawn_winery
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: mon_dawn_winery
+  to_id: mon_dawn_winery_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: mon_dawn_winery
+  to_id: monstadt_city
+  cost: 15.0
+  method: walk
+  danger_level: low
+- from_id: mondstadt_wolvendom
+  to_id: mon_wolvendom_north
+  cost: 5.0
+  method: walk
+  danger_level: medium
+- from_id: mondstadt_wolvendom
+  to_id: mon_wolvendom_south
+  cost: 5.0
+  method: walk
+  danger_level: medium
+- from_id: mon_wolvendom_north
+  to_id: mon_wolvendom_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: mon_wolvendom_south
+  to_id: mon_springvale
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: mon_wolvendom_north
+  to_id: mon_brightcrown_mountain
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: mon_brightcrown_mountain
+  to_id: mon_stormterror_lair_entrance
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: mon_stormterror_lair_entrance
+  to_id: mon_stormterror_lair_mid
+  cost: 5.0
+  method: walk
+  danger_level: medium
+- from_id: mon_stormterror_lair_mid
+  to_id: mon_stormterror_lair_top
+  cost: 5.0
+  method: walk
+  danger_level: high
+- from_id: mon_stormterror_lair_entrance
+  to_id: mon_stormterror_lair_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: mondstadt_dragonspine
+  to_id: mon_dragonspine_base_camp
+  cost: 5.0
+  method: walk
+  danger_level: medium
+- from_id: mon_dragonspine_base_camp
+  to_id: mon_dragonspine_snow_path
+  cost: 5.0
+  method: walk
+  danger_level: high
+- from_id: mon_dragonspine_snow_path
+  to_id: mon_starglow_cavern
+  cost: 8.0
+  method: walk
+  danger_level: high
+- from_id: mon_dragonspine_snow_path
+  to_id: mon_frostbearing_tree
+  cost: 3.0
+  method: walk
+  danger_level: medium
+- from_id: mon_starglow_cavern
+  to_id: mon_subzero_valley
+  cost: 5.0
+  method: walk
+  danger_level: high
+- from_id: mon_starglow_cavern
+  to_id: mon_entombed_city
+  cost: 8.0
+  method: walk
+  danger_level: high
+- from_id: mon_entombed_city
+  to_id: mon_peak_vindagnyr
+  cost: 10.0
+  method: walk
+  danger_level: high
+- from_id: mon_subzero_valley
+  to_id: mon_wyrmrest_valley
+  cost: 6.0
+  method: walk
+  danger_level: high
+- from_id: mon_wyrmrest_valley
+  to_id: mon_entombed_city
+  cost: 8.0
+  method: walk
+  danger_level: high
+- from_id: mondstadt_dragonspine
+  to_id: liyue_qingce_village
+  cost: 40.0
+  method: walk
+  danger_level: medium
+- from_id: monstadt_city
+  to_id: liyue_harbor
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: liyue_harbor
+  to_id: liyue_qingce_village
+  cost: 20.0
+  method: walk
+  danger_level: low
+- from_id: liyue_qingce_village
+  to_id: liyue_jueyun_karst
+  cost: 25.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_harbor
+  to_id: liyue_mingyun_village
+  cost: 18.0
+  method: walk
+  danger_level: low
+- from_id: liyue_harbor
+  to_id: liyue_domain_talent
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: liyue_harbor
+  to_id: liyue_harbor_dock
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_harbor
+  to_id: liyue_chihu_rock
+  cost: 5.0
+  method: walk
+  danger_level: none
+- from_id: liyue_harbor
+  to_id: liyue_yujing_terrace
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_harbor
+  to_id: liyue_harbor_main_street
+  cost: 2.0
+  method: walk
+  danger_level: none
+- from_id: liyue_harbor
+  to_id: liyue_harbor_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_harbor
+  to_id: liyue_mt_tianheng_west
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: liyue_harbor
+  to_id: liyue_mt_tianheng_east
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: liyue_mt_tianheng_west
+  to_id: liyue_mt_tianheng_statue
+  cost: 5.0
+  method: walk
+  danger_level: none
+- from_id: liyue_mt_tianheng_east
+  to_id: liyue_mt_tianheng_statue
+  cost: 5.0
+  method: walk
+  danger_level: none
+- from_id: liyue_mt_tianheng_west
+  to_id: liyue_mt_tianheng_east
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: liyue_qingce_village
+  to_id: liyue_qingce_village_north
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: liyue_qingce_village
+  to_id: liyue_qingce_village_south
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: liyue_qingce_village
+  to_id: liyue_qingce_village_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_qingce_village_north
+  to_id: liyue_qingce_village_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_qingce_village
+  to_id: liyue_wuwang_hill
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_wuwang_hill
+  to_id: liyue_wuwang_hill_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_qingce_village
+  to_id: liyue_bishui_plain
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: liyue_bishui_plain
+  to_id: liyue_stone_gate
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: liyue_bishui_plain
+  to_id: liyue_dihua_marsh
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: liyue_dihua_marsh
+  to_id: liyue_dihua_marsh_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_stone_gate
+  to_id: liyue_dihua_marsh
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: liyue_dihua_marsh
+  to_id: liyue_guili_plains
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: liyue_guili_plains
+  to_id: liyue_guili_plains_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_guili_plains
+  to_id: liyue_mingyun_village
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: liyue_mingyun_village
+  to_id: liyue_mingyun_village_east
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: liyue_mingyun_village
+  to_id: liyue_mingyun_statue
+  cost: 5.0
+  method: walk
+  danger_level: none
+- from_id: liyue_mingyun_village
+  to_id: liyue_yaoguang_shoal
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: liyue_yaoguang_shoal
+  to_id: liyue_sal_terrae
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: liyue_sal_terrae
+  to_id: liyue_sal_terrae_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_guili_plains
+  to_id: liyue_yaoguang_shoal
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: liyue_yaoguang_shoal
+  to_id: liyue_guyun_stone_forest
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_guyun_stone_forest
+  to_id: liyue_guyun_stone_forest_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_jueyun_karst
+  to_id: liyue_jueyun_karst_north
+  cost: 5.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_jueyun_karst
+  to_id: liyue_jueyun_karst_south
+  cost: 5.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_jueyun_karst
+  to_id: liyue_jueyun_karst_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_jueyun_karst_north
+  to_id: liyue_qingyun_peak
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_qingyun_peak
+  to_id: liyue_qingyun_peak_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_qingyun_peak
+  to_id: liyue_huaguang_stone_forest
+  cost: 6.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_jueyun_karst_south
+  to_id: liyue_mt_aozang
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_mt_aozang
+  to_id: liyue_qingyun_peak
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_jueyun_karst
+  to_id: liyue_mt_hulao
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_mt_hulao
+  to_id: liyue_mt_aozang
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_jueyun_karst_south
+  to_id: liyue_nantianmen
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_nantianmen
+  to_id: liyue_nantianmen_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_nantianmen
+  to_id: liyue_cuijue_slope
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: liyue_cuijue_slope
+  to_id: liyue_cuijue_slope_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_cuijue_slope
+  to_id: liyue_guili_plains
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: liyue_guili_plains
+  to_id: liyue_luhua_pool
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: liyue_luhua_pool
+  to_id: liyue_tianqiu_valley
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_tianqiu_valley
+  to_id: liyue_tianqiu_valley_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_tianqiu_valley
+  to_id: liyue_cuijue_slope
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_mt_tianheng_west
+  to_id: liyue_lisha
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_lisha
+  to_id: liyue_qingxu_pool
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: liyue_lisha
+  to_id: liyue_dunyu_ruins
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_dunyu_ruins
+  to_id: liyue_lingju_pass
+  cost: 6.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_lingju_pass
+  to_id: liyue_lingju_pass_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_qingxu_pool
+  to_id: liyue_domain_weapon
+  cost: 5.0
+  method: walk
+  danger_level: none
+- from_id: liyue_lingju_pass
+  to_id: liyue_qingxu_pool
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: liyue_lisha
+  to_id: liyue_chasm_surface
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_chasm_surface
+  to_id: liyue_chasm_statue
+  cost: 3.0
+  method: walk
+  danger_level: none
+- from_id: liyue_chasm_surface
+  to_id: liyue_chasm_underground
+  cost: 8.0
+  method: walk
+  danger_level: high
+- from_id: liyue_chasm_surface
+  to_id: liyue_lingju_pass
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_jueyun_karst_south
+  to_id: liyue_domain_boss
+  cost: 5.0
+  method: walk
+  danger_level: none
+- from_id: liyue_harbor
+  to_id: inazuma_narukami
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: inazuma_narukami
+  to_id: ina_inazuma_city
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: ina_inazuma_city
+  to_id: ina_tenshukaku
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: ina_inazuma_city
+  to_id: ina_amakane_island
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: ina_inazuma_city
+  to_id: ina_byakko_plain
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: ina_byakko_plain
+  to_id: ina_chinju_forest
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: ina_chinju_forest
+  to_id: ina_mt_yougou
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: ina_mt_yougou
+  to_id: ina_grand_narukami_shrine
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: ina_inazuma_city
+  to_id: ina_konda_village
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: ina_konda_village
+  to_id: ina_araumi
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: ina_byakko_plain
+  to_id: ina_kamisato_estate
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: ina_inazuma_city
+  to_id: ina_ritou
+  cost: 3.0
+  method: boat
+  danger_level: none
+- from_id: ina_inazuma_city
+  to_id: ina_kujou_encampment
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: inazuma_narukami
+  to_id: ina_kannazuka_statue
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: ina_kujou_encampment
+  to_id: ina_tatarasuna
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: ina_tatarasuna
+  to_id: ina_mikage_furnace
+  cost: 8.0
+  method: walk
+  danger_level: high
+- from_id: ina_kujou_encampment
+  to_id: ina_kannazuka_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: ina_kujou_encampment
+  to_id: inazuma_yashiori
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: inazuma_yashiori
+  to_id: ina_musoujin_gorge
+  cost: 8.0
+  method: walk
+  danger_level: high
+- from_id: ina_musoujin_gorge
+  to_id: ina_higi_village
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: ina_musoujin_gorge
+  to_id: ina_serpents_head
+  cost: 12.0
+  method: walk
+  danger_level: high
+- from_id: inazuma_yashiori
+  to_id: ina_fort_fujitou
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: ina_higi_village
+  to_id: ina_yashiori_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: inazuma_yashiori
+  to_id: inazuma_seirai
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: inazuma_narukami
+  to_id: inazuma_seirai
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: inazuma_seirai
+  to_id: ina_fort_hiraumi
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: ina_fort_hiraumi
+  to_id: ina_asase_shrine
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: ina_asase_shrine
+  to_id: ina_koseki_village
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: ina_asase_shrine
+  to_id: ina_amakumo_peak
+  cost: 15.0
+  method: walk
+  danger_level: high
+- from_id: inazuma_seirai
+  to_id: ina_seirai_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: inazuma_seirai
+  to_id: ina_sangonomiya_shrine
+  cost: 3.0
+  method: boat
+  danger_level: none
+- from_id: ina_sangonomiya_shrine
+  to_id: ina_bourou_village
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: ina_bourou_village
+  to_id: ina_mouun_shrine
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: ina_mouun_shrine
+  to_id: ina_suigetsu_pool
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: ina_sangonomiya_shrine
+  to_id: ina_watatsumi_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: ina_sangonomiya_shrine
+  to_id: ina_enk_sangonomiya
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: ina_enk_sangonomiya
+  to_id: ina_dainichi_mikoshi
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: ina_dainichi_mikoshi
+  to_id: ina_evernight_temple
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: ina_enk_sangonomiya
+  to_id: ina_the_narrows
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: ina_the_narrows
+  to_id: ina_serpents_bowels
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: ina_evernight_temple
+  to_id: ina_serpents_bowels
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: liyue_harbor
+  to_id: sumeru_city
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: sumeru_city
+  to_id: sum_akademiya
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sumeru_city
+  to_id: sum_bazaar
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sumeru_city
+  to_id: sum_treasures_street
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: sum_treasures_street
+  to_id: sum_port_ormos
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: sum_bazaar
+  to_id: sum_port_ormos
+  cost: 15.0
+  method: walk
+  danger_level: low
+- from_id: sumeru_city
+  to_id: sum_avidya_forest
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: sum_avidya_forest
+  to_id: sum_lost_nursery
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: sum_lost_nursery
+  to_id: sum_vanarana
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: sum_avidya_forest
+  to_id: sum_avidya_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sumeru_city
+  to_id: sumeru_lokapala
+  cost: 15.0
+  method: walk
+  danger_level: low
+- from_id: sumeru_lokapala
+  to_id: sum_gandharva_ville
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: sum_gandharva_ville
+  to_id: sum_vimara_village
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: sum_vimara_village
+  to_id: sum_devantaka_mountain
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: sumeru_lokapala
+  to_id: sum_lokapala_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sumeru_lokapala
+  to_id: sum_mawtiyima_forest
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: sum_mawtiyima_forest
+  to_id: sum_mawtiyima_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sumeru_city
+  to_id: sumeru_ashavan
+  cost: 20.0
+  method: walk
+  danger_level: medium
+- from_id: sumeru_ashavan
+  to_id: sum_apam_woods
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: sum_apam_woods
+  to_id: sum_vissudha_field
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: sumeru_ashavan
+  to_id: sum_ashavan_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sumeru_lokapala
+  to_id: sumeru_ashavan
+  cost: 25.0
+  method: walk
+  danger_level: medium
+- from_id: sumeru_ashavan
+  to_id: sum_yazadaha_pool
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: sum_yazadaha_pool
+  to_id: sum_caravan_ribat
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: sum_caravan_ribat
+  to_id: sum_lower_setekh
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: sum_lower_setekh
+  to_id: sum_lower_setekh_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sum_lower_setekh
+  to_id: sum_sobek_oasis
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: sum_lower_setekh
+  to_id: sum_abdju_pit
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: sum_lower_setekh
+  to_id: sum_upper_setekh
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: sum_upper_setekh
+  to_id: sum_upper_setekh_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sum_upper_setekh
+  to_id: sum_khemenu_temple
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: sum_upper_setekh
+  to_id: sum_hypostyle_desert
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: sum_hypostyle_desert
+  to_id: sum_hypostyle_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sum_hypostyle_desert
+  to_id: sum_al_ahmar_qant
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: sum_al_ahmar_qant
+  to_id: sum_qusayr_al_inkhida
+  cost: 10.0
+  method: walk
+  danger_level: medium
+- from_id: sum_hypostyle_desert
+  to_id: sum_dar_al_shifa
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: sum_hypostyle_desert
+  to_id: sum_gavireh_lajavard
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: sum_gavireh_lajavard
+  to_id: sum_gavireh_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: sum_gavireh_lajavard
+  to_id: sum_farakhkert
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: sum_farakhkert
+  to_id: sum_temir_mountains
+  cost: 15.0
+  method: walk
+  danger_level: high
+- from_id: sum_farakhkert
+  to_id: sum_asipattravana_swamp
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: sumeru_city
+  to_id: fontaine_court
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: fontaine_court
+  to_id: fontaine_belleau
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_court
+  to_id: fontaine_research
+  cost: 18.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_belleau
+  to_id: fontaine_research
+  cost: 20.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_court
+  to_id: natlan_stadium
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: natlan_stadium
+  to_id: natlan_toyac
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: natlan_stadium
+  to_id: natlan_tequemecan
+  cost: 20.0
+  method: walk
+  danger_level: high
+- from_id: natlan_toyac
+  to_id: natlan_tequemecan
+  cost: 18.0
+  method: walk
+  danger_level: medium
+- from_id: monstadt_city
+  to_id: sumeru_city
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: monstadt_city
+  to_id: fontaine_court
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: monstadt_city
+  to_id: natlan_stadium
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: domain_abyss
+  to_id: monstadt_city
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: fontaine_court
+  to_id: fon_court_plaza
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: fon_court_plaza
+  to_id: fon_fleuve_cendre
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fon_court_plaza
+  to_id: fon_fountain_lucine
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: fon_fountain_lucine
+  to_id: fon_opera_epiclese
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: fon_court_plaza
+  to_id: fon_quartier_lyonnais
+  cost: 7.0
+  method: walk
+  danger_level: low
+- from_id: fon_court_plaza
+  to_id: fon_aquabus_main
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fon_aquabus_main
+  to_id: fon_aquabus_court
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: fon_court_plaza
+  to_id: fon_court_south
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: fon_court_plaza
+  to_id: fon_court_north_gate
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fon_court_north_gate
+  to_id: fon_erinnyes_statue
+  cost: 15.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_belleau
+  to_id: fon_belleau_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_belleau
+  to_id: fon_belleau_west
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_belleau
+  to_id: fon_marcotte_station
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: fon_marcotte_station
+  to_id: fon_marcotte_hill
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_belleau
+  to_id: fon_elynas
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: fon_elynas
+  to_id: fon_poisson
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: fontaine_belleau
+  to_id: fon_underwater_belleau
+  cost: 5.0
+  method: swim
+  danger_level: low
+- from_id: fontaine_research
+  to_id: fon_beryl_statue
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: fon_beryl_statue
+  to_id: fon_meropide
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: fon_beryl_statue
+  to_id: fon_estaque
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fon_beryl_statue
+  to_id: fon_beryl_north
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: fon_beryl_statue
+  to_id: fon_beryl_lake
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: fon_beryl_statue
+  to_id: fon_beryl_east
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fon_liffey_statue
+  to_id: fon_lumidouce_harbor
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fon_liffey_statue
+  to_id: fon_loch_urania
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: fon_liffey_statue
+  to_id: fon_liffey_east
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fon_liffey_statue
+  to_id: fon_new_research_institute
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: fon_morte_statue
+  to_id: fon_weeping_willow
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fon_morte_statue
+  to_id: fon_foggy_forest
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: fon_morte_statue
+  to_id: fon_morte_south
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_research
+  to_id: fon_research_institute
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: fon_research_institute
+  to_id: fon_new_research_institute
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: fon_erinnyes_statue
+  to_id: fon_erinnyes_east
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: fon_erinnyes_statue
+  to_id: fon_erinnyes_center
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: fon_underwater_court
+  to_id: fon_underwater_belleau
+  cost: 15.0
+  method: swim
+  danger_level: medium
+- from_id: fontaine_court
+  to_id: fon_underwater_court
+  cost: 5.0
+  method: swim
+  danger_level: low
+- from_id: fon_opera_epiclese
+  to_id: fon_domain_fountain
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: fon_morte_statue
+  to_id: fon_beryl_statue
+  cost: 18.0
+  method: walk
+  danger_level: medium
+- from_id: fon_liffey_statue
+  to_id: fon_erinnyes_statue
+  cost: 15.0
+  method: walk
+  danger_level: low
+- from_id: natlan_stadium
+  to_id: nat_stadium_main
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: nat_stadium_main
+  to_id: nat_stadium_grandmaster
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: nat_stadium_main
+  to_id: nat_stadium_south
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: nat_stadium_main
+  to_id: nat_teleportlala
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: nat_scions_village
+  to_id: nat_scions_north
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: nat_scions_village
+  to_id: nat_scions_tree
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: natlan_stadium
+  to_id: nat_scions_village
+  cost: 15.0
+  method: walk
+  danger_level: medium
+- from_id: nat_echoes_village
+  to_id: nat_echoes_cave
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: nat_echoes_village
+  to_id: nat_echoes_south
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: natlan_stadium
+  to_id: nat_echoes_village
+  cost: 18.0
+  method: walk
+  danger_level: medium
+- from_id: nat_springs_village
+  to_id: nat_springs_hot_spring
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: nat_springs_village
+  to_id: nat_springs_east
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: natlan_toyac
+  to_id: nat_springs_village
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: nat_plenty_village
+  to_id: nat_plenty_market
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: natlan_stadium
+  to_id: nat_plenty_village
+  cost: 12.0
+  method: walk
+  danger_level: low
+- from_id: nat_flower_feather_village
+  to_id: nat_flower_feather_nest
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: natlan_tequemecan
+  to_id: nat_flower_feather_village
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: natlan_tequemecan
+  to_id: nat_tequemecan_statue
+  cost: 8.0
+  method: walk
+  danger_level: high
+- from_id: nat_tequemecan_statue
+  to_id: nat_tequemecan_south
+  cost: 6.0
+  method: walk
+  danger_level: medium
+- from_id: natlan_toyac
+  to_id: nat_toyac_statue
+  cost: 5.0
+  method: walk
+  danger_level: low
+- from_id: nat_toyac_statue
+  to_id: nat_toyac_north
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: nat_basin_statue
+  to_id: nat_basin_flames
+  cost: 6.0
+  method: walk
+  danger_level: medium
+- from_id: nat_echoes_village
+  to_id: nat_basin_statue
+  cost: 12.0
+  method: walk
+  danger_level: medium
+- from_id: nat_coatepec_statue
+  to_id: nat_coatepec_peak
+  cost: 10.0
+  method: walk
+  danger_level: high
+- from_id: natlan_tequemecan
+  to_id: nat_coatepec_statue
+  cost: 15.0
+  method: walk
+  danger_level: high
+- from_id: nat_ameyalco_statue
+  to_id: nat_ameyalco_waters
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: natlan_toyac
+  to_id: nat_ameyalco_statue
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: nat_ochkanatlan_statue
+  to_id: nat_ochkanatlan
+  cost: 6.0
+  method: walk
+  danger_level: high
+- from_id: nat_coatepec_peak
+  to_id: nat_ochkanatlan_statue
+  cost: 15.0
+  method: walk
+  danger_level: high
+- from_id: nat_echoes_cave
+  to_id: nat_mysterious_arrays
+  cost: 12.0
+  method: walk
+  danger_level: high
+- from_id: nat_stadium_main
+  to_id: nat_domain_natlan
+  cost: 3.0
+  method: teleport
+  danger_level: none
+- from_id: sne_capital
+  to_id: sne_harbor
+  cost: 0.0
+  method: unknown
+  danger_level: unknown
+- from_id: sne_capital
+  to_id: sne_palace
+  cost: 0.0
+  method: unknown
+  danger_level: unknown
+- from_id: sne_capital
+  to_id: sne_factory
+  cost: 0.0
+  method: unknown
+  danger_level: unknown
+- from_id: sne_capital
+  to_id: sne_statue
+  cost: 0.0
+  method: unknown
+  danger_level: unknown
+- from_id: sne_capital
+  to_id: sne_domain
+  cost: 0.0
+  method: unknown
+  danger_level: unknown
+- from_id: sne_harbor
+  to_id: sne_frost_forest
+  cost: 0.0
+  method: unknown
+  danger_level: unknown
+- from_id: sne_palace
+  to_id: sne_glacier_lake
+  cost: 0.0
+  method: unknown
+  danger_level: unknown
+- from_id: sne_frost_forest
+  to_id: sne_mountain_pass
+  cost: 0.0
+  method: unknown
+  danger_level: unknown
+- from_id: sne_factory
+  to_id: sne_outpost
+  cost: 0.0
+  method: unknown
+  danger_level: unknown
+- from_id: natlan_stadium
+  to_id: sne_capital
+  cost: 3.0
+  method: unknown
+  danger_level: unknown
+- from_id: fontaine_court
+  to_id: sne_harbor
+  cost: 3.0
+  method: unknown
+  danger_level: unknown

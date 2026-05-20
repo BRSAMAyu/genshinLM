@@ -3,7 +3,9 @@
 # Cross-referenced from Genshin Wiki (fandom) and in-game data.
 # Fixes: violetgrass -> 琉璃袋, nilotpala_lotus -> 月莲, valberry -> 落落莓,
 #         cor_lapis type -> mineral, noctilucous_jade type -> mineral,
-#         philanemo_mushroom name -> 慕风蘑菇, callalily name -> 海TT花-> 海霸花-> 海灵花
+#         philanemo_mushroom name -> 慕风蘑菇, callalily name -> 海灵花
+#         condensed_flame (fixed typo), kalpalata_lotus subregion -> apam_woods,
+#         fluoressence name_en typo fix, talent_book_ballad id normalization
 
 ores:
   - resource_id: iron_chunk
@@ -97,7 +99,7 @@ ores:
     regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
     visual: "Rare variant of crystal chunk with golden glow"
 
-  - resource_id: condessenced_flame
+  - resource_id: condensed_flame
     name: 浓缩爆炎
     name_en: Condensed Flame
     type: mineral
@@ -130,7 +132,7 @@ ores:
     regions: [inazuma]
     visual: "Electro-charged stone with kanji markings"
 
-  - resource_id: sumeru_rose_ore
+  - resource_id: sand_grease_pupa
     name: 沙脂蛹
     name_en: Sand Grease Pupa
     type: mineral
@@ -457,7 +459,7 @@ plants:
 
   - resource_id: fluoressence_flower
     name: 荧光花粉
-    name_en: Flouresence Flower
+    name_en: Fluorescence Flower
     type: plant
     detection_class: plant_fluorescence
     interaction: f_key
@@ -486,7 +488,7 @@ plants:
     interaction: f_key
     respawn_hours: 48
     regions: [sumeru]
-    subregion: apes_resort
+    subregion: apam_woods
     visual: "Pink-purple lotus on high cliff edges and tree branches"
 
   - resource_id: rukkhashava_mushroom
@@ -969,7 +971,7 @@ special:
     regions: [liyue]
     visual: "Talent material from Taishan Mansion domain (Tuesday/Friday)"
 
-  - resource_id: talent-book_ballad
+  - resource_id: talent_book_ballad
     name: 诗歌的教导
     name_en: Teachings of Ballad
     type: special

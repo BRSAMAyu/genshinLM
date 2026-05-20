@@ -217,7 +217,7 @@ monsters:
 
   - monster_id: lawachurl_anemo
     name: 风拳丘丘王
-    name_en: Anemo Hilichurl Rogue
+    name_en: Anemo Lawachurl
     class_id: monster_elite
     element: anemo
     hp_segments: 3
@@ -228,7 +228,7 @@ monsters:
 
   - monster_id: lawachurl_cryo
     name: 冰盾丘丘王
-    name_en: Cryo Hilichurl Rogue
+    name_en: Cryo Lawachurl
     class_id: monster_elite
     element: cryo
     hp_segments: 3
@@ -239,7 +239,7 @@ monsters:
 
   - monster_id: lawachurl_electro
     name: 雷斧丘丘王
-    name_en: Electro Hilichurl Rogue
+    name_en: Electro Lawachurl
     class_id: monster_elite
     element: electro
     hp_segments: 3
@@ -250,7 +250,7 @@ monsters:
 
   - monster_id: lawachurl_pyro
     name: 火斧丘丘王
-    name_en: Pyro Hilichurl Rogue
+    name_en: Pyro Lawachurl
     class_id: monster_elite
     element: pyro
     hp_segments: 3
@@ -261,7 +261,7 @@ monsters:
 
   - monster_id: lawachurl_geo
     name: 岩盾丘丘王
-    name_en: Geo Hilichurl Rogue
+    name_en: Geo Lawachurl
     class_id: monster_elite
     element: geo
     hp_segments: 3
@@ -1267,7 +1267,7 @@ monsters:
     weakpoints: ["pearl_core"]
     danger_signals: ["lightning_field", "electro_beam", "thunder_storm"]
     weaknesses: ["pyro", "cryo"]
-    drops: ["faded_red_satin", "vajrada_amethyst"]
+    drops: ["fontemer_unihorn", "vajrada_amethyst"]
     resin_cost: 40
     respawn_minutes: 3
     visual: "Large seahorse-like creature with electro pearl"
@@ -1397,7 +1397,7 @@ monsters:
     hp_segments: 8
     danger_signals: ["dendro_breath", "seed_attack", "decay_field", "apocalypse"]
     weaknesses: ["pyro", "electro"]
-    drops: ["primordial_greenbloom", "everamber", "pupils"]
+    drops: ["primordial_greenbloom", "everamber", "worldspan_fern"]
     resin_cost: 60
     respawn_minutes: 0
     region: sumeru
