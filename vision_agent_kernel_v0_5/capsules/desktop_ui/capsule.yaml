@@ -1,0 +1,13 @@
+capsule_id: desktop_ui
+version: "0.1.0"
+display_name: "Desktop UI Automation"
+description: "Capsule for safe desktop UI automation with grounding"
+frame_processors: []
+slots:
+  - desktop_ui.grounded_elements
+  - desktop_ui.safety_state
+skills:
+  - ui_grounding_skill
+transitions: []
+verifiers: []
+benchmark_tasks: []

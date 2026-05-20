@@ -1,0 +1,14 @@
+capsule_id: demo_arpg
+version: "0.1.0"
+display_name: "Demo ARPG"
+description: "Demonstration capsule for a generic ARPG"
+frame_processors:
+  - dummy_processor
+slots:
+  - demo_arpg.screen_state
+  - demo_arpg.danger_state
+skills:
+  - dummy_skill
+transitions: []
+verifiers: []
+benchmark_tasks: []
