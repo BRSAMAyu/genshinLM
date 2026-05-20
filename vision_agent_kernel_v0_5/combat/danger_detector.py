@@ -93,12 +93,13 @@ class GenshinDangerSignalExtractor:
         projectile = self._detect_projectile(frame, prev_frame) if prev_frame is not None else 0.0
         hp_drop = self._detect_hp_drop(char_hp_roi)
         stamina_crit = self._detect_stamina(stamina_roi)
+        boss_windup = self._detect_boss_windup(frame, prev_frame)
 
         signals = DangerSignals(
             ground_danger_zone=ground_danger,
             projectile_approaching=projectile,
             hp_drop_signal=hp_drop,
-            boss_windup=0.0,
+            boss_windup=boss_windup,
             stamina_critical=stamina_crit,
             overall_danger=0.0,
         )
@@ -107,7 +108,7 @@ class GenshinDangerSignalExtractor:
             ground_danger_zone=ground_danger,
             projectile_approaching=projectile,
             hp_drop_signal=hp_drop,
-            boss_windup=0.0,
+            boss_windup=boss_windup,
             stamina_critical=stamina_crit,
             overall_danger=overall,
         )
@@ -178,6 +179,43 @@ class GenshinDangerSignalExtractor:
         if ratio < self._thresholds.stamina_low:
             return 1.0
         return 0.0
+
+    def _detect_boss_windup(
+        self, frame: np.ndarray, prev_frame: np.ndarray | None
+    ) -> float:
+        """Detect boss wind-up by measuring bright saturated pixel area expansion."""
+        if prev_frame is None:
+            return 0.0
+        if frame.shape != prev_frame.shape:
+            return 0.0
+
+        prev_bright = self._bright_saturated_area(prev_frame)
+        curr_bright = self._bright_saturated_area(frame)
+
+        if prev_bright < 1.0:
+            # No significant bright area in previous frame — cannot measure growth.
+            return 0.0
+
+        growth = (curr_bright - prev_bright) / prev_bright
+        if growth <= 0.30:
+            return 0.0
+        # Proportional score: 30% growth -> 0.0, 130% growth -> ~1.0
+        score = (growth - 0.30) / 1.0
+        return _clamp(score)
+
+    @staticmethod
+    def _bright_saturated_area(frame: np.ndarray) -> float:
+        """Return count of bright, saturated pixels in *frame* (0-255 scale HSV)."""
+        hsv = _bgr_to_hsv(frame)
+        total_pixels = float(frame.shape[0] * frame.shape[1])
+        if total_pixels == 0:
+            return 0.0
+        # The existing _bgr_to_hsv returns H:0-360 deg, S:0-1, V:0-1.
+        # Bright & saturated: S >= 0.5 and V >= 0.6
+        s = hsv[:, :, 1]
+        v = hsv[:, :, 2]
+        mask = (s >= 0.5) & (v >= 0.6)
+        return float(mask.sum())
 
     def _estimate_hp_ratio(self, roi: np.ndarray) -> float:
         if roi.size == 0:

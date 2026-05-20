@@ -93,7 +93,7 @@ plants:
     visual: "Blue-purple berry cluster on low bushes"
 
   - resource_id: valberry
-    name: 树莓
+    name: 瓦莱莓
     name_en: Valberry
     type: plant
     detection_class: plant_valberry
@@ -158,7 +158,7 @@ plants:
     visual: "White lotus-like flower on tall stems, mountain tops"
 
   - resource_id: violetgrass
-    name: 琉璃百合
+    name: 琉璃袋
     name_en: Violetgrass
     type: plant
     detection_class: plant_violetgrass
@@ -193,7 +193,7 @@ plants:
   - resource_id: cor_lapis
     name: 石珀
     name_en: Cor Lapis
-    type: plant
+    type: mineral
     detection_class: plant_cor_lapis
     interaction: attack
     attack_count: 2
@@ -205,7 +205,7 @@ plants:
   - resource_id: noctilucous_jade
     name: 夜泊石
     name_en: Noctilucous Jade
-    type: plant
+    type: mineral
     detection_class: plant_noctilucous
     interaction: attack
     attack_count: 1
@@ -293,7 +293,7 @@ plants:
 
   # ---- Sumeru ----
   - resource_id: nilotpala_lotus
-    name: 帕蒂沙兰
+    name: 月莲
     name_en: Nilotpala Lotus
     type: plant
     detection_class: plant_nilotpala

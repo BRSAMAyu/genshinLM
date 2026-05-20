@@ -409,7 +409,7 @@ monsters:
     visual: "Giant ice plant boss, frost aura around flower head"
 
   - monster_id: geo_hypostasis
-    name: 纯水精灵
+    name: 无相之岩
     name_en: Geo Hypostasis
     class_id: monster_boss
     element: geo
