@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TYPE_CHECKING
 
-from core.events import Interrupt
+if TYPE_CHECKING:
+    from execution.verifier_base import VerifierResult
 
 
 JsonDict = dict[str, Any]
@@ -153,3 +154,4 @@ class SkillResult:
     started_at: float
     finished_at: float
     payload: JsonDict = field(default_factory=dict)
+    verifier_result: VerifierResult | None = None

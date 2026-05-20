@@ -63,6 +63,14 @@ class ModeArbiter:
         self._lock = threading.RLock()
         self._current_mode = initial_mode
         self._active_request: ModeRequest | None = None
+        self._extra_modes: set[str] = set()
+
+    def register_mode(self, mode: str) -> None:
+        with self._lock:
+            self._extra_modes.add(mode)
+
+    def _is_valid_mode(self, mode: str) -> bool:
+        return mode in VALID_MODES or mode in self._extra_modes
 
     @property
     def current_mode(self) -> str:
@@ -70,7 +78,7 @@ class ModeArbiter:
             return self._current_mode
 
     def submit(self, request: ModeRequest) -> ModeDecision:
-        if request.requested_mode not in VALID_MODES:
+        if not self._is_valid_mode(request.requested_mode):
             raise ValueError(f"invalid requested mode: {request.requested_mode}")
 
         with self._lock:

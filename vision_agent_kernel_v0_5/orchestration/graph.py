@@ -27,6 +27,12 @@ class StateTransition:
 
 
 class OrchestrationGraph:
+    def __init__(self) -> None:
+        self._custom_transitions: list[tuple[str, str, str]] = []
+
+    def register_transition(self, from_state: str, to_state: str, condition: str) -> None:
+        self._custom_transitions.append((from_state, to_state, condition))
+
     def next_for_skill_result(self, state: str, result: SkillResult) -> StateTransition:
         status = result.status
         failure = result.failure_code or ""
@@ -72,6 +78,9 @@ class OrchestrationGraph:
             if failure == "RECOVERY_RETRY":
                 return StateTransition(state, ACQUIRE_TARGET, failure)
             return StateTransition(state, FAILED, failure or "recovery_failed")
+        for from_s, to_s, cond in self._custom_transitions:
+            if state == from_s and status == cond:
+                return StateTransition(state, to_s, f"custom:{cond}")
         return StateTransition(state, state, "terminal_or_unknown")
 
     def next_for_interrupt(self, state: str, interrupt: Interrupt) -> StateTransition:
