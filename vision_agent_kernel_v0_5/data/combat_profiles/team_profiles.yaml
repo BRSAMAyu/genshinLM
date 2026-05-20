@@ -1,9 +1,429 @@
+# Genshin Impact Team Combat Profiles
+# Sparkle Project - Vision Agent Kernel v0.5
+# Each team includes rotation, resonance, strengths, and weaknesses.
+
 teams:
-  - team_id: default_team
-    display_name: Default Sandbox Team
+  - team_id: national
+    display_name: National Team (国家队)
     members:
-      - abstract_duelist
-      - abstract_support
-    behavior_preference: balanced
-    safety_threshold: 0.75
-    strategy_style: target_lock_with_reflex_evasion
+      - xiangling
+      - bennett
+      - xingqiu
+      - sucrose
+    resonance: none
+    recommended_rotation:
+      - "Xingqiu E > Q (apply hydro)"
+      - "Sucrose E (VV shred, share EM)"
+      - "Bennett Q > E (buff ATK)"
+      - "Xiangling Q > E (pyronado vaporize)"
+      - "Sucrose N2C to funnel particles"
+    strengths:
+      - "High sustained DPS through Xiangling vaporize"
+      - "Bennett provides ATK buff and healing"
+      - "Sucrose VV shred and EM share amplifies reactions"
+      - "Low investment, high return team"
+    weaknesses:
+      - "No defensive utility beyond Bennett heal"
+      - "Requires good energy management"
+      - "Xiangling needs high ER (200%+) before stacking offensive stats"
+
+  - team_id: raiden_national
+    display_name: Raiden National (雷神国家队)
+    members:
+      - raiden_shogun
+      - xiangling
+      - bennett
+      - xingqiu
+    resonance: none
+    recommended_rotation:
+      - "Raiden E (skill mark for burst DMG bonus)"
+      - "Xingqiu E > Q (apply hydro)"
+      - "Xiangling Q > E (pyronado vaporize)"
+      - "Bennett Q > E (buff ATK)"
+      - "Raiden Q (burst mode, recover energy)"
+      - "Raiden burst attacks to battery team"
+    strengths:
+      - "Raiden solves energy issues for 80-cost bursts"
+      - "Extremely high sustained DPS"
+      - "Raiden burst benefits from Bennett buff"
+      - "One of the strongest teams in the game"
+    weaknesses:
+      - "Bennett circle-limited"
+      - "Single target focused"
+      - "Needs good rotation timing to maximize burst windows"
+
+  - team_id: raiden_hypercarry
+    display_name: Raiden Hypercarry (雷神单核)
+    members:
+      - raiden_shogun
+      - bennett
+      - kujou_sara
+      - kaedehara_kazuha
+    resonance: none
+    recommended_rotation:
+      - "Raiden E (skill mark)"
+      - "Kazuha E > Q (VV shred electro, buff)"
+      - "Bennett Q > E (ATK buff)"
+      - "Kujou Sara Q > E (ATK buff + crit DMG)"
+      - "Raiden Q (burst mode with all buffs active)"
+      - "Raiden burst combo (N3C or N3D) for 7s"
+    strengths:
+      - "Massive burst damage from Raiden with full buffs"
+      - "Kazuha + Sara provide huge damage amplification"
+      - "Clean rotation with clear buff windows"
+    weaknesses:
+      - "Raiden needs high investment (C2 recommended)"
+      - "Sara requires precise positioning"
+      - "Burst-reliant, lower sustained damage between bursts"
+
+  - team_id: hu_tao_vape
+    display_name: Hu Tao Vape (胡桃蒸发)
+    members:
+      - hu_tao
+      - xingqiu
+      - zhongli
+      - albedo
+    resonance: geo_geo
+    recommended_rotation:
+      - "Zhongli E (hold for shield + shred)"
+      - "Albedo E (solar isotoma)"
+      - "Xingqiu E > Q (apply hydro)"
+      - "Hu Tao E > Q (enter paramita, vaporize attacks)"
+      - "Hu Tao N2C dash loop for 9s"
+      - "Hu Tao Q before E expires (vape nuke)"
+    strengths:
+      - "Zhongli shield provides comfortable gameplay"
+      - "Geo resonance + Zhongli shred boosts damage"
+      - "Albedo off-field geo damage"
+      - "Very safe team with high single-target DPS"
+    weaknesses:
+      - "Hu Tao needs below 50% HP for max damage"
+      - "Albedo flower can be destroyed in some fights"
+      - "AoE damage is limited"
+
+  - team_id: ayaka_freeze
+    display_name: Ayaka Freeze (绫华永冻)
+    members:
+      - kamisato_ayaka
+      - sangonomiya_kokomi
+      - kaedehara_kazuha
+      - rosaria
+    resonance: cryo_cryo
+    recommended_rotation:
+      - "Kokomi E (apply hydro, heal)"
+      - "Rosaria E > Q (apply cryo, crit share)"
+      - "Kazuha E > Q (VV shred, group enemies)"
+      - "Ayaka E > dash > Q (freeze burst combo)"
+      - "Ayaka N1C or N2C during burst"
+      - "Kokomi Q to refresh hydro as needed"
+    strengths:
+      - "Freeze provides crowd control and safety"
+      - "Blizzard Strayer gives free 40% CR on frozen enemies"
+      - "Kazuha grouping enables AoE burst"
+      - "Very high burst damage window"
+    weaknesses:
+      - "Ineffective against freeze-immune bosses"
+      - "Burst can miss if enemies move"
+      - "Ayaka is energy hungry (80 cost burst)"
+
+  - team_id: neuvillette_hyperbloom
+    display_name: Neuvillette Hyperbloom (那维超绽放)
+    members:
+      - neuvillette
+      - nahida
+      - furina
+      - kaedehara_kazuha
+    resonance: none
+    recommended_rotation:
+      - "Furina E > Q (salon members, fanfare stacks)"
+      - "Nahida E > Q (mark enemies, EM share)"
+      - "Kazuha E > Q (VV shred hydro/cryo)"
+      - "Neuvillette Q > charged attack (water beam)"
+      - "Neuvillette charged attack sustained DPS"
+    strengths:
+      - "Neuvillette has absurd sustained charged attack DPS"
+      - "Furina fanfare amplifies all damage"
+      - "Nahida provides dendro application and EM"
+      - "Very forgiving rotation"
+    weaknesses:
+      - "Neuvillette charged attack leaves him stationary"
+      - "Team needs healing to maintain Furina fanfare"
+      - "No dedicated hyperbloom trigger (pure hydro focus)"
+
+  - team_id: alhaitham_quickbloom
+    display_name: Alhaitham Quickbloom (海哥超激绽放)
+    members:
+      - alhaitham
+      - nahida
+      - xingqiu
+      - kuki_shinobu
+    resonance: none
+    recommended_rotation:
+      - "Nahida E > Q (mark enemies)"
+      - "Xingqiu E > Q (hydro application)"
+      - "Kuki Shinobu E (electro ring for hyperbloom trigger)"
+      - "Alhaitham Q > E (enter field state)"
+      - "Alhaitham mirror attack combo (projection + mirror attacks)"
+      - "Kuki Q if needed for more electro application"
+    strengths:
+      - "Hyperbloom is reliable off-field damage"
+      - "Alhaitham spread damage is strong"
+      - "Kuki provides healing and hyperbloom triggering"
+      - "Works well at low investment"
+    weaknesses:
+      - "Alhaitham requires mirror management"
+      - "Hyperbloom damage is limited by Kuki's EM"
+      - "AoE damage is moderate"
+
+  - team_id: arlecchino_vape
+    display_name: Arlecchino Vape (仆人蒸发)
+    members:
+      - arlecchino
+      - xingqiu
+      - bennett
+      - kaedehara_kazuha
+    resonance: none
+    recommended_rotation:
+      - "Arlecchino E (blood-debt, absorb marks)"
+      - "Kazuha E > Q (VV shred pyro)"
+      - "Bennett Q > E (ATK buff)"
+      - "Xingqiu E > Q (hydro application)"
+      - "Arlecchino NAs (vaporize normal attacks)"
+      - "Arlecchino Q when needed (heal + damage)"
+    strengths:
+      - "Arlecchino has very high normal attack damage"
+      - "Bennett + Kazuha provide massive buffs"
+      - "Xingqiu enables consistent vaporize"
+      - "Bond of Life mechanic is unique and powerful"
+    weaknesses:
+      - "Cannot be healed by others (Bond of Life restriction)"
+      - "Requires managing blood-debt mechanic"
+      - "Burst is used for healing, not pure damage"
+
+  - team_id: navia_double_geo
+    display_name: Navia Double Geo (娜维娅双岩)
+    members:
+      - navia
+      - zhongli
+      - bennett
+      - fischl
+    resonance: geo_geo
+    recommended_rotation:
+      - "Zhongli E (hold for shield + shred)"
+      - "Fischl E (Oz placement)"
+      - "Bennett Q > E (ATK buff)"
+      - "Navia E (collect crystal chips first)"
+      - "Navia Q (gunbarrage)"
+      - "Navia E again (if off cooldown)"
+      - "Navia NA/CA for on-field time"
+    strengths:
+      - "Navia skill has massive burst multiplier"
+      - "Geo resonance + Zhongli shred boosts damage"
+      - "Fischl provides off-field electro for crystallize"
+      - "Zhongli shield for comfort"
+    weaknesses:
+      - "Navia is front-loaded, lower sustained DPS"
+      - "Geo does not amplify reactions"
+      - "Needs to manage crystallize shards for skill stacks"
+
+  - team_id: mono_geo
+    display_name: Mono Geo (纯岩队)
+    members:
+      - arataki_itto
+      - zhongli
+      - gorou
+      - albedo
+    resonance: geo_geo
+    recommended_rotation:
+      - "Zhongli E (hold for shield + shred)"
+      - "Albedo E (solar isotoma)"
+      - "Gorou E > Q (DEF buff, geo DMG bonus)"
+      - "Itto Q (enter Kingslayer, gain ATK from DEF)"
+      - "Itto E > NA combos (keep Arataki charge stacks)"
+      - "Itto charged attacks for burst duration"
+    strengths:
+      - "Pure geo team with full resonance benefit"
+      - "Gorou provides massive DEF and geo DMG buffs"
+      - "Zhongli shield + shred for safety and damage"
+      - "Very comfortable to play"
+    weaknesses:
+      - "No elemental reactions for amplification"
+      - "Struggles against geo-resistant enemies"
+      - "Itto needs high energy (burst-reliant)"
+      - "Limited AoE without geo constructs"
+
+  - team_id: taser
+    display_name: Taser Team (武装队)
+    members:
+      - beidou
+      - fischl
+      - xingqiu
+      - sucrose
+    resonance: none
+    recommended_rotation:
+      - "Fischl E (Oz placement)"
+      - "Xingqiu E > Q (hydro application)"
+      - "Beidou Q > E (perfect counter for burst)"
+      - "Sucrose E > Q (VV shred, swirl electro/hydro)"
+      - "Sucrose NA on-field (trigger electro-charged)"
+      - "Fischl Q to reposition Oz if needed"
+    strengths:
+      - "Electro-charged is strong AoE reaction"
+      - "Beidou burst provides off-field damage + damage reduction"
+      - "Sucrose triggers reactions with EM builds"
+      - "Very strong in multi-target content"
+    weaknesses:
+      - "Sucrose needs EM investment"
+      - "Beidou needs perfect counter skill for energy"
+      - "Single-target damage is lower"
+      - "No dedicated healer"
+
+  - team_id: hyperbloom
+    display_name: Hyperbloom (超绽放)
+    members:
+      - nahida
+      - xingqiu
+      - raiden_shogun
+      - kuki_shinobu
+    resonance: none
+    recommended_rotation:
+      - "Nahida E > Q (mark enemies, EM share)"
+      - "Xingqiu E > Q (hydro for bloom seeds)"
+      - "Raiden E (electro application for hyperbloom)"
+      - "Kuki E (electro ring for healing + hyperbloom trigger)"
+      - "Kuki on-field NA to trigger more reactions"
+    strengths:
+      - "Hyperbloom has guaranteed damage regardless of enemy"
+      - "Very low investment needed (just EM on Kuki)"
+      - "Raiden E triggers hyperbloom from off-field"
+      - "Kuki provides healing"
+    weaknesses:
+      - "Hyperbloom damage is capped"
+      - "No significant front-loaded damage"
+      - "Electro application order matters"
+      - "Boss fights may need adaptation"
+
+  - team_id: mono_pyro
+    display_name: Mono Pyro (纯火队)
+    members:
+      - lyney
+      - bennett
+      - xiangling
+      - kaedehara_kazuha
+    resonance: pyro_pyro
+    recommended_rotation:
+      - "Bennett Q > E (ATK buff, pyro application)"
+      - "Kazuha E > Q (VV shred pyro, buff pyro DMG)"
+      - "Xiangling Q > E (pyronado)"
+      - "Lyney E > CA > E (prop arrow, charge shots)"
+      - "Lyney Q (burst explosion)"
+    strengths:
+      - "Pyro resonance gives +25% ATK"
+      - "Kazuha buffs pyro DMG significantly"
+      - "Lyney benefits from Bennett + pyro resonance"
+      - "Strong single-target and moderate AoE"
+    weaknesses:
+      - "Lyney requires charge shot aim"
+      - "No defensive utility beyond Bennett"
+      - "Struggles against pyro-immune enemies"
+      - "Energy management can be tricky"
+
+  - team_id: freeze_ganyu
+    display_name: Ganyu Freeze Alternative (甘雨永冻)
+    members:
+      - ganyu
+      - mona
+      - venti
+      - rosaria
+    resonance: cryo_cryo
+    recommended_rotation:
+      - "Venti E > Q (group enemies, VV shred cryo)"
+      - "Rosaria E > Q (cryo application, crit share)"
+      - "Mona Q > E (oomen debuff, hydro application)"
+      - "Ganyu E > Q (cryo field for freeze)"
+      - "Ganyu CA (charge shot loop for DPS)"
+    strengths:
+      - "Ganyu charge shots deal massive damage"
+      - "Freeze keeps enemies grouped for Venti"
+      - "Mona oomen provides damage amplification"
+      - "Blizzard Strayer set bonus on frozen targets"
+    weaknesses:
+      - "Ganyu requires aiming charge shots"
+      - "Ineffective against freeze-immune enemies"
+      - "Mona hydro application may be insufficient"
+      - "Venti may not pull heavy enemies"
+
+  - team_id: aggravate
+    display_name: Aggravate (激化队)
+    members:
+      - yae_miko
+      - fischl
+      - kaedehara_kazuha
+      - nahida
+    resonance: none
+    recommended_rotation:
+      - "Nahida E > Q (mark enemies, EM share)"
+      - "Fischl E (Oz placement)"
+      - "Kazuha E > Q (VV shred electro, buff)"
+      - "Yae Miko E E E (place three sakura)"
+      - "Yae Miko Q (tenko kenshin burst)"
+      - "Yae Miko NA on-field for aggravate triggers"
+    strengths:
+      - "Aggravate amplifies electro damage significantly"
+      - "Nahida provides constant dendro application"
+      - "Fischl + Yae dual off-field electro is strong"
+      - "Kazuha shreds electro resistance"
+    weaknesses:
+      - "No healer or shielder"
+      - "Yae sakura placement requires positioning"
+      - "Energy needs are high (Yae 90-cost burst)"
+      - "Lower AoE without grouping"
+
+  - team_id: nilou_bloom
+    display_name: Nilou Bloom (妮露绽放)
+    members:
+      - nilou
+      - nahida
+      - sangonomiya_kokomi
+      - collei
+    resonance: none
+    recommended_rotation:
+      - "Nilou E > NA combo (apply hydro, golden chalice)"
+      - "Nahida E > Q (mark enemies)"
+      - "Kokomi E (apply hydro, heal)"
+      - "Collei E > Q (apply dendro, generate bountiful cores)"
+      - "Kokomi on-field NA for hydro application"
+    strengths:
+      - "Bountiful cores have massive AoE damage"
+      - "Nilou restriction is easy to meet (hydro + dendro only)"
+      - "Kokomi provides healing"
+      - "Extremely strong in multi-target content"
+    weaknesses:
+      - "Self-damage from bloom explosions"
+      - "Team building is restricted to hydro + dendro only"
+      - "Single-target damage is lower"
+      - "Requires EM investment on Kokomi/Nahida"
+
+  - team_id: furina_hyperbloom
+    display_name: Furina Hyperbloom (芙宁娜超绽放)
+    members:
+      - furina
+      - nahida
+      - baizhu
+      - kuki_shinobu
+    resonance: none
+    recommended_rotation:
+      - "Furina E > Q (salon members, fanfare stacks)"
+      - "Nahida E > Q (mark enemies)"
+      - "Baizhu E > Q (heal, dendro application)"
+      - "Kuki E (electro ring for hyperbloom)"
+      - "Baizhu on-field for additional healing to stack fanfare"
+    strengths:
+      - "Furina fanfare amplifies all damage"
+      - "Baizhu provides healing for fanfare stacks"
+      - "Hyperbloom is reliable off-field damage"
+      - "Very comfortable team with healing and shielding"
+    weaknesses:
+      - "Dendro application may be insufficient for pure hyperbloom"
+      - "Furina needs fanfare ramp-up time"
+      - "Moderate single-target DPS"

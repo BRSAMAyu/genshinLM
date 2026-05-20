@@ -11,6 +11,8 @@ class GenshinApp:
         self._screen_slot = None
         self._danger_slot = None
         self._cooldown_slot = None
+        self._failure_bridge = None
+        self._persona_bridge = None
         self._active = False
 
     def install(self, context: AppContext) -> None:
@@ -39,6 +41,12 @@ class GenshinApp:
         if isinstance(graph, OrchestrationGraph):
             graph.register_transition("GENSHIN_COMBAT", "GENSHIN_DODGE", "DODGE_TRIGGERED")
             graph.register_transition("GENSHIN_DODGE", "GENSHIN_COMBAT", "SUCCESS")
+
+        from app_service.apps.genshin_failure_bridge import GenshinFailureBridge
+        self._failure_bridge = GenshinFailureBridge(context.state_bus)
+
+        from app_service.apps.genshin_persona_bridge import GenshinPersonaBridge
+        self._persona_bridge = GenshinPersonaBridge(context.state_bus)
 
     def activate(self) -> None:
         self._active = True

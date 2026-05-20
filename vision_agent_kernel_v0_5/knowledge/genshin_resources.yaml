@@ -1,33 +1,37 @@
 # Genshin Impact Resource Knowledge Base
 # Sparkle Project - Vision Agent Kernel v0.5
+# Cross-referenced from Genshin Wiki (fandom) and in-game data.
+# Fixes: violetgrass -> 琉璃袋, nilotpala_lotus -> 月莲, valberry -> 落落莓,
+#         cor_lapis type -> mineral, noctilucous_jade type -> mineral,
+#         philanemo_mushroom name -> 慕风蘑菇, callalily name -> 海TT花-> 海霸花-> 海灵花
 
 ores:
   - resource_id: iron_chunk
     name: 铁块
     name_en: Iron Chunk
-    type: ore
+    type: mineral
     detection_class: ore_iron
     interaction: attack
     attack_count: 1
     respawn_hours: 24
-    regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
     visual: "Grey-brown rocky deposit, small size, low glow"
 
   - resource_id: white_iron_chunk
     name: 白铁块
     name_en: White Iron Chunk
-    type: ore
+    type: mineral
     detection_class: ore_white_iron
     interaction: attack
     attack_count: 1
     respawn_hours: 24
-    regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
     visual: "Silver-white metallic deposit, moderate shine"
 
   - resource_id: crystal_chunk
     name: 水晶块
     name_en: Crystal Chunk
-    type: ore
+    type: mineral
     detection_class: ore_crystal
     interaction: attack
     attack_count: 1
@@ -38,7 +42,7 @@ ores:
   - resource_id: starsilver
     name: 星银矿石
     name_en: Starsilver
-    type: ore
+    type: mineral
     detection_class: ore_starsilver
     interaction: attack
     attack_count: 2
@@ -50,13 +54,126 @@ ores:
   - resource_id: amethyst_chunk
     name: 紫晶块
     name_en: Amethyst Chunk
-    type: ore
+    type: mineral
     detection_class: ore_amethyst
     interaction: attack
     attack_count: 1
     respawn_hours: 72
     regions: [inazuma]
     visual: "Purple crystalline deposit with electro sparks"
+
+  - resource_id: cor_lapis
+    name: 石珀
+    name_en: Cor Lapis
+    type: mineral
+    detection_class: mineral_cor_lapis
+    interaction: attack
+    attack_count: 2
+    respawn_hours: 48
+    regions: [liyue]
+    subregion: mt_tianheng
+    visual: "Amber-gold crystal embedded in cliff faces"
+
+  - resource_id: noctilucous_jade
+    name: 夜泊石
+    name_en: Noctilucous Jade
+    type: mineral
+    detection_class: mineral_noctilucous
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 48
+    regions: [liyue]
+    subregion: sal_terrae
+    visual: "Dark blue glowing stone found in caves and mines"
+
+  - resource_id: magical_crystal_chunk
+    name: 魔晶块
+    name_en: Magical Crystal Chunk
+    type: mineral
+    detection_class: ore_magical_crystal
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 72
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
+    visual: "Rare variant of crystal chunk with golden glow"
+
+  - resource_id: condessenced_flame
+    name: 浓缩爆炎
+    name_en: Condensed Flame
+    type: mineral
+    detection_class: ore_flame
+    interaction: attack
+    attack_count: 2
+    respawn_hours: 48
+    regions: [natlan]
+    visual: "Concentrated fire mineral found near volcanic areas"
+
+  - resource_id: clear_water_jade
+    name: 清心玉
+    name_en: Clear Water Jade
+    type: mineral
+    detection_class: mineral_water_jade
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 48
+    regions: [liyue]
+    visual: "Translucent jade near water sources in Liyue"
+
+  - resource_id: sigil_stone
+    name: 勾玉矿石
+    name_en: Sigil Stone
+    type: mineral
+    detection_class: ore_sigil
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 48
+    regions: [inazuma]
+    visual: "Electro-charged stone with kanji markings"
+
+  - resource_id: sumeru_rose_ore
+    name: 沙脂蛹
+    name_en: Sand Grease Pupa
+    type: mineral
+    detection_class: mineral_sand_grease
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 48
+    regions: [sumeru]
+    subregion: desert_of_hadramaveth
+    visual: "Pupa-like mineral found in desert caves"
+
+  - resource_id: luminous_rocks
+    name: 发光髓
+    name_en: Luminous Stones
+    type: mineral
+    detection_class: ore_luminous
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 48
+    regions: [fontaine]
+    visual: "Bioluminescent mineral deposits in underwater Fontaine"
+
+  - resource_id: fiery_iron
+    name: 烬火铁
+    name_en: Ironfire
+    type: mineral
+    detection_class: ore_ironfire
+    interaction: attack
+    attack_count: 2
+    respawn_hours: 48
+    regions: [natlan]
+    visual: "Red-hot iron ore found near lava flows"
+
+  - resource_id: blossom_ore
+    name: 浮游花晶
+    name_en: Pluie Lotus
+    type: mineral
+    detection_class: ore_pluie
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 48
+    regions: [fontaine]
+    visual: "Crystalized lotus mineral near Fontaine waterways"
 
 plants:
   # ---- Mondstadt ----
@@ -93,7 +210,7 @@ plants:
     visual: "Blue-purple berry cluster on low bushes"
 
   - resource_id: valberry
-    name: 瓦莱莓
+    name: 落落莓
     name_en: Valberry
     type: plant
     detection_class: plant_valberry
@@ -104,7 +221,7 @@ plants:
     visual: "Round red berries growing in clusters on bushes"
 
   - resource_id: philanemo_mushroom
-    name: 风车菊蘑菇
+    name: 慕风蘑菇
     name_en: Philanemo Mushroom
     type: plant
     detection_class: plant_philanemo
@@ -125,7 +242,7 @@ plants:
     visual: "Orange-red flower with spoke-like petals near windmills"
 
   - resource_id: callalily
-    name: 海霸花
+    name: 海灵花
     name_en: Calla Lily
     type: plant
     detection_class: plant_callalily
@@ -133,6 +250,17 @@ plants:
     respawn_hours: 48
     regions: [mondstadt]
     visual: "White trumpet-shaped flower found near water"
+
+  - resource_id: small_lamp_grass
+    name: 小灯草
+    name_en: Small Lamp Grass
+    type: plant
+    detection_class: plant_lamp_grass
+    interaction: f_key
+    respawn_hours: 48
+    regions: [mondstadt]
+    subregion: wolvendom
+    visual: "Small blue-white glowing flower found at night"
 
   # ---- Liyue ----
   - resource_id: jueyun_chili
@@ -190,29 +318,65 @@ plants:
     subregion: liyue_harbor
     visual: "Red ornamental flower in garden beds"
 
-  - resource_id: cor_lapis
-    name: 石珀
-    name_en: Cor Lapis
-    type: mineral
-    detection_class: plant_cor_lapis
-    interaction: attack
-    attack_count: 2
+  - resource_id: snapdragon
+    name: 金鱼草
+    name_en: Snapdragon
+    type: plant
+    detection_class: plant_snapdragon
+    interaction: f_key
     respawn_hours: 48
-    regions: [liyue]
-    subregion: mt_tianheng
-    visual: "Amber-gold crystal embedded in cliff faces"
+    regions: [liyue, mondstadt]
+    visual: "Yellow-orange flower found near water edges"
 
-  - resource_id: noctilucous_jade
-    name: 夜泊石
-    name_en: Noctilucous Jade
-    type: mineral
-    detection_class: plant_noctilucous
-    interaction: attack
-    attack_count: 1
+  - resource_id: mint
+    name: 薄荷
+    name_en: Mint
+    type: plant
+    detection_class: plant_mint
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Small green herb with serrated leaves"
+
+  - resource_id: mushroom
+    name: 蘑菇
+    name_en: Mushroom
+    type: plant
+    detection_class: plant_mushroom
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Common brown mushroom near trees and shaded areas"
+
+  - resource_id: sweet_flower
+    name: 甜甜花
+    name_en: Sweet Flower
+    type: plant
+    detection_class: plant_sweet_flower
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Small white flower with sweet scent"
+
+  - resource_id: berry
+    name: 树莓
+    name_en: Berry
+    type: plant
+    detection_class: plant_berry
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Red berry cluster on bushes"
+
+  - resource_id: matsutake
+    name: 松茸
+    name_en: Matsutake
+    type: plant
+    detection_class: plant_matsutake
+    interaction: f_key
     respawn_hours: 48
-    regions: [liyue]
-    subregion: sal_terrace
-    visual: "Dark blue glowing stone found in caves and mines"
+    regions: [mondstadt, liyue, inazuma]
+    visual: "Brown mushroom with distinct cap found under pine trees"
 
   # ---- Inazuma ----
   - resource_id: naku_weed
@@ -235,7 +399,7 @@ plants:
     respawn_hours: 48
     regions: [inazuma]
     subregion: narukami_island
-    visual: "Pink floating petal clusters around cherry trees, requires electro"
+    visual: "Pink floating petal clusters, requires electro to harvest"
 
   - resource_id: sea_ganoderma
     name: 海灵芝
@@ -256,7 +420,7 @@ plants:
     respawn_hours: 48
     regions: [inazuma]
     subregion: nazuchi_beach
-    visual: "Crimson red flower near battlefields and blood-stained areas"
+    visual: "Crimson red flower near battlefields"
 
   - resource_id: onikabuto
     name: 鬼兜虫
@@ -267,7 +431,7 @@ plants:
     respawn_hours: 48
     regions: [inazuma]
     subregion: yashiori_island
-    visual: "Red-and-blue beetle resting on tree trunks and rocks"
+    visual: "Red-and-blue beetle resting on tree trunks"
 
   - resource_id: crystal_marrow
     name: 晶化骨髓
@@ -290,6 +454,17 @@ plants:
     regions: [inazuma]
     subregion: seirai_island
     visual: "Purple electro-charged fruit on stalk plants"
+
+  - resource_id: fluoressence_flower
+    name: 荧光花粉
+    name_en: Flouresence Flower
+    type: plant
+    detection_class: plant_fluorescence
+    interaction: f_key
+    respawn_hours: 48
+    regions: [inazuma]
+    subregion: watatsumi_island
+    visual: "Glowing blue flower in dark underwater caves"
 
   # ---- Sumeru ----
   - resource_id: nilotpala_lotus
@@ -347,6 +522,36 @@ plants:
     subregion: desert_of_hadramaveth
     visual: "Red-orange berry on thorny desert bushes"
 
+  - resource_id: sumeru_rose
+    name: 须弥蔷薇
+    name_en: Sumeru Rose
+    type: plant
+    detection_class: plant_sumeru_rose
+    interaction: f_key
+    respawn_hours: 48
+    regions: [sumeru]
+    visual: "Pink rose found throughout Sumeru's forests"
+
+  - resource_id: viper_scorpion
+    name: 蝎尾草
+    name_en: Harra Fruit
+    type: plant
+    detection_class: plant_harra
+    interaction: f_key
+    respawn_hours: 48
+    regions: [sumeru]
+    visual: "Green fruit found in Sumeru's rainforest areas"
+
+  - resource_id: zaytun_peach
+    name: 悟空桃
+    name_en: Zaytun Peach
+    type: plant
+    detection_class: plant_zaytun
+    interaction: f_key
+    respawn_hours: 48
+    regions: [sumeru]
+    visual: "Yellow-green peach-like fruit in Sumeru's forests"
+
   # ---- Fontaine ----
   - resource_id: lumitoile
     name: 光芒角
@@ -381,16 +586,6 @@ plants:
     subregion: belleau_region
     visual: "Blue underwater flower with bioluminescent petals"
 
-  - resource_id: belleaua
-    name: 贝尔花
-    name_en: Belleaua
-    type: plant
-    detection_class: plant_belleaua
-    interaction: f_key
-    respawn_hours: 48
-    regions: [fontaine]
-    visual: "Small white coastal flower near Fontaine shores"
-
   - resource_id: rainbow_rose
     name: 虹彩蔷薇
     name_en: Rainbow Rose
@@ -402,8 +597,39 @@ plants:
     subregion: court_of_fontaine
     visual: "Multi-colored rose with iridescent sheen"
 
+  - resource_id: plume_fruit
+    name: 羽毛果
+    name_en: Pluie Lotus
+    type: plant
+    detection_class: plant_pluie
+    interaction: f_key
+    respawn_hours: 48
+    regions: [fontaine]
+    visual: "Lotus-like fruit found near Fontaine's waterways"
+
+  - resource_id: beryl_conch
+    name: 贝里螺
+    name_en: Beryl Conch
+    type: plant
+    detection_class: plant_beryl_conch
+    interaction: f_key
+    respawn_hours: 48
+    regions: [fontaine]
+    subregion: beryl_region
+    visual: "Colorful shell found on Fontaine's beaches"
+
+  - resource_id: marcotte
+    name: 马科特花
+    name_en: Marcotte
+    type: plant
+    detection_class: plant_marcotte
+    interaction: f_key
+    respawn_hours: 48
+    regions: [fontaine]
+    visual: "Orange-red flower with citrus scent in Fontaine fields"
+
   # ---- Natlan ----
-  - resource_id: embercore_flame
+  - resource_id: embercore_flower
     name: 烬芯花
     name_en: Embercore Flower
     type: plant
@@ -414,16 +640,16 @@ plants:
     subregion: scions_of_the_canopy
     visual: "Orange-red flower wreathed in ember-like particles"
 
-  - resource_id: qucusaur
-    name: 绒翼龙
-    name_en: Qucusaur
+  - resource_id: qucusaur_flower
+    name: 绒翼龙花
+    name_en: Qucusaur Feather
     type: plant
     detection_class: plant_qucusaur
     interaction: f_key
     respawn_hours: 48
     regions: [natlan]
     subregion: collectives_of_the_source
-    visual: "Feathered creature egg or scale near volcanic vents"
+    visual: "Feathered scale near volcanic vents"
 
   - resource_id: spritfish
     name: 灵鳞鱼
@@ -446,6 +672,26 @@ plants:
     regions: [natlan]
     subregion: tequemecan_valley
     visual: "Fiery shrub with glowing thread-like fibers"
+
+  - resource_id: saurian_claw
+    name: 龙爪花
+    name_en: Saurian Claw
+    type: plant
+    detection_class: plant_saurian_claw
+    interaction: f_key
+    respawn_hours: 48
+    regions: [natlan]
+    visual: "Claw-shaped flower found in Natlan's volcanic regions"
+
+  - resource_id: phosphorus_vine
+    name: 磷光藤
+    name_en: Phosphorescent Vine
+    type: plant
+    detection_class: plant_phosphorus_vine
+    interaction: f_key
+    respawn_hours: 48
+    regions: [natlan]
+    visual: "Glowing vine in Natlan's underground caves"
 
   # ---- Elemental / Special Plants ----
   - resource_id: flaming_flower_stamen
@@ -475,8 +721,8 @@ plants:
   - resource_id: electro_crystal
     name: 电气水晶
     name_en: Electro Crystal
-    type: plant
-    detection_class: plant_electro_crystal
+    type: mineral
+    detection_class: mineral_electro_crystal
     interaction: attack
     attack_count: 1
     element: pyro
@@ -528,7 +774,7 @@ animals:
     attack_count: 1
     respawn_hours: 24
     regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
-    visual: "Fish swimming in water bodies, attack or fish via fishing"
+    visual: "Fish swimming in water bodies"
 
   - resource_id: crab_roe
     name: 蟹黄
@@ -540,6 +786,77 @@ animals:
     respawn_hours: 24
     regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
     visual: "Small crabs on beaches, drops crab and crab roe"
+
+  - resource_id: shrimp
+    name: 虾仁
+    name_en: Shrimp Meat
+    type: animal
+    detection_class: animal_shrimp
+    interaction: f_key
+    respawn_hours: 24
+    regions: [liyue, inazuma, fontaine]
+    visual: "Shrimp in shallow water, collect by hand"
+
+  - resource_id: eel
+    name: 鳗肉
+    name_en: Unagi Meat
+    type: animal
+    detection_class: animal_eel
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 24
+    regions: [inazuma]
+    visual: "Eel hiding in sand near beaches"
+
+  - resource_id: lizard_tail
+    name: 蜥蜴尾巴
+    name_en: Lizard Tail
+    type: animal
+    detection_class: animal_lizard
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru]
+    visual: "Small lizard near rocks, approach quietly to catch"
+
+  - resource_id: butterfly_wings
+    name: 蝴蝶翅膀
+    name_en: Butterfly Wings
+    type: animal
+    detection_class: animal_butterfly
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
+    visual: "Colorful butterfly near flowers, approach to catch"
+
+  - resource_id: frog
+    name: 青蛙
+    name_en: Frog
+    type: animal
+    detection_class: animal_frog
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
+    visual: "Green frog near water edges, approach to catch"
+
+  - resource_id: crystal_core
+    name: 晶核
+    name_en: Crystal Core
+    type: animal
+    detection_class: animal_crystalfly
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
+    visual: "Glowing crystal butterfly (anemo/crystal), approach to catch"
+
+  - resource_id: luminescent_spine
+    name: 发光髓
+    name_en: Luminescent Spine
+    type: animal
+    detection_class: animal_firefly
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue]
+    visual: "Glowing firefly at night, approach to catch"
 
 special:
   - resource_id: blessed_lore
@@ -621,3 +938,433 @@ special:
     respawn_hours: 0
     regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
     visual: "Rainbow gem from chests, quests, daily commissions"
+
+  - resource_id: enhancement_ore
+    name: 强化矿石
+    name_en: Enhancement Ore
+    type: special
+    detection_class: ore_enhancement
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Blue crystal used for weapon enhancement"
+
+  - resource_id: talent_book_freedom
+    name: 自由的教导
+    name_en: Teachings of Freedom
+    type: special
+    detection_class: book_freedom
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt]
+    visual: "Talent material from Forsaken Rift domain (Monday/Thursday)"
+
+  - resource_id: talent_book_diligence
+    name: 勤劳的教导
+    name_en: Teachings of Diligence
+    type: special
+    detection_class: book_diligence
+    interaction: f_key
+    respawn_hours: 0
+    regions: [liyue]
+    visual: "Talent material from Taishan Mansion domain (Tuesday/Friday)"
+
+  - resource_id: talent-book_ballad
+    name: 诗歌的教导
+    name_en: Teachings of Ballad
+    type: special
+    detection_class: book_ballad
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt]
+    visual: "Talent material from Forsaken Rift domain (Wednesday/Saturday)"
+
+  - resource_id: talent_book_prosperity
+    name: 繁荣的教导
+    name_en: Teachings of Prosperity
+    type: special
+    detection_class: book_prosperity
+    interaction: f_key
+    respawn_hours: 0
+    regions: [liyue]
+    visual: "Talent material from Taishan Mansion domain (Monday/Thursday)"
+
+  - resource_id: talent_book_transience
+    name: 浮世的教导
+    name_en: Teachings of Transience
+    type: special
+    detection_class: book_transience
+    interaction: f_key
+    respawn_hours: 0
+    regions: [inazuma]
+    visual: "Talent material from Violet Court domain (Monday/Thursday)"
+
+  - resource_id: talent_book_elegance
+    name: 风雅的教导
+    name_en: Teachings of Elegance
+    type: special
+    detection_class: book_elegance
+    interaction: f_key
+    respawn_hours: 0
+    regions: [inazuma]
+    visual: "Talent material from Violet Court domain (Tuesday/Friday)"
+
+  - resource_id: talent_book_light
+    name: 光的教导
+    name_en: Teachings of Light
+    type: special
+    detection_class: book_light
+    interaction: f_key
+    respawn_hours: 0
+    regions: [inazuma]
+    visual: "Talent material from Violet Court domain (Wednesday/Saturday)"
+
+  - resource_id: talent_book_admonition
+    name: 诤言的教导
+    name_en: Teachings of Admonition
+    type: special
+    detection_class: book_admonition
+    interaction: f_key
+    respawn_hours: 0
+    regions: [sumeru]
+    visual: "Talent material from Steeple of Ignorance domain (Monday/Thursday)"
+
+  - resource_id: talent_book_ingenuity
+    name: 巧思的教导
+    name_en: Teachings of Ingenuity
+    type: special
+    detection_class: book_ingenuity
+    interaction: f_key
+    respawn_hours: 0
+    regions: [sumeru]
+    visual: "Talent material from Steeple of Ignorance domain (Tuesday/Friday)"
+
+  - resource_id: talent_book_praxis
+    name: 笃行的教导
+    name_en: Teachings of Praxis
+    type: special
+    detection_class: book_praxis
+    interaction: f_key
+    respawn_hours: 0
+    regions: [sumeru]
+    visual: "Talent material from Steeple of Ignorance domain (Wednesday/Saturday)"
+
+  - resource_id: talent_book_equity
+    name: 公平的教导
+    name_en: Teachings of Equity
+    type: special
+    detection_class: book_equity
+    interaction: f_key
+    respawn_hours: 0
+    regions: [fontaine]
+    visual: "Talent material from Pale Forgotten Glory domain (Monday/Thursday)"
+
+  - resource_id: talent_book_justice
+    name: 正义的教导
+    name_en: Teachings of Justice
+    type: special
+    detection_class: book_justice
+    interaction: f_key
+    respawn_hours: 0
+    regions: [fontaine]
+    visual: "Talent material from Pale Forgotten Glory domain (Tuesday/Friday)"
+
+  - resource_id: talent_book_order
+    name: 秩序的教导
+    name_en: Teachings of Order
+    type: special
+    detection_class: book_order
+    interaction: f_key
+    respawn_hours: 0
+    regions: [fontaine]
+    visual: "Talent material from Pale Forgotten Glory domain (Wednesday/Saturday)"
+
+  - resource_id: talent_book_conflict
+    name: 斗争的教导
+    name_en: Teachings of Conflict
+    type: special
+    detection_class: book_conflict
+    interaction: f_key
+    respawn_hours: 0
+    regions: [natlan]
+    visual: "Talent material from Blazing Ruins domain (Monday/Thursday)"
+
+  - resource_id: talent_book_kindling
+    name: 火种的教导
+    name_en: Teachings of Kindling
+    type: special
+    detection_class: book_kindling
+    interaction: f_key
+    respawn_hours: 0
+    regions: [natlan]
+    visual: "Talent material from Blazing Ruins domain (Tuesday/Friday)"
+
+  - resource_id: talent_book_contention
+    name: 辩论的教导
+    name_en: Teachings of Contention
+    type: special
+    detection_class: book_contention
+    interaction: f_key
+    respawn_hours: 0
+    regions: [natlan]
+    visual: "Talent material from Blazing Ruins domain (Wednesday/Saturday)"
+
+  - resource_id: boss_material_agate
+    name: 燃愿玛瑙
+    name_en: Agnidus Agate
+    type: special
+    detection_class: boss_elemental
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Pyro ascension gem from pyro bosses"
+
+  - resource_id: boss_material_jade
+    name: 哀叙冰玉
+    name_en: Shivada Jade
+    type: special
+    detection_class: boss_elemental
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Cryo ascension gem from cryo bosses"
+
+  - resource_id: boss_material_topaz
+    name: 坚牢黄玉
+    name_en: Prithiva Topaz
+    type: special
+    detection_class: boss_elemental
+    interaction: f_key
+    respawn_hours: 0
+    regions: [liyue]
+    visual: "Geo ascension gem from geo bosses"
+
+  - resource_id: boss_material_amethyst
+    name: 最胜紫晶
+    name_en: Vajrada Amethyst
+    type: special
+    detection_class: boss_elemental
+    interaction: f_key
+    respawn_hours: 0
+    regions: [inazuma]
+    visual: "Electro ascension gem from electro bosses"
+
+  - resource_id: boss_material_lazurite
+    name: 涤净青金
+    name_en: Varunada Lazurite
+    type: special
+    detection_class: boss_elemental
+    interaction: f_key
+    respawn_hours: 0
+    regions: [liyue, fontaine]
+    visual: "Hydro ascension gem from hydro bosses"
+
+  - resource_id: boss_material_turquoise
+    name: 自在松石
+    name_en: Vayuda Turquoise
+    type: special
+    detection_class: boss_elemental
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt]
+    visual: "Anemo ascension gem from anemo bosses"
+
+  - resource_id: boss_material_emerald
+    name: 生长碧翡
+    name_en: Nagadus Emerald
+    type: special
+    detection_class: boss_elemental
+    interaction: f_key
+    respawn_hours: 0
+    regions: [sumeru]
+    visual: "Dendro ascension gem from dendro bosses"
+
+  - resource_id: common_material_mask
+    name: 损坏的面具
+    name_en: Damaged Mask
+    type: special
+    detection_class: common_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Common drop from hilichurls"
+
+  - resource_id: common_material_arrowhead
+    name: 牢固的箭头
+    name_en: Firm Arrowhead
+    type: special
+    detection_class: common_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Common drop from hilichurl archers"
+
+  - resource_id: common_material_scroll
+    name: 导能绘卷
+    name_en: Divining Scroll
+    type: special
+    detection_class: common_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Common drop from samachurls"
+
+  - resource_id: common_material_slime
+    name: 史莱姆凝液
+    name_en: Slime Condensate
+    type: special
+    detection_class: common_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Common drop from all slime types"
+
+  - resource_id: common_material_insignia
+    name: 新兵的徽记
+    name_en: Recruits Insignia
+    type: special
+    detection_class: common_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Common drop from Fatui enemies"
+
+  - resource_id: common_material_handguard
+    name: 破旧的刀镡
+    name_en: Old Handguard
+    type: special
+    detection_class: common_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [inazuma]
+    visual: "Common drop from Nobushi and Kairagi"
+
+  - resource_id: common_material_spectral
+    name: 浮游干核
+    name_en: Spectral Husk
+    type: special
+    detection_class: common_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [inazuma, sumeru]
+    visual: "Common drop from Specters"
+
+  - resource_id: common_material_gear
+    name: 啮合齿轮
+    name_en: Meshing Gear
+    type: special
+    detection_class: common_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [fontaine]
+    visual: "Common drop from Clockwork Meks"
+
+  - resource_id: common_material_fang
+    name: 幼年长牙
+    name_en: Juvenile Fang
+    type: special
+    detection_class: common_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [natlan]
+    visual: "Common drop from Natlan saurians and warriors"
+
+  - resource_id: weekly_material_dvalin
+    name: 特瓦林的尾羽
+    name_en: Dvalins Plume
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt]
+    visual: "Weekly boss drop from Stormterror"
+
+  - resource_id: weekly_material_boreas
+    name: 北风的尾羽
+    name_en: Tail of Boreas
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt]
+    visual: "Weekly boss drop from Andrius"
+
+  - resource_id: weekly_material_childe
+    name: 吞天之角
+    name_en: Tusk of Monoceros Caeli
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [liyue]
+    visual: "Weekly boss drop from Childe"
+
+  - resource_id: weekly_material_azhdaha
+    name: 血玉之枝
+    name_en: Bloodjade Branch
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [liyue]
+    visual: "Weekly boss drop from Azhdaha"
+
+  - resource_id: weekly_material_signora
+    name: 熔毁之刻
+    name_en: Molten Moment
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [inazuma]
+    visual: "Weekly boss drop from La Signora"
+
+  - resource_id: weekly_material_raiden
+    name: 万劫之真意
+    name_en: Mudra of the Musou Isshin
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [inazuma]
+    visual: "Weekly boss drop from Magatsu Mitake"
+
+  - resource_id: weekly_material_scaramouche
+    name: 傀儡的悬丝
+    name_en: Puppet Strings
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [sumeru]
+    visual: "Weekly boss drop from Shouki no Kami"
+
+  - resource_id: weekly_material_apep
+    name: 原初之绿
+    name_en: Primordial Greenbloom
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [sumeru]
+    visual: "Weekly boss drop from Guardian of Apep's Oasis"
+
+  - resource_id: weekly_material_narwhal
+    name: 无光丝线
+    name_en: Lightless Silk String
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [fontaine]
+    visual: "Weekly boss drop from All-Devouring Narwhal"
+
+  - resource_id: weekly_material_arlecchino
+    name: 丝绒纹章
+    name_en: Silken Insignia
+    type: special
+    detection_class: weekly_material
+    interaction: f_key
+    respawn_hours: 0
+    regions: [fontaine]
+    visual: "Weekly boss drop from The Knave (Arlecchino)"

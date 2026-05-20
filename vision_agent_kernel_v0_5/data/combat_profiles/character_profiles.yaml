@@ -1,25 +1,1620 @@
+# Genshin Impact Character Combat Profiles
+# Sparkle Project - Vision Agent Kernel v0.5
+# Data cross-referenced from Genshin Wiki (fandom), gcsim, and in-game data.
+# Cooldowns in milliseconds. Energy costs are burst energy requirement.
+
 characters:
-  - character_id: abstract_duelist
-    display_name: Custom Duelist
-    role: close_range
-    skill_list:
-      - basic_attack
-      - guarded_dash
-      - recover_stance
-    cooldown:
-      guarded_dash_ms: 1200
-    behavior_preference: balanced
-    safety_threshold: 0.8
-    strategy_style: maintain_lock_then_burst
-  - character_id: abstract_support
-    display_name: Custom Support
+  # =====================================================================
+  # ARCHONS
+  # =====================================================================
+  - character_id: venti
+    display_name: 温迪
+    name_en: Venti
+    rarity: 5
+    element: anemo
+    weapon_type: bow
     role: support
-    skill_list:
-      - mark_target
-      - heal_if_low_hp
-      - disengage
-    cooldown:
-      heal_if_low_hp_ms: 5000
+    normal_attack_name: Divine Marksmanship
+    e_skill_name: Skyward Sonnet
+    q_burst_name: Wind's Grand Ode
+    e_skill_cd_ms: 6000
+    q_energy_cost: 60
+    q_duration_ms: 8000
     behavior_preference: conservative
-    safety_threshold: 0.65
-    strategy_style: preserve_hp_and_verify
+    strategy_style: burst_swap
+
+  - character_id: zhongli
+    display_name: 钟离
+    name_en: Zhongli
+    rarity: 5
+    element: geo
+    weapon_type: polearm
+    role: shield_support
+    normal_attack_name: Rain of Stone
+    e_skill_name: Dominus Lapidis
+    q_burst_name: Planet Befall
+    e_skill_cd_ms: 12000
+    q_energy_cost: 40
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: shield_swap
+
+  - character_id: raiden_shogun
+    display_name: 雷电将军
+    name_en: Raiden Shogun
+    rarity: 5
+    element: electro
+    weapon_type: polearm
+    role: burst_dps
+    normal_attack_name: Origin
+    e_skill_name: Transcendence: Baleful Omen
+    q_burst_name: Secret Art: Musou Shinsetsu
+    e_skill_cd_ms: 10000
+    q_energy_cost: 90
+    q_duration_ms: 7000
+    behavior_preference: aggressive
+    strategy_style: burst_swap
+
+  - character_id: nahida
+    display_name: 纳西妲
+    name_en: Nahida
+    rarity: 5
+    element: dendro
+    weapon_type: catalyst
+    role: off_field_dps
+    normal_attack_name: Akara
+    e_skill_name: All Schemes to Know
+    q_burst_name: Illusory Heart
+    e_skill_cd_ms: 5000
+    q_energy_cost: 50
+    q_duration_ms: 15000
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: furina
+    display_name: 芙宁娜
+    name_en: Furina
+    rarity: 5
+    element: hydro
+    weapon_type: sword
+    role: off_field_dps
+    normal_attack_name: Soloist's Solicitation
+    e_skill_name: Salon Solitaire
+    q_burst_name: Let the People Rejoice
+    e_skill_cd_ms: 20000
+    q_energy_cost: 60
+    q_duration_ms: 18000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: mavuika
+    display_name: 玛薇卡
+    name_en: Mavuika
+    rarity: 5
+    element: pyro
+    weapon_type: claymore
+    role: burst_dps
+    normal_attack_name: Atlatl's Blessing
+    e_skill_name: The Naming of Fists
+    q_burst_name: Hourglass of Burning Flames
+    e_skill_cd_ms: 14000
+    q_energy_cost: 50
+    q_duration_ms: 7000
+    behavior_preference: aggressive
+    strategy_style: burst_swap
+
+  # =====================================================================
+  # STANDARD BANNER 5-STARS
+  # =====================================================================
+  - character_id: jean
+    display_name: 琴
+    name_en: Jean
+    rarity: 5
+    element: anemo
+    weapon_type: sword
+    role: support
+    normal_attack_name: Favonius Bladework
+    e_skill_name: Gale Blade
+    q_burst_name: Dandelion Breeze
+    e_skill_cd_ms: 6000
+    q_energy_cost: 80
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: burst_swap
+
+  - character_id: diluc
+    display_name: 迪卢克
+    name_en: Diluc
+    rarity: 5
+    element: pyro
+    weapon_type: claymore
+    role: on_field_dps
+    normal_attack_name: Tempered Sword
+    e_skill_name: Searing Onslaught
+    q_burst_name: Dawn
+    e_skill_cd_ms: 10000
+    q_energy_cost: 40
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: mona
+    display_name: 莫娜
+    name_en: Mona
+    rarity: 5
+    element: hydro
+    weapon_type: catalyst
+    role: support
+    normal_attack_name: Ripple of Fate
+    e_skill_name: Mirror Reflection of Doom
+    q_burst_name: Stellaris Phantasm
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: burst_swap
+
+  - character_id: keqing
+    display_name: 刻晴
+    name_en: Keqing
+    rarity: 5
+    element: electro
+    weapon_type: sword
+    role: on_field_dps
+    normal_attack_name: Yunlai Swordsmanship
+    e_skill_name: Stellar Restoration
+    q_burst_name: Starward Sword
+    e_skill_cd_ms: 7500
+    q_energy_cost: 40
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: qiqi
+    display_name: 七七
+    name_en: Qiqi
+    rarity: 5
+    element: cryo
+    weapon_type: sword
+    role: healer
+    normal_attack_name: Ancient Sword Art
+    e_skill_name: Adeptus Art: Herald of Frost
+    q_burst_name: Adeptus Art: Preserver of Fortune
+    e_skill_cd_ms: 30000
+    q_energy_cost: 80
+    q_duration_ms: 15000
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: tighnari
+    display_name: 提纳里
+    name_en: Tighnari
+    rarity: 5
+    element: dendro
+    weapon_type: bow
+    role: spread_dps
+    normal_attack_name: Khanda Barrier-Buster
+    e_skill_name: Vijnana-Phala Mine
+    q_burst_name: Fashioner's Tanglevine Shaft
+    e_skill_cd_ms: 12000
+    q_energy_cost: 40
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: quickswap
+
+  - character_id: dehya
+    display_name: 迪希雅
+    name_en: Dehya
+    rarity: 5
+    element: pyro
+    weapon_type: claymore
+    role: off_field_support
+    normal_attack_name: Sandstorm Assault
+    e_skill_name: Molten Inferno
+    q_burst_name: Leonine Bite
+    e_skill_cd_ms: 20000
+    q_energy_cost: 70
+    q_duration_ms: 4000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  # =====================================================================
+  # LIMITED 5-STAR DPS
+  # =====================================================================
+  - character_id: hu_tao
+    display_name: 胡桃
+    name_en: Hu Tao
+    rarity: 5
+    element: pyro
+    weapon_type: polearm
+    role: on_field_dps
+    normal_attack_name: Secret Spear of Wangsheng
+    e_skill_name: Guide to Afterlife
+    q_burst_name: Spirit Soother
+    e_skill_cd_ms: 16000
+    q_energy_cost: 60
+    q_duration_ms: 9000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: ganyu
+    display_name: 甘雨
+    name_en: Ganyu
+    rarity: 5
+    element: cryo
+    weapon_type: bow
+    role: on_field_dps
+    normal_attack_name: Liutian Archery
+    e_skill_name: Trail of the Qilin
+    q_burst_name: Celestial Shower
+    e_skill_cd_ms: 10000
+    q_energy_cost: 60
+    q_duration_ms: 15000
+    behavior_preference: balanced
+    strategy_style: charge_shot
+
+  - character_id: kamisato_ayaka
+    display_name: 神里绫华
+    name_en: Kamisato Ayaka
+    rarity: 5
+    element: cryo
+    weapon_type: sword
+    role: burst_dps
+    normal_attack_name: Kamisato Art: Kabuki
+    e_skill_name: Kamisato Art: Hyouka
+    q_burst_name: Kamisato Art: Soumetsu
+    e_skill_cd_ms: 10000
+    q_energy_cost: 80
+    q_duration_ms: 5000
+    behavior_preference: aggressive
+    strategy_style: burst_swap
+
+  - character_id: neuvillette
+    display_name: 那维莱特
+    name_en: Neuvillette
+    rarity: 5
+    element: hydro
+    weapon_type: catalyst
+    role: on_field_dps
+    normal_attack_name: As Water Seeks Equilibrium
+    e_skill_name: Owe Teyvat, Owe Us Not
+    q_burst_name: O Tide, I Have Returned
+    e_skill_cd_ms: 12000
+    q_energy_cost: 70
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: arlecchino
+    display_name: 阿蕾奇诺
+    name_en: Arlecchino
+    rarity: 5
+    element: pyro
+    weapon_type: polearm
+    role: on_field_dps
+    normal_attack_name: Invitation to a Beheading
+    e_skill_name: All Is Ash
+    q_burst_name: Balemoon Rising
+    e_skill_cd_ms: 30000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: navia
+    display_name: 娜维娅
+    name_en: Navia
+    rarity: 5
+    element: geo
+    weapon_type: claymore
+    role: burst_dps
+    normal_attack_name: Bladelight
+    e_skill_name: Rosula Shardshot
+    q_burst_name: As the Sunlit Sky's Singing Salute
+    e_skill_cd_ms: 9000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: burst_swap
+
+  - character_id: alhaitham
+    display_name: 艾尔海森
+    name_en: Alhaitham
+    rarity: 5
+    element: dendro
+    weapon_type: sword
+    role: on_field_dps
+    normal_attack_name: Abductive Reasoning
+    e_skill_name: Universality: An Elaboration on Form
+    q_burst_name: Particular Field: Fetters of Phenomena
+    e_skill_cd_ms: 18000
+    q_energy_cost: 70
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: wriothesley
+    display_name: 莱欧斯利
+    name_en: Wriothesley
+    rarity: 5
+    element: cryo
+    weapon_type: catalyst
+    role: on_field_dps
+    normal_attack_name: Rebuke
+    e_skill_name: Icefang Rush
+    q_burst_name: Darkgold Wolfbite
+    e_skill_cd_ms: 16000
+    q_energy_cost: 60
+    q_duration_ms: 10000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: clorinde
+    display_name: 克洛琳德
+    name_en: Clorinde
+    rarity: 5
+    element: electro
+    weapon_type: sword
+    role: on_field_dps
+    normal_attack_name: Oath of Hunting Shadows
+    e_skill_name: Hunt for the Primal Fire
+    q_burst_name: Last Lightfall
+    e_skill_cd_ms: 16000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: mualani
+    display_name: 玛拉妮
+    name_en: Mualani
+    rarity: 5
+    element: hydro
+    weapon_type: catalyst
+    role: on_field_dps
+    normal_attack_name: Cold-Blooded Blow
+    e_skill_name: Surfshark Waveburst
+    q_burst_name: Boomsharka-laka
+    e_skill_cd_ms: 6000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: chasca
+    display_name: 恰斯卡
+    name_en: Chasca
+    rarity: 5
+    element: anemo
+    weapon_type: bow
+    role: on_field_dps
+    normal_attack_name: Phantom Hunting Feather
+    e_skill_name: Spirit Reins, Shadow Hunt
+    q_burst_name: Soul Reaper's Scouring Sweep
+    e_skill_cd_ms: 14000
+    q_energy_cost: 50
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: tartaglia
+    display_name: 达达利亚
+    name_en: Tartaglia
+    rarity: 5
+    element: hydro
+    weapon_type: bow
+    role: on_field_dps
+    normal_attack_name: Cutting Torrent
+    e_skill_name: Foul Legacy: Raging Tide
+    q_burst_name: Havoc: Obliteration
+    e_skill_cd_ms: 30000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: yoimiya
+    display_name: 宵宫
+    name_en: Yoimiya
+    rarity: 5
+    element: pyro
+    weapon_type: bow
+    role: on_field_dps
+    normal_attack_name: Firework Flare-Up
+    e_skill_name: Niwabi Fire-Dance
+    q_burst_name: Ryuukin Saxifrage
+    e_skill_cd_ms: 18000
+    q_energy_cost: 60
+    q_duration_ms: 10000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: xiao
+    display_name: 魈
+    name_en: Xiao
+    rarity: 5
+    element: anemo
+    weapon_type: polearm
+    role: on_field_dps
+    normal_attack_name: Whirlwind Thrust
+    e_skill_name: Lemniscatic Wind Cycling
+    q_burst_name: Bane of All Evil
+    e_skill_cd_ms: 10000
+    q_energy_cost: 70
+    q_duration_ms: 15000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: eula
+    display_name: 优菈
+    name_en: Eula
+    rarity: 5
+    element: cryo
+    weapon_type: claymore
+    role: burst_dps
+    normal_attack_name: Favonius Bladework - Edel
+    e_skill_name: Icetide Vortex
+    q_burst_name: Glacial Illumination
+    e_skill_cd_ms: 4000
+    q_energy_cost: 80
+    q_duration_ms: 7000
+    behavior_preference: aggressive
+    strategy_style: burst_swap
+
+  - character_id: cyno
+    display_name: 赛诺
+    name_en: Cyno
+    rarity: 5
+    element: electro
+    weapon_type: polearm
+    role: on_field_dps
+    normal_attack_name: Engraving of the Secret Source
+    e_skill_name: Secret Rite: Chasmic Soulfarer
+    q_burst_name: Sacred Rite: Wolf's Swiftness
+    e_skill_cd_ms: 7500
+    q_energy_cost: 80
+    q_duration_ms: 16000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: klee
+    display_name: 可莉
+    name_en: Klee
+    rarity: 5
+    element: pyro
+    weapon_type: catalyst
+    role: on_field_dps
+    normal_attack_name: Kaboom!
+    e_skill_name: Jumpy Dumpty
+    q_burst_name: Sparks 'n' Splash
+    e_skill_cd_ms: 20000
+    q_energy_cost: 60
+    q_duration_ms: 10000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: lyney
+    display_name: 林尼
+    name_en: Lyney
+    rarity: 5
+    element: pyro
+    weapon_type: bow
+    role: charge_shot_dps
+    normal_attack_name: Pinpoint
+    e_skill_name: Prop Arrow
+    q_burst_name: Wondrous Trick: Miracle Parade
+    e_skill_cd_ms: 18000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: charge_shot
+
+  - character_id: kinich
+    display_name: 基尼奇
+    name_en: Kinich
+    rarity: 5
+    element: dendro
+    weapon_type: claymore
+    role: on_field_dps
+    normal_attack_name: The Burning Fiend Within
+    e_skill_name: Canopy Hunter: Walking on the Edge of the Void
+    q_burst_name: Hail to the Almighty Dragon-Lord
+    e_skill_cd_ms: 18000
+    q_energy_cost: 70
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: nilou
+    display_name: 妮露
+    name_en: Nilou
+    rarity: 5
+    element: hydro
+    weapon_type: sword
+    role: bloom_enabler
+    normal_attack_name: Dance of Samser
+    e_skill_name: Dance of Haftkarsvash
+    q_burst_name: Dance of Abzendegi: Distant Dreams, Listening Spring
+    e_skill_cd_ms: 18000
+    q_energy_cost: 70
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: wanderer
+    display_name: 流浪者
+    name_en: Wanderer
+    rarity: 5
+    element: anemo
+    weapon_type: catalyst
+    role: on_field_dps
+    normal_attack_name: Windforce of Frost Blade
+    e_skill_name: Hanega: Song of the Wind
+    q_burst_name: Kyougen: Five Ceremonial Plays
+    e_skill_cd_ms: 6000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  # =====================================================================
+  # LIMITED 5-STAR SUPPORT
+  # =====================================================================
+  - character_id: kaedehara_kazuha
+    display_name: 枫原万叶
+    name_en: Kaedehara Kazuha
+    rarity: 5
+    element: anemo
+    weapon_type: sword
+    role: support
+    normal_attack_name: Garyuu Bladework
+    e_skill_name: Chihayaburu
+    q_burst_name: Kazuha Slash
+    e_skill_cd_ms: 9000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: yelan
+    display_name: 夜兰
+    name_en: Yelan
+    rarity: 5
+    element: hydro
+    weapon_type: bow
+    role: off_field_dps
+    normal_attack_name: Stealthy Bowshot
+    e_skill_name: Lingering Lifeline
+    q_burst_name: Depth-Clarion Dice
+    e_skill_cd_ms: 10000
+    q_energy_cost: 70
+    q_duration_ms: 15000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: sangonomiya_kokomi
+    display_name: 珊瑚宫心海
+    name_en: Sangonomiya Kokomi
+    rarity: 5
+    element: hydro
+    weapon_type: catalyst
+    role: healer
+    normal_attack_name: The Shape of Water
+    e_skill_name: Kurage's Oath
+    q_burst_name: Nereid's Ascension
+    e_skill_cd_ms: 20000
+    q_energy_cost: 70
+    q_duration_ms: 10000
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: baizhu
+    display_name: 白术
+    name_en: Baizhu
+    rarity: 5
+    element: dendro
+    weapon_type: catalyst
+    role: healer
+    normal_attack_name: The Classics of Acupuncture
+    e_skill_name: Universal Diagnosis
+    q_burst_name: Holistic Revivification
+    e_skill_cd_ms: 10000
+    q_energy_cost: 80
+    q_duration_ms: 14000
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: shenhe
+    display_name: 申鹤
+    name_en: Shenhe
+    rarity: 5
+    element: cryo
+    weapon_type: polearm
+    role: support
+    normal_attack_name: Dawnstar Piercer
+    e_skill_name: Spring Spirit Summoning
+    q_burst_name: Divine Maiden's Deliverance
+    e_skill_cd_ms: 10000
+    q_energy_cost: 80
+    q_duration_ms: 12000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: xianyun
+    display_name: 闲云
+    name_en: Xianyun
+    rarity: 5
+    element: anemo
+    weapon_type: catalyst
+    role: support
+    normal_attack_name: Words of Wind
+    e_skill_name: White Clouds at Dawn
+    q_burst_name: Stars Gather at Dusk
+    e_skill_cd_ms: 12000
+    q_energy_cost: 70
+    q_duration_ms: 16000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: albedo
+    display_name: 阿贝多
+    name_en: Albedo
+    rarity: 5
+    element: geo
+    weapon_type: sword
+    role: off_field_dps
+    normal_attack_name: Favonius Bladework - Weiss
+    e_skill_name: Abiogenesis: Solar Isotoma
+    q_burst_name: Rite of Progeniture: Tectonic Tide
+    e_skill_cd_ms: 4000
+    q_energy_cost: 40
+    q_duration_ms: 30000
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: kamisato_ayato
+    display_name: 神里绫人
+    name_en: Kamisato Ayato
+    rarity: 5
+    element: hydro
+    weapon_type: sword
+    role: on_field_dps
+    normal_attack_name: Kamisato Art: Marobashi
+    e_skill_name: Kamisato Art: Kyouka
+    q_burst_name: Kamisato Art: Suiyuu
+    e_skill_cd_ms: 12000
+    q_energy_cost: 80
+    q_duration_ms: 6000
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: yae_miko
+    display_name: 八重神子
+    name_en: Yae Miko
+    rarity: 5
+    element: electro
+    weapon_type: catalyst
+    role: off_field_dps
+    normal_attack_name: Spiritfox Sin-Eater
+    e_skill_name: Yakan Evocation: Sesshou Sakura
+    q_burst_name: Great Secret Art: Tenko Kenshin
+    e_skill_cd_ms: 4000
+    q_energy_cost: 90
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: sigewinne
+    display_name: 希格雯
+    name_en: Sigewinne
+    rarity: 5
+    element: hydro
+    weapon_type: bow
+    role: healer
+    normal_attack_name: Targeted Treatment
+    e_skill_name: Rebound Hydrotherapy
+    q_burst_name: Super Saturated Syringing
+    e_skill_cd_ms: 15000
+    q_energy_cost: 70
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: emilie
+    display_name: 艾梅莉埃
+    name_en: Emilie
+    rarity: 5
+    element: dendro
+    weapon_type: polearm
+    role: off_field_dps
+    normal_attack_name: Shadow-Hunting Spear
+    e_skill_name: Lumidouce Art: Dawntrial
+    q_burst_name: Lumidouce Art: Emerald Gateway
+    e_skill_cd_ms: 14000
+    q_energy_cost: 50
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: xilonen
+    display_name: 希诺宁
+    name_en: Xilonen
+    rarity: 5
+    element: geo
+    weapon_type: sword
+    role: support
+    normal_attack_name: Ehecatl's Roar
+    e_skill_name: In the Name of Xilonen
+    q_burst_name: Ocelotlicue Point!
+    e_skill_cd_ms: 16000
+    q_energy_cost: 50
+    q_duration_ms: 15000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: citlali
+    display_name: 茜特菈莉
+    name_en: Citlali
+    rarity: 5
+    element: cryo
+    weapon_type: catalyst
+    role: shield_support
+    normal_attack_name: Frostfall Feather
+    e_skill_name: Dawn's Preemptive Strike
+    q_burst_name: Edge of the Brink of the End
+    e_skill_cd_ms: 16000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: shield_swap
+
+  - character_id: escoffier
+    display_name: 爱可菲
+    name_en: Escoffier
+    rarity: 5
+    element: cryo
+    weapon_type: polearm
+    role: off_field_dps
+    normal_attack_name: Maison d'Etoiles
+    e_skill_name: Parfumurier's Craft
+    q_burst_name: Fleur de Sommet
+    e_skill_cd_ms: 10000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: chiori
+    display_name: 千织
+    name_en: Chiori
+    rarity: 5
+    element: geo
+    weapon_type: sword
+    role: off_field_dps
+    normal_attack_name: Weaving Blade
+    e_skill_name: Fluttering Hasode
+    q_burst_name: Hiyoku: Twin Blades
+    e_skill_cd_ms: 12000
+    q_energy_cost: 50
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: skirk
+    display_name: 丝柯克
+    name_en: Skirk
+    rarity: 5
+    element: cryo
+    weapon_type: sword
+    role: on_field_dps
+    normal_attack_name: Abyssal Blade
+    e_skill_name: Void-Form: Karmic Genesis
+    q_burst_name: Realm of Dark Rime
+    e_skill_cd_ms: 16000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: varesa
+    display_name: 瓦雷莎
+    name_en: Varesa
+    rarity: 5
+    element: electro
+    weapon_type: catalyst
+    role: on_field_dps
+    normal_attack_name: Thunderous Charge
+    e_skill_name: Voltaic Ring
+    q_burst_name: Lightning Lance
+    e_skill_cd_ms: 14000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: yumemizuki_mizuki
+    display_name: 梦见月瑞希
+    name_en: Yumemizuki Mizuki
+    rarity: 5
+    element: anemo
+    weapon_type: catalyst
+    role: support
+    normal_attack_name: Tempered Dream
+    e_skill_name: Anraku Secret Spring Diffusion
+    q_burst_name: Aisa Utamakura Pilgrimage
+    e_skill_cd_ms: 10000
+    q_energy_cost: 50
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: arataki_itto
+    display_name: 荒�的�的 一斗
+    name_en: Arataki Itto
+    rarity: 5
+    element: geo
+    weapon_type: claymore
+    role: on_field_dps
+    normal_attack_name: Fight Club Legend
+    e_skill_name: Masatsu Zetsugi: Akaushi Burst!
+    q_burst_name: Royal Descent: Behold, Itto the Evil!
+    e_skill_cd_ms: 10000
+    q_energy_cost: 70
+    q_duration_ms: 11000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: columbina
+    display_name: 哥伦比娅
+    name_en: Columbina
+    rarity: 5
+    element: hydro
+    weapon_type: catalyst
+    role: support
+    normal_attack_name: Night's Whisper
+    e_skill_name: Lullaby of the Damned
+    q_burst_name: Dream of the Endless Night
+    e_skill_cd_ms: 16000
+    q_energy_cost: 60
+    q_duration_ms: 12000
+    behavior_preference: conservative
+    strategy_style: burst_swap
+
+  # =====================================================================
+  # 4-STAR CHARACTERS
+  # =====================================================================
+  - character_id: bennett
+    display_name: 班尼特
+    name_en: Bennett
+    rarity: 4
+    element: pyro
+    weapon_type: sword
+    role: support
+    normal_attack_name: Strike of Fortune
+    e_skill_name: Passion Overload
+    q_burst_name: Fantastic Voyage
+    e_skill_cd_ms: 10000
+    q_energy_cost: 60
+    q_duration_ms: 12000
+    behavior_preference: conservative
+    strategy_style: burst_swap
+
+  - character_id: xingqiu
+    display_name: 行秋
+    name_en: Xingqiu
+    rarity: 4
+    element: hydro
+    weapon_type: sword
+    role: off_field_dps
+    normal_attack_name: Guhua Style
+    e_skill_name: Guhua Sword: Fatal Rainscreen
+    q_burst_name: Guhua Sword: Raincutter
+    e_skill_cd_ms: 21000
+    q_energy_cost: 80
+    q_duration_ms: 15000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: xiangling
+    display_name: 香菱
+    name_en: Xiangling
+    rarity: 4
+    element: pyro
+    weapon_type: polearm
+    role: off_field_dps
+    normal_attack_name: Dough-Fu
+    e_skill_name: Guoba Attack
+    q_burst_name: Pyronado
+    e_skill_cd_ms: 12000
+    q_energy_cost: 80
+    q_duration_ms: 10000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: fischl
+    display_name: 菲谢尔
+    name_en: Fischl
+    rarity: 4
+    element: electro
+    weapon_type: bow
+    role: off_field_dps
+    normal_attack_name: Bolts of Downfall
+    e_skill_name: Nightrider
+    q_burst_name: Midnight Phantasmagoria
+    e_skill_cd_ms: 25000
+    q_energy_cost: 60
+    q_duration_ms: 10000
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: sucrose
+    display_name: 砂糖
+    name_en: Sucrose
+    rarity: 4
+    element: anemo
+    weapon_type: catalyst
+    role: support
+    normal_attack_name: Wind Spirit Creation
+    e_skill_name: Astable Anemohypostasis Creation - 6308
+    q_burst_name: Forbidden Creation - Isomer 75 / Type II
+    e_skill_cd_ms: 15000
+    q_energy_cost: 80
+    q_duration_ms: 6000
+    behavior_preference: conservative
+    strategy_style: burst_swap
+
+  - character_id: rosaria
+    display_name: 罗莎莉亚
+    name_en: Rosaria
+    rarity: 4
+    element: cryo
+    weapon_type: polearm
+    role: off_field_dps
+    normal_attack_name: Spear of the Church
+    e_skill_name: Ravaging Confession
+    q_burst_name: Rites of Termination
+    e_skill_cd_ms: 6000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: kuki_shinobu
+    display_name: 久岐忍
+    name_en: Kuki Shinobu
+    rarity: 4
+    element: electro
+    weapon_type: sword
+    role: off_field_dps
+    normal_attack_name: Shinobu's Shadowsword
+    e_skill_name: Sanctifying Ring
+    q_burst_name: Gyoei Narukami Kariyama Rite
+    e_skill_cd_ms: 15000
+    q_energy_cost: 60
+    q_duration_ms: 12000
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: layla
+    display_name: 莱依拉
+    name_en: Layla
+    rarity: 4
+    element: cryo
+    weapon_type: sword
+    role: shield_support
+    normal_attack_name: Sword of the Radiant Path
+    e_skill_name: Nights of Formal Focus
+    q_burst_name: Starlight Slumber
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 12000
+    behavior_preference: conservative
+    strategy_style: shield_swap
+
+  - character_id: chevreuse
+    display_name: 夏沃蕾
+    name_en: Chevreuse
+    rarity: 4
+    element: pyro
+    weapon_type: polearm
+    role: support
+    normal_attack_name: Line Bayonet Assault
+    e_skill_name: Short-Range Rapid Interdiction Fire
+    q_burst_name: Explosive Grenade
+    e_skill_cd_ms: 15000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: gaming
+    display_name: 嘉明
+    name_en: Gaming
+    rarity: 4
+    element: pyro
+    weapon_type: claymore
+    role: on_field_dps
+    normal_attack_name: Auspicious Blade
+    e_skill_name: Bestial Ascent
+    q_burst_name: Suanni's Gilded Dance
+    e_skill_cd_ms: 6000
+    q_energy_cost: 70
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: amber
+    display_name: 安柏
+    name_en: Amber
+    rarity: 4
+    element: pyro
+    weapon_type: bow
+    role: support
+    normal_attack_name: Sharpshooter
+    e_skill_name: Baron Bunny
+    q_burst_name: Fiery Rain
+    e_skill_cd_ms: 15000
+    q_energy_cost: 40
+    q_duration_ms: 2000
+    behavior_preference: conservative
+    strategy_style: burst_swap
+
+  - character_id: lisa
+    display_name: 丽莎
+    name_en: Lisa
+    rarity: 4
+    element: electro
+    weapon_type: catalyst
+    role: off_field_dps
+    normal_attack_name: Lightning Touch
+    e_skill_name: Violet Arc
+    q_burst_name: Lightning Rose
+    e_skill_cd_ms: 15000
+    q_energy_cost: 80
+    q_duration_ms: 15000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: kaeya
+    display_name: 凯亚
+    name_en: Kaeya
+    rarity: 4
+    element: cryo
+    weapon_type: sword
+    role: off_field_dps
+    normal_attack_name: Ceremonial Bladework
+    e_skill_name: Frostgnaw
+    q_burst_name: Glacial Waltz
+    e_skill_cd_ms: 6000
+    q_energy_cost: 60
+    q_duration_ms: 8000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: barbara
+    display_name: 芭芭拉
+    name_en: Barbara
+    rarity: 4
+    element: hydro
+    weapon_type: catalyst
+    role: healer
+    normal_attack_name: Whisper of Water
+    e_skill_name: Let the Show Begin
+    q_burst_name: Shining Miracle
+    e_skill_cd_ms: 32000
+    q_energy_cost: 80
+    q_duration_ms: 15000
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: razor
+    display_name: 雷泽
+    name_en: Razor
+    rarity: 4
+    element: electro
+    weapon_type: claymore
+    role: on_field_dps
+    normal_attack_name: Steel Fang
+    e_skill_name: Claw and Thunder
+    q_burst_name: Lightning Fang
+    e_skill_cd_ms: 6000
+    q_energy_cost: 80
+    q_duration_ms: 15000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: noelle
+    display_name: 诺艾尔
+    name_en: Noelle
+    rarity: 4
+    element: geo
+    weapon_type: claymore
+    role: on_field_dps
+    normal_attack_name: Favonius Bladework - Maid
+    e_skill_name: Breastplate
+    q_burst_name: Sweeping Time
+    e_skill_cd_ms: 24000
+    q_energy_cost: 60
+    q_duration_ms: 15000
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: ningguang
+    display_name: 凝光
+    name_en: Ningguang
+    rarity: 4
+    element: geo
+    weapon_type: catalyst
+    role: on_field_dps
+    normal_attack_name: Sparkling Scatter
+    e_skill_name: Jade Screen
+    q_burst_name: Starshatter
+    e_skill_cd_ms: 12000
+    q_energy_cost: 40
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: beidou
+    display_name: 北斗
+    name_en: Beidou
+    rarity: 4
+    element: electro
+    weapon_type: claymore
+    role: off_field_dps
+    normal_attack_name: Oceanborne
+    e_skill_name: Tidecaller
+    q_burst_name: Stormbreaker
+    e_skill_cd_ms: 7500
+    q_energy_cost: 80
+    q_duration_ms: 15000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: chongyun
+    display_name: 重云
+    name_en: Chongyun
+    rarity: 4
+    element: cryo
+    weapon_type: claymore
+    role: support
+    normal_attack_name: Demonbane
+    e_skill_name: Spirit Blade: Chonghua's Layered Frost
+    q_burst_name: Spirit Blade: Cloud-Parting Star
+    e_skill_cd_ms: 15000
+    q_energy_cost: 40
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: xinyan
+    display_name: 辛焱
+    name_en: Xinyan
+    rarity: 4
+    element: pyro
+    weapon_type: claymore
+    role: shield_support
+    normal_attack_name: Favonius Bladework - Fencing
+    e_skill_name: Sweeping Fervor
+    q_burst_name: Riff Revolution
+    e_skill_cd_ms: 18000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: shield_swap
+
+  - character_id: diona
+    display_name: 迪奥娜
+    name_en: Diona
+    rarity: 4
+    element: cryo
+    weapon_type: bow
+    role: healer
+    normal_attack_name: Kätzlein Style
+    e_skill_name: Icy Paws
+    q_burst_name: Signature Mix
+    e_skill_cd_ms: 6000
+    q_energy_cost: 80
+    q_duration_ms: 12500
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: yanfei
+    display_name: 烟绯
+    name_en: Yanfei
+    rarity: 4
+    element: pyro
+    weapon_type: catalyst
+    role: on_field_dps
+    normal_attack_name: Seal of Approval
+    e_skill_name: Signed Edict
+    q_burst_name: Done Deal
+    e_skill_cd_ms: 9000
+    q_energy_cost: 80
+    q_duration_ms: 15000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: sayu
+    display_name: 早柚
+    name_en: Sayu
+    rarity: 4
+    element: anemo
+    weapon_type: claymore
+    role: healer
+    normal_attack_name: Shuumatsuban Ninja Blade
+    e_skill_name: Yoohoo Art: Fuuin Dash
+    q_burst_name: Yoohoo Art: Mujina Flurry
+    e_skill_cd_ms: 6000
+    q_energy_cost: 80
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: kujou_sara
+    display_name: 九条裟罗
+    name_en: Kujou Sara
+    rarity: 4
+    element: electro
+    weapon_type: bow
+    role: support
+    normal_attack_name: Tengu Bowmanship
+    e_skill_name: Tengu Stormcall
+    q_burst_name: Subjugation: Koukou Sendou
+    e_skill_cd_ms: 10000
+    q_energy_cost: 80
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: thoma
+    display_name: 托马
+    name_en: Thoma
+    rarity: 4
+    element: pyro
+    weapon_type: polearm
+    role: shield_support
+    normal_attack_name: Demonfang
+    e_skill_name: Blazing Blessing
+    q_burst_name: Crimson Ooyoroi
+    e_skill_cd_ms: 15000
+    q_energy_cost: 80
+    q_duration_ms: 6000
+    behavior_preference: conservative
+    strategy_style: shield_swap
+
+  - character_id: gorou
+    display_name: 五郎
+    name_en: Gorou
+    rarity: 4
+    element: geo
+    weapon_type: bow
+    role: support
+    normal_attack_name: Ripping Fang Fletching
+    e_skill_name: Inuzaka All-Round Defense
+    q_burst_name: Juuga: Forward Unto Victory
+    e_skill_cd_ms: 10000
+    q_energy_cost: 80
+    q_duration_ms: 9000
+    behavior_preference: conservative
+    strategy_style: burst_swap
+
+  - character_id: collei
+    display_name: 柯莱
+    name_en: Collei
+    rarity: 4
+    element: dendro
+    weapon_type: bow
+    role: off_field_dps
+    normal_attack_name: Supplicant's Bowcraft
+    e_skill_name: Floral Brush
+    q_burst_name: Trump-Card Kitty
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 6000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: dori
+    display_name: 多莉
+    name_en: Dori
+    rarity: 4
+    element: electro
+    weapon_type: claymore
+    role: healer
+    normal_attack_name: Marvelous Sword-Dance (Modified)
+    e_skill_name: Troubleshooter Shots
+    q_burst_name: Alcazarzaray's Exactitude
+    e_skill_cd_ms: 12000
+    q_energy_cost: 80
+    q_duration_ms: 12000
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: candace
+    display_name: 坎蒂丝
+    name_en: Candace
+    rarity: 4
+    element: hydro
+    weapon_type: polearm
+    role: support
+    normal_attack_name: Gleaming Spear - Guardian Stance
+    e_skill_name: Sacred Rite: Heron's Sanctum
+    q_burst_name: Sacred Rite: Wagtail's Tide
+    e_skill_cd_ms: 6000
+    q_energy_cost: 60
+    q_duration_ms: 90000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: faruzan
+    display_name: 珐露珊
+    name_en: Faruzan
+    rarity: 4
+    element: anemo
+    weapon_type: bow
+    role: support
+    normal_attack_name: Parthian Shot
+    e_skill_name: Wind Realm of Nasamed
+    q_burst_name: The Wind's Secret Ways
+    e_skill_cd_ms: 6000
+    q_energy_cost: 80
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: yaoyao
+    display_name: 瑶瑶
+    name_en: Yaoyao
+    rarity: 4
+    element: dendro
+    weapon_type: polearm
+    role: healer
+    normal_attack_name: Tossed Out
+    e_skill_name: Raphanus Sky Cluster
+    q_burst_name: Moonjade Descent
+    e_skill_cd_ms: 15000
+    q_energy_cost: 80
+    q_duration_ms: 5000
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: mika
+    display_name: 米卡
+    name_en: Mika
+    rarity: 4
+    element: cryo
+    weapon_type: polearm
+    role: support
+    normal_attack_name: Spear of Favonius
+    e_skill_name: Starfrost Swirl
+    q_burst_name: Skyfeather Song
+    e_skill_cd_ms: 15000
+    q_energy_cost: 70
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: burst_swap
+
+  - character_id: kaveh
+    display_name: 卡维
+    name_en: Kaveh
+    rarity: 4
+    element: dendro
+    weapon_type: claymore
+    role: bloom_dps
+    normal_attack_name: Schematic Setup
+    e_skill_name: Artistic Input
+    q_burst_name: Painted Dome
+    e_skill_cd_ms: 6000
+    q_energy_cost: 80
+    q_duration_ms: 12000
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: kirara
+    display_name: 绮良良
+    name_en: Kirara
+    rarity: 4
+    element: dendro
+    weapon_type: sword
+    role: shield_support
+    normal_attack_name: Disconnected By Kakera
+    e_skill_name: Meow-teor Kick
+    q_burst_name: Secret Art: Surprise Dispatch
+    e_skill_cd_ms: 8000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: shield_swap
+
+  - character_id: shikanoin_heizou
+    display_name: 鹿野院平藏
+    name_en: Shikanoin Heizou
+    rarity: 4
+    element: anemo
+    weapon_type: catalyst
+    role: on_field_dps
+    normal_attack_name: Fudou Style Martial Arts
+    e_skill_name: Heartstopper Strike
+    q_burst_name: Windmuster Kick
+    e_skill_cd_ms: 10000
+    q_energy_cost: 40
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: sethos
+    display_name: 赛索斯
+    name_en: Sethos
+    rarity: 4
+    element: electro
+    weapon_type: bow
+    role: on_field_dps
+    normal_attack_name: Royal Reed Archery
+    e_skill_name: Ancient Rite of Thunder
+    q_burst_name: Secrets of the Desert
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: freminet
+    display_name: 林尼的弟弟
+    name_en: Freminet
+    rarity: 4
+    element: cryo
+    weapon_type: claymore
+    role: on_field_dps
+    normal_attack_name: Pressure Flow
+    e_skill_name: Pressurized Floe
+    q_burst_name: Shadowhunter's Ambush
+    e_skill_cd_ms: 10000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: charlotte
+    display_name: 夏洛蒂
+    name_en: Charlotte
+    rarity: 4
+    element: cryo
+    weapon_type: catalyst
+    role: healer
+    normal_attack_name: Cool-Color Capture
+    e_skill_name: Monsieur Verite
+    q_burst_name: A Summons Behind the Lens
+    e_skill_cd_ms: 20000
+    q_energy_cost: 80
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: lynette
+    display_name: 林尼的妹妹
+    name_en: Lynette
+    rarity: 4
+    element: anemo
+    weapon_type: sword
+    role: support
+    normal_attack_name: Rapid Ritesaber
+    e_skill_name: Enigmatic Feint
+    q_burst_name: Magic Trick: Astonishing Shift
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: ororon
+    display_name: 欧洛伦
+    name_en: Ororon
+    rarity: 4
+    element: electro
+    weapon_type: bow
+    role: off_field_dps
+    normal_attack_name: Spiritweaver's Aim
+    e_skill_name: Night's Sling
+    q_burst_name: Amidst the Rainbow Clouds
+    e_skill_cd_ms: 14000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: kachina
+    display_name: 卡齐娜
+    name_en: Kachina
+    rarity: 4
+    element: geo
+    weapon_type: polearm
+    role: off_field_dps
+    normal_attack_name: Polearm of the Ancestral Fire
+    e_skill_name: Go, Go Turbo Twirly!
+    q_burst_name: Behold, It's the Turbo Grilled Cheese!
+    e_skill_cd_ms: 13000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: iansan
+    display_name: 伊安珊
+    name_en: Iansan
+    rarity: 4
+    element: electro
+    weapon_type: polearm
+    role: support
+    normal_attack_name: Thunderstrike
+    e_skill_name: Lightning Sprint
+    q_burst_name: Stormcaller's Wrath
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: lan_yan
+    display_name: 蓝砚
+    name_en: Lan Yan
+    rarity: 4
+    element: anemo
+    weapon_type: catalyst
+    role: support
+    normal_attack_name: Swallow's Tail
+    e_skill_name: Swallow's Flight
+    q_burst_name: Windborne Blessing
+    e_skill_cd_ms: 14000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: ifa
+    display_name: 伊法
+    name_en: Ifa
+    rarity: 4
+    element: anemo
+    weapon_type: catalyst
+    role: healer
+    normal_attack_name: Feathered Prescription
+    e_skill_name: Healing Tail-feather
+    q_burst_name: Wind's Blessing Ceremony
+    e_skill_cd_ms: 10000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: conservative
+    strategy_style: heal_swap
+
+  - character_id: aloy
+    display_name: 埃洛伊
+    name_en: Aloy
+    rarity: 5
+    element: cryo
+    weapon_type: bow
+    role: on_field_dps
+    normal_attack_name: Rapid Fire
+    e_skill_name: Freezing Bomb
+    q_burst_name: Prophecy of Dawn
+    e_skill_cd_ms: 20000
+    q_energy_cost: 40
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
+  - character_id: yun_jin
+    display_name: 云堇
+    name_en: Yun Jin
+    rarity: 4
+    element: geo
+    weapon_type: polearm
+    role: support
+    normal_attack_name: Cloudstrider
+    e_skill_name: Opening Flourish
+    q_burst_name: Cliffbreaker's Banner
+    e_skill_cd_ms: 9000
+    q_energy_cost: 60
+    q_duration_ms: 12000
+    behavior_preference: balanced
+    strategy_style: burst_swap

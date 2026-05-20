@@ -50,7 +50,7 @@ def test_resource_has_required_fields(kb: GenshinKnowledgeBase) -> None:
     assert crystal is not None
     assert crystal.name == "水晶块"
     assert crystal.name_en == "Crystal Chunk"
-    assert crystal.type == "ore"
+    assert crystal.type == "mineral"
     assert crystal.interaction == "attack"
     assert crystal.attack_count >= 1
     assert len(crystal.regions) > 0
