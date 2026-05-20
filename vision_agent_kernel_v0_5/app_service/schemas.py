@@ -96,7 +96,10 @@ class WindowSelectResponse(BaseModel):
 
 
 RoiMode = Literal["relative", "anchor"]
-AnchorName = Literal["top-left", "top-right", "bottom-left", "bottom-right", "center"]
+AnchorName = Literal[
+    "top-left", "top-right", "bottom-left", "bottom-right", "center",
+    "top-center", "bottom-center", "left-center", "right-center",
+]
 
 
 class RoiDefinitionModel(BaseModel):
@@ -106,8 +109,8 @@ class RoiDefinitionModel(BaseModel):
     w: float | None = Field(default=None, ge=0.0, le=1.0)
     h: float | None = Field(default=None, ge=0.0, le=1.0)
     anchor: AnchorName | None = None
-    offset_x_px: int | None = None
-    offset_y_px: int | None = None
+    offset_x_px: int | tuple[int, int] | None = None
+    offset_y_px: int | tuple[int, int] | None = None
     width_px: int | None = None
     height_px: int | None = None
 
@@ -119,6 +122,11 @@ class CalibrationProfileModel(BaseModel):
     normalized_resolution: tuple[int, int] = (1280, 720)
     rois: dict[str, RoiDefinitionModel]
     created_at: str | None = None
+    alt_window_title: str | None = None
+    process_name: str | None = None
+    alt_process_name: str | None = None
+    display_mode: str = "windowed"
+    environment: str = "generic"
 
 
 class CalibrationProfileSaveRequest(BaseModel):

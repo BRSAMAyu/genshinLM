@@ -6,6 +6,12 @@
       "window_title": "vision_agent_kernel_v0_5 pseudo3d_scene",
       "path": "configs/profiles/default_1920x1080.json",
       "updated_at": "2026-05-20T00:00:00"
+    },
+    {
+      "profile_id": "genshin_1920x1080",
+      "window_title": "原神",
+      "path": "configs/profiles/genshin_1920x1080.json",
+      "updated_at": "2026-05-20T00:00:00"
     }
   ]
 }

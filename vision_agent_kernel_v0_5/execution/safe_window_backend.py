@@ -3,8 +3,12 @@ from __future__ import annotations
 import ctypes
 from ctypes import wintypes
 from dataclasses import dataclass
+from typing import TYPE_CHECKING
 
 from core.timebase import Timebase
+
+if TYPE_CHECKING:
+    from app_service.calibration import CalibrationProfile
 
 
 INPUT_MOUSE = 0
@@ -60,13 +64,32 @@ class SafeWindowInputBackend:
         target_window_title: str,
         pixels_per_degree: float = 8.0,
         timebase: Timebase | None = None,
+        alt_window_titles: list[str] | None = None,
     ) -> None:
         self.target_window_title = target_window_title
         self.pixels_per_degree = pixels_per_degree
+        self.alt_window_titles = alt_window_titles or []
         self._timebase = timebase or Timebase()
         self._user32 = ctypes.windll.user32
         self._configure_win32()
         self._released = True
+
+    @classmethod
+    def from_profile(
+        cls,
+        profile: CalibrationProfile,
+        pixels_per_degree: float = 8.0,
+        timebase: Timebase | None = None,
+    ) -> SafeWindowInputBackend:
+        alt_titles: list[str] = []
+        if profile.alt_window_title is not None:
+            alt_titles.append(profile.alt_window_title)
+        return cls(
+            target_window_title=profile.window_title,
+            pixels_per_degree=pixels_per_degree,
+            timebase=timebase,
+            alt_window_titles=alt_titles,
+        )
 
     def mouse_move(self, dx: float, dy: float, reason: str = "") -> None:
         self._ensure_target_focused()
@@ -162,9 +185,14 @@ class SafeWindowInputBackend:
 
     def _find_target_window(self) -> int:
         hwnd = self._user32.FindWindowW(None, self.target_window_title)
-        if not hwnd:
-            raise SafeWindowInputError(f"target window not found: {self.target_window_title!r}")
-        return hwnd
+        if hwnd:
+            return hwnd
+        for alt_title in self.alt_window_titles:
+            hwnd = self._user32.FindWindowW(None, alt_title)
+            if hwnd:
+                return hwnd
+        tried = [self.target_window_title] + self.alt_window_titles
+        raise SafeWindowInputError(f"target window not found: tried {tried!r}")
 
     def _configure_win32(self) -> None:
         self._user32.FindWindowW.argtypes = [wintypes.LPCWSTR, wintypes.LPCWSTR]

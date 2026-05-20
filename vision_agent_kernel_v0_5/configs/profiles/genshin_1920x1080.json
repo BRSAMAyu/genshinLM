@@ -1,0 +1,97 @@
+{
+  "profile_id": "genshin_1920x1080",
+  "window_title": "原神",
+  "alt_window_title": "Genshin Impact",
+  "process_name": "YuanShen.exe",
+  "alt_process_name": "GenshinImpact.exe",
+  "source_resolution": [1920, 1080],
+  "normalized_resolution": [1280, 720],
+  "display_mode": "borderless_windowed",
+  "environment": "genshin",
+  "rois": {
+    "minimap": {
+      "mode": "anchor",
+      "anchor": "top-left",
+      "offset_x_px": 20,
+      "offset_y_px": 20,
+      "width_px": 200,
+      "height_px": 200
+    },
+    "enemy_hp_bar": {
+      "mode": "anchor",
+      "anchor": "top-center",
+      "offset_x_px": [-200, 200],
+      "offset_y_px": 20,
+      "height_px": 24
+    },
+    "active_char_hp": {
+      "mode": "anchor",
+      "anchor": "bottom-center",
+      "offset_x_px": [-200, 200],
+      "offset_y_px": -80,
+      "height_px": 30
+    },
+    "party_portraits": {
+      "mode": "anchor",
+      "anchor": "right-center",
+      "offset_x_px": -60,
+      "offset_y_px": -120,
+      "width_px": 60,
+      "height_px": 280
+    },
+    "skill_buttons": {
+      "mode": "anchor",
+      "anchor": "bottom-right",
+      "offset_x_px": -280,
+      "offset_y_px": -120,
+      "width_px": 260,
+      "height_px": 100
+    },
+    "skill_e_icon": {
+      "mode": "anchor",
+      "anchor": "bottom-right",
+      "offset_x_px": -160,
+      "offset_y_px": -80,
+      "width_px": 60,
+      "height_px": 60
+    },
+    "skill_q_icon": {
+      "mode": "anchor",
+      "anchor": "bottom-right",
+      "offset_x_px": -220,
+      "offset_y_px": -80,
+      "width_px": 60,
+      "height_px": 60
+    },
+    "stamina_bar": {
+      "mode": "anchor",
+      "anchor": "center",
+      "offset_x_px": 40,
+      "offset_y_px": -10,
+      "width_px": 120,
+      "height_px": 12
+    },
+    "interaction_prompt": {
+      "mode": "anchor",
+      "anchor": "bottom-center",
+      "offset_x_px": [-120, 120],
+      "offset_y_px": -160,
+      "height_px": 40
+    },
+    "dialog_area": {
+      "mode": "anchor",
+      "anchor": "bottom-center",
+      "offset_x_px": [-400, 400],
+      "offset_y_px": -200,
+      "height_px": 200
+    },
+    "main_view": {
+      "mode": "relative",
+      "x": 0.08,
+      "y": 0.06,
+      "w": 0.84,
+      "h": 0.76
+    }
+  },
+  "created_at": "2026-05-20T00:00:00"
+}

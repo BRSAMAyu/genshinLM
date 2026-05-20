@@ -8,8 +8,22 @@ from time import strftime
 from typing import Literal
 
 
-Anchor = Literal["top-left", "top-right", "bottom-left", "bottom-right", "center"]
+Anchor = Literal[
+    "top-left", "top-right", "bottom-left", "bottom-right", "center",
+    "top-center", "bottom-center", "left-center", "right-center",
+]
 RoiMode = Literal["relative", "anchor"]
+OffsetValue = int | tuple[int, int]
+
+
+def _parse_offset(value: object) -> OffsetValue | None:
+    if value is None:
+        return None
+    if isinstance(value, int):
+        return value
+    if isinstance(value, (list, tuple)) and len(value) == 2:
+        return (int(value[0]), int(value[1]))
+    return int(value)  # type: ignore[arg-type]
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,8 +34,8 @@ class RoiDefinition:
     w: float | None = None
     h: float | None = None
     anchor: Anchor | None = None
-    offset_x_px: int | None = None
-    offset_y_px: int | None = None
+    offset_x_px: OffsetValue | None = None
+    offset_y_px: OffsetValue | None = None
     width_px: int | None = None
     height_px: int | None = None
 
@@ -34,6 +48,11 @@ class CalibrationProfile:
     normalized_resolution: tuple[int, int]
     rois: dict[str, RoiDefinition]
     created_at: str = field(default_factory=lambda: strftime("%Y-%m-%dT%H:%M:%S"))
+    alt_window_title: str | None = None
+    process_name: str | None = None
+    alt_process_name: str | None = None
+    display_mode: str = "windowed"
+    environment: str = "generic"
 
 
 class CalibrationStore:
@@ -113,18 +132,32 @@ class CalibrationStore:
     def _write_index(self, index: dict[str, object]) -> None:
         self._index_path.write_text(json.dumps(index, indent=2), encoding="utf-8")
 
+    @staticmethod
+    def _serialize_offset(value: OffsetValue | None) -> object:
+        if isinstance(value, tuple):
+            return list(value)
+        return value
+
     def _profile_to_json(self, profile: CalibrationProfile) -> dict[str, object]:
         data = asdict(profile)
         data["source_resolution"] = list(profile.source_resolution)
         data["normalized_resolution"] = list(profile.normalized_resolution)
+        for roi_data in data.get("rois", {}).values():
+            if isinstance(roi_data, dict):
+                roi_data["offset_x_px"] = self._serialize_offset(roi_data.get("offset_x_px"))
+                roi_data["offset_y_px"] = self._serialize_offset(roi_data.get("offset_y_px"))
         return data
 
     def _profile_from_json(self, data: dict[str, object]) -> CalibrationProfile:
-        rois = {
-            name: RoiDefinition(**roi)
-            for name, roi in dict(data.get("rois", {})).items()
-            if isinstance(roi, dict)
-        }
+        rois_raw = data.get("rois", {})
+        rois: dict[str, RoiDefinition] = {}
+        for name, roi in dict(rois_raw).items():
+            if not isinstance(roi, dict):
+                continue
+            roi = dict(roi)
+            roi["offset_x_px"] = _parse_offset(roi.get("offset_x_px"))
+            roi["offset_y_px"] = _parse_offset(roi.get("offset_y_px"))
+            rois[name] = RoiDefinition(**roi)
         return CalibrationProfile(
             profile_id=str(data["profile_id"]),
             window_title=str(data["window_title"]),
@@ -132,4 +165,9 @@ class CalibrationStore:
             normalized_resolution=tuple(data["normalized_resolution"]),  # type: ignore[arg-type]
             rois=rois,
             created_at=str(data.get("created_at", "")),
+            alt_window_title=data.get("alt_window_title") if isinstance(data.get("alt_window_title"), str) else None,
+            process_name=data.get("process_name") if isinstance(data.get("process_name"), str) else None,
+            alt_process_name=data.get("alt_process_name") if isinstance(data.get("alt_process_name"), str) else None,
+            display_mode=str(data.get("display_mode", "windowed")),
+            environment=str(data.get("environment", "generic")),
         )
