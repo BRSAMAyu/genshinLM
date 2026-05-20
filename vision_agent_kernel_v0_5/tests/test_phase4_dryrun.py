@@ -271,3 +271,82 @@ def test_genshin_persona_bridge_responds_to_interrupt() -> None:
     assert data is not None
     assert "text" in data
     assert "emotion" in data
+
+
+def test_aurorabench_v0_flywheel_end_to_end() -> None:
+    """Benchmark: EvolutionEngine flywheel creates repair session, patch draft, and tracks failures."""
+    from unittest.mock import patch
+
+    from learning.evolution_engine import EvolutionEngine
+    from core.types import SkillResult
+
+    state_bus = StateBus()
+    timebase = Timebase()
+
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        engine = EvolutionEngine(state_bus, patches_dir=tmp)
+
+        # Mock _verify_in_sandbox to avoid subprocess pytest overhead
+        with patch.object(engine, "_verify_in_sandbox", return_value=True):
+            # 1. Simulate a failure
+            result = SkillResult(
+                skill_name="genshin_combat",
+                status="FAILED",
+                failure_code="TARGET_LOST",
+                started_at=timebase.now(),
+                finished_at=timebase.now() + 1.0,
+                payload={"observation": {"target_confidence_drop": True}},
+            )
+
+            # 2. Feed failure into EvolutionEngine
+            draft = engine.handle_failure(
+                skill_name=result.skill_name,
+                failure_code=result.failure_code,
+                observation_data=result.payload.get("observation", {}),
+            )
+
+            assert draft is not None
+            assert draft["skill_id"] == "genshin_combat"
+            assert "increase_coasting_window" in draft["patches"]
+            assert draft["verified"] is True
+
+            # 3. Verify repair session was created
+            session = engine.get_repair_session(draft.get("repair_session_id", ""))
+            assert session is not None
+            assert len(session.events) > 0
+            assert len(session.demonstration_ids) > 0
+
+            # 4. Verify SkillPatchDraft was created
+            new_patch_id = draft.get("new_patch_id")
+            assert new_patch_id is not None
+            patch_draft = engine.get_skill_patch_draft(new_patch_id)
+            assert patch_draft is not None
+            assert patch_draft.skill_id == "genshin_combat"
+
+            # 5. Approve patch and verify benchmark delta
+            approved = engine.approve_patch("genshin_combat")
+            assert approved is True
+
+            delta = engine.benchmark_delta("genshin_combat")
+            assert delta is not None
+            assert delta["skill_id"] == "genshin_combat"
+
+            # 6. List patch drafts
+            drafts = engine.list_patch_drafts("genshin_combat")
+            assert len(drafts) > 0
+
+            # 7. Run 10 iterations to verify flywheel repeatability
+            for _ in range(10):
+                draft = engine.handle_failure(
+                    skill_name="genshin_combat",
+                    failure_code="TARGET_LOST",
+                    observation_data={"target_confidence_drop": True},
+                )
+                assert draft is not None
+                assert draft["verified"] is True
+                assert engine.approve_patch("genshin_combat") is True
+
+            all_drafts = engine.list_patch_drafts("genshin_combat")
+            assert len(all_drafts) >= 11  # 1 initial + 10 flywheel iterations
+
