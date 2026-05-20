@@ -1,0 +1,3 @@
+{"timestamp":360070.7630991,"event":"action_block_step_start","block":"demo_visual_action_block","step_index":0,"step_type":"wait_visual_trigger"}
+{"timestamp":360073.7640059,"event":"action_block_timeout","block":"demo_visual_action_block","failure_code":"timeout waiting for trigger target_color_green"}
+{"timestamp":360073.7641573,"event":"skill_result","skill_name":"demo_visual_action_block","status":"TIMEOUT","failure_code":"timeout waiting for trigger target_color_green","started_at":360070.7630479,"finished_at":360073.7641504,"payload":{"final_ui_state_estimate":{"available":false}}}

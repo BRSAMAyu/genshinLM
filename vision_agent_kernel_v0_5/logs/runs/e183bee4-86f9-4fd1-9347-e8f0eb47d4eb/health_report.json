@@ -1,0 +1,16 @@
+{
+  "max_memory_mb": 117.11328125,
+  "memory_growth_mb": 7.0703125,
+  "avg_perception_fps": 37.075553659345665,
+  "avg_controller_fps": 19.958345107793857,
+  "max_telemetry_backlog": 2,
+  "interrupt_count": 294,
+  "dropped_low_priority_logs": 0,
+  "release_all_called": true,
+  "run_id": "e183bee4-86f9-4fd1-9347-e8f0eb47d4eb",
+  "seconds_requested": 180.0,
+  "mode": "dry-run",
+  "chaos": "mild",
+  "memory_source": "psutil",
+  "trace_path": "D:\\Aurora\\vision_agent_kernel_v0_5\\logs\\runs\\e183bee4-86f9-4fd1-9347-e8f0eb47d4eb\\endurance_trace.jsonl"
+}

@@ -1,0 +1,6 @@
+{"timestamp":359901.3449238,"event":"action_block_step_start","block":"demo_visual_action_block","step_index":0,"step_type":"wait_visual_trigger"}
+{"timestamp":359901.345135,"event":"visual_trigger_detected","trigger":"target_color_green","frame_id":20}
+{"timestamp":359901.345175,"event":"action_block_step_success","block":"demo_visual_action_block","step_index":0,"step_type":"wait_visual_trigger"}
+{"timestamp":359901.3452036,"event":"action_block_step_start","block":"demo_visual_action_block","step_index":1,"step_type":"emit_action_intent"}
+{"timestamp":359901.3452566,"event":"action_block_step_success","block":"demo_visual_action_block","step_index":1,"step_type":"emit_action_intent"}
+{"timestamp":359901.3452843,"event":"skill_result","skill_name":"demo_visual_action_block","status":"SUCCESS","failure_code":null,"started_at":359901.3448604,"finished_at":359901.3452788,"payload":{"emitted_intents":["ACTION_TRIGGERED"],"final_ui_state_estimate":{"available":false}}}

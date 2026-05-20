@@ -1,0 +1,11 @@
+name: demo_visual_action_block
+precondition:
+  - target_visible_and_centered
+steps:
+  - type: wait_visual_trigger
+    trigger: target_color_green
+    timeout_ms: 3000
+  - type: emit_action_intent
+    intent: ACTION_TRIGGERED
+success_criteria:
+  - visual_action_completed

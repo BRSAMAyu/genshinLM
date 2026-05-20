@@ -1,0 +1,2 @@
+{"timestamp":359802.0186776,"event":"action_block_timeout","block":"demo_visual_action_block","failure_code":"visual_action_block_test_timeout"}
+{"timestamp":359802.0188694,"event":"skill_result","skill_name":"demo_visual_action_block","status":"TIMEOUT","failure_code":"visual_action_block_test_timeout","started_at":359792.0127283,"finished_at":359802.0186717,"payload":{"block_started":false}}

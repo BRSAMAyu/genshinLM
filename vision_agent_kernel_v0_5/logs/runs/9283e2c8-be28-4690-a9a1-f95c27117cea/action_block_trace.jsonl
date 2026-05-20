@@ -1,0 +1,6 @@
+{"timestamp":360123.0308479,"event":"action_block_step_start","block":"demo_visual_action_block","step_index":0,"step_type":"wait_visual_trigger"}
+{"timestamp":360123.0310716,"event":"visual_trigger_detected","trigger":"target_color_green","frame_id":20}
+{"timestamp":360123.0311051,"event":"action_block_step_success","block":"demo_visual_action_block","step_index":0,"step_type":"wait_visual_trigger"}
+{"timestamp":360123.0311288,"event":"action_block_step_start","block":"demo_visual_action_block","step_index":1,"step_type":"emit_action_intent"}
+{"timestamp":360123.0311697,"event":"action_block_step_success","block":"demo_visual_action_block","step_index":1,"step_type":"emit_action_intent"}
+{"timestamp":360123.0311921,"event":"skill_result","skill_name":"demo_visual_action_block","status":"SUCCESS","failure_code":null,"started_at":360123.0307149,"finished_at":360123.0311874,"payload":{"emitted_intents":["ACTION_TRIGGERED"],"final_ui_state_estimate":{"available":false}}}
