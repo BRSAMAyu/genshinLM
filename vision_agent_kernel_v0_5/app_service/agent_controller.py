@@ -132,10 +132,27 @@ class AgentController:
         self._camera_intent_slot = self._state_bus.register_slot("camera_intent")
         self._movement_intent_slot = self._state_bus.register_slot("movement_intent")
 
-    def start(self) -> AgentStateView:
+        from app_service.app_registry import AppRegistry
+        self._app_registry = AppRegistry()
+        self._selected_app_id = "default"
+        self._frame_source_type = "demo"
+        self._frame_source_config: dict[str, object] = {}
+
+    def start(
+        self,
+        app_id: str | None = None,
+        frame_source: str | None = None,
+        frame_config: dict[str, object] | None = None,
+    ) -> AgentStateView:
         with self._lock:
             if self._mode == "RUNNING":
                 return self.state()
+            if app_id:
+                self._selected_app_id = app_id
+            if frame_source is not None:
+                self._frame_source_type = frame_source
+            if frame_config is not None:
+                self._frame_source_config = frame_config
             if self._worker is None or not self._worker.is_alive:
                 self._worker = InputWorker(self._backend, timebase=self._timebase, tick_seconds=0.01)
                 self._worker.start()
@@ -564,8 +581,12 @@ class AgentController:
         return self._product_e2e.latest_report()
 
     def _run_real_loop(self) -> None:
+        app_id = self._selected_app_id
         try:
-            capturer = _DemoCapturer(self._timebase)
+            from perception.frame_source import FrameSourceFactory
+            source_type = self._frame_source_type
+            source_config = self._frame_source_config
+            capturer = FrameSourceFactory.create_source(source_type, source_config)
             perception = PerceptionPipeline(
                 capturer=capturer,
                 state_bus=self._state_bus,
@@ -605,6 +626,23 @@ class AgentController:
             self._orchestrator = orchestrator
             if self._stop_event.is_set():
                 return
+
+            # AppRegistry dynamically mounts and activates selected App
+            if app_id != "default":
+                if app_id == "genshin":
+                    from app_service.apps.genshin_app import GenshinApp
+                    from app_service.app_registry import AppContext
+                    app = GenshinApp()
+                    context = AppContext(
+                        state_bus=self._state_bus,
+                        pipeline=perception,
+                        controller_loop=controller,
+                        orchestrator=orchestrator,
+                        root_dir=str(self._root),
+                    )
+                    self._app_registry.register_app(app, context)
+                    self._app_registry.activate(app_id)
+
             perception.start()
             controller.start()
             orchestrator.start()
@@ -618,6 +656,9 @@ class AgentController:
                         break
                 self._stop_event.wait(0.1)
         finally:
+            if app_id != "default":
+                self._app_registry.deactivate(app_id)
+                self._app_registry.unregister_app(app_id)
             self._shutdown_pipeline()
 
     def _get_or_create_action_executor(self) -> object:

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Literal
 
 from core.events import Interrupt
+from core.state_bus import StateBus
 from core.timebase import Timebase
 from core.types import InputLease
 from execution.console_backend import ConsoleInputBackend
@@ -29,6 +30,8 @@ class InputWorker:
         tick_seconds: float = 0.01,
         command_queue_size: int = 1024,
         release_on_stop: bool = True,
+        state_bus: StateBus | None = None,
+        target_window_title: str | None = None,
     ) -> None:
         self._timebase = timebase or Timebase()
         self._backend = backend or ConsoleInputBackend(self._timebase)
@@ -39,7 +42,10 @@ class InputWorker:
         self._thread: threading.Thread | None = None
         self._stop_event = threading.Event()
         self._started = threading.Event()
+        self._focus_lost_published = False
         self._log_lock = threading.RLock()
+        self._state_bus = state_bus
+        self._target_window_title = target_window_title
 
     @property
     def backend(self) -> ConsoleInputBackend:
@@ -98,6 +104,7 @@ class InputWorker:
             while not self._stop_event.is_set():
                 self._drain_one_command()
                 self._run_deadman_check()
+                self._run_focus_check()
         except BaseException as exc:
             self._log(f"fatal worker exception: {exc!r}; forcing release_all")
             self._backend.release_all(reason="input_worker_exception")
@@ -178,6 +185,34 @@ class InputWorker:
         )
         for key in expired.keys_to_release:
             self._backend.key_up(key, reason="deadman_expired")
+
+    def _run_focus_check(self) -> None:
+        if hasattr(self._backend, "is_target_focused"):
+            focused = True
+            try:
+                focused = self._backend.is_target_focused()
+            except Exception as e:
+                self._log(f"Error checking window focus: {e}")
+                focused = False
+
+            if not focused and not self._focus_lost_published:
+                self._log("Target window focus lost! Activating physical deadman safety switch.")
+                self._lease_store.clear()
+                self._backend.release_all(reason="focus_lost")
+                self._focus_lost_published = True
+                if self._state_bus is not None:
+                    self._state_bus.publish_interrupt(
+                        Interrupt(
+                            priority=0,
+                            timestamp=self._timebase.now(),
+                            code="FOCUS_LOST",
+                            source="InputWorker",
+                            recoverable=True,
+                            requires_input_release=True,
+                        )
+                    )
+            elif focused and self._focus_lost_published:
+                self._focus_lost_published = False
 
     def _log(self, message: str) -> None:
         with self._log_lock:

@@ -3,6 +3,7 @@ from __future__ import annotations
 import time
 
 from core.events import Interrupt
+from core.state_bus import StateBus
 from core.timebase import Timebase
 from core.types import InputLease
 from execution.console_backend import ConsoleInputBackend
@@ -97,3 +98,50 @@ def test_worker_stop_finally_release_all() -> None:
         event.action == "release_all" and event.payload["reason"] == "input_worker_exit"
         for event in backend.events_snapshot()
     )
+
+
+def test_focus_loss_releases_all_and_interrupts() -> None:
+    timebase = Timebase()
+    state_bus = StateBus()
+
+    class MockBackend(ConsoleInputBackend):
+        def __init__(self, timebase):
+            super().__init__(timebase)
+            self.focused = True
+
+        def is_target_focused(self) -> bool:
+            return self.focused
+
+    backend = MockBackend(timebase)
+    worker = InputWorker(
+        backend=backend,
+        timebase=timebase,
+        tick_seconds=0.005,
+        state_bus=state_bus,
+    )
+
+    interrupts = []
+    state_bus.subscribe("interrupt", lambda intr: interrupts.append(intr))
+
+    worker.start()
+    try:
+        assert worker.submit_lease(_lease("lease-1", "W", timebase.now() + 1.0))
+        _wait_for(lambda: "W" in backend.down_keys_snapshot())
+
+        backend.focused = False
+
+        _wait_for(
+            lambda: any(
+                event.action == "release_all" and event.payload["reason"] == "focus_lost"
+                for event in backend.events_snapshot()
+            )
+        )
+
+        assert backend.down_keys_snapshot() == set()
+
+        _wait_for(lambda: len(interrupts) > 0)
+        assert interrupts[0].code == "FOCUS_LOST"
+        assert interrupts[0].priority == 0
+    finally:
+        worker.stop()
+

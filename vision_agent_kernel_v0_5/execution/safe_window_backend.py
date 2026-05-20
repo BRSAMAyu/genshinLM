@@ -12,7 +12,21 @@ if TYPE_CHECKING:
 
 
 INPUT_MOUSE = 0
+INPUT_KEYBOARD = 1
 MOUSEEVENTF_MOVE = 0x0001
+KEYEVENTF_KEYUP = 0x0002
+
+# Common virtual key codes
+_VK_MAP: dict[str, int] = {
+    "w": 0x57, "a": 0x41, "s": 0x53, "d": 0x44,
+    "e": 0x45, "q": 0x51, "r": 0x52, "f": 0x46,
+    "c": 0x43, "v": 0x56, "x": 0x58, "z": 0x5A,
+    "1": 0x31, "2": 0x32, "3": 0x33, "4": 0x34,
+    "5": 0x35,
+    "space": 0x20, "shift": 0x10, "ctrl": 0x11, "alt": 0x12,
+    "tab": 0x09, "enter": 0x0D, "esc": 0x1B, "escape": 0x1B,
+    "left": 0x25, "up": 0x26, "right": 0x27, "down": 0x28,
+}
 
 
 class SafeWindowInputError(RuntimeError):
@@ -30,8 +44,18 @@ class MOUSEINPUT(ctypes.Structure):
     ]
 
 
+class KEYBDINPUT(ctypes.Structure):
+    _fields_ = [
+        ("wVk", wintypes.WORD),
+        ("wScan", wintypes.WORD),
+        ("dwFlags", wintypes.DWORD),
+        ("time", wintypes.DWORD),
+        ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
+    ]
+
+
 class INPUT_UNION(ctypes.Union):
-    _fields_ = [("mi", MOUSEINPUT)]
+    _fields_ = [("mi", MOUSEINPUT), ("ki", KEYBDINPUT)]
 
 
 class INPUT(ctypes.Structure):
@@ -122,18 +146,63 @@ class SafeWindowInputBackend:
 
     def key_down(self, key: str, reason: str = "") -> None:
         self._ensure_target_focused()
+        vk = self._resolve_vk(key)
+        extra = ctypes.c_ulong(0)
+        input_packet = INPUT(
+            type=INPUT_KEYBOARD,
+            union=INPUT_UNION(
+                ki=KEYBDINPUT(
+                    wVk=vk,
+                    wScan=0,
+                    dwFlags=0,
+                    time=0,
+                    dwExtraInfo=ctypes.pointer(extra),
+                )
+            ),
+        )
+        sent = self._user32.SendInput(1, ctypes.byref(input_packet), ctypes.sizeof(INPUT))
+        if sent != 1:
+            raise SafeWindowInputError(f"SendInput key_down failed for key={key!r}")
+        self._released = False
         print(
             "[SafeWindowInputBackend] "
-            f"{self._timebase.now():.6f} key_down ignored key={key!r} reason={reason!r}",
+            f"{self._timebase.now():.6f} key_down key={key!r} vk=0x{vk:02X} reason={reason!r}",
             flush=True,
         )
 
     def key_up(self, key: str, reason: str = "") -> None:
+        self._ensure_target_focused()
+        vk = self._resolve_vk(key)
+        extra = ctypes.c_ulong(0)
+        input_packet = INPUT(
+            type=INPUT_KEYBOARD,
+            union=INPUT_UNION(
+                ki=KEYBDINPUT(
+                    wVk=vk,
+                    wScan=0,
+                    dwFlags=KEYEVENTF_KEYUP,
+                    time=0,
+                    dwExtraInfo=ctypes.pointer(extra),
+                )
+            ),
+        )
+        sent = self._user32.SendInput(1, ctypes.byref(input_packet), ctypes.sizeof(INPUT))
+        if sent != 1:
+            raise SafeWindowInputError(f"SendInput key_up failed for key={key!r}")
         print(
             "[SafeWindowInputBackend] "
-            f"{self._timebase.now():.6f} key_up ignored key={key!r} reason={reason!r}",
+            f"{self._timebase.now():.6f} key_up key={key!r} vk=0x{vk:02X} reason={reason!r}",
             flush=True,
         )
+
+    @staticmethod
+    def _resolve_vk(key: str) -> int:
+        vk = _VK_MAP.get(key.lower())
+        if vk is not None:
+            return vk
+        if len(key) == 1:
+            return ord(key.upper())
+        raise SafeWindowInputError(f"unknown key: {key!r}")
 
     def release_all(self, reason: str = "") -> None:
         self._released = True
