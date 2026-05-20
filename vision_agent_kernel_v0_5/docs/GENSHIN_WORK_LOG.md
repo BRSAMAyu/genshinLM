@@ -98,3 +98,24 @@
   - 4 integration tests proving clean registration
 - Test count: 334 → 343 (all pass)
 - Phase 2D (HSV/YAML/boss_windup) + Phase 3 (data) running in background
+
+### 2026-05-20 (Phase 4: Verification & Learning Flywheel)
+- **Phase 4A** `64de8e6`: Verifier-Driven E2E test (6 tests)
+  - _DangerFrameCapturer simulates red danger zones, clearable
+  - _DodgeVerifier: VerifierResult(ok=True) only when danger_score < 0.15
+  - test_full_dodge_reflex_closed_loop: detect→reject→clear→confirm
+  - Evidence chain: frame_id + danger_score in every VerifierResult
+- **Phase 4B** `64de8e6`: GenshinFailureBridge
+  - Maps 9 failure_code strings → FailureCategory enum
+  - record_failure() → analyze_patterns() → publish to genshin.failure_state slot
+- **Phase 4C** `64de8e6`: GenshinPersonaBridge
+  - Maps Interrupt codes → persona events (DODGE_REFLEX→DANGER_HIT, etc.)
+  - on_event() → publish response to genshin.persona_response slot
+- **Phase 4D** `64de8e6`: Dry-Run Demo validation (4 tests)
+  - Full pipeline: DemoCapturer → Pipeline + GenshinApp → Controller → Orchestrator
+  - Danger zone activation/clearance during live pipeline
+  - Failure bridge records FAILED SkillResult
+  - Persona bridge responds to Interrupt
+- **Data**: character/team profiles expanded, monster YAML colons quoted, resource type ore→mineral
+- Test count: 343 → 365 (all pass). Zero core/ modifications.
+- Independent verification agent dispatched
