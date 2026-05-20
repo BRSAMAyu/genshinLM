@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import heapq
 import threading
-from collections import deque
+from collections import deque, defaultdict
 from dataclasses import dataclass, field
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Any, Callable
 
 from core.events import Interrupt, ModeRequest
 from core.types import Observation, ProgressState
@@ -168,6 +168,10 @@ class StateBus:
         self._heartbeat_table: dict[str, float] = {}
         self._dynamic_slots_lock = threading.RLock()
         self._dynamic_slots: dict[str, LatestSlot[object]] = {}
+        self._listeners: dict[str, list[Callable[[Any], None]]] = defaultdict(list)
+        self._listeners_lock = threading.RLock()
+        self._sub_ids: dict[str, tuple[str, Callable[[Any], None]]] = {}
+        self._sub_counter = 0
 
     def publish_observation(self, observation: Observation) -> int:
         version = self.latest_observation.put(observation)
@@ -184,6 +188,7 @@ class StateBus:
         accepted = self.event_queue.put(interrupt, priority=interrupt.priority)
         if accepted:
             self.event_signal.set()
+            self.publish("interrupt", interrupt)
         return accepted
 
     def next_interrupt(self, timeout: float | None = None) -> Interrupt | None:
@@ -232,3 +237,38 @@ class StateBus:
     def registered_slot_names(self) -> list[str]:
         with self._dynamic_slots_lock:
             return list(self._dynamic_slots.keys())
+
+    def subscribe(self, event_type: str, callback: Callable[[Any], None]) -> str:
+        """Subscribe to an event type. Returns a subscription_id for unsubscribe."""
+        sub_id = f"{event_type}_{id(callback)}_{threading.get_ident()}_{self._sub_counter}"
+        self._sub_counter += 1
+        with self._listeners_lock:
+            self._listeners[event_type].append(callback)
+            self._sub_ids[sub_id] = (event_type, callback)
+        return sub_id
+
+    def unsubscribe(self, subscription_id: str) -> bool:
+        """Remove a subscription by its ID. Returns True if found and removed."""
+        with self._listeners_lock:
+            entry = self._sub_ids.pop(subscription_id, None)
+            if entry is None:
+                return False
+            event_type, callback = entry
+            listeners = self._listeners.get(event_type, [])
+            try:
+                listeners.remove(callback)
+            except ValueError:
+                pass
+            return True
+
+    def publish(self, event_type: str, data: Any) -> None:
+        with self._listeners_lock:
+            listeners = list(self._listeners.get(event_type, []))
+        for callback in listeners:
+            try:
+                callback(data)
+            except Exception as e:
+                import logging
+                logging.getLogger("StateBus").error(
+                    f"Error executing listener for {event_type}: {str(e)}"
+                )

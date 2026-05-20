@@ -1,7 +1,11 @@
 from __future__ import annotations
 
+import logging
+
 from app_service.app_registry import AppContext
 from perception.pipeline import FramePostProcessor
+
+_log = logging.getLogger("GenshinApp")
 
 
 class GenshinApp:
@@ -31,22 +35,21 @@ class GenshinApp:
             GenshinCombatSkill,
             GenshinDodgeReflexSkill,
         )
-        context.orchestrator._skills["genshin_combat"] = GenshinCombatSkill(context.state_bus)
-        context.orchestrator._skills["genshin_dodge"] = GenshinDodgeReflexSkill(
+        context.orchestrator.register_skill("genshin_combat", GenshinCombatSkill(context.state_bus))
+        context.orchestrator.register_skill("genshin_dodge", GenshinDodgeReflexSkill(
             context.state_bus, self._danger_slot,
-        )
+        ))
 
-        from orchestration.graph import OrchestrationGraph
-        graph = context.orchestrator._graph
-        if isinstance(graph, OrchestrationGraph):
-            graph.register_transition("GENSHIN_COMBAT", "GENSHIN_DODGE", "DODGE_TRIGGERED")
-            graph.register_transition("GENSHIN_DODGE", "GENSHIN_COMBAT", "SUCCESS")
+        context.orchestrator.register_transition("GENSHIN_COMBAT", "GENSHIN_DODGE", "DODGE_TRIGGERED")
+        context.orchestrator.register_transition("GENSHIN_DODGE", "GENSHIN_COMBAT", "SUCCESS")
 
         from app_service.apps.genshin_failure_bridge import GenshinFailureBridge
         self._failure_bridge = GenshinFailureBridge(context.state_bus)
+        context.state_bus.subscribe("skill_result", self._failure_bridge.on_skill_result)
 
         from app_service.apps.genshin_persona_bridge import GenshinPersonaBridge
         self._persona_bridge = GenshinPersonaBridge(context.state_bus)
+        context.state_bus.subscribe("interrupt", self._persona_bridge.on_interrupt)
 
     def activate(self) -> None:
         self._active = True
@@ -74,13 +77,13 @@ class _GenshinPerceptionBridge:
         try:
             from perception.genshin_screen_classifier import GenshinScreenClassifier
             self._classifier = GenshinScreenClassifier()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("Failed to load GenshinScreenClassifier: %s", e)
         try:
             from combat.danger_detector import GenshinDangerSignalExtractor
             self._danger_extractor = GenshinDangerSignalExtractor()
-        except Exception:
-            pass
+        except Exception as e:
+            _log.warning("Failed to load GenshinDangerSignalExtractor: %s", e)
 
     def process(self, frame, observation, state_bus) -> None:
         self._ensure_components()
@@ -90,8 +93,9 @@ class _GenshinPerceptionBridge:
                 screen_state = self._classifier.classify(frame)
                 self._screen_slot.put(asdict(screen_state))
                 observation.extensions["genshin_screen"] = screen_state.state
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("ScreenClassifier.classify failed: %s", e)
+                observation.extensions["genshin_screen_error"] = str(e)
         if self._danger_extractor is not None:
             try:
                 signals = self._danger_extractor.extract(frame, self._prev_frame)
@@ -103,6 +107,7 @@ class _GenshinPerceptionBridge:
                     "should_dodge": signals.overall_danger >= 0.7,
                 })
                 observation.extensions["genshin_danger"] = signals.overall_danger
-            except Exception:
-                pass
+            except Exception as e:
+                _log.warning("DangerSignalExtractor.extract failed: %s", e)
+                observation.extensions["genshin_danger_error"] = str(e)
         self._prev_frame = frame.copy() if frame is not None else None
