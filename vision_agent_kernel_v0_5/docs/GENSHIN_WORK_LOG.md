@@ -76,3 +76,25 @@
 - Phase 3 `d09ada5`: combat planner, persona, navigation, dialog, multi-resolution
 - Phase 4 `cf938de`: daily commission, resin, failure learning, version, skill exchange, Co-Op
 - Final verification: 24/24 PASS, 334/334 tests PASS
+
+### 2026-05-20 (Heart Bypass & Architecture Integration)
+- **Phase 0: Heart Bypass** `5c95c36` `bb4b43c`
+  - StateBus: dynamic slot registration (register_slot/get_slot)
+  - Observation: generic extensions dict (no genshin_payload)
+  - PerceptionPipeline: FramePostProcessor protocol + post_processors
+  - ControllerLoop: optional camera_servo + danger_callback DI
+  - AgentController: replaced _run_status_loop fake loop with _run_real_loop
+  - E2E test: Pipeline → non-None target_track → Orchestrator transitions
+- **Phase 1: Architecture Discipline** `c975d64`
+  - App Registry: App protocol, AppContext, AppRegistry lifecycle
+  - Verifier: VerifierResult gains frame_id, roi_ids, detection_confidence
+  - SkillResult: optional verifier_result field
+  - OrchestrationGraph: register_transition() for custom flows
+  - ModeArbiter: register_mode() for runtime extension
+- **Phase 2: Genshin App Integration** `e97ebcb`
+  - GenshinApp: registers via App Registry, zero core/ modifications
+  - Genshin Perception Bridge: calls classifier + danger extractor
+  - Genshin Skills: Combat + Dodge adapters
+  - 4 integration tests proving clean registration
+- Test count: 334 → 343 (all pass)
+- Phase 2D (HSV/YAML/boss_windup) + Phase 3 (data) running in background
