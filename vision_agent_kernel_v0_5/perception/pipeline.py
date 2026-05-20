@@ -112,12 +112,12 @@ class PerceptionPipeline:
             os_focus=FocusState(focused=True),
             stale=latency_ms > self._config.stale_threshold_ms,
         )
-        self._state_bus.publish_observation(observation)
         for pp in self._post_processors:
             try:
                 pp.process(normalized, observation, self._state_bus)
             except Exception:
                 pass
+        self._state_bus.publish_observation(observation)
         print(
             "[PerceptionPipeline] "
             f"published observation frame_id={packet.frame_id} "
