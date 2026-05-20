@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 
 
@@ -25,3 +26,24 @@ class BenchmarkResult:
     metrics: BenchmarkMetrics
     evidence_ids: list[str] = field(default_factory=list)
     report: dict[str, object] = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class BenchmarkReport:
+    suite_name: str
+    run_id: str
+    timestamp: str
+    total_scenarios: int
+    passed_scenarios: int
+    failed_scenarios: int
+    evidence_coverage_rate: float
+    results: list[BenchmarkResult]
+    summary: dict[str, object]
+
+
+@dataclass(slots=True)
+class BenchmarkSuiteConfig:
+    suite_name: str
+    dry_run: bool = True
+    max_iterations: int = 1
+    output_dir: str = "benchmark_reports"
