@@ -128,3 +128,17 @@ class TestFailureBridgePublishesToSlot:
         data = slot.get()
         assert data is not None
         assert data["failure_id"] != ""
+
+    def test_automatic_subscription_via_state_bus_publish(self) -> None:
+        bus = StateBus()
+        bridge = GenshinFailureBridge(bus)
+        bus.subscribe("skill_result", bridge.on_skill_result)
+        
+        result = _failed_result("dodge_skill", "DANGER_UNAVOIDED")
+        bus.publish("skill_result", result)
+
+        slot = bus.get_slot("genshin.failure_state")
+        assert slot is not None
+        data = slot.get()
+        assert data is not None
+        assert data["failure_id"] != ""

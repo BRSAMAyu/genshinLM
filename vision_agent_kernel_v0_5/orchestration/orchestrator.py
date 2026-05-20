@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import threading
+from typing import Callable
 
 from core.state_bus import StateBus
 from core.timebase import Timebase
@@ -43,6 +44,14 @@ class Orchestrator:
         self._transitions: list[StateTransition] = []
         self._results: list[SkillResult] = []
 
+    def register_skill(self, name: str, skill: Skill) -> None:
+        """Public API to register a custom skill cleanly."""
+        self._skills[name] = skill
+
+    def register_transition(self, from_state: str, to_state: str, condition: str | Callable) -> None:
+        """Public API to register a custom state transition cleanly on the underlying graph."""
+        self._graph.register_transition(from_state, to_state, condition)
+
     @property
     def state(self) -> str:
         return self._state
@@ -81,7 +90,20 @@ class Orchestrator:
 
         skill = self._skill_for_state(self._state)
         result = skill.run()
+
+        # Evidence Guardrail
+        if self._state == VERIFY_SUCCESS or result.verifier_result is not None:
+            v_res = result.verifier_result
+            if v_res is None or not v_res.evidence or v_res.frame_id is None:
+                result.status = "FAILED"
+                result.failure_code = "EVIDENCE_MISSING"
+                result.payload["error"] = f"Verifier {v_res.verifier_id if v_res else 'Unknown'} failed to provide physical frame evidence chain."
+
         self._results.append(result)
+        self._state_bus.publish("skill_result", result)
+        if result.verifier_result is not None:
+            self._state_bus.publish("verifier_result", result.verifier_result)
+
         transition = self._graph.next_for_skill_result(self._state, result)
         self._apply_transition(transition)
         return transition

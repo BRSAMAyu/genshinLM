@@ -1,3 +1,6 @@
+# Genshin Impact World Graph - Regions, Waypoints, and Edges
+# Sparkle Project - Vision Agent Kernel v0.5
+
 regions:
 - region_id: mondstadt
   name: 蒙德
@@ -2145,6 +2148,166 @@ waypoints:
   - 1580.0
   region: snezhnaya
   type: unknown
+- waypoint_id: fon_court_fountain
+  name: 枫丹廷·大喷泉
+  position:
+  - 3510.0
+  - 310.0
+  - 490.0
+  region: fontaine
+  type: landmark
+- waypoint_id: fon_court_bookshop
+  name: 枫丹廷书店
+  position:
+  - 3530.0
+  - 315.0
+  - 510.0
+  region: fontaine
+  type: landmark
+- waypoint_id: fon_court_bank
+  name: 枫丹廷·银行
+  position:
+  - 3490.0
+  - 295.0
+  - 510.0
+  region: fontaine
+  type: landmark
+- waypoint_id: fon_belleau_east
+  name: 贝尔岛东
+  position:
+  - 3860.0
+  - 210.0
+  - 260.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_belleau_south
+  name: 贝尔岛南
+  position:
+  - 3790.0
+  - 190.0
+  - 310.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_beryl_west
+  name: 贝里地区西
+  position:
+  - 3000.0
+  - 340.0
+  - 680.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_beryl_underwater
+  name: 贝里地区水下
+  position:
+  - 3080.0
+  - 150.0
+  - 700.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_liffey_underwater
+  name: 利菲地区水下
+  position:
+  - 3420.0
+  - 180.0
+  - 870.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_morte_underwater
+  name: 莫尔特地区水下
+  position:
+  - 3220.0
+  - 160.0
+  - 580.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_erinnyes_underwater
+  name: 欧庇克莱歌林水下
+  position:
+  - 3650.0
+  - 170.0
+  - 670.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: fon_deep_water_hub
+  name: 枫丹深水枢纽
+  position:
+  - 3600.0
+  - 50.0
+  - 600.0
+  region: fontaine
+  type: teleport_waypoint
+- waypoint_id: nat_stadium_west
+  name: 竞技场西门
+  position:
+  - 4960.0
+  - 510.0
+  - -1020.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_scions_spring
+  name: 悬木人温泉
+  position:
+  - 5180.0
+  - 550.0
+  - -1080.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_echoes_west
+  name: 回声之子西
+  position:
+  - 4780.0
+  - 540.0
+  - -1180.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_springs_waterfall
+  name: 涌流瀑布
+  position:
+  - 5400.0
+  - 460.0
+  - -640.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_plenty_farm
+  name: 丰饶农场
+  position:
+  - 5180.0
+  - 490.0
+  - -820.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_flower_feather_sky
+  name: 翎羽天空之路
+  position:
+  - 4940.0
+  - 680.0
+  - -1360.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_ochkanatlan_underwater
+  name: 奥奇卡纳特兰水下
+  position:
+  - 4480.0
+  - 500.0
+  - -1430.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_coatepec_volcano
+  name: 库阿特佩克火山口
+  position:
+  - 4580.0
+  - 750.0
+  - -1380.0
+  region: natlan
+  type: teleport_waypoint
+- waypoint_id: nat_ameyalco_hot_spring
+  name: 阿梅亚尔科温泉
+  position:
+  - 5260.0
+  - 440.0
+  - -740.0
+  region: natlan
+  type: teleport_waypoint
 - waypoint_id: domain_abyss
   name: 深境螺旋
   position:
@@ -3624,3 +3787,108 @@ edges:
   cost: 3.0
   method: unknown
   danger_level: unknown
+- from_id: fon_court_plaza
+  to_id: fon_court_fountain
+  cost: 3.0
+  method: walk
+  danger_level: low
+- from_id: fon_court_plaza
+  to_id: fon_court_bookshop
+  cost: 4.0
+  method: walk
+  danger_level: low
+- from_id: fon_court_plaza
+  to_id: fon_court_bank
+  cost: 4.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_belleau
+  to_id: fon_belleau_east
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: fontaine_belleau
+  to_id: fon_belleau_south
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: fon_beryl_statue
+  to_id: fon_beryl_west
+  cost: 10.0
+  method: walk
+  danger_level: low
+- from_id: fon_beryl_statue
+  to_id: fon_beryl_underwater
+  cost: 8.0
+  method: swim
+  danger_level: medium
+- from_id: fon_liffey_statue
+  to_id: fon_liffey_underwater
+  cost: 8.0
+  method: swim
+  danger_level: medium
+- from_id: fon_morte_statue
+  to_id: fon_morte_underwater
+  cost: 8.0
+  method: swim
+  danger_level: medium
+- from_id: fon_erinnyes_statue
+  to_id: fon_erinnyes_underwater
+  cost: 8.0
+  method: swim
+  danger_level: medium
+- from_id: fon_underwater_court
+  to_id: fon_deep_water_hub
+  cost: 10.0
+  method: swim
+  danger_level: medium
+- from_id: fon_deep_water_hub
+  to_id: fon_underwater_belleau
+  cost: 12.0
+  method: swim
+  danger_level: medium
+- from_id: nat_stadium_main
+  to_id: nat_stadium_west
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: nat_scions_village
+  to_id: nat_scions_spring
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: nat_echoes_village
+  to_id: nat_echoes_west
+  cost: 8.0
+  method: walk
+  danger_level: medium
+- from_id: nat_springs_village
+  to_id: nat_springs_waterfall
+  cost: 8.0
+  method: walk
+  danger_level: low
+- from_id: nat_plenty_village
+  to_id: nat_plenty_farm
+  cost: 6.0
+  method: walk
+  danger_level: low
+- from_id: nat_flower_feather_village
+  to_id: nat_flower_feather_sky
+  cost: 10.0
+  method: walk
+  danger_level: high
+- from_id: nat_ochkanatlan_statue
+  to_id: nat_ochkanatlan_underwater
+  cost: 8.0
+  method: swim
+  danger_level: high
+- from_id: nat_coatepec_peak
+  to_id: nat_coatepec_volcano
+  cost: 10.0
+  method: walk
+  danger_level: high
+- from_id: nat_ameyalco_statue
+  to_id: nat_ameyalco_hot_spring
+  cost: 6.0
+  method: walk
+  danger_level: low

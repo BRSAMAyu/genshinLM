@@ -97,3 +97,17 @@ class TestPersonaBridgePublishesResponseToSlot:
         response = slot.get()
         assert response is not None
         assert response["emotion"] == "calm"
+
+    def test_automatic_subscription_via_state_bus_publish(self) -> None:
+        bus = StateBus()
+        bridge = GenshinPersonaBridge(bus)
+        bus.subscribe("interrupt", bridge.on_interrupt)
+        
+        interrupt = _make_interrupt("NO_TASK_PROGRESS", priority=40)
+        bus.publish_interrupt(interrupt)
+
+        slot = bus.get_slot("genshin.persona_response")
+        assert slot is not None
+        response = slot.get()
+        assert response is not None
+        assert response["emotion"] == "calm"

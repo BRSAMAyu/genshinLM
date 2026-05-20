@@ -115,8 +115,20 @@ class PerceptionPipeline:
         for pp in self._post_processors:
             try:
                 pp.process(normalized, observation, self._state_bus)
-            except Exception:
-                pass
+            except Exception as e:
+                import logging
+                logging.getLogger("PerceptionPipeline").error(f"Post-processor {pp.__class__.__name__} failed: {str(e)}")
+                self._state_bus.publish_interrupt(
+                    Interrupt(
+                        priority=80, # High priority system fault
+                        timestamp=self._timebase.now(),
+                        code="POST_PROCESSOR_ERROR",
+                        source=pp.__class__.__name__,
+                        payload={"error": str(e)},
+                        recoverable=True,
+                        requires_input_release=False,
+                    )
+                )
         self._state_bus.publish_observation(observation)
         print(
             "[PerceptionPipeline] "

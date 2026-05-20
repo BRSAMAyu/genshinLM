@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 
 from core.events import Interrupt
 from core.types import SkillResult
@@ -30,7 +31,7 @@ class OrchestrationGraph:
     def __init__(self) -> None:
         self._custom_transitions: list[tuple[str, str, str]] = []
 
-    def register_transition(self, from_state: str, to_state: str, condition: str) -> None:
+    def register_transition(self, from_state: str, to_state: str, condition: str | Callable) -> None:
         self._custom_transitions.append((from_state, to_state, condition))
 
     def next_for_skill_result(self, state: str, result: SkillResult) -> StateTransition:
@@ -79,8 +80,15 @@ class OrchestrationGraph:
                 return StateTransition(state, ACQUIRE_TARGET, failure)
             return StateTransition(state, FAILED, failure or "recovery_failed")
         for from_s, to_s, cond in self._custom_transitions:
-            if state == from_s and status == cond:
-                return StateTransition(state, to_s, f"custom:{cond}")
+            if state == from_s:
+                if callable(cond):
+                    try:
+                        if cond(result):
+                            return StateTransition(state, to_s, "custom_callable")
+                    except Exception:
+                        pass
+                elif status == cond or failure == cond:
+                    return StateTransition(state, to_s, f"custom:{cond}")
         return StateTransition(state, state, "terminal_or_unknown")
 
     def next_for_interrupt(self, state: str, interrupt: Interrupt) -> StateTransition:

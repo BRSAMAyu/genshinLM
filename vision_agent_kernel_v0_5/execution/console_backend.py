@@ -54,6 +54,9 @@ class ConsoleInputBackend:
         with self._lock:
             return set(self._down_keys)
 
+    def is_target_focused(self) -> bool:
+        return True
+
     def _record(self, action: str, payload: dict[str, object]) -> None:
         event = ConsoleInputEvent(
             timestamp=self._timebase.now(),

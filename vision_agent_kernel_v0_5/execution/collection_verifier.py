@@ -14,7 +14,17 @@ class CollectionVerifier:
         item_visible = _green_visible(ctx.frame)
         collected = bool(state.get("item_disappeared") or state.get("gain_popup") or state.get("count_delta", 0) > 0 or (state.get("collection_started", False) and not item_visible))
         evidence = {"item_visible": item_visible, "ocr_text": ctx.ocr_text, "state": state}
-        return VerifierResult(collected, self.verifier_id, 0.86 if collected else 0.32, "collection verified" if collected else "collection not verified", evidence)
+        frame_id = ctx.observation.frame_id if ctx.observation is not None else None
+        return VerifierResult(
+            ok=collected,
+            verifier_id=self.verifier_id,
+            confidence=0.86 if collected else 0.32,
+            reason="collection verified" if collected else "collection not verified",
+            evidence=evidence,
+            frame_id=frame_id,
+            detection_confidence=0.86 if collected else 0.32,
+            roi_ids=["item_ground"] if item_visible else [],
+        )
 
 
 def _green_visible(frame: np.ndarray | None) -> bool:

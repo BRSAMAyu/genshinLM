@@ -9,6 +9,7 @@ from execution.visual_action_block import (
     VisualActionBlockExecutor,
     VisualActionStep,
 )
+from execution.verifier_base import VerifierResult
 
 
 class BaseSkill:
@@ -117,10 +118,32 @@ class VerifySuccessSkill(BaseSkill):
     def run(self) -> SkillResult:
         observation = self._state_bus.latest_observation.get()
         if observation is None:
-            return self._result("FAILED", "NO_OBSERVATION")
-        if observation.visual_triggers.get("action_sequence_completed", True):
-            return self._result("SUCCESS", frame_id=observation.frame_id)
-        return self._result("FAILED", "VERIFY_FAILED", frame_id=observation.frame_id)
+            v_res = VerifierResult(
+                ok=False,
+                verifier_id="VerifySuccessSkill",
+                confidence=0.0,
+                reason="NO_OBSERVATION",
+                evidence={},
+                frame_id=None
+            )
+            res = self._result("FAILED", "NO_OBSERVATION")
+            res.verifier_result = v_res
+            return res
+
+        ok = observation.visual_triggers.get("action_sequence_completed", True)
+        v_res = VerifierResult(
+            ok=ok,
+            verifier_id="VerifySuccessSkill",
+            confidence=1.0 if ok else 0.0,
+            reason="Action sequence completed" if ok else "Action sequence not completed",
+            evidence={"action_sequence_completed": ok},
+            frame_id=observation.frame_id
+        )
+        status = "SUCCESS" if ok else "FAILED"
+        failure_code = None if ok else "VERIFY_FAILED"
+        res = self._result(status, failure_code, frame_id=observation.frame_id)
+        res.verifier_result = v_res
+        return res
 
 
 class RecoverSkill(BaseSkill):
