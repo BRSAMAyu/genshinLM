@@ -92,6 +92,7 @@ class CameraServo:
 
         if self._config.pitch_compensation_factor != 1.0:
             raw_pitch *= self._config.pitch_compensation_factor
+        raw_yaw, raw_pitch = self._apply_acceleration(raw_yaw, raw_pitch)
 
         yaw_delta = self._smooth(raw_yaw, self._last_yaw_delta)
         pitch_delta = self._smooth(raw_pitch, self._last_pitch_delta)
@@ -142,6 +143,7 @@ class CameraServo:
 
         if self._config.pitch_compensation_factor != 1.0:
             raw_pitch *= self._config.pitch_compensation_factor
+        raw_yaw, raw_pitch = self._apply_acceleration(raw_yaw, raw_pitch)
 
         yaw_delta = self._smooth(raw_yaw, self._last_yaw_delta)
         pitch_delta = self._smooth(raw_pitch, self._last_pitch_delta)
@@ -211,6 +213,16 @@ class CameraServo:
                 reason=f"{reason} substep={i + 1}/{n_steps}",
             ))
         return steps
+
+    def _apply_acceleration(self, raw_yaw: float, raw_pitch: float) -> tuple[float, float]:
+        if self._config.acceleration_compensation == "none":
+            return raw_yaw, raw_pitch
+        # Counteract forced mouse acceleration: dampen larger moves more
+        # Linear model: gain *= 1 / (1 + k * |delta|)
+        k = 0.08
+        yaw_scale = 1.0 / (1.0 + k * abs(raw_yaw))
+        pitch_scale = 1.0 / (1.0 + k * abs(raw_pitch))
+        return raw_yaw * yaw_scale, raw_pitch * pitch_scale
 
     def _predicted_center(self, track: TargetTrack) -> tuple[float, float] | None:
         center = track.smoothed_center_px

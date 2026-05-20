@@ -1,0 +1,130 @@
+# Genshin Impact detection model configuration
+# For use with Ultralytics YOLO training pipeline
+
+# Dataset paths
+dataset:
+  name: genshin_detection_v1
+  path: datasets/genshin
+  train_split: 0.8
+  export_format: yolov8
+
+# Detection class hierarchy
+classes:
+  # === Enemies ===
+  0: monster_normal        # Hilichurls, Slimes, Treasure Hoarders
+  1: monster_elite         # Mitachurls, Ruin Guards, Fatui Agents
+  2: monster_boss          # Boss enemies (multi-segment HP)
+
+  # === Collectibles ===
+  3: ore                   # All ore types (iron, crystal, starsilver, amethyst)
+  4: plant                 # All plant types (flowers, mushrooms, fruits, specialties)
+  5: chest                 # All chest types (common, exquisite, precious, luxurious)
+  6: loot_beam             # Drop item light beams
+
+  # === UI Elements ===
+  7: interaction_prompt    # F-key interaction prompt
+  8: hp_bar_enemy          # Enemy HP bar (top of screen)
+  9: danger_zone           # Red circle / red flash danger indicator
+
+# Training configuration
+training:
+  model: yolov8n.pt        # Base model (nano for speed)
+  # Alternative: yolov11n.pt for higher accuracy
+  epochs: 100
+  batch_size: 16
+  image_size: 640
+  device: cpu              # Change to 0 for GPU
+  patience: 20             # Early stopping patience
+  augment: true
+  mosaic: 1.0
+  mixup: 0.1
+  hsv_h: 0.015
+  hsv_s: 0.7
+  hsv_v: 0.4
+  degrees: 0.0
+  translate: 0.1
+  scale: 0.5
+  fliplr: 0.5
+  flipud: 0.0
+
+# Inference configuration (for deployment)
+inference:
+  conf_threshold: 0.35
+  iou_threshold: 0.5
+  max_det: 20
+  device: cpu
+  half: false
+
+# External datasets available for download
+external_datasets:
+  - name: "Genshin Monster XJTLU MERGED"
+    url: "https://universe.roboflow.com/genshindetection-uzjmm/genshin-monster-xjtlu-merged"
+    images: 1905
+    classes: 44
+    format: "YOLOv8"
+    license: "Public Domain"
+    note: "Competition dataset with detailed monster subclasses (Hilichurl, Slime-PYRO, Abyss_mage-CRYO, etc.)"
+
+  - name: "Genshin Impact YOLO"
+    url: "https://universe.roboflow.com/absk-1skxf/genshin-impact-yolo"
+    images: 100
+    classes: "Various"
+    format: "YOLOv8"
+    note: "Small dataset with pre-trained model"
+
+  - name: "Genshin Impact Anime Character"
+    url: "https://universe.roboflow.com/l-eqpbq/genshin-impact-anime-character"
+    images: 1526
+    classes: "Character classes"
+    format: "YOLOv8"
+    note: "Character detection dataset"
+
+# Class mapping: Roboflow XJTLU (44 classes) -> our 10 classes
+class_mapping:
+  # monster_normal
+  Hilichurl: 0
+  Hilichurl-CRYO: 0
+  Hilichurl-ELECTRO: 0
+  Hilichurl-PYRO: 0
+  "Treasure_hoarders-Fat": 0
+  "Treasure_hoarders-Thin": 0
+  "Flowing_blade-human": 0
+  "Forged_sand-human": 0
+  "Swiftstep-human": 0
+  "Slime-ANEMO": 0
+  "Slime-CRYO": 0
+  "Slime-CRYO-Large": 0
+  "Slime-DENDRO": 0
+  "Slime-DENDRO-Large": 0
+  "Slime-ELECTRO": 0
+  "Slime-ELECTRO-Large": 0
+  "Slime-HYDRO": 0
+  "Slime-HYDRO-Large": 0
+  "Slime-PYRO": 0
+  Cicin-ELECTRO: 0
+  Rifthound_whelp: 0
+  Koholasaur-Whelp: 0
+  Tepetlisaur-Whelp: 0
+  Yumkasaur-Whelp: 0
+
+  # monster_elite
+  Mitachurl: 1
+  "FS-Agent-PYRO": 1
+  "FS-ANEMO": 1
+  "FS-CRYO": 1
+  "FS-Cicin_mage-CRYO": 1
+  "FS-Cicin_mage-ELECTRO": 1
+  "FS-ELECTRO": 1
+  "FS-GEO": 1
+  "FS-HYDRO": 1
+  "FS-PYRO": 1
+  Samachurl-HYDRO: 1
+  "Whopperflower-CRYO": 1
+  "Whopperflower-PYRO": 1
+  "Abyss_mage-CRYO": 1
+  "Abyss_mage-ELECTRO": 1
+  "Abyss_mage-HYDRO": 1
+  "Abyss_mage-PYRO": 1
+  Koholasaurus: 1
+  Tepetlisaurus: 1
+  Yumkasaurus: 1
