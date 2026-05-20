@@ -1,0 +1,623 @@
+# Genshin Impact Resource Knowledge Base
+# Sparkle Project - Vision Agent Kernel v0.5
+
+ores:
+  - resource_id: iron_chunk
+    name: 铁块
+    name_en: Iron Chunk
+    type: ore
+    detection_class: ore_iron
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
+    visual: "Grey-brown rocky deposit, small size, low glow"
+
+  - resource_id: white_iron_chunk
+    name: 白铁块
+    name_en: White Iron Chunk
+    type: ore
+    detection_class: ore_white_iron
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
+    visual: "Silver-white metallic deposit, moderate shine"
+
+  - resource_id: crystal_chunk
+    name: 水晶块
+    name_en: Crystal Chunk
+    type: ore
+    detection_class: ore_crystal
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 72
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Blue-tinted crystalline cluster, bright refraction"
+
+  - resource_id: starsilver
+    name: 星银矿石
+    name_en: Starsilver
+    type: ore
+    detection_class: ore_starsilver
+    interaction: attack
+    attack_count: 2
+    respawn_hours: 48
+    regions: [mondstadt]
+    subregion: dragonspine
+    visual: "Dark silver ore with star-like glimmer, cold aura"
+
+  - resource_id: amethyst_chunk
+    name: 紫晶块
+    name_en: Amethyst Chunk
+    type: ore
+    detection_class: ore_amethyst
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 72
+    regions: [inazuma]
+    visual: "Purple crystalline deposit with electro sparks"
+
+plants:
+  # ---- Mondstadt ----
+  - resource_id: cecilia
+    name: 塞西莉亚花
+    name_en: Cecilia
+    type: plant
+    detection_class: plant_cecilia
+    interaction: f_key
+    respawn_hours: 48
+    regions: [mondstadt]
+    subregion: starsnatch_cliff
+    visual: "Small white flower with pale blue center, grows on high cliffs"
+
+  - resource_id: dandelion_seed
+    name: 蒲公英籽
+    name_en: Dandelion Seed
+    type: plant
+    detection_class: plant_dandelion
+    interaction: anemo_skill
+    respawn_hours: 48
+    regions: [mondstadt]
+    visual: "White puffball on green stem, requires anemo to harvest"
+
+  - resource_id: wolfhook
+    name: 钩钩果
+    name_en: Wolfhook
+    type: plant
+    detection_class: plant_wolfhook
+    interaction: f_key
+    respawn_hours: 48
+    regions: [mondstadt]
+    subregion: wolvendom
+    visual: "Blue-purple berry cluster on low bushes"
+
+  - resource_id: valberry
+    name: 树莓
+    name_en: Valberry
+    type: plant
+    detection_class: plant_valberry
+    interaction: f_key
+    respawn_hours: 48
+    regions: [mondstadt]
+    subregion: stormbearer
+    visual: "Round red berries growing in clusters on bushes"
+
+  - resource_id: philanemo_mushroom
+    name: 风车菊蘑菇
+    name_en: Philanemo Mushroom
+    type: plant
+    detection_class: plant_philanemo
+    interaction: f_key
+    respawn_hours: 48
+    regions: [mondstadt]
+    visual: "Small mushroom growing on house walls and windmills"
+
+  - resource_id: windwheel_aster
+    name: 风车菊
+    name_en: Windwheel Aster
+    type: plant
+    detection_class: plant_windwheel
+    interaction: f_key
+    respawn_hours: 48
+    regions: [mondstadt]
+    subregion: windrise
+    visual: "Orange-red flower with spoke-like petals near windmills"
+
+  - resource_id: callalily
+    name: 海霸花
+    name_en: Calla Lily
+    type: plant
+    detection_class: plant_callalily
+    interaction: f_key
+    respawn_hours: 48
+    regions: [mondstadt]
+    visual: "White trumpet-shaped flower found near water"
+
+  # ---- Liyue ----
+  - resource_id: jueyun_chili
+    name: 绝云椒椒
+    name_en: Jueyun Chili
+    type: plant
+    detection_class: plant_jueyun_chili
+    interaction: f_key
+    respawn_hours: 48
+    regions: [liyue]
+    subregion: qingce_village
+    visual: "Bright red chili peppers on low bushes"
+
+  - resource_id: qingxin
+    name: 清心
+    name_en: Qingxin
+    type: plant
+    detection_class: plant_qingxin
+    interaction: f_key
+    respawn_hours: 48
+    regions: [liyue]
+    subregion: jueyun_karst
+    visual: "White lotus-like flower on tall stems, mountain tops"
+
+  - resource_id: violetgrass
+    name: 琉璃百合
+    name_en: Violetgrass
+    type: plant
+    detection_class: plant_violetgrass
+    interaction: f_key
+    respawn_hours: 48
+    regions: [liyue]
+    subregion: mingyun_village
+    visual: "Purple hanging flower on cliff walls"
+
+  - resource_id: glaze_lily
+    name: 琉璃百合
+    name_en: Glaze Lily
+    type: plant
+    detection_class: plant_glaze_lily
+    interaction: f_key
+    respawn_hours: 48
+    regions: [liyue]
+    subregion: liyue_harbor
+    visual: "Elegant white-blue lily with crystalline sheen, only at night"
+
+  - resource_id: silk_flower
+    name: 霓裳花
+    name_en: Silk Flower
+    type: plant
+    detection_class: plant_silk_flower
+    interaction: f_key
+    respawn_hours: 48
+    regions: [liyue]
+    subregion: liyue_harbor
+    visual: "Red ornamental flower in garden beds"
+
+  - resource_id: cor_lapis
+    name: 石珀
+    name_en: Cor Lapis
+    type: plant
+    detection_class: plant_cor_lapis
+    interaction: attack
+    attack_count: 2
+    respawn_hours: 48
+    regions: [liyue]
+    subregion: mt_tianheng
+    visual: "Amber-gold crystal embedded in cliff faces"
+
+  - resource_id: noctilucous_jade
+    name: 夜泊石
+    name_en: Noctilucous Jade
+    type: plant
+    detection_class: plant_noctilucous
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 48
+    regions: [liyue]
+    subregion: sal_terrace
+    visual: "Dark blue glowing stone found in caves and mines"
+
+  # ---- Inazuma ----
+  - resource_id: naku_weed
+    name: 鸣草
+    name_en: Naku Weed
+    type: plant
+    detection_class: plant_naku_weed
+    interaction: f_key
+    respawn_hours: 48
+    regions: [inazuma]
+    subregion: seirai_island
+    visual: "Pink-purple bell-shaped flowers with electro wisps"
+
+  - resource_id: sakura_bloom
+    name: 绯樱绣球
+    name_en: Sakura Bloom
+    type: plant
+    detection_class: plant_sakura_bloom
+    interaction: electro_skill
+    respawn_hours: 48
+    regions: [inazuma]
+    subregion: narukami_island
+    visual: "Pink floating petal clusters around cherry trees, requires electro"
+
+  - resource_id: sea_ganoderma
+    name: 海灵芝
+    name_en: Sea Ganoderma
+    type: plant
+    detection_class: plant_sea_ganoderma
+    interaction: f_key
+    respawn_hours: 48
+    regions: [inazuma]
+    visual: "Blue-green mushroom on beaches and shallow water"
+
+  - resource_id: dendrobium
+    name: 血斛
+    name_en: Dendrobium
+    type: plant
+    detection_class: plant_dendrobium
+    interaction: f_key
+    respawn_hours: 48
+    regions: [inazuma]
+    subregion: nazuchi_beach
+    visual: "Crimson red flower near battlefields and blood-stained areas"
+
+  - resource_id: onikabuto
+    name: 鬼兜虫
+    name_en: Onikabuto
+    type: plant
+    detection_class: plant_onikabuto
+    interaction: f_key
+    respawn_hours: 48
+    regions: [inazuma]
+    subregion: yashiori_island
+    visual: "Red-and-blue beetle resting on tree trunks and rocks"
+
+  - resource_id: crystal_marrow
+    name: 晶化骨髓
+    name_en: Crystal Marrow
+    type: plant
+    detection_class: plant_crystal_marrow
+    interaction: f_key
+    respawn_hours: 48
+    regions: [inazuma]
+    subregion: yashiori_island
+    visual: "Pale blue crystallized bone fragment on the ground"
+
+  - resource_id: amakumo_fruit
+    name: 天云果实
+    name_en: Amakumo Fruit
+    type: plant
+    detection_class: plant_amakumo
+    interaction: f_key
+    respawn_hours: 48
+    regions: [inazuma]
+    subregion: seirai_island
+    visual: "Purple electro-charged fruit on stalk plants"
+
+  # ---- Sumeru ----
+  - resource_id: nilotpala_lotus
+    name: 帕蒂沙兰
+    name_en: Nilotpala Lotus
+    type: plant
+    detection_class: plant_nilotpala
+    interaction: f_key
+    respawn_hours: 48
+    regions: [sumeru]
+    subregion: lokapala_jungle
+    visual: "Golden-yellow lotus floating on water surfaces"
+
+  - resource_id: kalpalata_lotus
+    name: 劫波莲
+    name_en: Kalpalata Lotus
+    type: plant
+    detection_class: plant_kalpalata
+    interaction: f_key
+    respawn_hours: 48
+    regions: [sumeru]
+    subregion: apes_resort
+    visual: "Pink-purple lotus on high cliff edges and tree branches"
+
+  - resource_id: rukkhashava_mushroom
+    name: 树王圣体菇
+    name_en: Rukkhashava Mushroom
+    type: plant
+    detection_class: plant_rukkhashava
+    interaction: f_key
+    respawn_hours: 48
+    regions: [sumeru]
+    subregion: ashavan_realm
+    visual: "Glowing teal mushroom on tree trunks in the rainforest"
+
+  - resource_id: padisarah
+    name: 帕蒂沙兰
+    name_en: Padisarah
+    type: plant
+    detection_class: plant_padisarah
+    interaction: f_key
+    respawn_hours: 48
+    regions: [sumeru]
+    subregion: sumeru_city
+    visual: "Purple ornamental flower in garden areas"
+
+  - resource_id: henna_berry
+    name: 赤念果
+    name_en: Henna Berry
+    type: plant
+    detection_class: plant_henna_berry
+    interaction: f_key
+    respawn_hours: 48
+    regions: [sumeru]
+    subregion: desert_of_hadramaveth
+    visual: "Red-orange berry on thorny desert bushes"
+
+  # ---- Fontaine ----
+  - resource_id: lumitoile
+    name: 光芒角
+    name_en: Lumitoile
+    type: plant
+    detection_class: plant_lumitoile
+    interaction: f_key
+    respawn_hours: 48
+    regions: [fontaine]
+    subregion: court_of_fontaine
+    visual: "Glowing yellow star-shaped creature near water edges"
+
+  - resource_id: subdetection_unit
+    name: 侦测单元
+    name_en: Subdetection Unit
+    type: plant
+    detection_class: plant_subdetection
+    interaction: f_key
+    respawn_hours: 48
+    regions: [fontaine]
+    subregion: fontaine_research_institute
+    visual: "Small hovering mechanical device with blue lights"
+
+  - resource_id: romaritime_flower
+    name: 美露莘花
+    name_en: Romaritime Flower
+    type: plant
+    detection_class: plant_romaritime
+    interaction: f_key
+    respawn_hours: 48
+    regions: [fontaine]
+    subregion: belleau_region
+    visual: "Blue underwater flower with bioluminescent petals"
+
+  - resource_id: belleaua
+    name: 贝尔花
+    name_en: Belleaua
+    type: plant
+    detection_class: plant_belleaua
+    interaction: f_key
+    respawn_hours: 48
+    regions: [fontaine]
+    visual: "Small white coastal flower near Fontaine shores"
+
+  - resource_id: rainbow_rose
+    name: 虹彩蔷薇
+    name_en: Rainbow Rose
+    type: plant
+    detection_class: plant_rainbow_rose
+    interaction: f_key
+    respawn_hours: 48
+    regions: [fontaine]
+    subregion: court_of_fontaine
+    visual: "Multi-colored rose with iridescent sheen"
+
+  # ---- Natlan ----
+  - resource_id: embercore_flame
+    name: 烬芯花
+    name_en: Embercore Flower
+    type: plant
+    detection_class: plant_embercore
+    interaction: f_key
+    respawn_hours: 48
+    regions: [natlan]
+    subregion: scions_of_the_canopy
+    visual: "Orange-red flower wreathed in ember-like particles"
+
+  - resource_id: qucusaur
+    name: 绒翼龙
+    name_en: Qucusaur
+    type: plant
+    detection_class: plant_qucusaur
+    interaction: f_key
+    respawn_hours: 48
+    regions: [natlan]
+    subregion: collectives_of_the_source
+    visual: "Feathered creature egg or scale near volcanic vents"
+
+  - resource_id: spritfish
+    name: 灵鳞鱼
+    name_en: Spritfish
+    type: plant
+    detection_class: plant_spritfish
+    interaction: f_key
+    respawn_hours: 48
+    regions: [natlan]
+    subregion: toyac_springs
+    visual: "Luminous fish in Natlan hot springs"
+
+  - resource_id: sparkcloth_bush
+    name: 火焰花布
+    name_en: Sparkcloth Bush
+    type: plant
+    detection_class: plant_sparkcloth
+    interaction: f_key
+    respawn_hours: 48
+    regions: [natlan]
+    subregion: tequemecan_valley
+    visual: "Fiery shrub with glowing thread-like fibers"
+
+  # ---- Elemental / Special Plants ----
+  - resource_id: flaming_flower_stamen
+    name: 烈焰花花蕊
+    name_en: Flaming Flower Stamen
+    type: plant
+    detection_class: plant_flaming_flower
+    interaction: attack
+    attack_count: 1
+    element: hydro
+    respawn_hours: 8
+    regions: [mondstadt, liyue, inazuma, sumeru]
+    visual: "Red flower with fire aura, extinguish with hydro then collect"
+
+  - resource_id: mist_flower_corolla
+    name: 冰雾花蕊
+    name_en: Mist Flower Corolla
+    type: plant
+    detection_class: plant_mist_flower
+    interaction: attack
+    attack_count: 1
+    element: pyro
+    respawn_hours: 8
+    regions: [mondstadt, liyue, inazuma, sumeru]
+    visual: "Blue flower with frost aura, melt with pyro then collect"
+
+  - resource_id: electro_crystal
+    name: 电气水晶
+    name_en: Electro Crystal
+    type: plant
+    detection_class: plant_electro_crystal
+    interaction: attack
+    attack_count: 1
+    element: pyro
+    respawn_hours: 8
+    regions: [mondstadt, liyue, inazuma]
+    visual: "Purple crystal cluster with electro sparks, break with pyro"
+
+animals:
+  - resource_id: fowl
+    name: 禽肉
+    name_en: Fowl
+    type: animal
+    detection_class: animal_bird
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Birds perched or flying near terrain, drops raw fowl"
+
+  - resource_id: raw_meat
+    name: 兽肉
+    name_en: Raw Meat
+    type: animal
+    detection_class: animal_boar
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Wild boars and deer, drops raw meat on defeat"
+
+  - resource_id: chilled_meat
+    name: 冷鲜肉
+    name_en: Chilled Meat
+    type: animal
+    detection_class: animal_snow_boar
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 24
+    regions: [mondstadt]
+    subregion: dragonspine
+    visual: "Frozen snow boars embedded in ice, thaw then defeat"
+
+  - resource_id: fish
+    name: 鱼肉
+    name_en: Fish
+    type: animal
+    detection_class: animal_fish
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Fish swimming in water bodies, attack or fish via fishing"
+
+  - resource_id: crab_roe
+    name: 蟹黄
+    name_en: Crab Roe
+    type: animal
+    detection_class: animal_crab
+    interaction: attack
+    attack_count: 1
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine]
+    visual: "Small crabs on beaches, drops crab and crab roe"
+
+special:
+  - resource_id: blessed_lore
+    name: 圣遗物狗粮
+    name_en: Blessed Lore (Artifact XP)
+    type: special
+    detection_class: artifact_xp
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Glowing investigation point, gives artifact XP material"
+
+  - resource_id: artifact_circlet
+    name: 理之冠
+    name_en: Circlet of Logos
+    type: special
+    detection_class: artifact_circlet
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Artifact dropped from domains or bosses, head slot"
+
+  - resource_id: artifact_goblet
+    name: 空之杯
+    name_en: Goblet of Eonothem
+    type: special
+    detection_class: artifact_goblet
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Artifact dropped from domains or bosses, cup slot"
+
+  - resource_id: artifact_plume
+    name: 死之羽
+    name_en: Plume of Death
+    type: special
+    detection_class: artifact_plume
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Artifact dropped from domains or bosses, feather slot"
+
+  - resource_id: artifact_flower
+    name: 生之花
+    name_en: Flower of Life
+    type: special
+    detection_class: artifact_flower
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Artifact dropped from domains or bosses, flower slot"
+
+  - resource_id: artifact_sands
+    name: 时之沙
+    name_en: Sands of Eon
+    type: special
+    detection_class: artifact_sands
+    interaction: f_key
+    respawn_hours: 24
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Artifact dropped from domains or bosses, clock slot"
+
+  - resource_id: mora
+    name: 摩拉
+    name_en: Mora
+    type: special
+    detection_class: currency_mora
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Gold coin currency from chests, quests, ley line blossoms"
+
+  - resource_id: primogem
+    name: 原石
+    name_en: Primogem
+    type: special
+    detection_class: currency_primogem
+    interaction: f_key
+    respawn_hours: 0
+    regions: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
+    visual: "Rainbow gem from chests, quests, daily commissions"

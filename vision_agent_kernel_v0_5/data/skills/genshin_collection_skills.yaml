@@ -1,0 +1,209 @@
+# Genshin Impact Collection Skill Templates
+# Environment: Genshin Impact 1920x1080
+
+skills:
+  collect_plant_genshin_v1:
+    skill_id: collect_plant_genshin_v1
+    name: "Genshin Plant Collection v1"
+    type: collection
+    environment_profile: genshin_1920x1080
+    steps:
+      - step_id: approach_target
+        type: move_to_target
+        label: "Approach target plant"
+        timeout_ms: 8000
+        params:
+          method: "minimap_guided"
+          stop_distance: 1.5
+
+      - step_id: align_center
+        type: camera_align
+        label: "Align target to screen center"
+        timeout_ms: 2000
+        params:
+          alignment: "center"
+          tolerance_px: 50
+
+      - step_id: wait_f_prompt
+        type: wait_visual_trigger
+        label: "Wait for F interaction prompt"
+        timeout_ms: 3000
+        params:
+          trigger: "interact_prompt_visible"
+          chunk_ms: 100
+
+      - step_id: press_f
+        type: action_sequence
+        label: "Press F to collect"
+        timeout_ms: 1000
+        params:
+          actions:
+            - { input: "press_key", key: "f" }
+
+      - step_id: verify_collection
+        type: checkpoint
+        label: "Verify item collected"
+        timeout_ms: 2000
+        params:
+          checkpoint: "item_disappeared_or_gain_popup"
+
+    visual_triggers:
+      interact_prompt_visible:
+        trigger_id: interact_prompt_visible
+        type: ui_state_changed
+        detection: interaction_prompt_f
+        roi: "interaction_area"
+      item_disappeared_or_gain_popup:
+        trigger_id: item_disappeared_or_gain_popup
+        type: visual_change
+        detection: target_gone_or_loot_popup
+        roi: "screen_center"
+
+    success_criteria:
+      - "item_collected"
+      - "visual_action_completed"
+
+    failure_policy:
+      max_retries: 2
+      fallback: "skip_and_log"
+      on_timeout: "abort_step"
+
+    safety:
+      dry_run_default: true
+      interruptible: true
+      require_focus: true
+      max_duration_ms: 15000
+
+  mine_ore_genshin_v1:
+    skill_id: mine_ore_genshin_v1
+    name: "Genshin Ore Mining v1"
+    type: collection
+    environment_profile: genshin_1920x1080
+    steps:
+      - step_id: approach_ore
+        type: move_to_target
+        label: "Approach ore deposit"
+        timeout_ms: 8000
+        params:
+          method: "minimap_guided"
+          stop_distance: 1.2
+
+      - step_id: attack_ore
+        type: action_sequence
+        label: "Attack ore 5 times"
+        timeout_ms: 5000
+        params:
+          actions:
+            - { input: "click", count: 5, interval_ms: 300 }
+
+      - step_id: wait_drops
+        type: wait_visual_trigger
+        label: "Wait for loot beam"
+        timeout_ms: 3000
+        params:
+          trigger: "loot_beam_visible"
+          chunk_ms: 200
+
+      - step_id: collect_drops
+        type: action_sequence
+        label: "Press F to collect drops"
+        timeout_ms: 1500
+        params:
+          actions:
+            - { input: "press_key", key: "f" }
+
+    visual_triggers:
+      loot_beam_visible:
+        trigger_id: loot_beam_visible
+        type: visual_effect
+        detection: loot_pickup_beam
+        roi: "screen_center"
+
+    success_criteria:
+      - "ore_mined"
+      - "drops_collected"
+      - "visual_action_completed"
+
+    failure_policy:
+      max_retries: 3
+      fallback: "skip_and_log"
+      on_timeout: "abort_step"
+
+    safety:
+      dry_run_default: true
+      interruptible: true
+      require_focus: true
+      max_duration_ms: 20000
+
+  open_chest_genshin_v1:
+    skill_id: open_chest_genshin_v1
+    name: "Genshin Chest Opening v1"
+    type: collection
+    environment_profile: genshin_1920x1080
+    steps:
+      - step_id: approach_chest
+        type: move_to_target
+        label: "Approach chest"
+        timeout_ms: 8000
+        params:
+          method: "minimap_guided"
+          stop_distance: 1.0
+
+      - step_id: wait_open_prompt
+        type: wait_visual_trigger
+        label: "Wait for open prompt (contains text)"
+        timeout_ms: 3000
+        params:
+          trigger: "chest_prompt_visible"
+          chunk_ms: 100
+
+      - step_id: press_f_open
+        type: action_sequence
+        label: "Press F to open chest"
+        timeout_ms: 1000
+        params:
+          actions:
+            - { input: "press_key", key: "f" }
+
+      - step_id: wait_animation
+        type: wait_visual_trigger
+        label: "Wait for chest animation"
+        timeout_ms: 5000
+        params:
+          trigger: "chest_animation_done"
+          chunk_ms: 200
+
+      - step_id: claim_rewards
+        type: checkpoint
+        label: "Claim rewards (auto-collected)"
+        timeout_ms: 2000
+        params:
+          checkpoint: "rewards_claimed"
+
+    visual_triggers:
+      chest_prompt_visible:
+        trigger_id: chest_prompt_visible
+        type: ui_state_changed
+        detection: ocr_prompt_contains_open
+        roi: "interaction_area"
+      chest_animation_done:
+        trigger_id: chest_animation_done
+        type: visual_change
+        detection: chest_open_animation_end
+        roi: "screen_center"
+
+    success_criteria:
+      - "chest_opened"
+      - "rewards_claimed"
+      - "visual_action_completed"
+
+    failure_policy:
+      max_retries: 2
+      fallback: "skip_and_log"
+      on_timeout: "abort_step"
+
+    safety:
+      dry_run_default: true
+      interruptible: true
+      require_focus: true
+      max_duration_ms: 20000

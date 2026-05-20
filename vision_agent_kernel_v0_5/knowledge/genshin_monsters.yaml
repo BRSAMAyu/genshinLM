@@ -1,0 +1,507 @@
+# Genshin Impact Monster Knowledge Base
+# Sparkle Project - Vision Agent Kernel v0.5
+
+monsters:
+  # ---- Hilichurl Family ----
+  - monster_id: hilichurl
+    name: 丘丘人
+    name_en: Hilichurl
+    class_id: monster_normal
+    element: none
+    hp_segments: 1
+    danger_signals: ["club_swing", "rock_throw"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["damaged_mask", "stained_mask", "ominous_mask"]
+    visual: "Small masked creature with club or bare hands"
+
+  - monster_id: hilichurl_fighter
+    name: 丘丘暴徒
+    name_en: Hilichurl Fighter
+    class_id: monster_normal
+    element: none
+    hp_segments: 1
+    danger_signals: ["club_swing", "charge_attack"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["damaged_mask", "stained_mask", "ominous_mask", "heavy_horn"]
+    visual: "Hilichurl wielding a wooden club, slightly larger"
+
+  - monster_id: hilichurl_archer
+    name: 丘丘射手
+    name_en: Hilichurl Shooter
+    class_id: monster_normal
+    element: none
+    hp_segments: 1
+    danger_signals: ["arrow_draw", "aimed_shot"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["firm_arrowhead", "sharp_arrowhead", "weathered_arrowhead"]
+    visual: "Hilichurl with bow, may have elemental arrow type"
+
+  - monster_id: hilichurl_grenadier
+    name: 丘丘火枪手
+    name_en: Hilichurl Grenadier
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["grenade_throw", "barrel_explosion"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["damaged_mask", "stained_mask", "ominous_mask"]
+    visual: "Hilichurl carrying explosive barrel or slime barrel"
+
+  - monster_id: hilichurl_berserker
+    name: 丘丘狂暴战士
+    name_en: Hilichurl Berserker
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["fire_baton_spin", "charge_attack"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["damaged_mask", "stained_mask", "ominous_mask"]
+    visual: "Hilichurl wielding flaming torch, aggressive stance"
+
+  - monster_id: mitachurl_wood_shield
+    name: 木盾丘丘暴徒
+    name_en: Wooden Shieldwall Mitachurl
+    class_id: monster_elite
+    element: none
+    hp_segments: 1
+    danger_signals: ["shield_bash", "charge_attack", "summon_hilichurls"]
+    weaknesses: ["pyro"]
+    drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    visual: "Large hilichurl with wooden shield, slow but armored"
+
+  - monster_id: mitachurl_stone_shield
+    name: 岩盾丘丘暴徒
+    name_en: Rock Shieldwall Mitachurl
+    class_id: monster_elite
+    element: geo
+    hp_segments: 1
+    danger_signals: ["shield_bash", "rock_throw", "charge_attack"]
+    weaknesses: ["geo", "claymore", "overloaded"]
+    drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    visual: "Large hilichurl with stone shield, very durable"
+
+  - monster_id: mitachurl_ice_shield
+    name: 冰盾丘丘暴徒
+    name_en: Ice Shieldwall Mitachurl
+    class_id: monster_elite
+    element: cryo
+    hp_segments: 1
+    danger_signals: ["shield_bash", "ice_swing", "charge_attack"]
+    weaknesses: ["pyro", "claymore"]
+    drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    visual: "Large hilichurl with ice shield, freezes nearby"
+
+  - monster_id: mitachurl_fire_axe
+    name: 火斧丘丘暴徒
+    name_en: Blazing Axe Mitachurl
+    class_id: monster_elite
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["axe_slam", "fire_wave", "enraged_spin"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    visual: "Large hilichurl wielding flaming battle axe"
+
+  # ---- Slime Family ----
+  - monster_id: pyro_slime
+    name: 火史莱姆
+    name_en: Pyro Slime
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["flame_bounce", "self_explode"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    visual: "Orange-red slime blob with flame aura, bounces toward player"
+
+  - monster_id: large_pyro_slime
+    name: 大火史莱姆
+    name_en: Large Pyro Slime
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 2
+    danger_signals: ["fire_breath", "explosion_charge"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    visual: "Large orange slime with visible flame core inside"
+
+  - monster_id: hydro_slime
+    name: 水史莱姆
+    name_en: Hydro Slime
+    class_id: monster_normal
+    element: hydro
+    hp_segments: 1
+    danger_signals: ["water_splash", "bubble_trap"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    visual: "Blue translucent slime, may trap player in bubble"
+
+  - monster_id: large_hydro_slime
+    name: 大水史莱姆
+    name_en: Large Hydro Slime
+    class_id: monster_normal
+    element: hydro
+    hp_segments: 2
+    danger_signals: ["tidal_wave", "bubble_traps"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    visual: "Large blue slime that creates water hazards"
+
+  - monster_id: cryo_slime
+    name: 冰史莱姆
+    name_en: Cryo Slime
+    class_id: monster_normal
+    element: cryo
+    hp_segments: 1
+    danger_signals: ["freeze_burst", "ice_shard"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    visual: "Light blue slime with frost aura, chills player"
+
+  - monster_id: large_cryo_slime
+    name: 大冰史莱姆
+    name_en: Large Cryo Slime
+    class_id: monster_normal
+    element: cryo
+    hp_segments: 2
+    danger_signals: ["blizzard", "ice_rain"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    visual: "Large blue-white slime generating frost field"
+
+  - monster_id: electro_slime
+    name: 雷史莱姆
+    name_en: Electro Slime
+    class_id: monster_normal
+    element: electro
+    hp_segments: 1
+    danger_signals: ["shock_discharge", "electric_arc"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    visual: "Purple slime with crackling electro sparks"
+
+  - monster_id: large_electro_slime
+    name: 大雷史莱姆
+    name_en: Large Electro Slime
+    class_id: monster_normal
+    element: electro
+    hp_segments: 2
+    danger_signals: ["lightning_field", "chain_lightning"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    visual: "Large purple slime with sustained electro field"
+
+  - monster_id: anemo_slime
+    name: 风史莱姆
+    name_en: Anemo Slime
+    class_id: monster_normal
+    element: anemo
+    hp_segments: 1
+    danger_signals: ["wind_gust", "vacuum_pull"]
+    weaknesses: ["any_element"]
+    drops: ["slime_condensate", "slime_secretions"]
+    visual: "Green-tinted slime that floats and creates wind currents"
+
+  - monster_id: geo_slime
+    name: 岩史莱姆
+    name_en: Geo Slime
+    class_id: monster_normal
+    element: geo
+    hp_segments: 1
+    danger_signals: ["rock_shield", "stone_throw"]
+    weaknesses: ["geo", "claymore", "overloaded"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    visual: "Brown slime with rocky armor shell"
+
+  - monster_id: dendro_slime
+    name: 草史莱姆
+    name_en: Dendro Slime
+    class_id: monster_normal
+    element: dendro
+    hp_segments: 1
+    danger_signals: ["vine_trap", "poison_spore"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["slime_condensate", "slime_secretions"]
+    visual: "Green slime that hides underground and shoots vines"
+
+  # ---- Abyss Order ----
+  - monster_id: abyss_mage_pyro
+    name: 火深渊法师
+    name_en: Pyro Abyss Mage
+    class_id: monster_elite
+    element: pyro
+    hp_segments: 2
+    shield_element: pyro
+    danger_signals: ["teleport", "fire_rain", "shield_regen"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    visual: "Floating robed figure with pyro shield and staff"
+
+  - monster_id: abyss_mage_cryo
+    name: 冰深渊法师
+    name_en: Cryo Abyss Mage
+    class_id: monster_elite
+    element: cryo
+    hp_segments: 2
+    shield_element: cryo
+    danger_signals: ["teleport", "freeze_mist", "shield_regen"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    visual: "Floating robed figure with cryo shield, emits frost"
+
+  - monster_id: abyss_mage_hydro
+    name: 水深渊法师
+    name_en: Hydro Abyss Mage
+    class_id: monster_elite
+    element: hydro
+    hp_segments: 2
+    shield_element: hydro
+    danger_signals: ["teleport", "water_bubble", "shield_regen"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    visual: "Floating robed figure with hydro shield, creates bubbles"
+
+  - monster_id: abyss_mage_electro
+    name: 雷深渊法师
+    name_en: Electro Abyss Mage
+    class_id: monster_elite
+    element: electro
+    hp_segments: 2
+    shield_element: electro
+    danger_signals: ["teleport", "chain_lightning", "shield_regen"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    visual: "Floating robed figure with electro shield, crackling arcs"
+
+  # ---- Fatui ----
+  - monster_id: fatui_agent
+    name: 愚人众·债务处理人
+    name_en: Fatui Pyro Agent
+    class_id: monster_elite
+    element: pyro
+    hp_segments: 2
+    danger_signals: ["stealth", "backstab", "blade_combo"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["hunter_sacrificial_knife", "agent_sacrificial_knife", "inspector_sacrificial_knife"]
+    visual: "Red-coated agent who turns invisible, dual wields blades"
+
+  - monster_id: fatui_cicin_mage_electro
+    name: 愚人众·雷萤术士
+    name_en: Fatui Electro Cicin Mage
+    class_id: monster_elite
+    element: electro
+    hp_segments: 2
+    danger_signals: ["cicin_swarm", "lightning_bolt", "teleport"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["recruits_insignia", "sergeants_insignia", "lieutenants_insignia"]
+    visual: "Fatui woman surrounded by electro cicin bugs"
+
+  - monster_id: fatui_cicin_mage_cryo
+    name: 愚人众·冰萤术士
+    name_en: Fatui Cryo Cicin Mage
+    class_id: monster_elite
+    element: cryo
+    hp_segments: 2
+    shield_element: cryo
+    danger_signals: ["cicin_swarm", "ice_field", "shield_deploy"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["recruits_insignia", "sergeants_insignia", "lieutenants_insignia"]
+    visual: "Fatui woman with cryo shield and ice cicin swarm"
+
+  - monster_id: fatui_skirmisher_geochanter
+    name: 愚人众·岩先遣队
+    name_en: Fatui Skirmisher - Geochanter Bracer
+    class_id: monster_normal
+    element: geo
+    hp_segments: 1
+    danger_signals: ["rock_blast", "geo_barrier"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["recruits_insignia", "sergeants_insignia"]
+    visual: "Fatui soldier with geo gauntlets, buffed by others"
+
+  - monster_id: fatui_skirmisher_anemoboxer
+    name: 愚人众·风先遣队
+    name_en: Fatui Skirmisher - Anemoboxer Vanguard
+    class_id: monster_normal
+    element: anemo
+    hp_segments: 1
+    danger_signals: ["wind_punch", "vacuum_pull"]
+    weaknesses: ["any_element"]
+    drops: ["recruits_insignia", "sergeants_insignia"]
+    visual: "Fatui brawler with wind gauntlets, pulls player in"
+
+  # ---- Ruin Machines ----
+  - monster_id: ruin_guard
+    name: 遗迹守卫
+    name_en: Ruin Guard
+    class_id: monster_elite
+    element: none
+    hp_segments: 3
+    weakpoints: ["eye_core", "shoulder_left", "shoulder_right"]
+    danger_signals: ["missile_barrage", "spin_attack", "stomp"]
+    weaknesses: ["weakpoint_hit"]
+    drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    visual: "Large mechanical humanoid with glowing eye and armoured body"
+
+  - monster_id: ruin_hunter
+    name: 遗迹猎者
+    name_en: Ruin Hunter
+    class_id: monster_elite
+    element: none
+    hp_segments: 3
+    weakpoints: ["eye_core", "missile_pods"]
+    danger_signals: ["flight_mode", "bombardment", "sweep_attack"]
+    weaknesses: ["weakpoint_hit"]
+    drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    visual: "Mechanical quadruped that transforms to flying mode"
+
+  - monster_id: ruin_grader
+    name: 遗迹重机
+    name_en: Ruin Grader
+    class_id: monster_elite
+    element: none
+    hp_segments: 4
+    weakpoints: ["eye_core", "knee_left", "knee_right", "foot_vents"]
+    danger_signals: ["laser_beam", "stomp_combo", "charge_dash"]
+    weaknesses: ["weakpoint_hit"]
+    drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    visual: "Massive mechanical walker with multiple weakpoint lights"
+
+  - monster_id: ruin_serpent
+    name: 遗迹巨蛇
+    name_en: Ruin Serpent
+    class_id: monster_elite
+    element: none
+    hp_segments: 4
+    weakpoints: ["core_segments", "head_lamp"]
+    danger_signals: ["burrow", "laser_sweep", "spin_attack"]
+    weaknesses: ["weakpoint_hit"]
+    drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    visual: "Long mechanical snake with segmented glowing core"
+
+  # ---- Bosses ----
+  - monster_id: pyro_regisvine
+    name: 爆炎树
+    name_en: Pyro Regisvine
+    class_id: monster_boss
+    element: pyro
+    hp_segments: 5
+    weakpoints: ["root_core", "flower_core"]
+    danger_signals: ["fire_rain", "flame_sweep", "eruption"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["everflame_seed", "agnidus_agate"]
+    resin_cost: 40
+    respawn_minutes: 3
+    visual: "Giant fiery plant boss, flower and root cores alternate exposure"
+
+  - monster_id: cryo_regisvine
+    name: 急冻树
+    name_en: Cryo Regisvine
+    class_id: monster_boss
+    element: cryo
+    hp_segments: 5
+    weakpoints: ["root_core", "flower_core"]
+    danger_signals: ["ice_rain", "frost_sweep", "freeze_field"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["hoarfrost_core", "shivada_jade"]
+    resin_cost: 40
+    respawn_minutes: 3
+    visual: "Giant ice plant boss, frost aura around flower head"
+
+  - monster_id: geo_hypostasis
+    name: 纯水精灵
+    name_en: Geo Hypostasis
+    class_id: monster_boss
+    element: geo
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["rock_wave", "geo_pillars", "stone_shower"]
+    weaknesses: ["geo", "claymore", "overloaded"]
+    drops: ["basalt_pillar", "prithiva_topaz"]
+    resin_cost: 40
+    respawn_minutes: 3
+    visual: "Golden cube entity that forms geometric rock shapes"
+
+  - monster_id: anemo_hypostasis
+    name: 风之核
+    name_en: Anemo Hypostasis
+    class_id: monster_boss
+    element: anemo
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["vacuum_cut", "tornado_field", "wind_burst"]
+    weaknesses: ["any_element"]
+    drops: ["hurricane_seed", "vayuda_turquoise"]
+    resin_cost: 40
+    respawn_minutes: 3
+    visual: "Translucent wind cube entity that forms anemo attacks"
+
+  - monster_id: electro_hypostasis
+    name: 雷之核
+    name_en: Electro Hypostasis
+    class_id: monster_boss
+    element: electro
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["lightning_slash", "electro_prison", "chain_storm"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["lightning_prism", "vajrada_amethyst"]
+    resin_cost: 40
+    respawn_minutes: 3
+    visual: "Purple electro cube entity with crackling energy"
+
+  - monster_id: oceanid
+    name: 纯水精灵
+    name_en: Oceanid
+    class_id: monster_boss
+    element: hydro
+    hp_segments: 5
+    weakpoints: ["hydro_mimics"]
+    danger_signals: ["mimic_wave", "water_dive", "platform_sink"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["cleansing_heart", "varunada_lazurite"]
+    resin_cost: 40
+    respawn_minutes: 3
+    visual: "Elegant water spirit that spawns hydro animal mimics"
+
+  - monster_id: pyro_hypostasis
+    name: 火之核
+    name_en: Pyro Hypostasis
+    class_id: monster_boss
+    element: pyro
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["flame_roll", "fire_pillars", "eruption_ring"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["smoldering_pearl", "agnidus_agate"]
+    resin_cost: 40
+    respawn_minutes: 3
+    visual: "Molten fire cube entity on volcanic terrain"
+
+  - monster_id: cryo_hypostasis
+    name: 冰之核
+    name_en: Cryo Hypostasis
+    class_id: monster_boss
+    element: cryo
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["frost_spin", "ice_spears", "blizzard_dome"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["crystalline_bloom", "shivada_jade"]
+    resin_cost: 40
+    respawn_minutes: 3
+    visual: "Ice crystal cube entity in frozen cavern"
+
+  - monster_id: hydro_hypostasis
+    name: 水之核
+    name_en: Hydro Hypostasis
+    class_id: monster_boss
+    element: hydro
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["water_dome", "hydro_mines", "tidal_wave"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["dew_of_repudiation", "varunada_lazurite"]
+    resin_cost: 40
+    respawn_minutes: 3
+    visual: "Water cube entity that creates hydro traps"

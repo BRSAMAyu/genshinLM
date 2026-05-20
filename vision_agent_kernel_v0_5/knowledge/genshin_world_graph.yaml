@@ -1,0 +1,404 @@
+# Genshin Impact World Graph - Regions, Waypoints, and Edges
+# Sparkle Project - Vision Agent Kernel v0.5
+
+regions:
+  - region_id: mondstadt
+    name: 蒙德
+    name_en: Mondstadt
+    color_palette: "green_sky_blue"
+    theme: "wind_freedom_anemo"
+    visual_signature: "rolling_green_plains_windmills"
+    element_theme: anemo
+
+  - region_id: liyue
+    name: 璃月
+    name_en: Liyue
+    color_palette: "amber_gold_ochre"
+    theme: "contracts_mountain_geo"
+    visual_signature: "karst_mountains_golden_autumn"
+    element_theme: geo
+
+  - region_id: inazuma
+    name: 稻妻
+    name_en: Inazuma
+    color_palette: "purple_sakura_indigo"
+    theme: "eternity_thunder_electro"
+    visual_signature: "cherry_blossoms_thunder_storms"
+    element_theme: electro
+
+  - region_id: sumeru
+    name: 须弥
+    name_en: Sumeru
+    color_palette: "teal_green_sand"
+    theme: "wisdom_forest_dendro"
+    visual_signature: "giant_rainforest_desert_dunes"
+    element_theme: dendro
+
+  - region_id: fontaine
+    name: 枫丹
+    name_en: Fontaine
+    color_palette: "blue_white_gold"
+    theme: "justice_water_hydro"
+    visual_signature: "art_deco_french_canals_waterfalls"
+    element_theme: hydro
+
+  - region_id: natlan
+    name: 纳塔
+    name_en: Natlan
+    color_palette: "red_orange_volcanic"
+    theme: "war_flame_pyro"
+    visual_signature: "volcanic_plains_dragon_saurians"
+    element_theme: pyro
+
+  - region_id: snezhnaya
+    name: 至冬
+    name_en: Snezhnaya
+    color_palette: "ice_white_steel"
+    theme: "ice_cryoeconomy"
+    visual_signature: "perpetual_snow_industrial_fortress"
+    element_theme: cryo
+
+waypoints:
+  # ---- Mondstadt ----
+  - waypoint_id: monstadt_city
+    name: 蒙德城
+    position: [2200.0, 200.0, -800.0]
+    region: mondstadt
+    type: statue_of_seven
+
+  - waypoint_id: mondstadt_windrise
+    name: 风起地
+    position: [2600.0, 180.0, -400.0]
+    region: mondstadt
+    type: teleport_waypoint
+
+  - waypoint_id: mondstadt_starsnatch
+    name: 摘星崖
+    position: [3100.0, 250.0, -200.0]
+    region: mondstadt
+    type: teleport_waypoint
+
+  - waypoint_id: mondstadt_wolvendom
+    name: 奔狼领
+    position: [1800.0, 150.0, -1100.0]
+    region: mondstadt
+    type: teleport_waypoint
+
+  - waypoint_id: mondstadt_dragonspine
+    name: 龙脊雪山
+    position: [1200.0, 500.0, -1500.0]
+    region: mondstadt
+    type: statue_of_seven
+
+  # ---- Liyue ----
+  - waypoint_id: liyue_harbor
+    name: 璃月港
+    position: [1600.0, -50.0, -2800.0]
+    region: liyue
+    type: statue_of_seven
+
+  - waypoint_id: liyue_qingce_village
+    name: 轻策庄
+    position: [1200.0, 300.0, -2200.0]
+    region: liyue
+    type: teleport_waypoint
+
+  - waypoint_id: liyue_jueyun_karst
+    name: 绝云间
+    position: [800.0, 600.0, -2600.0]
+    region: liyue
+    type: teleport_waypoint
+
+  - waypoint_id: liyue_mingyun_village
+    name: 明蕴镇
+    position: [2000.0, 100.0, -2400.0]
+    region: liyue
+    type: teleport_waypoint
+
+  - waypoint_id: liyue_domain_talent
+    name: 璃月天赋本
+    position: [1400.0, 200.0, -3000.0]
+    region: liyue
+    type: domain
+
+  # ---- Inazuma ----
+  - waypoint_id: inazuma_narukami
+    name: 稻妻城·鸣神岛
+    position: [-5000.0, 100.0, -2000.0]
+    region: inazuma
+    type: statue_of_seven
+
+  - waypoint_id: inazuma_yashiori
+    name: 八酝岛
+    position: [-5400.0, 50.0, -2400.0]
+    region: inazuma
+    type: teleport_waypoint
+
+  - waypoint_id: inazuma_seirai
+    name: 清籁岛
+    position: [-5800.0, 80.0, -1800.0]
+    region: inazuma
+    type: teleport_waypoint
+
+  # ---- Sumeru ----
+  - waypoint_id: sumeru_city
+    name: 须弥城
+    position: [-2000.0, 400.0, 1500.0]
+    region: sumeru
+    type: statue_of_seven
+
+  - waypoint_id: sumeru_lokapala
+    name: 俱利般地
+    position: [-1600.0, 350.0, 1200.0]
+    region: sumeru
+    type: teleport_waypoint
+
+  - waypoint_id: sumeru_ashavan
+    name: 阿莎梵
+    position: [-2400.0, 300.0, 1800.0]
+    region: sumeru
+    type: teleport_waypoint
+
+  # ---- Fontaine ----
+  - waypoint_id: fontaine_court
+    name: 枫丹廷
+    position: [3500.0, 300.0, 500.0]
+    region: fontaine
+    type: statue_of_seven
+
+  - waypoint_id: fontaine_belleau
+    name: 贝尔岛
+    position: [3800.0, 200.0, 300.0]
+    region: fontaine
+    type: teleport_waypoint
+
+  - waypoint_id: fontaine_research
+    name: 枫丹科学院
+    position: [3200.0, 400.0, 800.0]
+    region: fontaine
+    type: teleport_waypoint
+
+  # ---- Natlan ----
+  - waypoint_id: natlan_stadium
+    name: 纳塔竞技场
+    position: [5000.0, 500.0, -1000.0]
+    region: natlan
+    type: statue_of_seven
+
+  - waypoint_id: natlan_toyac
+    name: 托亚卡温泉
+    position: [5300.0, 400.0, -700.0]
+    region: natlan
+    type: teleport_waypoint
+
+  - waypoint_id: natlan_tequemecan
+    name: 特克梅肯谷
+    position: [4700.0, 600.0, -1300.0]
+    region: natlan
+    type: teleport_waypoint
+
+  # ---- Cross-region ----
+  - waypoint_id: domain_abyss
+    name: 深境螺旋
+    position: [0.0, -999.0, 0.0]
+    region: mondstadt
+    type: domain
+
+edges:
+  # ---- Mondstadt internal ----
+  - from_id: monstadt_city
+    to_id: mondstadt_windrise
+    cost: 15.0
+    method: walk
+    danger_level: low
+
+  - from_id: mondstadt_windrise
+    to_id: mondstadt_starsnatch
+    cost: 20.0
+    method: walk
+    danger_level: low
+
+  - from_id: monstadt_city
+    to_id: mondstadt_wolvendom
+    cost: 25.0
+    method: walk
+    danger_level: medium
+
+  - from_id: mondstadt_wolvendom
+    to_id: mondstadt_dragonspine
+    cost: 30.0
+    method: walk
+    danger_level: high
+
+  - from_id: monstadt_city
+    to_id: mondstadt_dragonspine
+    cost: 35.0
+    method: walk
+    danger_level: high
+
+  # ---- Mondstadt <-> Liyue ----
+  - from_id: mondstadt_dragonspine
+    to_id: liyue_qingce_village
+    cost: 40.0
+    method: walk
+    danger_level: medium
+
+  - from_id: monstadt_city
+    to_id: liyue_harbor
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  # ---- Liyue internal ----
+  - from_id: liyue_harbor
+    to_id: liyue_qingce_village
+    cost: 20.0
+    method: walk
+    danger_level: low
+
+  - from_id: liyue_qingce_village
+    to_id: liyue_jueyun_karst
+    cost: 25.0
+    method: walk
+    danger_level: medium
+
+  - from_id: liyue_harbor
+    to_id: liyue_mingyun_village
+    cost: 18.0
+    method: walk
+    danger_level: low
+
+  - from_id: liyue_harbor
+    to_id: liyue_domain_talent
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  # ---- Liyue <-> Inazuma (boat/teleport) ----
+  - from_id: liyue_harbor
+    to_id: inazuma_narukami
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  # ---- Inazuma internal ----
+  - from_id: inazuma_narukami
+    to_id: inazuma_yashiori
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  - from_id: inazuma_yashiori
+    to_id: inazuma_seirai
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  - from_id: inazuma_narukami
+    to_id: inazuma_seirai
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  # ---- Liyue <-> Sumeru ----
+  - from_id: liyue_harbor
+    to_id: sumeru_city
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  # ---- Sumeru internal ----
+  - from_id: sumeru_city
+    to_id: sumeru_lokapala
+    cost: 15.0
+    method: walk
+    danger_level: low
+
+  - from_id: sumeru_city
+    to_id: sumeru_ashavan
+    cost: 20.0
+    method: walk
+    danger_level: medium
+
+  - from_id: sumeru_lokapala
+    to_id: sumeru_ashavan
+    cost: 25.0
+    method: walk
+    danger_level: medium
+
+  # ---- Sumeru <-> Fontaine ----
+  - from_id: sumeru_city
+    to_id: fontaine_court
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  # ---- Fontaine internal ----
+  - from_id: fontaine_court
+    to_id: fontaine_belleau
+    cost: 12.0
+    method: walk
+    danger_level: low
+
+  - from_id: fontaine_court
+    to_id: fontaine_research
+    cost: 18.0
+    method: walk
+    danger_level: low
+
+  - from_id: fontaine_belleau
+    to_id: fontaine_research
+    cost: 20.0
+    method: walk
+    danger_level: low
+
+  # ---- Fontaine <-> Natlan ----
+  - from_id: fontaine_court
+    to_id: natlan_stadium
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  # ---- Natlan internal ----
+  - from_id: natlan_stadium
+    to_id: natlan_toyac
+    cost: 15.0
+    method: walk
+    danger_level: medium
+
+  - from_id: natlan_stadium
+    to_id: natlan_tequemecan
+    cost: 20.0
+    method: walk
+    danger_level: high
+
+  - from_id: natlan_toyac
+    to_id: natlan_tequemecan
+    cost: 18.0
+    method: walk
+    danger_level: medium
+
+  # ---- Cross-region shortcuts ----
+  - from_id: monstadt_city
+    to_id: sumeru_city
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  - from_id: monstadt_city
+    to_id: fontaine_court
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  - from_id: monstadt_city
+    to_id: natlan_stadium
+    cost: 3.0
+    method: teleport
+    danger_level: none
+
+  - from_id: domain_abyss
+    to_id: monstadt_city
+    cost: 3.0
+    method: teleport
+    danger_level: none

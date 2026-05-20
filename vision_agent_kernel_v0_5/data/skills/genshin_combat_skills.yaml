@@ -1,0 +1,237 @@
+# Genshin Impact Combat Skill Templates
+# Environment: Genshin Impact 1920x1080
+
+skills:
+  safe_combat_genshin_v1:
+    skill_id: safe_combat_genshin_v1
+    name: "Genshin Safe Combat Loop v1"
+    type: combat
+    environment_profile: genshin_1920x1080
+    steps:
+      - step_id: maintain_lock
+        type: checkpoint
+        label: "Maintain target lock"
+        timeout_ms: 1000
+        params:
+          checkpoint: target_visible
+
+      - step_id: normal_attack_combo
+        type: action_sequence
+        label: "Normal attack combo (4-hit)"
+        timeout_ms: 2000
+        params:
+          actions:
+            - { input: "click", count: 4, interval_ms: 250 }
+
+      - step_id: check_e_skill
+        type: branch_on_visual_state
+        label: "Check E skill readiness"
+        timeout_ms: 500
+        params:
+          guard: "skill_e_ready == true"
+
+      - step_id: use_e_skill
+        type: action_sequence
+        label: "Use E skill"
+        timeout_ms: 1500
+        params:
+          actions:
+            - { input: "press_key", key: "e" }
+          condition: "skill_e_ready == true"
+
+      - step_id: check_q_burst
+        type: branch_on_visual_state
+        label: "Check Q burst readiness"
+        timeout_ms: 500
+        params:
+          guard: "burst_q_ready == true"
+
+      - step_id: use_q_burst
+        type: action_sequence
+        label: "Use Q burst"
+        timeout_ms: 2000
+        params:
+          actions:
+            - { input: "press_key", key: "q" }
+          condition: "burst_q_ready == true"
+
+      - step_id: dodge_on_danger
+        type: guard
+        label: "Dodge on danger (P0)"
+        timeout_ms: 300
+        params:
+          interrupt: DODGE_REFLEX
+          priority: 0
+
+      - step_id: check_hp_switch
+        type: branch_on_visual_state
+        label: "Switch character on low HP"
+        timeout_ms: 500
+        params:
+          guard: "active_char_hp < 0.3"
+
+      - step_id: switch_character
+        type: action_sequence
+        label: "Switch to next character"
+        timeout_ms: 1000
+        params:
+          actions:
+            - { input: "press_key", key: "2" }
+          condition: "active_char_hp < 0.3"
+
+    visual_triggers:
+      target_visible:
+        trigger_id: target_visible
+        type: target_visible
+        detection: tracker_state
+      skill_e_ready:
+        trigger_id: skill_e_ready
+        type: ui_state_changed
+        detection: skill_icon_not_greyed
+        roi: "skill_bar_e"
+      burst_q_ready:
+        trigger_id: burst_q_ready
+        type: ui_state_changed
+        detection: skill_icon_glowing_and_energy_full
+        roi: "burst_bar_q"
+      active_char_hp:
+        trigger_id: active_char_hp
+        type: hp_bar_value
+        detection: hp_bar_ratio
+        roi: "active_char_hp_bar"
+
+    success_criteria:
+      - "target_eliminated"
+      - "visual_action_completed"
+
+    failure_policy:
+      max_retries: 3
+      fallback: "pause_and_reacquire"
+      on_target_lost: "reacquire_or_retreat"
+
+    safety:
+      dry_run_default: true
+      interruptible: true
+      require_focus: true
+      max_duration_ms: 30000
+      danger_threshold: 0.45
+
+  boss_combat_genshin_v1:
+    skill_id: boss_combat_genshin_v1
+    name: "Genshin Boss Combat v1"
+    type: combat
+    environment_profile: genshin_1920x1080
+    extends: safe_combat_genshin_v1
+    steps:
+      - step_id: detect_phase_change
+        type: branch_on_visual_state
+        label: "Detect boss phase change"
+        timeout_ms: 1000
+        params:
+          guard: "boss_phase_changed == true"
+
+      - step_id: react_to_phase
+        type: action_sequence
+        label: "React to phase change (reposition)"
+        timeout_ms: 3000
+        params:
+          actions:
+            - { input: "hold_key", key: "w", duration_ms: 1500 }
+            - { input: "press_key", key: "space" }
+          condition: "boss_phase_changed == true"
+
+      - step_id: check_weakpoint
+        type: branch_on_visual_state
+        label: "Check for weakpoint"
+        timeout_ms: 500
+        params:
+          guard: "weakpoint_visible == true"
+
+      - step_id: attack_weakpoint
+        type: action_sequence
+        label: "Attack weakpoint"
+        timeout_ms: 3000
+        params:
+          actions:
+            - { input: "aim_at", target: "weakpoint_center" }
+            - { input: "click", count: 3, interval_ms: 200 }
+          condition: "weakpoint_visible == true"
+
+      - step_id: q_burst_iframe_dodge
+        type: action_sequence
+        label: "Q burst invincibility frames for dodging"
+        timeout_ms: 2000
+        params:
+          actions:
+            - { input: "press_key", key: "q" }
+          condition: "burst_q_ready == true && danger_score > 0.6"
+
+    visual_triggers:
+      boss_phase_changed:
+        trigger_id: boss_phase_changed
+        type: ui_state_changed
+        detection: boss_visual_transformation
+        roi: "boss_area"
+      weakpoint_visible:
+        trigger_id: weakpoint_visible
+        type: target_visible
+        detection: weakpoint_highlight
+        roi: "boss_area"
+
+    success_criteria:
+      - "boss_defeated"
+      - "visual_action_completed"
+
+    failure_policy:
+      max_retries: 5
+      fallback: "retreat_and_heal"
+      on_target_lost: "reacquire_or_retreat"
+
+    safety:
+      dry_run_default: true
+      interruptible: true
+      require_focus: true
+      max_duration_ms: 120000
+      danger_threshold: 0.6
+
+  dodge_reflex_genshin_v1:
+    skill_id: dodge_reflex_genshin_v1
+    name: "Genshin Reflex Dodge v1"
+    type: combat
+    environment_profile: genshin_1920x1080
+    steps:
+      - step_id: detect_danger
+        type: guard
+        label: "Detect danger signal"
+        timeout_ms: 200
+        params:
+          guard: "danger_score > 0.5"
+
+      - step_id: dodge_sprint
+        type: action_sequence
+        label: "Dodge (right-click sprint)"
+        timeout_ms: 500
+        params:
+          actions:
+            - { input: "click", button: "right" }
+
+    visual_triggers:
+      danger_signal:
+        trigger_id: danger_signal
+        type: danger_detected
+        detection: GenshinDangerSignalExtractor
+
+    success_criteria:
+      - "dodge_executed"
+      - "damage_avoided"
+
+    failure_policy:
+      max_retries: 1
+      fallback: "hold_position"
+
+    safety:
+      dry_run_default: true
+      interruptible: true
+      require_focus: true
+      max_duration_ms: 1000
+      danger_threshold: 0.5
