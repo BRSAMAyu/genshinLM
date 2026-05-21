@@ -1,0 +1,9 @@
+basic_attack:
+  key: Q
+  cooldown: 0
+turn_skill:
+  key: E
+  cooldown: 1
+ultimate_ability:
+  key: "1"
+  cooldown: 3

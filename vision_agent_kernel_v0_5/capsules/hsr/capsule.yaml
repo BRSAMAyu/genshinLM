@@ -1,0 +1,144 @@
+capsule_id: hsr
+version: "0.1.0"
+display_name: "Honkai: Star Rail Capability Pack"
+description: "Full HSR capsule for turn-based combat, map navigation, dialog, and reward collection."
+runtime_package: "capsules.hsr"
+entrypoint: "capsule_entry:HSRCapsule"
+providers:
+  screen_classifier: capsules.hsr.providers:HSRScreenClassifierProvider
+  combat_planner: capsules.hsr.providers:HSRCombatPlannerProvider
+  navigator: capsules.hsr.providers:HSRNavigatorProvider
+  dialog_handler: capsules.hsr.providers:HSRDialogHandlerProvider
+  knowledge: capsules.hsr.providers:HSRKnowledgeProvider
+  verifier: capsules.hsr.providers:HSRVerifierProvider
+capabilities:
+  - hsr_screen_classification
+  - hsr_dialog_progression
+  - hsr_turn_based_combat
+  - hsr_navigation
+  - hsr_reward_claim
+frame_processors:
+  - hsr_perception_bridge
+detectors:
+  - perception.hsr_screen_classifier:HSRScreenClassifier
+slots:
+  - hsr.screen_state
+  - hsr.cooldown_state
+  - hsr.battle_log
+  - hsr.skill_points
+  - hsr.failure_state
+  - hsr.persona_response
+skills:
+  - skill_id: hsr_combat
+    kind: turn_based_skill
+    capabilities_provided:
+      - hsr_turn_based_combat
+    resources:
+      - hsr_keymap
+    verifiers:
+      - combat_finished
+    planner_tags:
+      - combat
+      - turn_based
+  - skill_id: hsr_navigation
+    kind: grid_nav_skill
+    capabilities_provided:
+      - hsr_navigation
+    resources:
+      - hsr_task_patterns
+    verifiers:
+      - nav_destination_reached
+    planner_tags:
+      - navigation
+      - box_map
+  - skill_id: hsr_claim_rewards
+    kind: menu_interaction_skill
+    risk_level: human_confirm
+    capabilities_provided:
+      - hsr_reward_claim
+    resources:
+      - hsr_screen_regions
+    verifiers:
+      - reward_claimed
+    planner_tags:
+      - menu
+      - collection
+  - skill_id: hsr_dialog
+    kind: dialog_skill
+    capabilities_provided:
+      - hsr_dialog_progression
+    resources:
+      - hsr_screen_regions
+    verifiers:
+      - dialog_progressed
+    planner_tags:
+      - dialog
+      - progression
+  - skill_id: hsr_screen_classification
+    kind: provider_capability
+    capabilities_provided:
+      - hsr_screen_classification
+    resources:
+      - hsr_screen_regions
+    verifiers:
+      - screen_state_classified
+    planner_tags:
+      - perception
+      - screen_state
+transitions:
+  - from: HSR_COMBAT
+    to: HSR_ULTIMATE_PHASE
+    reason: ULTIMATE_READY
+  - from: HSR_ULTIMATE_PHASE
+    to: HSR_COMBAT
+    reason: ULTIMATE_USED
+verifiers:
+  - combat_finished
+  - nav_destination_reached
+  - reward_claimed
+  - dialog_progressed
+  - screen_state_classified
+keymaps:
+  confirm: F
+  menu: Esc
+  map: M
+  normal_attack: Q
+  skill: E
+  ultimate_1: "1"
+  ultimate_2: "2"
+  ultimate_3: "3"
+  ultimate_4: "4"
+  speed_toggle: V
+  auto_toggle: Fe
+resources:
+  - resource_id: hsr_keymap
+    kind: yaml
+    path: resources/keymap.yaml
+    description: HSR keymap bindings.
+  - resource_id: hsr_screen_regions
+    kind: yaml
+    path: resources/screen_regions.yaml
+    description: HSR UI click coordinates.
+  - resource_id: hsr_task_patterns
+    kind: yaml
+    path: resources/task_patterns.yaml
+    description: HSR mission flow patterns.
+  - resource_id: hsr_characters
+    kind: yaml
+    path: ../../knowledge/hsr_characters.yaml
+    description: HSR character database.
+  - resource_id: hsr_enemies
+    kind: yaml
+    path: ../../knowledge/hsr_enemies.yaml
+    description: HSR enemy database.
+  - resource_id: hsr_combat_skills
+    kind: skill_yaml
+    path: ../../data/skills/hsr_combat_skills.yaml
+    description: HSR declarative combat skills.
+failure_bridge: app_service.apps.hsr_failure_bridge:HSRFailureBridge
+persona_bridge: app_service.apps.hsr_persona_bridge:HSRPersonaBridge
+profiles:
+  - hsr_1920x1080
+benchmark_tasks:
+  - aurorabench.hsr_combat
+  - aurorabench.hsr_dialog

@@ -1,0 +1,113 @@
+skills:
+  - skill_id: hsr_basic_attack
+    name: 基础攻击
+    type: combat
+    environment_profile: hsr_1920x1080
+    steps:
+      - step_id: target_enemy
+        type: click
+        label: 点击目标敌人
+        params:
+          target: enemy_target
+        timeout_ms: 2000
+      - step_id: press_basic
+        type: key_press
+        label: 按Q基础攻击
+        params:
+          key: Q
+        timeout_ms: 1000
+    visual_triggers:
+      turn_ready:
+        trigger_id: turn_ready
+        type: state_check
+        detection: hsr_turn_indicator_active
+        roi: action_order_bar
+    success_criteria:
+      - turn_executed
+    failure_policy:
+      on_timeout: skip_turn
+      max_retries: 2
+    safety:
+      max_sp_cost: 0
+      sp_gain: 1
+
+  - skill_id: hsr_skill
+    name: 战技
+    type: combat
+    environment_profile: hsr_1920x1080
+    steps:
+      - step_id: target_enemy
+        type: click
+        label: 点击目标敌人
+        params:
+          target: enemy_weakness_target
+        timeout_ms: 2000
+      - step_id: press_skill
+        type: key_press
+        label: 按E使用战技
+        params:
+          key: E
+        timeout_ms: 1500
+    visual_triggers:
+      turn_ready:
+        trigger_id: turn_ready
+        type: state_check
+        detection: hsr_turn_indicator_active
+        roi: action_order_bar
+      sp_available:
+        trigger_id: sp_available
+        type: state_check
+        detection: hsr_sp_count_ge_1
+        roi: sp_indicator
+    success_criteria:
+      - turn_executed
+      - sp_consumed
+    failure_policy:
+      on_timeout: fallback_basic
+      max_retries: 1
+    safety:
+      max_sp_cost: 1
+      sp_gain: 0
+
+  - skill_id: hsr_ultimate
+    name: 终结技
+    type: combat
+    environment_profile: hsr_1920x1080
+    steps:
+      - step_id: press_ultimate
+        type: key_press
+        label: 按数字键释放终结技
+        params:
+          key: "{character_position}"
+        timeout_ms: 1000
+    visual_triggers:
+      ultimate_ready:
+        trigger_id: ultimate_ready
+        type: state_check
+        detection: hsr_ultimate_icon_glow
+        roi: character_portrait
+    success_criteria:
+      - ultimate_anim_started
+    failure_policy:
+      on_timeout: skip
+      max_retries: 0
+    safety:
+      max_sp_cost: 0
+      sp_gain: 0
+      can_interrupt: true
+
+  - skill_id: hsr_auto_toggle
+    name: 自动战斗切换
+    type: utility
+    environment_profile: hsr_1920x1080
+    steps:
+      - step_id: click_auto
+        type: click
+        label: 点击自动战斗按钮
+        params:
+          target: combat_auto_button
+        timeout_ms: 1000
+    success_criteria:
+      - auto_toggled
+    safety:
+      max_sp_cost: 0

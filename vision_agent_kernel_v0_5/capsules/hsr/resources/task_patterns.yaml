@@ -1,0 +1,8 @@
+combat_farm_flow:
+  - navigate_to_calyx
+  - interact_with_marker
+  - execute_combat
+  - claim_loot
+dialog_skip_flow:
+  - click_skip_until_overworld
+  - select_default_choice

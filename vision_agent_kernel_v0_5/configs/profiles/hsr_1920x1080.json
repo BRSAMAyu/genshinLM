@@ -1,0 +1,81 @@
+{
+  "profile_id": "hsr_1920x1080",
+  "window_title": "崩坏：星穹铁道",
+  "alt_window_title": "Honkai: Star Rail",
+  "process_name": "StarRail.exe",
+  "source_resolution": [1920, 1080],
+  "normalized_resolution": [1280, 720],
+  "environment": "hsr",
+  "rois": {
+    "action_order_bar": {
+      "mode": "anchor",
+      "anchor": "bottom-center",
+      "offset_x_px": [-300, 300],
+      "offset_y_px": [-200, -120],
+      "height_px": 80
+    },
+    "sp_indicator": {
+      "mode": "anchor",
+      "anchor": "bottom-center",
+      "offset_x_px": [-100, 100],
+      "offset_y_px": [-160, -120],
+      "height_px": 40
+    },
+    "team_hp_bars": {
+      "mode": "anchor",
+      "anchor": "bottom-left",
+      "offset_x_px": [20, 300],
+      "offset_y_px": [-200, -160],
+      "height_px": 40
+    },
+    "dialog_text_area": {
+      "mode": "anchor",
+      "anchor": "bottom-center",
+      "offset_x_px": [-600, 600],
+      "offset_y_px": [-380, -180],
+      "height_px": 200
+    },
+    "auto_battle_button": {
+      "mode": "anchor",
+      "anchor": "top-right",
+      "offset_x_px": [-120, -20],
+      "offset_y_px": [10, 60],
+      "height_px": 50
+    },
+    "speed_button": {
+      "mode": "anchor",
+      "anchor": "top-right",
+      "offset_x_px": [-200, -130],
+      "offset_y_px": [10, 60],
+      "height_px": 50
+    },
+    "character_portrait_1": {
+      "mode": "anchor",
+      "anchor": "bottom-left",
+      "offset_x_px": [10, 90],
+      "offset_y_px": [-130, -50],
+      "height_px": 80
+    },
+    "character_portrait_2": {
+      "mode": "anchor",
+      "anchor": "bottom-left",
+      "offset_x_px": [100, 180],
+      "offset_y_px": [-130, -50],
+      "height_px": 80
+    },
+    "character_portrait_3": {
+      "mode": "anchor",
+      "anchor": "bottom-left",
+      "offset_x_px": [190, 270],
+      "offset_y_px": [-130, -50],
+      "height_px": 80
+    },
+    "character_portrait_4": {
+      "mode": "anchor",
+      "anchor": "bottom-left",
+      "offset_x_px": [280, 360],
+      "offset_y_px": [-130, -50],
+      "height_px": 80
+    }
+  }
+}

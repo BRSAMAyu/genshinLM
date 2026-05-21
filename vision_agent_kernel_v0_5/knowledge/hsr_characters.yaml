@@ -1,0 +1,276 @@
+characters:
+  - character_id: trailblazer_physical
+    name: 开拓者·物理
+    name_en: Trailblazer (Physical)
+    rarity: 5
+    path: destruction
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 过载真刃
+    ultimate_name: 煌煌星火
+
+  - character_id: trailblazer_fire
+    name: 开拓者·火
+    name_en: Trailblazer (Fire)
+    rarity: 5
+    path: preservation
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 烬煅之誓
+    ultimate_name: 旷古的炬火
+
+  - character_id: march_7th
+    name: 三月七
+    name_en: March 7th
+    rarity: 4
+    path: preservation
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 极寒的弓矢
+    ultimate_name: 冻结一切的冰晶
+
+  - character_id: dan_heng
+    name: 丹恒
+    name_en: Dan Heng
+    rarity: 4
+    path: hunt
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 云骑枪术·涧雨
+    ultimate_name: 澂天枪彻
+
+  - character_id: himeko
+    name: 姬子
+    name_en: Himeko
+    rarity: 5
+    path: erudition
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 战术装甲·熔核
+    ultimate_name: 天弧燎原
+
+  - character_id: welt
+    name: 瓦尔特
+    name_en: Welt
+    rarity: 5
+    path: nihility
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 虚空断界
+    ultimate_name: 拟似黑洞
+
+  - character_id: bronya
+    name: 布洛妮娅
+    name_en: Bronya
+    rarity: 5
+    path: harmony
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 作战开始！
+    ultimate_name: 覆写指令
+
+  - character_id: clara
+    name: 克拉拉
+    name_en: Clara
+    rarity: 5
+    path: destruction
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 史瓦罗在看着你
+    ultimate_name: 答应我的事
+
+  - character_id: natasha
+    name: 娜塔莎
+    name_en: Natasha
+    rarity: 4
+    path: abundance
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 新生之礼
+    ultimate_name: 慈悲永存
+
+  - character_id: seele
+    name: 希儿
+    name_en: Seele
+    rarity: 5
+    path: hunt
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 刃锋交错
+    ultimate_name: 蝶火终焉
+
+  - character_id: jing_yuan
+    name: 景元
+    name_en: Jing Yuan
+    rarity: 5
+    path: erudition
+    element: lightning
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 紫霄震雷
+    ultimate_name: 神君天临
+
+  - character_id: kafka
+    name: 卡芙卡
+    name_en: Kafka
+    rarity: 5
+    path: nihility
+    element: lightning
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 夜阑听雨
+    ultimate_name: 终章的黄昏
+
+  - character_id: blade
+    name: 刃
+    name_en: Blade
+    rarity: 5
+    path: destruction
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 地狱变
+    ultimate_name: 大辟万死
+
+  - character_id: luocha
+    name: 罗刹
+    name_en: Luocha
+    rarity: 5
+    path: abundance
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 棺的回响
+    ultimate_name: 死生之债
+
+  - character_id: fu_xuan
+    name: 符玄
+    name_en: Fu Xuan
+    rarity: 5
+    path: preservation
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 斗转星移
+    ultimate_name: 天算·否泰交济
+
+  - character_id: huohuo
+    name: 藿藿
+    name_en: Huohuo
+    rarity: 5
+    path: abundance
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 狐祈·禳灾
+    ultimate_name: 镇妖祓魔
+
+  - character_id: topaz
+    name: 托帕&账账
+    name_en: Topaz & Numby
+    rarity: 5
+    path: hunt
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 报账时间！
+    ultimate_name: 允准结算！
+
+  - character_id: dr_ratio
+    name: 真理医生
+    name_en: Dr. Ratio
+    rarity: 5
+    path: hunt
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 精神助产术
+    ultimate_name: 演绎法推论
+
+  - character_id: acheron
+    name: 黄泉
+    name_en: Acheron
+    rarity: 5
+    path: nihility
+    element: lightning
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 四相断我
+    ultimate_name: 飞来去刃
+
+  - character_id: robin
+    name: 知更鸟
+    name_en: Robin
+    rarity: 5
+    path: harmony
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 嗓音的回响
+    ultimate_name: 二重唱
+
+  - character_id: firefly
+    name: 流萤
+    name_en: Firefly
+    rarity: 5
+    path: destruction
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 焦土作战
+    ultimate_name: 萤火之矢
+
+  - character_id: asta
+    name: 艾丝妲
+    name_en: Asta
+    rarity: 4
+    path: harmony
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 星辰引力
+    ultimate_name: 天象学奇迹
+
+  - character_id: serval
+    name: 希露瓦
+    name_en: Serval
+    rarity: 4
+    path: erudition
+    element: lightning
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 闪电禁区
+    ultimate_name: 这里是摇滚！

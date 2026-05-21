@@ -1,0 +1,4 @@
+dialog_skip_zone: [1500, 100, 1800, 200]
+combat_auto_button: [1700, 40, 1750, 80]
+combat_speed_button: [1600, 40, 1650, 80]
+menu_claim_all_rewards: [960, 800, 1100, 850]

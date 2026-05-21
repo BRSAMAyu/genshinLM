@@ -1,0 +1,295 @@
+enemies:
+  # === Normal Enemies ===
+  - enemy_id: voidranger_reaver
+    name: 虚空游侠·掠夺者
+    name_en: "Voidranger: Reaver"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [fire, ice, imaginary]
+    toughness: 30
+    danger_signals: [blade_combo]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: voidranger_trampler
+    name: 虚空游侠·践踏者
+    name_en: "Voidranger: Trampler"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [physical, lightning, wind]
+    toughness: 30
+    danger_signals: [charge_attack]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: voidranger_distorter
+    name: 虚空游侠·扭曲者
+    name_en: "Voidranger: Distorter"
+    class_id: enemy_normal
+    element: imaginary
+    weaknesses: [physical, fire, wind]
+    toughness: 30
+    danger_signals: [zone_trap]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: automaton_beetle
+    name: 自动机兵·甲虫
+    name_en: Automaton Beetle
+    class_id: enemy_normal
+    element: none
+    weaknesses: [fire, lightning, quantum]
+    toughness: 30
+    danger_signals: [shield_bash]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: automaton_spider
+    name: 自动机兵·蜘蛛
+    name_en: Automaton Spider
+    class_id: enemy_normal
+    element: none
+    weaknesses: [ice, physical, wind]
+    toughness: 30
+    danger_signals: [self_destruct]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: automaton_hound
+    name: 自动机兵·猎犬
+    name_en: Automaton Hound
+    class_id: enemy_normal
+    element: none
+    weaknesses: [lightning, imaginary, fire]
+    toughness: 30
+    danger_signals: [rapid_bite]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: mara_struck_soldier
+    name: 魔阴身士卒
+    name_en: Mara-Struck Soldier
+    class_id: enemy_normal
+    element: wind
+    weaknesses: [physical, fire, imaginary]
+    toughness: 30
+    danger_signals: [cursed_blade]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: mara_struck_lieutenant
+    name: 魔阴身校尉
+    name_en: Mara-Struck Lieutenant
+    class_id: enemy_normal
+    element: wind
+    weaknesses: [ice, quantum, fire]
+    toughness: 30
+    danger_signals: [war_cry]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: swarm_true_sting
+    name: 虫群·真蛰虫
+    name_en: "Swarm: True Sting"
+    class_id: enemy_normal
+    element: lightning
+    weaknesses: [fire, ice, physical]
+    toughness: 30
+    danger_signals: [summon_spawn]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: sparkle_hog
+    name: 丰饶玄鹿
+    name_en: "Abundance Sprite: Golden Hound"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [ice, wind, imaginary]
+    toughness: 30
+    danger_signals: [charge]
+    drops: [thief_instinct, usurper_scheme]
+
+  # === Elite Enemies ===
+  - enemy_id: vagrant_fire
+    name: 兴风者·火
+    name_en: "Vagrant: Fire"
+    class_id: enemy_elite
+    element: fire
+    weaknesses: [ice, quantum, imaginary]
+    toughness: 60
+    danger_signals: [fire_burst, summon_spawn]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: vagrant_lightning
+    name: 兴风者·雷
+    name_en: "Vagrant: Lightning"
+    class_id: enemy_elite
+    element: lightning
+    weaknesses: [physical, ice, wind]
+    toughness: 60
+    danger_signals: [lightning_sting, charge_attack]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: ascended_frost_spirit
+    name: 琴缺·霜华
+    name_en: "Ascended: Frost Sprite"
+    class_id: enemy_elite
+    element: ice
+    weaknesses: [fire, lightning, wind]
+    toughness: 60
+    danger_signals: [freeze_wave, ice_shield]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: ascended_wind_spirit
+    name: 琴缺·风华
+    name_en: "Ascended: Wind Sprite"
+    class_id: enemy_elite
+    element: wind
+    weaknesses: [physical, fire, quantum]
+    toughness: 60
+    danger_signals: [tornado, wind_shear_stack]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: senior_abomination
+    name: 异邦人·异星
+    name_en: Senior Abomination
+    class_id: enemy_elite
+    element: physical
+    weaknesses: [fire, lightning, quantum]
+    toughness: 60
+    danger_signals: [multi_hit_combo, hp_recovery]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: aurumaton_spectral
+    name: 金人司阍·幽灵
+    name_en: Aurumaton Spectral
+    class_id: enemy_elite
+    element: imaginary
+    weaknesses: [physical, fire, lightning]
+    toughness: 60
+    danger_signals: [zone_lock, summon_spawn]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  # === Boss Enemies ===
+  - enemy_id: doomsday_beast
+    name: 末日兽
+    name_en: Doomsday Beast
+    class_id: enemy_boss
+    element: none
+    weaknesses: [fire, ice, physical, lightning]
+    toughness: 90
+    danger_signals: [dual_head_attack, shield_phase, aoe_nuke]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  - enemy_id: cocolia
+    name: 可可利亚·虚妄之母
+    name_en: "Cocolia, Mother of Deception"
+    class_id: enemy_boss
+    element: lightning
+    weaknesses: [physical, wind, imaginary]
+    toughness: 90
+    danger_signals: [summon_spawn, lightning_field, shield_phase]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  - enemy_id: phantylia
+    name: 幻胧
+    name_en: "Phantylia the Undying"
+    class_id: enemy_boss
+    element: fire
+    weaknesses: [ice, lightning, wind]
+    toughness: 90
+    danger_signals: [summon_spawn, aoe_nuke, hp_recovery]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  - enemy_id: svarog
+    name: 史瓦罗
+    name_en: Svarog
+    class_id: enemy_boss
+    element: lightning
+    weaknesses: [physical, fire, wind]
+    toughness: 90
+    danger_signals: [grab_attack, summon_spawn, laser_beam]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  - enemy_id: aeon_destruccion
+    name: 纳努克·毁灭之星
+    name_en: "Nanook, Destruction's Emanator"
+    class_id: enemy_boss
+    element: none
+    weaknesses: [fire, ice, physical, lightning, wind, quantum, imaginary]
+    toughness: 120
+    danger_signals: [aoe_nuke, phase_change, summon_spawn]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  # === Echo of War ===
+  - enemy_id: destructions_beginning
+    name: 毁灭的开端
+    name_en: "Destruction's Beginning"
+    class_id: echo_of_war
+    element: none
+    weaknesses: [physical, fire, wind]
+    toughness: 90
+    danger_signals: [shield_phase, aoe_nuke]
+    drops: [track_of_destiny, endurance_ash]
+
+  - enemy_id: endurances_last_stand
+    name: 存护的最后据点
+    name_en: "Endurance's Last Stand"
+    class_id: echo_of_war
+    element: none
+    weaknesses: [ice, lightning, imaginary]
+    toughness: 90
+    danger_signals: [summon_spawn, shield_phase]
+    drops: [track_of_destiny, endurance_ash]
+
+  # === Simulated Universe ===
+  - enemy_id: swarm_king_skarak
+    name: 虫皇·斯卡拉克
+    name_en: "Swarm King: Skarak"
+    class_id: simulated_universe
+    element: lightning
+    weaknesses: [fire, ice, physical]
+    toughness: 120
+    danger_signals: [summon_spawn, lightning_field, hp_recovery]
+    drops: [simulated_reward]
+
+  - enemy_id: abundance_highbush
+    name: 丰饶·高位灌木
+    name_en: "Abundance: Highbush"
+    class_id: simulated_universe
+    element: wind
+    weaknesses: [fire, lightning, quantum]
+    toughness: 120
+    danger_signals: [hp_recovery, summon_spawn, zone_trap]
+    drops: [simulated_reward]
+
+  - enemy_id: remembrance_diamond
+    name: 记忆·钻石
+    name_en: "Remembrance: Diamond"
+    class_id: simulated_universe
+    element: ice
+    weaknesses: [fire, physical, wind]
+    toughness: 120
+    danger_signals: [freeze_wave, shield_phase, aoe_nuke]
+    drops: [simulated_reward]
+
+  - enemy_id: preservation_pawn
+    name: 存护·卒
+    name_en: "Preservation: Pawn"
+    class_id: simulated_universe
+    element: none
+    weaknesses: [lightning, wind, imaginary]
+    toughness: 120
+    danger_signals: [shield_phase, counter_attack]
+    drops: [simulated_reward]
+
+  - enemy_id: elation_dice
+    name: 欢愉·骰子
+    name_en: "Elation: Dice"
+    class_id: simulated_universe
+    element: none
+    weaknesses: [physical, fire, quantum]
+    toughness: 120
+    danger_signals: [random_attack, aoe_nuke]
+    drops: [simulated_reward]
+
+  - enemy_id: propagation_larva
+    name: 繁育·幼虫
+    name_en: "Propagation: Larva"
+    class_id: simulated_universe
+    element: physical
+    weaknesses: [fire, ice, lightning]
+    toughness: 120
+    danger_signals: [summon_spawn, rapid_bite]
+    drops: [simulated_reward]
