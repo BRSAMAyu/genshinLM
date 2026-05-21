@@ -546,13 +546,6 @@ class ReliabilityStore:
 
 
 @dataclass(frozen=True, slots=True)
-class StabilizationSample:
-    claim_type: str
-    next_action_succeeded: bool
-    stabilization_window_ms: int
-
-
-@dataclass(frozen=True, slots=True)
 class StabilizationEstimate:
     claim_type: str
     current_window_ms: int
@@ -567,6 +560,8 @@ class StabilizationTracker:
     If the next action after a claim frequently fails, the window is too short.
     If it's consistently stable, the window can be slowly reduced.
     """
+
+    _MAX_SAMPLES_PER_TYPE = 200
 
     def __init__(
         self,
@@ -583,7 +578,7 @@ class StabilizationTracker:
         self._increase = increase_factor
         self._decrease = decrease_factor
         self._min_samples = min_samples
-        self._samples: dict[str, list[bool]] = defaultdict(list)
+        self._samples: dict[str, deque[bool]] = defaultdict(lambda: deque(maxlen=self._MAX_SAMPLES_PER_TYPE))
         self._current_windows: dict[str, int] = dict(self._defaults)
 
     def record(self, claim_type: str, next_action_succeeded: bool) -> StabilizationEstimate:
@@ -935,14 +930,15 @@ class ClaimProducingExecutor:
         snapshot: AuditSnapshot | None = None,
     ) -> ClaimExecutionResult:
         ctx = context or {}
-        estimate = self.reliability_store.estimate(skill_id, ctx)
         gate_decision = self.gate.evaluate(skill_id, ctx, risk_level)
+        estimate = gate_decision.estimate
         replan_count = self._replan_counts.get(node_id, 0)
         uncertainty_decision = self.uncertainty_policy.decide(
-            confidence=gate_decision.estimate.reliability,
+            confidence=estimate.reliability,
             risk_level=risk_level,
             replan_count=replan_count,
         )
+        context_match = min(1.0, estimate.total / max(1, self.reliability_store.min_samples))
         claim = StateDeltaClaim.from_signals(
             claim_id=claim_id,
             mission_id=mission_id,
@@ -951,7 +947,7 @@ class ClaimProducingExecutor:
             claim_type=claim_type,
             claimed_delta=claimed_delta,
             verifier_historical_reliability=estimate.reliability,
-            context_match_score=estimate.reliability,
+            context_match_score=context_match,
             sample_sufficiency=min(1.0, estimate.total / max(1, self.reliability_store.min_samples)),
             drift_penalty=estimate.drift_penalty,
             signals=signals,
@@ -1014,7 +1010,7 @@ class ClaimProducingExecutor:
                     self.stabilization_tracker.record(claim.claim_type, True)
         else:
             self.stabilization_tracker.record(claim.claim_type, False)
-        return claim
+        return self.claim_graph.get(claim_id)
 
     @property
     def journal(self) -> list[RunJournalEntry]:
