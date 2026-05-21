@@ -19,9 +19,68 @@ class RunCheckpoint:
     created_at: float = field(default_factory=time.time)
     evidence_refs: list[str] = field(default_factory=list)
     profile_id: str = ""
+    profile_version: str = ""
     capsule_id: str = ""
+    capsule_version: str = ""
+    window_id: str = ""
+    screen_state: str = ""
+    observation_graph_id: str = ""
+    state_hash: str = ""
+    semantic_action_id: str = ""
+    controller_id: str = ""
+    verifier_id: str = ""
+    verifier_ok: bool | None = None
+    allowed_next_actions: list[str] = field(default_factory=list)
     skill_versions: dict[str, int] = field(default_factory=dict)
+    runtime_versions: dict[str, str] = field(default_factory=dict)
+    claim_refs: list[str] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class ResumeContext:
+    profile_id: str = ""
+    profile_version: str = ""
+    capsule_id: str = ""
+    capsule_version: str = ""
+    window_id: str = ""
+    screen_state: str = ""
+    skill_versions: dict[str, int] = field(default_factory=dict)
+    runtime_versions: dict[str, str] = field(default_factory=dict)
+
+
+class CheckpointValidator:
+    """Validate that a stored checkpoint is safe to resume from."""
+
+    def validate(self, checkpoint: RunCheckpoint | dict[str, Any], current: ResumeContext) -> list[str]:
+        data = asdict(checkpoint) if isinstance(checkpoint, RunCheckpoint) else dict(checkpoint)
+        errors: list[str] = []
+        if data.get("verified") is not True:
+            errors.append("checkpoint_not_verified")
+        if not data.get("evidence_refs"):
+            errors.append("missing_checkpoint_evidence")
+        if data.get("verifier_ok") is False:
+            errors.append("verifier_not_ok")
+        self._match(errors, data, "profile_id", current.profile_id, "profile_mismatch")
+        self._match(errors, data, "profile_version", current.profile_version, "profile_version_mismatch")
+        self._match(errors, data, "capsule_id", current.capsule_id, "capsule_mismatch")
+        self._match(errors, data, "capsule_version", current.capsule_version, "capsule_version_mismatch")
+        self._match(errors, data, "window_id", current.window_id, "window_mismatch")
+        self._match(errors, data, "screen_state", current.screen_state, "screen_state_mismatch")
+
+        for skill_id, expected in dict(data.get("skill_versions") or {}).items():
+            if current.skill_versions.get(skill_id) != expected:
+                errors.append(f"skill_version_mismatch:{skill_id}")
+        for component, expected in dict(data.get("runtime_versions") or {}).items():
+            if current.runtime_versions and current.runtime_versions.get(component) != expected:
+                errors.append(f"runtime_version_mismatch:{component}")
+        return errors
+
+    @staticmethod
+    def _match(errors: list[str], data: dict[str, Any], key: str, current: str, code: str) -> None:
+        expected = str(data.get(key) or "")
+        if expected and current and expected != current:
+            errors.append(code)
 
 
 class RunStateStore:
@@ -64,14 +123,7 @@ class RunStateStore:
         capsule_id: str,
         skill_versions: dict[str, int] | None = None,
     ) -> list[str]:
-        errors: list[str] = []
-        if checkpoint.get("profile_id") and checkpoint.get("profile_id") != profile_id:
-            errors.append("profile_mismatch")
-        if checkpoint.get("capsule_id") and checkpoint.get("capsule_id") != capsule_id:
-            errors.append("capsule_mismatch")
-        expected_versions = dict(checkpoint.get("skill_versions") or {})
-        current_versions = skill_versions or {}
-        for skill_id, expected in expected_versions.items():
-            if current_versions.get(skill_id) != expected:
-                errors.append(f"skill_version_mismatch:{skill_id}")
-        return errors
+        return CheckpointValidator().validate(
+            checkpoint,
+            ResumeContext(profile_id=profile_id, capsule_id=capsule_id, skill_versions=skill_versions or {}),
+        )

@@ -11,6 +11,15 @@ from core.types import Observation, TargetTrack
 
 
 @dataclass(frozen=True, slots=True)
+class SignalCorroboration:
+    signal_id: str
+    source: str
+    supports_ok: bool
+    confidence: float
+    description: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class VerifierResult:
     ok: bool
     verifier_id: str
@@ -20,6 +29,10 @@ class VerifierResult:
     frame_id: int | None = None
     roi_ids: list[str] = field(default_factory=list)
     detection_confidence: float = 0.0
+    alternative_signals: list[SignalCorroboration] = field(default_factory=list)
+    downstream_effects_verified: list[str] = field(default_factory=list)
+    false_negative_likelihood: float = 0.0
+    re_verify_recommended: bool = False
 
 
 @dataclass(frozen=True, slots=True)

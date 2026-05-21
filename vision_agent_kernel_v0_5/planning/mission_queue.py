@@ -20,6 +20,7 @@ class MissionNode:
     failure_policy: dict[str, Any]
     route_id: str | None = None
     playbook: str | None = None
+    risk_level: str = "medium"
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +52,7 @@ def mission_to_dict(queue: MissionQueue) -> dict[str, Any]:
                 "failure_policy": node.failure_policy,
                 "route_id": node.route_id,
                 "playbook": node.playbook,
+                "risk_level": node.risk_level,
             }
             for node in queue.nodes
         ],

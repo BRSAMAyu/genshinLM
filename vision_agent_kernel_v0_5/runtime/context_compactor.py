@@ -22,6 +22,7 @@ class RunSummary:
     hot_context: dict[str, Any] = field(default_factory=dict)
     warm_context: dict[str, Any] = field(default_factory=dict)
     cold_context_refs: list[str] = field(default_factory=list)
+    claim_status: dict[str, str] = field(default_factory=dict)
 
 
 class ContextCompactor:
@@ -37,6 +38,7 @@ class ContextCompactor:
         failures: list[dict[str, Any]] | None = None,
         recovery_attempts: int = 0,
         cold_refs: list[str] | None = None,
+        claim_status: dict[str, str] | None = None,
     ) -> RunSummary:
         verified_facts = [
             str(result.get("fact") or result.get("verifier_id") or result.get("reason"))
@@ -73,6 +75,7 @@ class ContextCompactor:
                 "recovery_attempts": recovery_attempts,
             },
             cold_context_refs=cold_refs or [],
+            claim_status=claim_status or {},
         )
 
     def _next_allowed_actions(
@@ -91,3 +94,32 @@ class ContextCompactor:
             if current_seen and node.id not in completed_nodes:
                 return [node.id]
         return []
+
+
+@dataclass(frozen=True, slots=True)
+class SummaryValidationResult:
+    ok: bool
+    errors: list[str] = field(default_factory=list)
+
+
+class RunSummaryValidator:
+    """Guard against silent context-compaction corruption."""
+
+    def validate(self, mission: MissionQueue, summary: RunSummary) -> SummaryValidationResult:
+        errors: list[str] = []
+        node_ids = {node.id for node in mission.nodes}
+        if summary.mission_id != mission.mission_id:
+            errors.append("mission_id_mismatch")
+        if summary.current_node and summary.current_node not in node_ids:
+            errors.append("unknown_current_node")
+        for node_id in summary.completed_nodes:
+            if node_id not in node_ids:
+                errors.append(f"unknown_completed_node:{node_id}")
+        for node_id in summary.next_allowed_actions:
+            if node_id not in node_ids:
+                errors.append(f"unknown_next_action:{node_id}")
+        if summary.verified_facts and not summary.evidence_refs:
+            errors.append("verified_facts_without_evidence")
+        if len(set(summary.completed_nodes)) != len(summary.completed_nodes):
+            errors.append("duplicate_completed_nodes")
+        return SummaryValidationResult(ok=not errors, errors=errors)
