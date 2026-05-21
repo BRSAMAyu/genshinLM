@@ -8,3 +8,4 @@ build/
 benchmark_reports/
 data/skill_patches/
 logs/
+knowledge/genshin_world_graph.yaml.bak
