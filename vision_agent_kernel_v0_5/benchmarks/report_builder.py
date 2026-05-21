@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
@@ -71,17 +72,7 @@ class ReportBuilder:
             "passed": result.passed,
             "evidence_ids": result.evidence_ids,
             "report": result.report,
-            "metrics": {
-                "frame_to_observation_ms": result.metrics.frame_to_observation_ms,
-                "observation_to_interrupt_ms": result.metrics.observation_to_interrupt_ms,
-                "interrupt_to_lease_ms": result.metrics.interrupt_to_lease_ms,
-                "danger_clear_time_ms": result.metrics.danger_clear_time_ms,
-                "danger_false_clear_rate": result.metrics.danger_false_clear_rate,
-                "resume_success_rate": result.metrics.resume_success_rate,
-                "max_consecutive_dodges": result.metrics.max_consecutive_dodges,
-                "final_task_success": result.metrics.final_task_success,
-                "evidence_coverage": result.metrics.evidence_coverage,
-            },
+            "metrics": asdict(result.metrics),
         }
 
     # -- markdown rendering -------------------------------------------------
@@ -135,6 +126,12 @@ class ReportBuilder:
             lines.append(f"- resume_success_rate: {m.resume_success_rate:.3f}")
             lines.append(f"- max_consecutive_dodges: {m.max_consecutive_dodges}")
             lines.append(f"- final_task_success: {m.final_task_success}")
+            if m.boss_clear_rate or "boss_clear_rate" in r.report:
+                lines.append(f"- boss_clear_rate: {m.boss_clear_rate:.3f}")
+                lines.append(f"- survival_rate: {m.survival_rate:.3f}")
+                lines.append(f"- target_reacquire_success_rate: {m.target_reacquire_success_rate:.3f}")
+                lines.append(f"- heal_success_rate: {m.heal_success_rate:.3f}")
+                lines.append(f"- safe_abort_success_rate: {m.safe_abort_success_rate:.3f}")
             # Include benchmark-specific report keys
             if r.report:
                 lines.append("")

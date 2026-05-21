@@ -18,6 +18,10 @@ ObservationNodeKind = Literal[
     "danger_signal",
     "quest_signal",
     "navigation_signal",
+    "boss_phase_signal",
+    "telegraph_signal",
+    "punish_window_signal",
+    "combat_resource_signal",
     "capsule_extension",
 ]
 
@@ -92,6 +96,10 @@ _KINDS: tuple[ObservationNodeKind, ...] = (
     "danger_signal",
     "quest_signal",
     "navigation_signal",
+    "boss_phase_signal",
+    "telegraph_signal",
+    "punish_window_signal",
+    "combat_resource_signal",
     "capsule_extension",
 )
 
@@ -157,8 +165,23 @@ class ObservationBuilder:
         nodes.extend(self._nodes_from_extension(observation, "danger_signals", "danger_signal"))
         nodes.extend(self._nodes_from_extension(observation, "quest_signals", "quest_signal"))
         nodes.extend(self._nodes_from_extension(observation, "navigation_signals", "navigation_signal"))
+        nodes.extend(self._nodes_from_extension(observation, "boss_phase_signals", "boss_phase_signal"))
+        nodes.extend(self._nodes_from_extension(observation, "telegraph_signals", "telegraph_signal"))
+        nodes.extend(self._nodes_from_extension(observation, "punish_window_signals", "punish_window_signal"))
+        nodes.extend(self._nodes_from_extension(observation, "combat_resource_signals", "combat_resource_signal"))
         for key, value in observation.extensions.items():
-            if key in {"ui_elements", "ocr_blocks", "detected_objects", "danger_signals", "quest_signals", "navigation_signals"}:
+            if key in {
+                "ui_elements",
+                "ocr_blocks",
+                "detected_objects",
+                "danger_signals",
+                "quest_signals",
+                "navigation_signals",
+                "boss_phase_signals",
+                "telegraph_signals",
+                "punish_window_signals",
+                "combat_resource_signals",
+            }:
                 continue
             nodes.append(
                 ObservationNode(

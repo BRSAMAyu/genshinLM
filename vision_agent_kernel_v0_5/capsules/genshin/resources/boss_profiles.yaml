@@ -1,0 +1,169 @@
+bosses:
+  - boss_id: aoe_boss
+    display_name: Synthetic AOE Boss
+    mobility_profile: stationary
+    elemental_resistance:
+      pyro: 0.2
+      hydro: 0.1
+    recommended_reactions:
+      - Vaporize
+      - Frozen
+    shield_states:
+      - none
+    enrage_rules:
+      - hp_below_0_25_increases_aoe_frequency
+    failure_modes:
+      - DANGER_FALSE_NEGATIVE
+      - PUNISH_WINDOW_MISSED
+    phases:
+      - phase_id: opening
+        hp_min: 0.7
+        hp_max: 1.0
+        tactic: setup_then_short_burst
+        attack_patterns:
+          - ground_aoe
+      - phase_id: enrage
+        hp_min: 0.0
+        hp_max: 0.69
+        tactic: defensive_burst_windows
+        attack_patterns:
+          - ground_aoe
+          - multi_hit_combo
+    attack_patterns:
+      - pattern_id: ground_aoe
+        telegraph_signals:
+          - ground_danger_zone
+          - red_floor
+        danger_type: ground
+        time_to_impact_ms: 420
+        safe_response: dodge_reflex
+        priority: 0
+      - pattern_id: multi_hit_combo
+        telegraph_signals:
+          - boss_windup
+          - repeated_flash
+        danger_type: combo
+        time_to_impact_ms: 260
+        safe_response: dodge_then_keep_distance
+        priority: 1
+    punish_windows:
+      - window_id: after_aoe
+        phase_id: opening
+        duration_ms: 1800
+        recommended_action: e_skill_then_burst
+
+  - boss_id: projectile_boss
+    display_name: Synthetic Projectile Boss
+    mobility_profile: high
+    elemental_resistance:
+      electro: 0.65
+    recommended_reactions:
+      - Vaporize
+      - Quicken
+    failure_modes:
+      - PROJECTILE_FALSE_NEGATIVE
+      - TARGET_LOST
+    phases:
+      - phase_id: ranged_loop
+        hp_min: 0.35
+        hp_max: 1.0
+        tactic: strafe_and_punish
+        attack_patterns:
+          - tracking_projectile
+      - phase_id: close_burst
+        hp_min: 0.0
+        hp_max: 0.34
+        tactic: keep_distance
+        attack_patterns:
+          - tracking_projectile
+          - delayed_explosion
+    attack_patterns:
+      - pattern_id: tracking_projectile
+        telegraph_signals:
+          - projectile_approaching
+          - bright_motion
+        danger_type: projectile
+        time_to_impact_ms: 300
+        safe_response: lateral_dodge
+        priority: 0
+      - pattern_id: delayed_explosion
+        telegraph_signals:
+          - delayed_ring
+          - boss_windup
+        danger_type: delayed_aoe
+        time_to_impact_ms: 650
+        safe_response: leave_zone
+        priority: 1
+    punish_windows:
+      - window_id: after_projectile
+        phase_id: ranged_loop
+        duration_ms: 1200
+        recommended_action: normal_attack_short_combo
+
+  - boss_id: phase_shift_boss
+    display_name: Synthetic Phase Shift Boss
+    mobility_profile: teleporting
+    elemental_resistance:
+      cryo: 0.5
+    recommended_reactions:
+      - Quicken
+      - Vaporize
+    shield_states:
+      - elemental_shield
+    enrage_rules:
+      - shield_break_opens_large_punish_window
+    failure_modes:
+      - PHASE_MISREAD
+      - SHIELD_NOT_BROKEN
+      - TARGET_LOST
+    phases:
+      - phase_id: normal
+        hp_min: 0.55
+        hp_max: 1.0
+        tactic: reaction_setup
+        attack_patterns:
+          - teleport_slash
+      - phase_id: shielded
+        hp_min: 0.25
+        hp_max: 0.54
+        tactic: shield_break_safe_loop
+        shield_state: elemental_shield
+        attack_patterns:
+          - shield_pulse
+          - teleport_slash
+      - phase_id: enrage
+        hp_min: 0.0
+        hp_max: 0.24
+        tactic: defensive_finish
+        attack_patterns:
+          - enrage_burst
+    attack_patterns:
+      - pattern_id: teleport_slash
+        telegraph_signals:
+          - target_occlusion
+          - boss_windup
+        danger_type: teleport
+        time_to_impact_ms: 220
+        safe_response: dodge_then_reacquire
+        priority: 0
+      - pattern_id: shield_pulse
+        telegraph_signals:
+          - shield_flash
+          - ground_danger_zone
+        danger_type: shield_pulse
+        time_to_impact_ms: 480
+        safe_response: retreat_then_counter_element
+        priority: 1
+      - pattern_id: enrage_burst
+        telegraph_signals:
+          - repeated_flash
+          - boss_windup
+        danger_type: enrage
+        time_to_impact_ms: 180
+        safe_response: dodge_reflex
+        priority: 0
+    punish_windows:
+      - window_id: shield_break
+        phase_id: shielded
+        duration_ms: 2500
+        recommended_action: burst_window

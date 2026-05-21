@@ -2,7 +2,7 @@
 """AuroraBench: run benchmark suites for the Aurora Vision Agent Kernel.
 
 Usage:
-    python scripts/run_aurorabench.py --suite [all|reflex|long_horizon|repair|ui_safety] --mode [dry-run|live] --output-dir DIR
+    python scripts/run_aurorabench.py --suite [all|reflex|long_horizon|repair|ui_safety|boss_combat] --mode [dry-run|live] --output-dir DIR
 """
 
 from __future__ import annotations
@@ -38,12 +38,16 @@ def _register_suites(runner: BenchmarkRunner) -> None:
     from benchmarks.high_res_ui_safety_grounding.runner import run_all_ui_safety
     runner.register_suite("ui_safety", run_all_ui_safety)
 
+    # Boss combat dry-run/testbed gauntlet
+    from benchmarks.boss_combat_gauntlet.runner import run_all_boss_combat
+    runner.register_suite("boss_combat", run_all_boss_combat)
+
 
 def main() -> int:
     parser = argparse.ArgumentParser(description="AuroraBench: run benchmark suites")
     parser.add_argument(
         "--suite",
-        choices=["all", "reflex", "long_horizon", "repair", "ui_safety"],
+        choices=["all", "reflex", "long_horizon", "repair", "ui_safety", "boss_combat"],
         default="all",
         help="Which suite to run (default: all)",
     )

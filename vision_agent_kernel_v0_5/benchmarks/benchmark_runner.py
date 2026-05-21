@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import uuid
+from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Callable
@@ -124,17 +125,7 @@ def _report_to_dict(report: BenchmarkReport) -> dict[str, object]:
             "passed": r.passed,
             "evidence_ids": r.evidence_ids,
             "report": r.report,
-            "metrics": {
-                "frame_to_observation_ms": r.metrics.frame_to_observation_ms,
-                "observation_to_interrupt_ms": r.metrics.observation_to_interrupt_ms,
-                "interrupt_to_lease_ms": r.metrics.interrupt_to_lease_ms,
-                "danger_clear_time_ms": r.metrics.danger_clear_time_ms,
-                "danger_false_clear_rate": r.metrics.danger_false_clear_rate,
-                "resume_success_rate": r.metrics.resume_success_rate,
-                "max_consecutive_dodges": r.metrics.max_consecutive_dodges,
-                "final_task_success": r.metrics.final_task_success,
-                "evidence_coverage": r.metrics.evidence_coverage,
-            },
+            "metrics": asdict(r.metrics),
         })
 
     return {

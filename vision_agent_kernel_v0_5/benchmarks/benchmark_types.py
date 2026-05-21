@@ -26,6 +26,17 @@ class BenchmarkMetrics:
     mean_time_to_recover_ms: float = 0.0
     memory_growth_mb_per_hour: float = 0.0
     context_compaction_success_rate: float = 0.0
+    boss_clear_rate: float = 0.0
+    survival_rate: float = 0.0
+    death_count: int = 0
+    damage_window_utilization: float = 0.0
+    reaction_uptime: float = 0.0
+    danger_false_negative_rate: float = 0.0
+    danger_false_positive_rate: float = 0.0
+    target_reacquire_success_rate: float = 0.0
+    heal_success_rate: float = 0.0
+    safe_abort_success_rate: float = 0.0
+    input_stuck_count: int = 0
 
 
 @dataclass(slots=True)

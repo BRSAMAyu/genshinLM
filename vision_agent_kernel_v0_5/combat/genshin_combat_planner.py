@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+from combat.boss_schema import BossProfile, conservative_unknown_boss
 from combat.genshin_element_reactions import GenshinReactionTable
+from combat.team_capability import TeamCapabilityAnalyzer, TeamCombatPlan
 
 
 @dataclass(frozen=True, slots=True)
@@ -50,8 +52,9 @@ _ELEMENT_TO_SLOT: dict[str, int] = {
 class GenshinCombatPlanner:
     """Generate combat playbooks for Genshin Impact encounters."""
 
-    def __init__(self) -> None:
+    def __init__(self, team_analyzer: TeamCapabilityAnalyzer | None = None) -> None:
         self._reactions = GenshinReactionTable()
+        self._team_analyzer = team_analyzer or TeamCapabilityAnalyzer()
 
     def generate_playbook(
         self,
@@ -79,6 +82,56 @@ class GenshinCombatPlanner:
             fallback=fallback,
             elemental_chain=reaction_chain,
         )
+
+    def generate_boss_playbook(
+        self,
+        team_elements: list[str],
+        team_characters: list[str],
+        boss_profile: BossProfile | None = None,
+    ) -> tuple[CombatPlaybook, TeamCombatPlan]:
+        """Generate a conservative boss-aware playbook and its team plan.
+
+        This keeps the legacy ``generate_playbook`` API stable while giving the
+        boss runtime a capability-compiled plan.
+        """
+        boss = boss_profile or conservative_unknown_boss()
+        team_profile = self._team_analyzer.analyze(team_characters, team_elements)
+        team_plan = self._team_analyzer.compile_plan(team_profile, boss)
+        base = self.generate_playbook(
+            team_elements=team_profile.elements or team_elements,
+            team_characters=team_characters,
+            enemy_id=boss.boss_id,
+            enemy_weaknesses=list(team_plan.main_chain),
+        )
+        triggers = list(base.priority_triggers)
+        if team_profile.has_shielder:
+            triggers.append(PriorityTrigger("hp < 0.55", "shield", 1, True))
+        if team_profile.has_healer:
+            triggers.append(PriorityTrigger("hp < 0.45", "heal", 2, True))
+        if not team_profile.has_healer and not team_profile.has_shielder:
+            triggers.append(PriorityTrigger("hp < 0.45", "retreat", 1, True))
+        if team_plan.conservative_level >= 2:
+            default_rotation = [
+                CombatAction("normal_attack", team_profile.primary_dps_slot, repeat=2, priority=55),
+                CombatAction("e_skill", team_profile.primary_dps_slot, condition="skill_e_ready", priority=45),
+            ]
+        else:
+            default_rotation = base.default_rotation
+        playbook = CombatPlaybook(
+            playbook_id=f"boss_pb_{boss.boss_id}_{'_'.join(team_profile.elements or team_elements)}",
+            team=base.team,
+            enemy=boss.boss_id,
+            default_rotation=default_rotation,
+            priority_triggers=sorted(triggers, key=lambda trigger: trigger.priority),
+            fallback=FallbackStrategy(
+                on_target_lost="re_acquire_target",
+                on_combo_break="reset_tactic",
+                on_all_dead="safe_abort",
+                on_timeout="safe_abort",
+            ),
+            elemental_chain=team_plan.main_chain,
+        )
+        return playbook, team_plan
 
     def _plan_reaction_chain(
         self, team_elements: list[str], weaknesses: list[str]
