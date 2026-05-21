@@ -156,3 +156,4 @@ class SkillResult:
     payload: JsonDict = field(default_factory=dict)
     verifier_result: VerifierResult | None = None
     claim_id: str = ""
+    claim_status: str = ""

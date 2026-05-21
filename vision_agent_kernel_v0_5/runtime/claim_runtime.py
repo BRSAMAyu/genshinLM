@@ -8,7 +8,10 @@ from typing import Any, Callable, Literal
 
 
 RiskLevel = Literal["low", "medium", "high", "critical"]
-ClaimStatus = Literal["asserted", "tentative", "verified", "uncertain", "suspect", "demoted", "invalidated"]
+ClaimStatus = Literal[
+    "asserted", "tentative", "verified", "locked", "audited",
+    "uncertain", "suspect", "demoted", "reverified", "rejected", "expired",
+]
 AuditStatus = Literal["pending", "matched", "mismatch", "contaminated", "unverifiable"]
 CascadeAction = Literal["continue_with_warning", "revalidate_cluster", "pause_replan", "safe_abort_user_confirm"]
 UncertaintyAction = Literal[
@@ -173,6 +176,33 @@ class StateDeltaClaim:
 
 
 @dataclass(frozen=True, slots=True)
+class ObservationClaim:
+    observation_id: str
+    claim_id: str
+    source_family: str
+    polarity: Literal["support", "refute", "neutral"]
+    signal_quality: float
+    frame_id: int | None = None
+    roi_id: str = ""
+    graph_node_refs: list[str] = field(default_factory=list)
+    verifier_id: str = ""
+    confidence: float = 0.0
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class AdjudicationEvent:
+    adjudication_id: str
+    claim_id: str
+    old_status: ClaimStatus
+    new_status: ClaimStatus
+    reason: str
+    confidence: float = 0.0
+    evidence_votes_summary: dict[str, Any] = field(default_factory=dict)
+    created_at: float = field(default_factory=time.time)
+
+
+@dataclass(frozen=True, slots=True)
 class DependencyGap:
     claim_id: str
     inferred_dependency: str
@@ -202,11 +232,18 @@ class FalseNegativeReport:
 
 
 class ClaimGraph:
-    """Claim dependency graph with cluster-scoped invalidation."""
+    """Claim dependency graph with cluster-scoped invalidation.
+
+    Three node types: StateDeltaClaim, ObservationClaim, AdjudicationEvent.
+    Single-writer event loop + immutable snapshots for concurrency safety (Section 17.1).
+    """
 
     def __init__(self) -> None:
         self._claims: dict[str, StateDeltaClaim] = {}
+        self._observations: dict[str, ObservationClaim] = {}
+        self._adjudications: dict[str, AdjudicationEvent] = {}
         self._children: dict[str, set[str]] = defaultdict(set)
+        self._evidence: dict[str, list[str]] = defaultdict(list)
         self._dependency_gaps: list[DependencyGap] = []
 
     def add_claim(self, claim: StateDeltaClaim, inferred_dependencies: list[str] | None = None) -> list[DependencyGap]:
@@ -221,6 +258,37 @@ class ClaimGraph:
         for dep in claim.all_dependencies:
             self._children[dep].add(claim.claim_id)
         return gaps
+
+    def add_observation(self, obs: ObservationClaim) -> None:
+        self._observations[obs.observation_id] = obs
+        self._evidence[obs.claim_id].append(obs.observation_id)
+
+    def add_adjudication(self, event: AdjudicationEvent) -> None:
+        self._adjudications[event.adjudication_id] = event
+
+    def get_observations_for(self, claim_id: str) -> list[ObservationClaim]:
+        obs_ids = self._evidence.get(claim_id, [])
+        return [self._observations[oid] for oid in obs_ids if oid in self._observations]
+
+    def get_adjudications_for(self, claim_id: str) -> list[AdjudicationEvent]:
+        return [e for e in self._adjudications.values() if e.claim_id == claim_id]
+
+    @property
+    def claim_count(self) -> int:
+        return len(self._claims)
+
+    @property
+    def observation_count(self) -> int:
+        return len(self._observations)
+
+    def snapshot(self) -> dict[str, Any]:
+        return {
+            "claim_count": len(self._claims),
+            "observation_count": len(self._observations),
+            "adjudication_count": len(self._adjudications),
+            "claims": {cid: c.status for cid, c in self._claims.items()},
+            "latest_claim_id": max(self._claims.keys()) if self._claims else "",
+        }
 
     def get(self, claim_id: str) -> StateDeltaClaim:
         return self._claims[claim_id]
