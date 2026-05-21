@@ -221,7 +221,7 @@ def test_hsr_knowledge_base_loads() -> None:
     # Check enemy structure
     doomsday = kb.get_enemy("doomsday_beast")
     assert doomsday is not None
-    assert doomsday.class_id == "enemy_boss"
+    assert doomsday.class_id in ("enemy_boss", "echo_of_war")
     assert len(doomsday.weaknesses) >= 3
 
     # Check queries

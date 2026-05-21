@@ -1,4 +1,17 @@
+# Genshin Impact Character Combat Profiles
+# Sparkle Project - Vision Agent Kernel v0.5
+# Data cross-referenced from Genshin Wiki (fandom), HoYoWiki, Joytify, Mobalytics, and in-game data.
+# Updated through Version Luna V (6.x) - May 2026.
+# Cooldowns in milliseconds. Energy costs are burst energy requirement.
+#
+# behavior_preference enum: on_field_dps | off_field_dps | support | healer | shielder | battery | hybrid
+# strategy_style enum: burst_rotation | sustained_dps | quick_swap | reaction_enabler | utility
+
 characters:
+  # =====================================================================
+  # ARCHONS
+  # =====================================================================
+
   - character_id: venti
     display_name: 温迪
     name_en: Venti
@@ -89,6 +102,10 @@ characters:
     q_duration_ms: 7000
     behavior_preference: on_field_dps
     strategy_style: burst_rotation
+  # =====================================================================
+  # STANDARD BANNER 5-STARS
+  # =====================================================================
+
   - character_id: jean
     display_name: 琴
     name_en: Jean
@@ -194,6 +211,10 @@ characters:
     q_duration_ms: 4000
     behavior_preference: off_field_dps
     strategy_style: quick_swap
+  # =====================================================================
+  # LIMITED 5-STAR DPS
+  # =====================================================================
+
   - character_id: hu_tao
     display_name: 胡桃
     name_en: Hu Tao
@@ -509,6 +530,10 @@ characters:
     q_duration_ms: 0
     behavior_preference: on_field_dps
     strategy_style: sustained_dps
+  # =====================================================================
+  # LIMITED 5-STAR SUPPORT
+  # =====================================================================
+
   - character_id: kaedehara_kazuha
     display_name: 枫原万叶
     name_en: Kaedehara Kazuha
@@ -899,6 +924,10 @@ characters:
     q_duration_ms: 0
     behavior_preference: on_field_dps
     strategy_style: sustained_dps
+  # =====================================================================
+  # 4-STAR CHARACTERS
+  # =====================================================================
+
   - character_id: bennett
     display_name: 班尼特
     name_en: Bennett
@@ -1634,6 +1663,10 @@ characters:
     q_duration_ms: 0
     behavior_preference: support
     strategy_style: utility
+  # =====================================================================
+  # COLLABORATION / SPECIAL CHARACTERS
+  # =====================================================================
+
   - character_id: aloy
     display_name: 埃洛伊
     name_en: Aloy

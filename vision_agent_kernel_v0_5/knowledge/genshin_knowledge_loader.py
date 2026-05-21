@@ -160,6 +160,13 @@ def _collect_resources(raw: dict[str, Any]) -> dict[str, ResourceInfo]:
 
 
 class GenshinKnowledgeBase:
+    _WAYPOINT_ALIASES: dict[str, str] = {
+        "mondstadt_windrise": "mon_windrise",
+        "sumeru_city": "sum_sumeru_city",
+        "fontaine_court": "fon_court",
+        "natlan_stadium": "nat_stadium",
+    }
+
     def __init__(self, knowledge_dir: Path | None = None) -> None:
         self._dir = knowledge_dir or Path("knowledge")
         self._resources: dict[str, ResourceInfo] | None = None
@@ -193,7 +200,19 @@ class GenshinKnowledgeBase:
         path = self._dir / "genshin_world_graph.yaml"
         raw = _load_yaml(path)
         entries = raw.get("waypoints", [])
-        return {_build_waypoint(e).waypoint_id: _build_waypoint(e) for e in entries}
+        waypoints = {_build_waypoint(e).waypoint_id: _build_waypoint(e) for e in entries}
+        for alias, canonical in self._WAYPOINT_ALIASES.items():
+            if alias in waypoints or canonical not in waypoints:
+                continue
+            source = waypoints[canonical]
+            waypoints[alias] = WaypointInfo(
+                waypoint_id=alias,
+                name=source.name,
+                position=list(source.position),
+                region=source.region,
+                type=source.type,
+            )
+        return waypoints
 
     def _load_edges(self) -> list[EdgeInfo]:
         path = self._dir / "genshin_world_graph.yaml"

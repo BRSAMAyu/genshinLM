@@ -699,7 +699,7 @@ enemies:
     drops: [thief_instinct, usurper_scheme]
 
   - enemy_id: black_tide_corroded_axe
-    name: 黑潮腐斧
+    name: 黑潮蚀斧
     name_en: "Black Tide's Corroded Axe"
     class_id: enemy_normal
     element: fire
@@ -776,6 +776,140 @@ enemies:
     weaknesses: [physical, wind, quantum]
     toughness: 60
     danger_signals: [thunder_dive]
+    drops: [thief_instinct, usurper_scheme]
+
+  # ----------------------------------------------------------------
+  # NORMAL ENEMIES — Imagenae (v4.x)
+  # ----------------------------------------------------------------
+
+  - enemy_id: alloy_pommy
+    name: 「合金保姆」
+    name_en: "\"Alloy Pommy\""
+    class_id: enemy_normal
+    element: quantum
+    weaknesses: [fire, lightning, imaginary] # Damage RES: Fire 0%, Lightning 0%, Imaginary 0%, others 20%
+    toughness: 180
+    danger_signals: [alarm_call, defense_down]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: aggressive_reading_material
+    name: 攻击性阅读物
+    name_en: "Aggressive Reading Material"
+    class_id: enemy_normal
+    element: physical
+    weaknesses: [physical, fire, lightning] # Damage RES: Physical 0%, Fire 0%, Lightning 0%, others 20%
+    toughness: 90
+    danger_signals: [page_slam]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: assistant_graffiti_demander
+    name: 助手涂鸦催稿
+    name_en: "Assistant Graffiti: Demander"
+    class_id: enemy_normal
+    element: lightning
+    weaknesses: [ice, wind] # Damage RES: Ice 0%, Wind 0%, others 20%
+    toughness: 90
+    danger_signals: [demand_strike]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: assistant_graffiti_rusher
+    name: 助手涂鸦赶稿
+    name_en: "Assistant Graffiti: Rusher"
+    class_id: enemy_normal
+    element: wind
+    weaknesses: [ice, lightning] # Damage RES: Ice 0%, Lightning 0%, others 20%
+    toughness: 90
+    danger_signals: [rush_strike]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: assistant_graffiti_slacker
+    name: 助手涂鸦拖稿
+    name_en: "Assistant Graffiti: Slacker"
+    class_id: enemy_normal
+    element: ice
+    weaknesses: [lightning, wind] # Damage RES: Lightning 0%, Wind 0%, others 20%
+    toughness: 90
+    danger_signals: [slack_bomb]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: autonomous_wand
+    name: 全自动魔仙棒
+    name_en: "Autonomous Wand"
+    class_id: enemy_normal
+    element: quantum
+    weaknesses: [physical, imaginary] # Damage RES: Physical 0%, Imaginary 0%, others 20%
+    toughness: 90
+    danger_signals: [wand_blast]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: furbo_journalist
+    name: 狸猫记者
+    name_en: "Furbo Journalist"
+    class_id: enemy_normal
+    element: imaginary
+    weaknesses: [lightning, quantum, imaginary] # Damage RES: Lightning 0%, Quantum 0%, Imaginary 0%, others 20%
+    toughness: 90
+    danger_signals: [flash_attack]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: illwish_lotus # Boss summon from Paramount Bliss Inverted: Illwish Archlotus; faction "Other" on Honey Hunter
+    name: 恶愿莲
+    name_en: "Illwish Lotus"
+    class_id: enemy_normal
+    element: none # No explicit attack element; skills are support/talent type
+    weaknesses: [fire, ice, imaginary] # Damage RES: Fire 0%, Ice 0%, Imaginary 0%, others 20%
+    toughness: 90
+    danger_signals: [lotus_trap]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: magical_girl_troupe
+    name: 魔法少女急袭剧团
+    name_en: "Magical Girl Troupe"
+    class_id: enemy_normal
+    element: lightning
+    weaknesses: [physical, fire, ice] # Damage RES: Physical 0%, Fire 0%, Ice 0%, others 20%
+    toughness: 90
+    danger_signals: [troupe_attack]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: output_port_1
+    name: 一号输出端
+    name_en: "Output Port 1"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [wind, quantum, imaginary] # Damage RES: Wind 0%, Quantum 0%, Imaginary 0%, others 20%
+    toughness: 90
+    danger_signals: [port_blast]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: output_port_2
+    name: 二号输出端
+    name_en: "Output Port 2"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [wind, quantum, imaginary] # Damage RES: Wind 0%, Quantum 0%, Imaginary 0%, others 20%
+    toughness: 90
+    danger_signals: [port_blast]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: sd_civilian_mechatron
+    name: 民用机铠
+    name_en: "SD Civilian Mechatron"
+    class_id: enemy_normal
+    element: physical
+    weaknesses: [physical, fire, lightning] # Damage RES: Physical 0%, Fire 0%, Lightning 0%, others 20%
+    toughness: 90
+    danger_signals: [mech_punch]
+    drops: [thief_instinct, usurper_scheme]
+
+  - enemy_id: security_doggo
+    name: 治安忠犬
+    name_en: "Security Doggo"
+    class_id: enemy_normal
+    element: physical
+    weaknesses: [ice, imaginary] # Damage RES: Ice 0%, Imaginary 0%, others 20%
+    toughness: 90
+    danger_signals: [guard_bark]
     drops: [thief_instinct, usurper_scheme]
 
   # ================================================================
@@ -1041,7 +1175,7 @@ enemies:
   # ================================================================
 
   - enemy_id: furiae_praetor
-    name: 天谴近卫
+    name: 天谴先锋
     name_en: Furiae Praetor
     class_id: enemy_elite
     element: imaginary
@@ -1091,7 +1225,7 @@ enemies:
     drops: [thief_instinct, usurper_scheme, conquerors_will]
 
   - enemy_id: black_tides_champion
-    name: 黑潮冠军
+    name: 黑潮斗将
     name_en: "Black Tide's Champion"
     class_id: enemy_elite
     element: physical
@@ -1101,7 +1235,7 @@ enemies:
     drops: [thief_instinct, usurper_scheme, conquerors_will]
 
   - enemy_id: black_tides_corroded_daemon
-    name: 黑潮腐蚀恶魔
+    name: 黑潮蚀魔
     name_en: "Black Tide's Corroded Daemon"
     class_id: enemy_elite
     element: physical
@@ -1138,6 +1272,164 @@ enemies:
     weaknesses: [physical, fire, ice]
     toughness: 60
     danger_signals: [serpent_dive, ichor_spit]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: tide_eroded_blade
+    name: 黑潮蚀刃
+    name_en: "Tide-Eroded Blade"
+    class_id: enemy_elite
+    element: physical
+    weaknesses: [lightning, quantum, imaginary] # Damage RES: Lightning/Quantum/Imaginary 0%, others 20%
+    toughness: 90
+    danger_signals: [blade_combo, dark_buff]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: black_tides_decrepit_bow
+    name: 黑潮朽弓
+    name_en: "Black Tide's Decrepit Bow"
+    class_id: enemy_elite
+    element: physical
+    weaknesses: [physical, ice, quantum] # Damage RES: Physical/Ice/Quantum 0%, others 20%
+    toughness: 90
+    danger_signals: [dark_volley, decay_aura]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  # ----------------------------------------------------------------
+  # ELITE ENEMIES — Imagenae (v4.x)
+  # ----------------------------------------------------------------
+
+  - enemy_id: daybreak_squadron_azurewing
+    name: 破晓小队天霁
+    name_en: "Daybreak Squadron: Azurewing"
+    class_id: enemy_elite
+    element: quantum
+    weaknesses: [physical, fire, imaginary]
+    toughness: 60
+    danger_signals: [azure_dive, squad_combo]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: daybreak_squadron_blazeweaver
+    name: 破晓小队织焰
+    name_en: "Daybreak Squadron: Blazeweaver"
+    class_id: enemy_elite
+    element: fire
+    weaknesses: [physical, quantum, imaginary]
+    toughness: 60
+    danger_signals: [blaze_weave, squad_combo]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: daybreak_squadron_cinderborne
+    name: 破晓小队烬羽
+    name_en: "Daybreak Squadron: Cinderborne"
+    class_id: enemy_elite
+    element: physical
+    weaknesses: [imaginary, fire, quantum]
+    toughness: 60
+    danger_signals: [cinder_dive, squad_combo]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: daybreak_squadron_dawnlance
+    name: 破晓小队晨枪
+    name_en: "Daybreak Squadron: Dawnlance"
+    class_id: enemy_elite
+    element: imaginary
+    weaknesses: [physical, fire, quantum]
+    toughness: 60
+    danger_signals: [dawn_lance, squad_combo]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: joy_ascendant
+    name: 欢愉登顶
+    name_en: "Joy Ascendant"
+    class_id: enemy_elite
+    element: physical
+    weaknesses: [fire, lightning, imaginary]
+    toughness: 60
+    danger_signals: [joy_burst, carnival_rush]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: synergy_duo_ironclad_white_guard
+    name: 戮力双雄铁壁白卫
+    name_en: "Synergy Duo: Ironclad White Guard"
+    class_id: enemy_elite
+    element: imaginary
+    weaknesses: [ice, lightning, wind] # Damage RES: Ice/Lightning/Wind 0%, others 20%
+    toughness: 60
+    danger_signals: [duo_combo, shield_bash]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: ecliptic_inner_beast_shadow_of_feixiao
+    name: 朔日内兽与「飞霄」之影
+    name_en: "Ecliptic Inner Beast & Shadow of Feixiao"
+    class_id: enemy_elite
+    element: none
+    weaknesses: [] # Damage RES: ALL elements 20%; weaknesses only on shared-HP parts (Nebula Devourer, Planeshred Claws, Worldpurge Tail)
+    toughness: 60
+    danger_signals: [beast_fury, rapid_combo, phase_change]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: sanerot_hearteater
+    name: 蛊言妄念的蚀心兽
+    name_en: "Sanerot Hearteater"
+    class_id: enemy_elite
+    element: none
+    weaknesses: [] # Damage RES: ALL elements 20%; shared-HP fight with parts that have individual weaknesses
+    toughness: 40
+    danger_signals: [heart_devour, hp_drain]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  # ----------------------------------------------------------------
+  # ELITE ENEMIES — Other (Event / Cross-faction)
+  # ----------------------------------------------------------------
+
+  - enemy_id: corrupting_shadowfiend
+    name: 蚀心影魔浑流奔涌的腐坏者
+    name_en: "Corrupting Shadowfiend: Torrential Rotbringer"
+    class_id: enemy_elite
+    element: wind
+    weaknesses: [physical, wind, imaginary] # Damage RES: Physical/Wind/Imaginary 0%, others 20%
+    toughness: 60
+    danger_signals: [shadow_corrupt, decay_aura]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: earthshaker_leo
+    name: 狮震八方皎阳似火的飞翼兽
+    name_en: "Earthshaker Leo: Solblaze Winged Beast"
+    class_id: enemy_elite
+    element: fire
+    weaknesses: [physical, fire, imaginary] # Damage RES: Physical/Fire/Imaginary 0%, others 20%
+    toughness: 60
+    danger_signals: [leo_slam, fire_dive]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: elegy_siren
+    name: 哀歌塞壬无情无餍的深海妖
+    name_en: "Elegy Siren: Insatiable Leviathan"
+    class_id: enemy_elite
+    element: ice
+    weaknesses: [physical, fire, lightning] # Damage RES: Physical/Fire/Lightning 0%, others 20%
+    toughness: 60
+    danger_signals: [siren_song, tidal_pull]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: greatsword_guardian
+    name: 巨剑守护陷坚挫锐的先锋将
+    name_en: "Greatsword Guardian: Vanguard Wallbreaker"
+    class_id: enemy_elite
+    element: ice
+    weaknesses: [ice, lightning, quantum] # Damage RES: Ice/Lightning/Quantum 0%, others 20%
+    toughness: 60
+    danger_signals: [greatsword_slam, shield_bash]
+    drops: [thief_instinct, usurper_scheme, conquerors_will]
+
+  - enemy_id: synergy_duo_bloodbound
+    name: 戮力双雄歃血联战的黑斗士
+    name_en: "Synergy Duo: Bloodbound Dark Duelist"
+    class_id: enemy_elite
+    element: physical
+    weaknesses: [physical, lightning, quantum] # Damage RES: Physical/Lightning/Quantum 0%, others 20%
+    toughness: 60
+    danger_signals: [duo_combo, blood_fury]
     drops: [thief_instinct, usurper_scheme, conquerors_will]
 
   # ================================================================
@@ -1209,7 +1501,7 @@ enemies:
   # ================================================================
 
   - enemy_id: cloud_knight_lieutenant_yanqing
-    name: 云骑军统领·彦卿
+    name: 云骑骁卫•彦卿
     name_en: "Cloud Knight Lieutenant: Yanqing"
     class_id: enemy_boss
     element: ice
@@ -1219,9 +1511,9 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: phantylia
-    name: 幻胧
+    name: 不死神实•幻胧
     name_en: "Phantylia the Undying"
-    class_id: enemy_boss
+    class_id: echo_of_war
     element: fire
     weaknesses: [lightning, wind, imaginary]
     toughness: 90
@@ -1249,11 +1541,11 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: cirrus
-    name: 卷云
+    name: 浮烟
     name_en: Cirrus
     class_id: enemy_boss
-    element: none
-    weaknesses: []
+    element: none                # Cannot be directly targeted; loses HP when minions die
+    weaknesses: [physical, fire, ice, lightning, wind, quantum, imaginary]  # 0% RES to all elements
     toughness: 90
     danger_signals: [memory_drain, summon_spawn, aoe_nuke]
     drops: [endurance_ash, broken_teeth, conquerors_will]
@@ -1293,27 +1585,27 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: ten_stonehearts_aventurine
-    name: 十二石心·砂金
+    name: 「石心十人」诡弈砂金
     name_en: "Ten Stonehearts: Aventurine of Stratagems"
     class_id: enemy_boss
     element: imaginary
-    weaknesses: [physical, ice, lightning]
+    weaknesses: [physical, fire, ice, lightning]  # Physical/Fire/Ice/Lightning 0%, Wind 20%, Quantum 20%, Imaginary 40%
     toughness: 90
     danger_signals: [shield_phase, gamble_attack, aoe_nuke]
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: the_past_present_and_eternal_show
-    name: 过去、现在与永恒之秀
+    name: 昔在、今在、永在的剧目
     name_en: "The Past, Present, and Eternal Show"
     class_id: enemy_boss
-    element: physical
-    weaknesses: []
+    element: physical                # Shared HP entity; sub-units deal Physical/Lightning/Imaginary
+    weaknesses: [physical, fire, ice, lightning, wind, quantum, imaginary]  # 0% RES to all elements
     toughness: 90
     danger_signals: [phase_change, summon_spawn, aoe_nuke]
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: borisin_warhead_hoolay
-    name: 狼头·呼雷
+    name: 步离战首•呼雷
     name_en: "Borisin Warhead: Hoolay"
     class_id: enemy_boss
     element: lightning
@@ -1323,7 +1615,7 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: soulhook_sovereign
-    name: 勾魂主宰
+    name: 勾魂摄魄的支配者
     name_en: Soulhook Sovereign
     class_id: enemy_boss
     element: lightning
@@ -1333,17 +1625,17 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: annihilator_of_desolation_mistral
-    name: 荒湮灭者·密斯托拉尔
+    name: 无望冽风的幻灭者
     name_en: Annihilator of Desolation Mistral
     class_id: enemy_boss
     element: ice
-    weaknesses: [fire, lightning, wind, quantum]
+    weaknesses: [fire, lightning, wind, quantum]  # Fire/Lightning/Wind/Quantum 0%, Physical 40%, Ice 60%, Imaginary 60%
     toughness: 90
     danger_signals: [ice_nuke, phase_change, summon_spawn]
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: silver_knight_of_virtuous_gallantry
-    name: 高洁银骑士
+    name: 芒寒色正的银骑士
     name_en: Silver Knight of Virtuous Gallantry
     class_id: enemy_boss
     element: physical
@@ -1353,7 +1645,7 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: daring_diceroller
-    name: 勇敢的骰子
+    name: 孤注一掷的掷骰者
     name_en: Daring Diceroller
     class_id: enemy_boss
     element: imaginary
@@ -1372,12 +1664,22 @@ enemies:
     danger_signals: [banana_burst, summon_spawn, aoe_nuke]
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
+  - enemy_id: blaznana_monkey_trick
+    name: 心蕉如火的猴把戏
+    name_en: "Blaznana Monkey Trick"
+    class_id: enemy_boss
+    element: fire # Shared HP entity (Apocalyptic Shadow variant)
+    weaknesses: [physical, fire, ice, lightning, wind, quantum, imaginary] # 0% RES to all 7 elements
+    toughness: 90
+    danger_signals: [banana_burst, summon_spawn, channel_switch]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
   # ================================================================
   # BOSS ENEMIES — Amphoreus (v3.x)
   # ================================================================
 
   - enemy_id: savage_god_mad_king_incarnation_of_strife
-    name: 野蛮之神、疯狂之王、纷争化身
+    name: 蛮神，疯王，纷争的化身
     name_en: "Savage God, Mad King, Incarnation of Strife"
     class_id: enemy_boss
     element: imaginary
@@ -1387,17 +1689,17 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: the_giver_master_of_legions_lance_of_fury
-    name: 赐予者、军团之主、怒之枪
+    name: 颁赐者，千军首，天谴之矛
     name_en: "The Giver, Master of Legions, Lance of Fury"
     class_id: enemy_boss
     element: imaginary
-    weaknesses: []
+    weaknesses: [ice, lightning, quantum] # Same RES table as Savage God: Ice/Lightning/Quantum 0%, others 20%
     toughness: 90
     danger_signals: [lance_thrust, legion_summon, aoe_nuke]
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: flame_reaver_of_deepest_dark
-    name: 深暗之焰掠夺者
+    name: 至黑之剑，盗火行者
     name_en: "Flame Reaver of the Deepest Dark"
     class_id: enemy_boss
     element: physical
@@ -1407,7 +1709,7 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: flame_reaver_of_doomsday_led_astray
-    name: 末日之焰掠夺者
+    name: 末日歧途的盗火者
     name_en: "Flame Reaver of Doomsday Led Astray"
     class_id: enemy_boss
     element: physical
@@ -1417,7 +1719,7 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: fulminating_wolflord
-    name: 雷怒之狼主
+    name: 雷奔云谲的恶狼主
     name_en: Fulminating Wolflord
     class_id: enemy_boss
     element: lightning
@@ -1427,7 +1729,7 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: pollux_netherwing_husk
-    name: 冥翼之壳·波鲁克斯
+    name: 冥魂渡者，死龙残躯，玻吕刻斯
     name_en: "Pollux, Netherwing Husk, Ferry of Souls"
     class_id: enemy_boss
     element: quantum
@@ -1437,7 +1739,7 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: first_genius_zandar
-    name: 第一天才、本体、赞达尔
+    name: 第一位天才，隐德来希，赞达尔
     name_en: "First Genius, Entelechy, Zandar"
     class_id: enemy_boss
     element: quantum
@@ -1447,7 +1749,7 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: guide_of_withering_and_decay
-    name: 枯萎与腐烂之引
+    name: 枯茎朽骨的引路人
     name_en: Guide of Withering and Decay
     class_id: enemy_boss
     element: quantum
@@ -1457,7 +1759,7 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: ichor_memosprite_judge_of_oblivion
-    name: 灵血忆灵·遗忘之审判者
+    name: 金血忆灵•裁定忘却之形
     name_en: "Ichor Memosprite: Judge of Oblivion"
     class_id: enemy_boss
     element: imaginary
@@ -1467,7 +1769,7 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: rocking_rebel
-    name: 摇滚叛逆者
+    name: 摇滚狂徒
     name_en: Rocking Rebel
     class_id: enemy_boss
     element: imaginary
@@ -1477,17 +1779,37 @@ enemies:
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
   - enemy_id: vessel_of_destruction_khaslana
-    name: 毁灭之器·卡斯兰娜
+    name: 毁灭的容器，卡厄斯兰那
     name_en: "Vessel of the Destruction, Khaslana"
     class_id: enemy_boss
-    element: none
-    weaknesses: []
+    element: none # Mission-exclusive story boss; SPD 0, does not attack
+    weaknesses: [physical, fire, ice, lightning, wind, quantum, imaginary] # Damage RES: ALL elements 0%
     toughness: 120
     danger_signals: [destruction_burst, phase_change, aoe_nuke]
     drops: [endurance_ash, broken_teeth, conquerors_will]
 
+  - enemy_id: sparxi_con_official
+    name: 火花大会@Official
+    name_en: "@SparxiConOfficial"
+    class_id: enemy_boss
+    element: quantum
+    weaknesses: [fire, quantum, imaginary] # Damage RES: Fire/Quantum/Imaginary 0%, others 20%
+    toughness: 450 # Shared HP with Output Ports
+    danger_signals: [viral_burst, summon_output_ports, channel_switch]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  - enemy_id: live_stream_assistant
+    name: 直播小助手
+    name_en: Live Stream Assistant
+    class_id: enemy_boss
+    element: quantum
+    weaknesses: [fire, quantum, imaginary] # Damage RES: Fire/Quantum/Imaginary 0%, others 20%
+    toughness: 450 # Shared HP entity
+    danger_signals: [stream_boost, summon_spawn, channel_switch]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
   - enemy_id: harbinger_of_death_swarm_nightmare
-    name: 死亡先驱·虫群梦魇
+    name: 示死祸源：深魇蝗灾
     name_en: "Harbinger of Death: Swarm Nightmare"
     class_id: enemy_boss
     element: fire
@@ -1495,6 +1817,184 @@ enemies:
     toughness: 90
     danger_signals: [swarm_burst, summon_spawn, aoe_nuke]
     drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  # ----------------------------------------------------------------
+  # BOSS ENEMIES — Imagenae (v4.x)
+  # ----------------------------------------------------------------
+
+  - enemy_id: alloy_mechatron_king_pom_pom
+    name: 合金机铠帕姆王
+    name_en: "Alloy Mechatron: King Pom-Pom"
+    class_id: enemy_boss
+    element: quantum
+    weaknesses: [fire, lightning, imaginary]
+    toughness: 90
+    danger_signals: [mech_slam, summon_spawn, phase_change]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  - enemy_id: paramount_bliss_inverted_illwish_archlotus
+    name: 至乐倒悬恶愿梵莲
+    name_en: "Paramount Bliss Inverted: Illwish Archlotus"
+    class_id: enemy_boss
+    element: lightning
+    weaknesses: [physical, lightning, imaginary]
+    toughness: 90
+    danger_signals: [lotus_bloom, debuff_stack, phase_change]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  - enemy_id: super_idol_center_of_attention
+    name: 超级偶像万众瞩目
+    name_en: "Super Idol: Center of Attention"
+    class_id: enemy_boss
+    element: quantum
+    weaknesses: [physical, fire, quantum, imaginary]
+    toughness: 90
+    danger_signals: [spotlight_burst, summon_spawn, phase_change]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  - enemy_id: canvas_peacock
+    name: 画板孔雀
+    name_en: "Canvas Peacock"
+    class_id: enemy_boss
+    element: physical
+    weaknesses: [physical, fire, ice, lightning, wind, quantum, imaginary] # Damage RES: ALL elements 0%
+    toughness: 360
+    danger_signals: [paint_consume, colorless_state, aoe_palette_meltdown, all_type_res]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  - enemy_id: god_devourer_offspring
+    name: 吞神子嗣
+    name_en: "God-Devourer Offspring"
+    class_id: enemy_boss
+    element: fire
+    weaknesses: [fire, lightning, imaginary] # Damage RES: Fire 0%, Lightning 0%, Imaginary 0%, others 20%
+    toughness: 540
+    danger_signals: [devour_strike, dark_buff, aoe_nuke, def_reduce]
+    drops: [endurance_ash, broken_teeth, conquerors_will]
+
+  # ----------------------------------------------------------------
+  # BOSS SUMMONS / MINIONS — Argenti (Cosmos)
+  # Statues summoned by boss Argenti during combat
+  # ----------------------------------------------------------------
+
+  - enemy_id: speartip
+    name: 「枪尖」
+    name_en: "\"Speartip\""
+    class_id: enemy_normal
+    element: physical
+    weaknesses: [physical, fire] # Damage RES: all 0% (no resistance to any element)
+    toughness: 30
+    danger_signals: [spear_thrust, soul_release]
+    drops: []  # Boss summon for Argenti
+
+  - enemy_id: the_honored
+    name: 「受颂者」
+    name_en: "\"The Honored\""
+    class_id: enemy_normal
+    element: physical
+    weaknesses: [physical, ice] # Damage RES: Physical 0%, Ice 0%, others 20%
+    toughness: 30
+    danger_signals: [soul_release, dmg_boost]
+    drops: []  # Boss summon for Argenti
+
+  - enemy_id: the_shield
+    name: 「盾」
+    name_en: "\"The Shield\""
+    class_id: enemy_normal
+    element: physical
+    weaknesses: [physical, lightning, quantum, imaginary] # Damage RES: Physical/Lightning/Quantum/Imaginary 0%, others 20%
+    toughness: 30
+    danger_signals: [soul_release, barrier]
+    drops: []  # Boss summon for Argenti
+
+  # ----------------------------------------------------------------
+  # BOSS SUMMONS / MINIONS — Amphoreus (v3.x)
+  # High-toughness entities summoned by bosses during combat
+  # ----------------------------------------------------------------
+
+  - enemy_id: conquer_or_be_conquered
+    name: 征服或被征服
+    name_en: "Conquer or Be Conquered"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [lightning, quantum, imaginary] # Damage RES: Lightning/Quantum/Imaginary 0%, others 20%
+    toughness: 240
+    danger_signals: [guardian_strike, dark_buff]
+    drops: []  # Boss summon, no independent drops
+
+  - enemy_id: dried_lacrimal_bone
+    name: 干涸的泪骨
+    name_en: "Dried Lacrimal Bone"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [physical, quantum, imaginary] # Damage RES: Physical/Quantum/Imaginary 0%, others 20%
+    toughness: 360
+    danger_signals: [bone_guard, decay_aura]
+    drops: []  # Boss summon, no independent drops
+
+  - enemy_id: languid_ethmoid_bone
+    name: 枯槁的筛骨
+    name_en: "Languid Ethmoid Bone"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [physical, quantum, imaginary] # Damage RES: Physical/Quantum/Imaginary 0%, others 20%
+    toughness: 360
+    danger_signals: [bone_guard, decay_aura]
+    drops: []  # Boss summon, no independent drops
+
+  - enemy_id: shoot_of_hundred_eyes
+    name: 百眼之末
+    name_en: "Shoot of Hundred Eyes"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [physical, ice, quantum] # Damage RES: Physical/Ice/Quantum 0%, others 20%
+    toughness: 300
+    danger_signals: [gaze_attack, dark_buff]
+    drops: []  # Boss summon, no independent drops
+
+  - enemy_id: twig_of_hundred_eyes
+    name: 百眼之梢
+    name_en: "Twig of Hundred Eyes"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [physical, ice, quantum] # Damage RES: Physical/Ice/Quantum 0%, others 20%
+    toughness: 300
+    danger_signals: [gaze_attack, dark_buff]
+    drops: []  # Boss summon, no independent drops
+
+  - enemy_id: the_long_arms_of_sorrow
+    name: 哀悯长臂
+    name_en: "The Long Arms of Sorrow"
+    class_id: enemy_normal
+    element: quantum
+    weaknesses: [lightning, quantum, imaginary] # Damage RES: Lightning/Quantum/Imaginary 0%, others 20%
+    toughness: 90
+    danger_signals: [arm_reach, quantum_burst]
+    drops: []  # Boss summon for Decimator
+
+  - enemy_id: long_shattered_vessel
+    name: 残破容器
+    name_en: "Long-Shattered Vessel"
+    class_id: enemy_normal
+    element: none
+    weaknesses: [ice, lightning, quantum] # Damage RES: Ice/Lightning/Quantum 0%, others 20%
+    toughness: 180
+    danger_signals: [vessel_burst, dark_buff]
+    drops: []  # Boss summon for Flame Reaver
+
+  # ----------------------------------------------------------------
+  # BOSS SUMMONS / MINIONS — Imagenae (v4.x)
+  # ----------------------------------------------------------------
+
+  - enemy_id: shadow_of_hatred
+    name: 「恨」的侧影
+    name_en: "Shadow of \"Hatred\""
+    class_id: enemy_normal
+    element: physical
+    weaknesses: [physical, ice, lightning, quantum] # Damage RES: Physical/Ice/Lightning/Quantum 0%, Fire/Wind/Imaginary 40%
+    toughness: 180
+    danger_signals: [hatred_overflow, aoe_physical]
+    drops: []  # Summoned by Vessel of the Destruction, Khaslana
 
   # ================================================================
   # ECHO OF WAR BOSSES
@@ -1559,14 +2059,181 @@ enemies:
     danger_signals: [beast_fury, summon_spawn, phase_change]
     drops: [track_of_destiny, auspice_sliver]
 
-  - enemy_id: glance_of_twilight
-    name: 黄昏一瞥
-    name_en: "Glance of Twilight"
+  # glance_of_twilight removed — this is the Echo of War domain name, not a standalone enemy.
+  # The two actual bosses are listed separately:
+  #   decimator_karma_of_daythunder_eye_of_twilight (this file)
+  #   sublime_radiant_avatar_of_the_sky (this file)
+
+  - enemy_id: doomsday_beast
+    name: 末日兽
+    name_en: "Doomsday Beast"
     class_id: echo_of_war
     element: none
-    weaknesses: []
+    weaknesses: [physical, fire, ice, lightning, wind, quantum, imaginary] # Damage RES: all 7 elements 0%
+    toughness: 90 # Shared HP multi-unit entity
+    danger_signals: [dual_head_attack, shield_phase, aoe_nuke]
+    drops: [track_of_destiny, destroyers_final_road]
+
+  - enemy_id: cocolia_mother_of_deception
+    name: 可可利亚，虚妄之母
+    name_en: "Cocolia, Mother of Deception"
+    class_id: echo_of_war
+    element: ice
+    weaknesses: [fire, lightning, quantum] # Damage RES: Fire/Lightning/Quantum 0%, Imaginary 20%, Wind 40%, Physical 40%, Ice 60%
     toughness: 90
-    danger_signals: [twilight_gaze, summon_spawn, aoe_nuke]
+    danger_signals: [ice_storm, summon_bronya, shield_phase, aoe_nuke]
+    drops: [track_of_destiny, guardians_lament]
+
+  - enemy_id: phantylia_the_undying
+    name: 不死神实•幻胧
+    name_en: "Phantylia the Undying"
+    class_id: echo_of_war
+    element: wind
+    weaknesses: [lightning, wind, imaginary] # Damage RES: Lightning/Wind/Imaginary 0%, others 20%
+    toughness: 90
+    danger_signals: [phase_change, summon_spawn, aoe_nuke, hp_recovery]
+    drops: [track_of_destiny, regret_of_infinite_ochema]
+
+  - enemy_id: starcrusher_swarm_king_skaracabaz_synthetic
+    name: 碎星王虫•斯喀拉卡巴兹（拟造）
+    name_en: "Starcrusher Swarm King: Skaracabaz (Synthetic)"
+    class_id: echo_of_war
+    element: quantum
+    weaknesses: [physical, ice, imaginary] # Damage RES: Physical/Ice/Imaginary 0%, Fire/Lightning/Wind 20%, Quantum 40%
+    toughness: 90
+    danger_signals: [summon_spawn, zone_trap, aoe_nuke, phase_change]
+    drops: [track_of_destiny, past_evils_of_borehole]
+
+  - enemy_id: maddened_feixiao
+    name: 失控的飞霄
+    name_en: "Maddened Feixiao"
+    class_id: echo_of_war
+    element: wind
+    weaknesses: [physical, fire, quantum] # Damage RES: Physical/Fire/Quantum 0%, others 20%
+    toughness: 90
+    danger_signals: [rapid_combo, phase_change, summon_spawn]
+    drops: [track_of_destiny, auspice_sliver]
+
+  - enemy_id: opportunistic_provocateur
+    name: 乘间抵隙的煽动者
+    name_en: "Opportunistic Provocateur"
+    class_id: echo_of_war
+    element: wind
+    weaknesses: [fire, lightning, wind, imaginary] # Damage RES: Fire/Lightning/Wind/Imaginary 0%, Physical/Ice/Quantum 40%
+    danger_signals: [debuff_stack, aoe_nuke, phase_change]
+    toughness: 90
+    drops: [track_of_destiny, regret_of_infinite_ochema]
+
+  - enemy_id: starbane_doombringer
+    name: 诛尽杀绝的灭星兽
+    name_en: "Starbane Doombringer"
+    class_id: echo_of_war
+    element: none
+    weaknesses: [physical, fire, ice, wind] # Damage RES: Physical/Fire/Ice/Wind 0%, Lightning/Quantum/Imaginary 20%
+    toughness: 90 # Shared HP multi-unit entity
+    danger_signals: [dual_head_attack, shield_phase, aoe_nuke]
+    drops: [track_of_destiny, destroyers_final_road]
+
+  - enemy_id: cacophonic_conductor
+    name: 万籁齐响的指挥家
+    name_en: "Cacophonic Conductor"
+    class_id: echo_of_war
+    element: imaginary
+    weaknesses: [fire, lightning, quantum, imaginary] # Damage RES: Fire/Lightning/Quantum/Imaginary 0%, Physical 40%, Ice 40% (shared with Echo of Faded Dreams), Wind 40%
+    toughness: 90 # Shared HP multi-unit entity (Echo of Faded Dreams x4 + conductor)
+    danger_signals: [debuff_stack, aoe_nuke, phase_change, summon_spawn]
+    drops: [track_of_destiny, lost_echo_of_shared_wish]
+
+  - enemy_id: hellcharred_shadow_general
+    name: 业火焚心的影将军
+    name_en: "Hellcharred Shadow General"
+    class_id: echo_of_war
+    element: wind
+    weaknesses: [physical, fire, lightning, quantum] # Damage RES: Physical/Fire/Lightning/Quantum 0%, Ice 40%, Wind 40%, Imaginary 40%
+    toughness: 90 # Apocalyptic Shadow variant of Feixiao
+    danger_signals: [rapid_combo, phase_change, summon_spawn, aoe_nuke]
+    drops: [track_of_destiny, auspice_sliver]
+
+  - enemy_id: sky_shrouding_stardevourer_swarm
+    name: 遮天蔽日的噬星蠹
+    name_en: "Sky-Shrouding Stardevourer Swarm"
+    class_id: echo_of_war
+    element: quantum
+    weaknesses: [physical, ice, quantum, imaginary] # Damage RES: Physical/Ice/Quantum/Imaginary 0%, Fire 40%, Lightning 40%, Wind 40%
+    toughness: 90 # Apocalyptic Shadow variant of Starcrusher Swarm King
+    danger_signals: [summon_spawn, zone_trap, aoe_nuke, phase_change]
+    drops: [track_of_destiny, past_evils_of_borehole]
+
+  - enemy_id: annihilator_of_desolation_mistral_mother_of_deception
+    name: 无望冽风的幻灭者•虚妄之母
+    name_en: "Annihilator of Desolation Mistral: Mother of Deception"
+    class_id: echo_of_war
+    element: imaginary
+    weaknesses: [fire, lightning, wind, quantum] # Damage RES: Fire/Lightning/Wind/Quantum 0%, Physical 40%, Ice 60%, Imaginary 60%
+    toughness: 90 # Apocalyptic Shadow variant of Cocolia
+    danger_signals: [ice_storm, summon_spawn, shield_phase, aoe_nuke, phase_change]
+    drops: [track_of_destiny, guardians_lament]
+
+  # Partially verified Echo of War entries — Apocalyptic Shadow variants
+
+  - enemy_id: harmonious_choir_the_great_septimus
+    name: 「合唱」大七
+    name_en: "\"Harmonious Choir\" The Great Septimus"
+    class_id: echo_of_war
+    element: imaginary
+    weaknesses: [fire, lightning, imaginary] # Damage RES: Fire 0%, Lightning 0%, Imaginary 0%, Physical 20%, Ice 20%, Wind 20%, Quantum 20%
+    toughness: 90
+    danger_signals: [debuff_stack, aoe_nuke, phase_change]
+    drops: [track_of_destiny, lost_echo_of_shared_wish]
+
+  - enemy_id: shadow_of_feixiao
+    name: 「飞霄」之影
+    name_en: "Shadow of \"Feixiao\""
+    class_id: echo_of_war
+    element: wind
+    weaknesses: [physical, fire, quantum] # Damage RES: Physical 0%, Fire 0%, Quantum 0%, others 20%
+    toughness: 90
+    danger_signals: [rapid_combo, phase_change, summon_spawn]
+    drops: [track_of_destiny, auspice_sliver]
+
+  - enemy_id: anti_creator_hatred_inundate
+    name: 反造物主，流溢之恨
+    name_en: "Anti-Creator, Hatred Inundate"
+    class_id: echo_of_war
+    element: none
+    weaknesses: [ice, lightning, quantum] # Damage RES: Ice 0%, Lightning 0%, Quantum 0%, others 20%
+    toughness: 90
+    danger_signals: [aoe_nuke, phase_change, summon_spawn]
+    drops: [track_of_destiny, destroyers_final_road]
+
+  - enemy_id: irontomb_anti_nous_funeral_of_gnosis
+    name: 铁墓，反诺斯，灵知的葬仪
+    name_en: "Irontomb, Anti-Nous, Funeral of Gnosis"
+    class_id: echo_of_war
+    element: none
+    weaknesses: [ice, lightning, quantum] # Damage RES: Ice 0%, Lightning 0%, Quantum 0%, others 20%
+    toughness: 90
+    danger_signals: [debuff_stack, aoe_nuke, phase_change]
+    drops: [track_of_destiny, daythunder_anamnesis]
+
+  - enemy_id: decimator_karma_of_daythunder_eye_of_twilight
+    name: 绝灭者，阳雷的业果，晨昏之眼
+    name_en: "Decimator, Karma of Daythunder, Eye of Twilight"
+    class_id: echo_of_war
+    element: imaginary
+    weaknesses: [physical, ice, quantum] # Damage RES: Physical 0%, Ice 0%, Quantum 0%, others 20%
+    toughness: 90
+    danger_signals: [aoe_nuke, phase_change, lightning_field]
+    drops: [track_of_destiny, daythunder_anamnesis]
+
+  - enemy_id: sublime_radiant_avatar_of_the_sky
+    name: 至高，至阳，天空的化身
+    name_en: "Sublime, Radiant, Avatar of the Sky"
+    class_id: echo_of_war
+    element: fire
+    weaknesses: [physical, ice, quantum] # Damage RES: Physical 0%, Ice 0%, Quantum 0%, others 20%
+    toughness: 90
+    danger_signals: [shield_phase, aoe_nuke, phase_change]
     drops: [track_of_destiny, daythunder_anamnesis]
 
   # ================================================================
@@ -1652,3 +2319,13 @@ enemies:
     toughness: 120
     danger_signals: [aoe_nuke, phase_change, summon_spawn]
     drops: [simulated_reward]
+
+  # ================================================================
+  # DIVERGENT UNIVERSE — Note
+  # ================================================================
+  # Divergent Universe does NOT have unique enemies. It reuses existing enemies:
+  # - Boss encounters reuse story/SU bosses with "(Complete)" suffix in name
+  # - Elite encounters reuse existing elites with "(Bug)" suffix in name
+  # - Normal enemies are unchanged
+  # These are cosmetic labels for DU difficulty scaling, not distinct entities.
+  # Therefore no separate divergent_universe entries are needed here.

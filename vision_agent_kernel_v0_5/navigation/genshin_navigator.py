@@ -29,6 +29,13 @@ class _GraphEdge:
 class GenshinNavigator:
     """In-game navigation using minimap and teleport system."""
 
+    _WAYPOINT_ALIASES: dict[str, str] = {
+        "mondstadt_windrise": "mon_windrise",
+        "sumeru_city": "sum_sumeru_city",
+        "fontaine_court": "fon_court",
+        "natlan_stadium": "nat_stadium",
+    }
+
     def __init__(self, knowledge_dir: Path | None = None) -> None:
         self._state = NavigationState(False, "", "unknown", 0.0, "idle", 0.0)
         self._waypoint_reached_threshold_px = 30
@@ -59,6 +66,14 @@ class GenshinNavigator:
             method = str(edge.get("method", "walk"))
             self._adj.setdefault(from_id, []).append(_GraphEdge(to_id, cost, method))
             self._adj.setdefault(to_id, []).append(_GraphEdge(from_id, cost, method))
+
+        for alias, canonical in self._WAYPOINT_ALIASES.items():
+            if canonical not in self._waypoint_regions:
+                continue
+            self._waypoint_regions[alias] = self._waypoint_regions[canonical]
+            self._waypoint_positions[alias] = list(self._waypoint_positions.get(canonical, [0.0, 0.0, 0.0]))
+            self._adj.setdefault(alias, []).append(_GraphEdge(canonical, 0.0, "alias"))
+            self._adj.setdefault(canonical, []).append(_GraphEdge(alias, 0.0, "alias"))
 
     def plan_route(self, from_id: str, to_id: str) -> list[str]:
         """Plan shortest route between two waypoints using world graph.
