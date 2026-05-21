@@ -240,9 +240,9 @@ class StateBus:
 
     def subscribe(self, event_type: str, callback: Callable[[Any], None]) -> str:
         """Subscribe to an event type. Returns a subscription_id for unsubscribe."""
-        sub_id = f"{event_type}_{id(callback)}_{threading.get_ident()}_{self._sub_counter}"
-        self._sub_counter += 1
         with self._listeners_lock:
+            sub_id = f"{event_type}_{id(callback)}_{threading.get_ident()}_{self._sub_counter}"
+            self._sub_counter += 1
             self._listeners[event_type].append(callback)
             self._sub_ids[sub_id] = (event_type, callback)
         return sub_id
@@ -260,6 +260,11 @@ class StateBus:
             except ValueError:
                 pass
             return True
+
+    def subscription_ids(self) -> list[str]:
+        """Return a snapshot of active subscription IDs."""
+        with self._listeners_lock:
+            return list(self._sub_ids.keys())
 
     def publish(self, event_type: str, data: Any) -> None:
         with self._listeners_lock:

@@ -179,6 +179,72 @@ class TestCapsuleUnsubscribe:
         # Verify subscription was cleaned up.
         assert len(bus._sub_ids) == 0
 
+    def test_registry_cleans_capsule_subscriptions_if_uninstall_forgets(self) -> None:
+        bus = StateBus()
+        ctx = _make_context(bus)
+
+        class ForgetfulCapsule:
+            capsule_id: str = "forgetful"
+
+            def install(self, context: CapsuleContext) -> None:
+                context.state_bus.subscribe("test_event", lambda d: None)
+
+            def activate(self) -> None:
+                pass
+
+            def deactivate(self) -> None:
+                pass
+
+            @property
+            def is_active(self) -> bool:
+                return False
+
+            def uninstall(self, context: CapsuleContext) -> None:
+                pass
+
+        registry = CapsuleRegistry()
+        registry.register(ForgetfulCapsule(), _make_manifest(capsule_id="forgetful"), ctx)
+        assert len(bus.subscription_ids()) == 1
+
+        registry.unregister("forgetful")
+
+        assert bus.subscription_ids() == []
+
+    def test_register_failure_rolls_back_subscriptions_created_during_install(self) -> None:
+        bus = StateBus()
+        ctx = _make_context(bus)
+
+        class FailingAfterSubscribeCapsule:
+            capsule_id: str = "failing_after_subscribe"
+
+            def install(self, context: CapsuleContext) -> None:
+                context.state_bus.subscribe("test_event", lambda d: None)
+                raise RuntimeError("install exploded after subscribe")
+
+            def activate(self) -> None:
+                pass
+
+            def deactivate(self) -> None:
+                pass
+
+            @property
+            def is_active(self) -> bool:
+                return False
+
+            def uninstall(self, context: CapsuleContext) -> None:
+                pass
+
+        registry = CapsuleRegistry()
+
+        with pytest.raises(RuntimeError, match="install exploded after subscribe"):
+            registry.register(
+                FailingAfterSubscribeCapsule(),
+                _make_manifest(capsule_id="failing_after_subscribe"),
+                ctx,
+            )
+
+        assert bus.subscription_ids() == []
+
 
 # ---------------------------------------------------------------------------
 # 4. No genshin references under capsules/ or core/ (grep test)

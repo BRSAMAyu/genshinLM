@@ -30,30 +30,18 @@ class CapsuleRegistry:
         if cid in self._capsules:
             raise ValueError(f"Capsule '{cid}' is already registered")
 
-        # Snapshot subscription counter before install to track new subscriptions.
-        sub_counter_before = context.state_bus._sub_counter
+        subscription_ids_before = set(context.state_bus.subscription_ids())
 
         try:
             capsule.install(context)
         except Exception:
+            for sub_id in set(context.state_bus.subscription_ids()) - subscription_ids_before:
+                context.state_bus.unsubscribe(sub_id)
             logger.exception("Failed to install capsule '%s'", cid)
             raise
 
-        # Collect subscription IDs created during install.
-        sub_counter_after = context.state_bus._sub_counter
-        new_sub_ids: list[str] = []
-        # Unfortunately StateBus.subscribe generates opaque IDs, so we track
-        # by range. We reconstruct the IDs using the same formula. Since we
-        # cannot know the callback id/thread id, we record the counter delta
-        # and store it for later cleanup. Instead, we simply snapshot the
-        # current _sub_ids keys that were added after our marker.
-        # A cleaner approach: ask the StateBus for recently added sub IDs.
-        # We iterate backwards through known IDs to find new ones.
-        current_sub_ids = set(context.state_bus._sub_ids.keys())
-        new_sub_ids = []  # We'll use the counter range approach
-
-        # Record the counter range for later cleanup via StateBus internals.
-        self._subscription_ids[cid] = []  # populated below
+        subscription_ids_after = set(context.state_bus.subscription_ids())
+        self._subscription_ids[cid] = sorted(subscription_ids_after - subscription_ids_before)
 
         self._capsules[cid] = capsule
         self._manifests[cid] = manifest

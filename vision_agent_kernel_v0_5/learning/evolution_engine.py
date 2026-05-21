@@ -20,7 +20,8 @@ from repair.skill_patch_builder import SkillPatchBuilder, SkillPatchDraft
 from repair.repair_validator import RepairValidator
 from repair.repair_benchmark_runner import RepairBenchmarkRunner, BenchmarkDelta
 
-_PATCHES_DIR = Path("data/skill_patches")
+_ROOT = Path(__file__).resolve().parents[1]
+_PATCHES_DIR = _ROOT / "data" / "skill_patches"
 
 
 class EvolutionEngine:
