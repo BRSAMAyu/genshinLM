@@ -73,7 +73,10 @@ class AdjudicationResult:
 
 # --- Family aggregation ---
 
-def _aggregate_family_weights(votes: list[EvidenceVote]) -> float:
+def _aggregate_family_weights(
+    votes: list[EvidenceVote],
+    family_correlations: list[dict[str, Any]] | None = None,
+) -> float:
     if not votes:
         return 0.0
     by_group: dict[str, list[EvidenceVote]] = defaultdict(list)
@@ -90,10 +93,55 @@ def _aggregate_family_weights(votes: list[EvidenceVote]) -> float:
     for v in ungrouped:
         group_weights.append(v.weight)
 
+    if family_correlations:
+        group_weights = _apply_family_correlation_discount(by_group, ungrouped, group_weights, family_correlations)
+
     if not group_weights:
         return 0.0
     fail_probs = [_clamp(1.0 - w) for w in group_weights]
     return _clamp(1.0 - math.prod(fail_probs))
+
+
+def _apply_family_correlation_discount(
+    grouped_votes: dict[str, list[EvidenceVote]],
+    ungrouped_votes: list[EvidenceVote],
+    group_weights: list[float],
+    family_correlations: list[dict[str, Any]],
+) -> list[float]:
+    """Conservatively discount correlated evidence families before noisy-or.
+
+    The MVP treats the highest declared correlation touching a family as a
+    penalty against that family's independent contribution. This avoids
+    over-counting signals such as toast OCR and prompt disappearance when they
+    are driven by the same underlying UI event.
+    """
+    family_weight: dict[str, float] = {}
+    for family, votes in grouped_votes.items():
+        family_weight[family] = max((vote.weight for vote in votes), default=0.0)
+    for vote in ungrouped_votes:
+        family_weight[vote.source_family] = max(family_weight.get(vote.source_family, 0.0), vote.weight)
+
+    max_penalty: dict[str, float] = defaultdict(float)
+    for item in family_correlations:
+        families = item.get("families", [])
+        try:
+            correlation = _clamp(float(item.get("correlation", 0.0)))
+        except (TypeError, ValueError):
+            correlation = 0.0
+        if not isinstance(families, list) or correlation <= 0.0:
+            continue
+        present = [str(family) for family in families if str(family) in family_weight]
+        if len(present) < 2:
+            continue
+        for family in present:
+            others = [family_weight[other] for other in present if other != family]
+            other_strength = max(others) if others else 0.0
+            max_penalty[family] = max(max_penalty[family], correlation * other_strength)
+
+    discounted: list[float] = []
+    for family, weight in family_weight.items():
+        discounted.append(_clamp(weight * (1.0 - max_penalty.get(family, 0.0))))
+    return discounted
 
 
 def _check_structural_gates(
@@ -166,8 +214,8 @@ class ClaimAdjudicator:
                 recipe_complete=False, next_action="alternate_verify" if status == "uncertain" else "abort",
             )
 
-        support_score = _aggregate_family_weights(support_votes)
-        refute_score = _aggregate_family_weights(refute_votes)
+        support_score = _aggregate_family_weights(support_votes, recipe.family_correlations)
+        refute_score = _aggregate_family_weights(refute_votes, recipe.family_correlations)
 
         independent_support_count = len({v.source_family for v in support_votes})
         recipe_complete = independent_support_count >= recipe.min_independent_support_families
@@ -214,19 +262,28 @@ class ClaimAdjudicator:
     def _observations_to_votes(self, observations: list[ObservationClaim]) -> list[EvidenceVote]:
         votes: list[EvidenceVote] = []
         for obs in observations:
-            verifier_rel = self._verifier_reliability.get(obs.verifier_id, 1.0)
-            freshness = 1.0
-            if obs.frame_id is not None:
-                freshness = _clamp(1.0 - 0.01 * obs.frame_id)
-            votes.append(EvidenceVote(
-                claim_id=obs.claim_id,
-                source_family=obs.source_family,
-                polarity=obs.polarity,
-                signal_quality=obs.signal_quality,
-                verifier_reliability=verifier_rel,
-                freshness=freshness,
-                independence_group=obs.source_family,
-            ))
+            try:
+                if not obs.claim_id or not obs.source_family:
+                    raise ValueError("missing_claim_or_source_family")
+                verifier_rel = self._verifier_reliability.get(obs.verifier_id, 1.0)
+                freshness = _clamp(float(obs.metadata.get("freshness", 1.0)))
+                votes.append(EvidenceVote(
+                    claim_id=obs.claim_id,
+                    source_family=obs.source_family,
+                    polarity=obs.polarity,
+                    signal_quality=obs.signal_quality,
+                    verifier_reliability=verifier_rel,
+                    freshness=freshness,
+                    independence_group=str(obs.metadata.get("independence_group", obs.source_family)),
+                ))
+            except Exception:
+                votes.append(EvidenceVote(
+                    claim_id=obs.claim_id or "invalid",
+                    source_family="adjudication_error",
+                    polarity="refute",
+                    signal_quality=1.0,
+                    verifier_reliability=1.0,
+                ))
         return votes
 
     def _find_recipe(self, claim_type: str) -> ClaimRecipe:

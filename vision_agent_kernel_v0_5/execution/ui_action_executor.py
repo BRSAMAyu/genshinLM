@@ -17,8 +17,12 @@ from evidence.evidence_nodes import (
     EvidenceNode,
 )
 from execution.input_worker import InputWorker
+from execution.mouse_motor import ClickReceipt, MousePathPolicy, mouse_policy_for_action_family
+from execution.physical_receipt import PhysicalActionReceipt
 from interaction.ui_anchor import ClickResult, UIAnchor, UIAnchorResolver, UIElement
 from perception.observation_graph import ObservationGraph
+from runtime.claim_runtime import ObservationClaim, StateDeltaClaim
+from runtime.claim_worker import ClaimGraphCommand, ClaimGraphCommandResult, ClaimGraphWorker
 
 
 @dataclass(frozen=True, slots=True)
@@ -27,12 +31,17 @@ class UIExecutionConfig:
     require_confirmation: bool = False
     max_click_lease_ms: int = 120
     owner: str = "ui_anchor_executor"
+    mouse_policy: MousePathPolicy | None = None
+    current_mouse_position: tuple[int, int] = (0, 0)
 
 
 @dataclass(frozen=True, slots=True)
 class UIExecutionResult:
     click_result: ClickResult
     evidence_ids: list[str] = field(default_factory=list)
+    click_receipt: ClickReceipt | None = None
+    physical_receipts: list[PhysicalActionReceipt] = field(default_factory=list)
+    claim_result: ClaimGraphCommandResult | None = None
 
 
 class UIAnchorActionExecutor:
@@ -111,6 +120,16 @@ class UIAnchorActionExecutor:
             )
 
         lease_id = f"lease:{uuid.uuid4()}"
+        mouse_policy = cfg.mouse_policy or mouse_policy_for_action_family("ui_click", dry_run=cfg.dry_run)
+        mouse_path = mouse_policy.build_path(cfg.current_mouse_position, resolved.click_point)
+        click_receipt = ClickReceipt(
+            anchor_id=anchor.anchor_id,
+            click_point=resolved.click_point,
+            path=mouse_path,
+            pre_click_frame_id=observation_graph.frame_id,
+            coordinate_space="viewport_px",
+            evidence_ids=[action_id],
+        )
         lease_node = EvidenceNode(
             node_id=lease_id,
             node_type=NODE_TYPE_INPUT_LEASE,
@@ -121,33 +140,52 @@ class UIAnchorActionExecutor:
                 "click_point": resolved.click_point,
                 "dry_run": cfg.dry_run,
                 "max_click_lease_ms": cfg.max_click_lease_ms,
+                "mouse_path": {
+                    "mode": mouse_path.mode,
+                    "points": mouse_path.points,
+                    "duration_ms": mouse_path.duration_ms,
+                    "coordinate_space": mouse_path.coordinate_space,
+                },
             },
         )
         self._graph.add_node(lease_node)
         self._graph.add_edge(action_id, lease_id, EDGE_LEASED_AS)
+        now = time.perf_counter()
+        lease = InputLease(
+            lease_id=lease_id,
+            owner=cfg.owner,
+            priority=30,
+            key_states={"mouse_left": "DOWN"},
+            mouse_delta=None,
+            created_at=now,
+            expires_at=now + cfg.max_click_lease_ms / 1000.0,
+            reason=f"click_anchor:{anchor.anchor_id}",
+        )
+        receipt_status = "dry_run" if cfg.dry_run else "accepted"
+        physical_receipt = PhysicalActionReceipt.from_lease(
+            lease,
+            status=receipt_status,
+            backend="dry-run" if cfg.dry_run else self._input_worker.backend.__class__.__name__ if self._input_worker else "unknown",
+            action_family="ui_click",
+            evidence_ids=[lease_id],
+            metadata={"click_point": resolved.click_point, "mouse_path_points": mouse_path.points},
+        )
         if not cfg.dry_run:
             if self._input_worker is None:
                 raise RuntimeError("safe-window UI execution requires InputWorker")
-            now = time.perf_counter()
-            self._input_worker.submit_lease(
-                InputLease(
-                    lease_id=lease_id,
-                    owner=cfg.owner,
-                    priority=30,
-                    key_states={"mouse_left": "DOWN"},
-                    mouse_delta=None,
-                    created_at=now,
-                    expires_at=now + cfg.max_click_lease_ms / 1000.0,
-                    reason=f"click_anchor:{anchor.anchor_id}",
-                )
-            )
+            self._input_worker.submit_lease(lease)
 
         result_id = f"actuation:{uuid.uuid4()}"
         result_node = EvidenceNode(
             node_id=result_id,
             node_type=NODE_TYPE_ACTUATION_RESULT,
             created_at=time.time(),
-            payload={"status": "EXECUTED", "anchor_id": anchor.anchor_id, "dry_run": cfg.dry_run},
+            payload={
+                "status": "EXECUTED",
+                "anchor_id": anchor.anchor_id,
+                "dry_run": cfg.dry_run,
+                "receipt_id": physical_receipt.receipt_id,
+            },
         )
         self._graph.add_node(result_node)
         self._graph.add_edge(lease_id, result_id, EDGE_RESULTED_IN)
@@ -161,4 +199,52 @@ class UIAnchorActionExecutor:
                 evidence_ids=evidence_ids,
             ),
             evidence_ids,
+            click_receipt,
+            [physical_receipt],
+        )
+
+    def click_anchor_with_claim(
+        self,
+        anchor: UIAnchor,
+        observation_graph: ObservationGraph,
+        *,
+        claim: StateDeltaClaim,
+        claim_worker: ClaimGraphWorker,
+        elements: list[UIElement] | None = None,
+        config: UIExecutionConfig | None = None,
+    ) -> UIExecutionResult:
+        """Execute a UI anchor action and route its result into ClaimGraphWorker.
+
+        The click itself is only an actuation claim. The caller must still attach
+        post-action screen/inventory/navigation verifiers for terminal success.
+        """
+        click = self.click_anchor(anchor, observation_graph, elements=elements, config=config)
+        claim_worker.submit(ClaimGraphCommand("add_claim", claim=claim))
+        polarity = "support" if click.click_result.status == "EXECUTED" else "refute"
+        quality = click.click_result.resolution.confidence if click.click_result.resolution else 0.0
+        obs = ObservationClaim(
+            observation_id=f"obs:{claim.claim_id}:ui_click",
+            claim_id=claim.claim_id,
+            source_family="ui_action",
+            polarity=polarity,
+            signal_quality=quality,
+            frame_id=observation_graph.frame_id,
+            graph_node_refs=click.evidence_ids,
+            verifier_id="ui_anchor_action_executor",
+            confidence=quality,
+            metadata={
+                "click_status": click.click_result.status,
+                "anchor_id": anchor.anchor_id,
+                "post_action_verifier": anchor.post_action_verifier,
+                "freshness": 1.0,
+            },
+        )
+        claim_worker.submit(ClaimGraphCommand("add_observation", observation=obs))
+        adjudication = claim_worker.submit(ClaimGraphCommand("adjudicate", claim_id=claim.claim_id))
+        return UIExecutionResult(
+            click.click_result,
+            click.evidence_ids,
+            click.click_receipt,
+            click.physical_receipts,
+            adjudication,
         )

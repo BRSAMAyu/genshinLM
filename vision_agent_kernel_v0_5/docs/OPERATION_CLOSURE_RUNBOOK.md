@@ -38,3 +38,21 @@ anti-cheat bypasses, or driver-level input.
 - Terminal success must have observation-grounded verifier evidence.
 - Long runs must checkpoint after verified MissionNodes and compact LLM context
   from runtime facts, not from free-form memory.
+
+## Pre-Realworld Gate
+
+Before opening a real game window, the local runtime must pass:
+
+1. `python -m pytest -q`
+2. `python .\scripts\check_core_boundaries.py --root .`
+3. `python .\scripts\run_aurorabench.py --suite all --mode dry-run --output-dir .\benchmark_reports\pre_realworld_closure`
+4. Capsule profile preflight for the target game. Unattended mode is blocked
+   unless required anchors, profile metadata, normalized coordinates, and anchor
+   validation all pass.
+5. Local VLM optional smoke check. If the OpenAI-compatible endpoint is down or
+   fails JSON/grounding validation, fallback visual-agent actions require human
+   confirmation.
+
+Terminal MissionNode completion must pass through ClaimGraphWorker and
+ClaimAdjudicator. Legacy `VerifierResult(ok=True)` can only create an
+ObservationClaim; it cannot complete a terminal node by itself.

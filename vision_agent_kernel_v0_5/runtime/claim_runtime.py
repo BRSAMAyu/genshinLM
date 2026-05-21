@@ -11,6 +11,7 @@ RiskLevel = Literal["low", "medium", "high", "critical"]
 ClaimStatus = Literal[
     "asserted", "tentative", "verified", "locked", "audited",
     "uncertain", "disputed", "suspect", "demoted", "reverified", "rejected", "expired",
+    "error",
 ]
 AuditStatus = Literal["pending", "matched", "mismatch", "contaminated", "unverifiable"]
 CascadeAction = Literal["continue_with_warning", "revalidate_cluster", "pause_replan", "safe_abort_user_confirm"]

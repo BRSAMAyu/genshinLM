@@ -42,6 +42,8 @@ from runtime.claim_adjudicator import (
     CORE_RECIPES,
     EvidenceVote,
 )
+from runtime.claim_events import ClaimEvent, ClaimEventPublisher, ClaimGraphState
+from runtime.claim_worker import ClaimGraphCommand, ClaimGraphCommandResult, ClaimGraphWorker
 from runtime.audit_scheduler import (
     AuditCompletion,
     AuditRecord,
@@ -75,8 +77,14 @@ __all__ = [
     "CORE_RECIPES",
     "CapabilityReliabilityGate",
     "ClaimAdjudicator",
+    "ClaimEvent",
+    "ClaimEventPublisher",
     "ClaimExecutionResult",
     "ClaimGraph",
+    "ClaimGraphCommand",
+    "ClaimGraphCommandResult",
+    "ClaimGraphState",
+    "ClaimGraphWorker",
     "ClaimProducingExecutor",
     "ClaimRecipe",
     "ClaimRole",

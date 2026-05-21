@@ -178,6 +178,17 @@ class TestClaimAdjudicator:
         adj.adjudicate(claim, [])
         assert adj.adjudication_count == 2
 
+    def test_frame_id_does_not_decay_freshness(self):
+        adj = ClaimAdjudicator()
+        claim = _make_claim("c1", "inventory_delta")
+        observations = [
+            ObservationClaim("obs_1", "c1", "toast", "support", 0.85, frame_id=250),
+            ObservationClaim("obs_2", "c1", "inventory_delta", "support", 0.9, frame_id=251),
+        ]
+        result = adj.adjudicate(claim, observations)
+        assert result.status == "verified"
+        assert result.confidence > 0.7
+
     def test_core_recipes_loaded(self):
         assert "inventory_delta.default" in CORE_RECIPES
         assert "combat_target_killed.default" in CORE_RECIPES

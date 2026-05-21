@@ -28,6 +28,16 @@ class CalibrationReport:
     issues: list[CalibrationIssue] = field(default_factory=list)
 
 
+@dataclass(frozen=True, slots=True)
+class ProfilePreflightReport:
+    capsule_id: str
+    profile_id: str
+    ready_for_unattended: bool
+    ready_for_supervised: bool
+    checklist: dict[str, bool]
+    issues: list[CalibrationIssue] = field(default_factory=list)
+
+
 class CalibrationWizard:
     """Non-UI calibration workflow core for GUI/CLI wrappers.
 
@@ -97,5 +107,52 @@ class CalibrationWizard:
             profile_id=profile.profile_id,
             ready=not issues,
             resolutions=resolutions,
+            issues=issues,
+        )
+
+    def preflight(
+        self,
+        profile: CalibrationProfile,
+        elements: Iterable[UIElement],
+        *,
+        required_anchors: Iterable[str],
+        required_metadata: Iterable[str] = ("language", "window_mode", "scale", "capsule_version"),
+        screen_state_by_anchor: dict[str, str] | None = None,
+    ) -> ProfilePreflightReport:
+        validation = self.validate(profile, elements, screen_state_by_anchor=screen_state_by_anchor)
+        required_anchor_set = set(required_anchors)
+        missing_anchor_defs = sorted(anchor_id for anchor_id in required_anchor_set if anchor_id not in profile.anchors)
+        metadata_keys = set(profile.metadata.keys())
+        missing_metadata = sorted(key for key in required_metadata if key not in metadata_keys)
+        issues = list(validation.issues)
+        issues.extend(
+            CalibrationIssue(anchor_id=anchor_id, code="missing_anchor_definition", message=f"{anchor_id} is not declared in profile")
+            for anchor_id in missing_anchor_defs
+        )
+        issues.extend(
+            CalibrationIssue(anchor_id="profile", code="missing_profile_metadata", message=f"missing metadata: {key}")
+            for key in missing_metadata
+        )
+        checklist = {
+            "viewport_recorded": bool(profile.viewport[0] > 0 and profile.viewport[1] > 0),
+            "required_anchors_declared": not missing_anchor_defs,
+            "required_metadata_present": not missing_metadata,
+            "anchors_validated": validation.ready,
+            "normalized_coordinates": all(
+                0.0 <= anchor.candidate_roi.x <= 1.0
+                and 0.0 <= anchor.candidate_roi.y <= 1.0
+                and 0.0 < anchor.candidate_roi.w <= 1.0
+                and 0.0 < anchor.candidate_roi.h <= 1.0
+                for anchor in profile.anchors.values()
+            ),
+        }
+        ready_for_supervised = checklist["viewport_recorded"] and checklist["required_anchors_declared"] and checklist["normalized_coordinates"]
+        ready_for_unattended = ready_for_supervised and checklist["required_metadata_present"] and checklist["anchors_validated"]
+        return ProfilePreflightReport(
+            capsule_id=profile.capsule_id,
+            profile_id=profile.profile_id,
+            ready_for_unattended=ready_for_unattended,
+            ready_for_supervised=ready_for_supervised,
+            checklist=checklist,
             issues=issues,
         )
