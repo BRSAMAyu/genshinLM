@@ -49,6 +49,16 @@ class PerceptionPipeline:
     def add_post_processor(self, processor: FramePostProcessor) -> None:
         self._post_processors.append(processor)
 
+    def remove_post_processor(self, processor: FramePostProcessor) -> bool:
+        try:
+            self._post_processors.remove(processor)
+        except ValueError:
+            return False
+        return True
+
+    def post_processors_snapshot(self) -> list[FramePostProcessor]:
+        return list(self._post_processors)
+
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
             print("[PerceptionPipeline] start ignored; already running", flush=True)

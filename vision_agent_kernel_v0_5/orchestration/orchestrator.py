@@ -48,9 +48,22 @@ class Orchestrator:
         """Public API to register a custom skill cleanly."""
         self._skills[name] = skill
 
+    def unregister_skill(self, name: str) -> bool:
+        """Remove a dynamically registered skill."""
+        return self._skills.pop(name, None) is not None
+
+    def skill_names(self) -> list[str]:
+        return list(self._skills.keys())
+
     def register_transition(self, from_state: str, to_state: str, condition: str | Callable) -> None:
         """Public API to register a custom state transition cleanly on the underlying graph."""
         self._graph.register_transition(from_state, to_state, condition)
+
+    def unregister_transition(self, from_state: str, to_state: str, condition: str | Callable) -> bool:
+        return self._graph.unregister_transition(from_state, to_state, condition)
+
+    def custom_transitions_snapshot(self) -> list[tuple[str, str, str | Callable]]:
+        return self._graph.custom_transitions_snapshot()
 
     @property
     def state(self) -> str:

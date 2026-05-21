@@ -195,6 +195,12 @@ class SkillDefinitionModel(BaseModel):
     type: Literal["ui", "navigation", "combat", "recovery", "verification"] = "ui"
     version: int = 1
     metadata: dict[str, Any] = {}
+    capsule_id: str = "core"
+    capabilities: list[str] = []
+    parameters_schema: dict[str, Any] = {}
+    resources: list[dict[str, Any]] = []
+    verifier_contracts: list[dict[str, Any]] = []
+    planner: dict[str, Any] = {}
     environment_profile: str = "default_1920x1080"
     preconditions: list[str] = []
     steps: list[SkillStepModel]

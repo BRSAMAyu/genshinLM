@@ -2,12 +2,33 @@ capsule_id: desktop_ui
 version: "0.1.0"
 display_name: "Desktop UI Automation"
 description: "Capsule for safe desktop UI automation with grounding"
+runtime_package: "capsules.desktop_ui"
+entrypoint: "capsule_entry:DesktopUiCapsule"
+capabilities:
+  - ui_grounding
+  - safe_desktop_interaction
 frame_processors: []
 slots:
   - desktop_ui.grounded_elements
   - desktop_ui.safety_state
 skills:
-  - ui_grounding_skill
+  - skill_id: ui_grounding_skill
+    kind: skill
+    capabilities:
+      - locate_ui_element
+      - grounded_click_candidate
+    resources: []
+    verifiers:
+      - ui_grounded
+    planner_tags:
+      - desktop_ui
 transitions: []
-verifiers: []
+verifiers:
+  - ui_grounded
+detectors: []
+keymaps:
+  confirm: Enter
+resources: []
+profiles:
+  - default_1920x1080
 benchmark_tasks: []

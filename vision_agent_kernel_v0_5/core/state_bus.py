@@ -234,6 +234,10 @@ class StateBus:
         with self._dynamic_slots_lock:
             return self._dynamic_slots.get(name)
 
+    def unregister_slot(self, name: str) -> bool:
+        with self._dynamic_slots_lock:
+            return self._dynamic_slots.pop(name, None) is not None
+
     def registered_slot_names(self) -> list[str]:
         with self._dynamic_slots_lock:
             return list(self._dynamic_slots.keys())

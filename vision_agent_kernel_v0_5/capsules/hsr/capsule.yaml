@@ -110,6 +110,46 @@ keymaps:
   ultimate_4: "4"
   speed_toggle: V
   auto_toggle: Fe
+ui_anchors:
+  - anchor_id: hsr_menu_button
+    screen_state: overworld
+    semantic_role: open_menu
+    candidate_roi: [0.88, 0.0, 0.12, 0.18]
+    matchers:
+      - kind: template
+        value: menu_icon
+        weight: 0.9
+      - kind: calibrated
+        roi: [0.93, 0.04, 0.04, 0.06]
+        weight: 0.72
+    post_action_verifier: screen_state_classified
+  - anchor_id: hsr_claim_reward_button
+    screen_state: menu
+    semantic_role: claim_reward
+    candidate_roi: [0.62, 0.72, 0.28, 0.18]
+    matchers:
+      - kind: ocr
+        value: Claim
+        weight: 0.95
+      - kind: ocr
+        value: 领取
+        weight: 0.95
+      - kind: calibrated
+        roi: [0.72, 0.80, 0.12, 0.07]
+        weight: 0.7
+    post_action_verifier: reward_claimed
+  - anchor_id: hsr_dialog_continue
+    screen_state: dialog
+    semantic_role: continue_dialog
+    candidate_roi: [0.68, 0.66, 0.28, 0.22]
+    matchers:
+      - kind: ocr
+        value: Continue
+        weight: 0.9
+      - kind: calibrated
+        roi: [0.78, 0.78, 0.1, 0.08]
+        weight: 0.7
+    post_action_verifier: dialog_progressed
 resources:
   - resource_id: hsr_keymap
     kind: yaml

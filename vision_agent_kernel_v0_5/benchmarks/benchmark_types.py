@@ -14,6 +14,18 @@ class BenchmarkMetrics:
     max_consecutive_dodges: int = 0
     final_task_success: bool = False
     evidence_coverage: float = 0.0
+    task_success_rate: float = 0.0
+    verifier_false_accept_rate: float = 0.0
+    anchor_resolution_rate: float = 0.0
+    click_success_rate: float = 0.0
+    navigation_drift_rate: float = 0.0
+    stuck_recovery_rate: float = 0.0
+    reflex_latency_p95: float = 0.0
+    release_all_success_rate: float = 0.0
+    human_interventions: int = 0
+    mean_time_to_recover_ms: float = 0.0
+    memory_growth_mb_per_hour: float = 0.0
+    context_compaction_success_rate: float = 0.0
 
 
 @dataclass(slots=True)

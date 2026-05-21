@@ -91,6 +91,31 @@ class TestRegistryRegisterUnregister:
         with pytest.raises(ValueError, match="already registered"):
             registry.register(DemoArpgCapsule(), manifest, ctx)
 
+    def test_register_rejects_manifest_id_mismatch(self) -> None:
+        registry = CapsuleRegistry()
+        ctx = _make_context()
+
+        with pytest.raises(ValueError, match="does not match"):
+            registry.register(
+                DemoArpgCapsule(),
+                _make_manifest(capsule_id="wrong_id"),
+                ctx,
+            )
+
+    def test_registry_exposes_skill_catalog(self) -> None:
+        registry = CapsuleRegistry()
+        bus = StateBus()
+        ctx = _make_context(bus)
+        manifest = load_manifest_from_yaml(
+            str(Path(__file__).resolve().parent.parent / "capsules" / "demo_arpg" / "capsule.yaml")
+        )
+
+        registry.register(DemoArpgCapsule(), manifest, ctx)
+
+        catalog = registry.skill_catalog()
+        assert catalog[0]["capsule_id"] == "demo_arpg"
+        assert catalog[0]["skill_id"] == "dummy_skill"
+
 
 # ---------------------------------------------------------------------------
 # 2. Capsule install registers slots on StateBus
@@ -251,14 +276,16 @@ class TestCapsuleUnsubscribe:
 # ---------------------------------------------------------------------------
 
 class TestNoGenshinReferences:
-    def test_no_genshin_in_capsules_dir(self) -> None:
+    def test_no_genshin_in_non_genshin_capsules(self) -> None:
         capsules_dir = Path(__file__).resolve().parent.parent / "capsules"
         if not capsules_dir.exists():
             pytest.skip("capsules/ directory not found")
 
         for py_file in capsules_dir.rglob("*.py"):
+            if "genshin" in py_file.parts:
+                continue
             content = py_file.read_text(encoding="utf-8")
-            # Allow mentioning genshin in comments but not as import targets.
+            # Non-Genshin capsules must not couple to Genshin-specific imports.
             for line_no, line in enumerate(content.splitlines(), 1):
                 stripped = line.strip()
                 if stripped.startswith("#"):
@@ -485,7 +512,7 @@ class TestCapsuleManifestYaml:
         assert manifest.display_name == "Demo ARPG"
         assert "demo_arpg.screen_state" in manifest.slots
         assert "demo_arpg.danger_state" in manifest.slots
-        assert "dummy_skill" in manifest.skills
+        assert [skill.skill_id for skill in manifest.skills] == ["dummy_skill"]
         assert "dummy_processor" in manifest.frame_processors
         assert manifest.transitions == []
         assert manifest.benchmark_tasks == []
@@ -504,7 +531,7 @@ class TestCapsuleManifestYaml:
         assert manifest.display_name == "Desktop UI Automation"
         assert "desktop_ui.grounded_elements" in manifest.slots
         assert "desktop_ui.safety_state" in manifest.slots
-        assert "ui_grounding_skill" in manifest.skills
+        assert [skill.skill_id for skill in manifest.skills] == ["ui_grounding_skill"]
         assert manifest.frame_processors == []
 
     def test_manifest_roundtrip(self, tmp_path: Path) -> None:
@@ -531,12 +558,56 @@ class TestCapsuleManifestYaml:
         assert manifest.capsule_id == "roundtrip_test"
         assert manifest.version == "1.0.0"
         assert manifest.slots == ["rt.slot_a", "rt.slot_b"]
-        assert manifest.skills == ["rt_skill"]
+        assert [skill.skill_id for skill in manifest.skills] == ["rt_skill"]
         assert manifest.frame_processors == ["fp_one"]
         assert manifest.transitions == [{"from": "A", "to": "B"}]
         assert manifest.verifiers == ["v1"]
         assert manifest.failure_bridge == "bridge_mod"
         assert manifest.benchmark_tasks == ["task_1"]
+
+    def test_manifest_v1_declares_resources_and_planner_skill_specs(self, tmp_path: Path) -> None:
+        (tmp_path / "data").mkdir()
+        (tmp_path / "data" / "skills.yaml").write_text("skills: []", encoding="utf-8")
+        data = {
+            "capsule_id": "manifest_v1",
+            "version": "1.0.0",
+            "display_name": "Manifest V1",
+            "description": "Resource-aware manifest",
+            "runtime_package": "capsules.manifest_v1",
+            "entrypoint": "capsule_entry:ManifestV1Capsule",
+            "capabilities": ["navigation", "combat"],
+            "skills": [
+                {
+                    "skill_id": "manifest_v1.navigate",
+                    "capabilities": ["navigate_to_marker"],
+                    "resources": ["skill_pack"],
+                    "verifiers": ["marker_visible"],
+                    "planner_tags": ["long_horizon"],
+                }
+            ],
+            "resources": [
+                {
+                    "resource_id": "skill_pack",
+                    "kind": "skill_yaml",
+                    "path": "data/skills.yaml",
+                    "description": "Skill declarations",
+                }
+            ],
+            "profiles": ["manifest_v1_1920x1080"],
+            "keymaps": {"interact": "F"},
+        }
+        yaml_file = tmp_path / "capsule.yaml"
+        yaml_file.write_text(yaml.dump(data, default_flow_style=False), encoding="utf-8")
+
+        manifest = load_manifest_from_yaml(str(yaml_file))
+
+        assert manifest.runtime_package == "capsules.manifest_v1"
+        assert manifest.entrypoint == "capsule_entry:ManifestV1Capsule"
+        assert manifest.capabilities == ["navigation", "combat"]
+        assert manifest.skills[0].skill_id == "manifest_v1.navigate"
+        assert manifest.skills[0].resources == ["skill_pack"]
+        assert manifest.resources[0].resource_id == "skill_pack"
+        assert manifest.resource_paths(yaml_file)["skill_pack"].exists()
 
 
 # ---------------------------------------------------------------------------

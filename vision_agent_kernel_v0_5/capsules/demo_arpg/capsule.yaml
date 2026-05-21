@@ -2,13 +2,32 @@ capsule_id: demo_arpg
 version: "0.1.0"
 display_name: "Demo ARPG"
 description: "Demonstration capsule for a generic ARPG"
+runtime_package: "capsules.demo_arpg"
+entrypoint: "capsule_entry:DemoArpgCapsule"
+capabilities:
+  - generic_arpg_navigation
+  - generic_arpg_combat
 frame_processors:
   - dummy_processor
 slots:
   - demo_arpg.screen_state
   - demo_arpg.danger_state
 skills:
-  - dummy_skill
+  - skill_id: dummy_skill
+    kind: skill
+    capabilities:
+      - demo_action
+    resources: []
+    verifiers: []
+    planner_tags:
+      - smoke_test
 transitions: []
 verifiers: []
+detectors:
+  - dummy_processor
+keymaps:
+  interact: F
+resources: []
+profiles:
+  - default_1920x1080
 benchmark_tasks: []

@@ -34,6 +34,17 @@ class OrchestrationGraph:
     def register_transition(self, from_state: str, to_state: str, condition: str | Callable) -> None:
         self._custom_transitions.append((from_state, to_state, condition))
 
+    def unregister_transition(self, from_state: str, to_state: str, condition: str | Callable) -> bool:
+        before = len(self._custom_transitions)
+        self._custom_transitions = [
+            item for item in self._custom_transitions
+            if item != (from_state, to_state, condition)
+        ]
+        return len(self._custom_transitions) != before
+
+    def custom_transitions_snapshot(self) -> list[tuple[str, str, str | Callable]]:
+        return list(self._custom_transitions)
+
     def next_for_skill_result(self, state: str, result: SkillResult) -> StateTransition:
         status = result.status
         failure = result.failure_code or ""

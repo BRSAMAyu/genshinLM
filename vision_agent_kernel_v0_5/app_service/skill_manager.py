@@ -44,6 +44,20 @@ class SkillDefinition:
     failure_policy: dict[str, Any]
     cleanup: list[dict[str, Any]]
     safety: dict[str, Any]
+    capsule_id: str = "core"
+    capabilities: list[str] = field(default_factory=list)
+    parameters_schema: dict[str, Any] = field(default_factory=dict)
+    resources: list[dict[str, Any]] = field(default_factory=list)
+    verifier_contracts: list[dict[str, Any]] = field(default_factory=list)
+    planner: dict[str, Any] = field(default_factory=dict)
+    semantic_actions: list[dict[str, Any]] = field(default_factory=list)
+    ui_anchors: list[str] = field(default_factory=list)
+    capabilities_required: list[str] = field(default_factory=list)
+    capabilities_provided: list[str] = field(default_factory=list)
+    failure_modes: list[dict[str, Any]] = field(default_factory=list)
+    fallbacks: list[dict[str, Any]] = field(default_factory=list)
+    profile_compatibility: dict[str, Any] = field(default_factory=dict)
+    benchmark_stats: dict[str, Any] = field(default_factory=dict)
     archived: bool = False
     updated_at: float = field(default_factory=time.time)
 
@@ -334,6 +348,22 @@ class SkillRecorder:
             "type": "ui",
             "version": 1,
             "metadata": {"source": "recorder", "draft_id": resolved.draft_id},
+            "capsule_id": "core",
+            "capabilities": ["recorded_replay"],
+            "parameters_schema": {"type": "object", "additionalProperties": True},
+            "resources": [{"kind": "recording", "uri": f"recording:{resolved.draft_id}", "optional": False}],
+            "verifier_contracts": [
+                {
+                    "verifier_id": "visual_checkpoint",
+                    "requires": ["frame", "visual_trigger"],
+                    "success_criteria": ["visual_action_completed"],
+                }
+            ],
+            "planner": {
+                "select_when": ["matching_preconditions", "requested_recorded_skill"],
+                "cost": "low",
+                "latency": "replay",
+            },
             "environment_profile": profile,
             "preconditions": ["require_focus", "target_visible"],
             "steps": steps,
@@ -469,6 +499,20 @@ class SkillStore:
             failure_policy=dict(data.get("failure_policy", {"max_retries": 1})),
             cleanup=list(data.get("cleanup", [])),
             safety=dict(data.get("safety", {})),
+            capsule_id=str(data.get("capsule_id", "core")),
+            capabilities=list(data.get("capabilities", [])),
+            parameters_schema=dict(data.get("parameters_schema", {})),
+            resources=list(data.get("resources", [])),
+            verifier_contracts=list(data.get("verifier_contracts", [])),
+            planner=dict(data.get("planner", {})),
+            semantic_actions=list(data.get("semantic_actions", [])),
+            ui_anchors=list(data.get("ui_anchors", [])),
+            capabilities_required=list(data.get("capabilities_required", [])),
+            capabilities_provided=list(data.get("capabilities_provided", [])),
+            failure_modes=list(data.get("failure_modes", [])),
+            fallbacks=list(data.get("fallbacks", [])),
+            profile_compatibility=dict(data.get("profile_compatibility", {})),
+            benchmark_stats=dict(data.get("benchmark_stats", {})),
             archived=bool(data.get("archived", False)),
             updated_at=float(data.get("updated_at") or time.time()),
         )
@@ -495,6 +539,24 @@ class SkillValidator:
             errors.append("safety.max_duration_ms is required")
         if "max_retries" not in skill.failure_policy:
             errors.append("failure_policy.max_retries is required")
+        if not skill.capsule_id:
+            errors.append("capsule_id is required")
+        for index, resource in enumerate(skill.resources):
+            if not isinstance(resource, dict):
+                errors.append(f"resources[{index}] must be an object")
+                continue
+            if not resource.get("kind"):
+                errors.append(f"resources[{index}].kind is required")
+            if not resource.get("uri"):
+                errors.append(f"resources[{index}].uri is required")
+        for index, contract in enumerate(skill.verifier_contracts):
+            if not isinstance(contract, dict):
+                errors.append(f"verifier_contracts[{index}] must be an object")
+                continue
+            if not contract.get("verifier_id"):
+                errors.append(f"verifier_contracts[{index}].verifier_id is required")
+            if not contract.get("success_criteria"):
+                errors.append(f"verifier_contracts[{index}].success_criteria is required")
         for step in skill.steps:
             if not step.interruptible:
                 errors.append(f"{step.step_id}: interruptible must be true")
@@ -509,6 +571,20 @@ class SkillValidator:
                 chunk = int(step.params.get("chunk_ms", 100))
                 if chunk <= 0 or chunk > 100:
                     errors.append(f"{step.step_id}: wait steps must be chunked at <=100ms")
+        for index, action in enumerate(skill.semantic_actions):
+            if not isinstance(action, dict):
+                errors.append(f"semantic_actions[{index}] must be an object")
+                continue
+            if not action.get("intent"):
+                errors.append(f"semantic_actions[{index}].intent is required")
+            if action.get("kind") == "ui" and action.get("intent") in {"click_anchor", "click_text", "select_list_item"} and not action.get("target"):
+                errors.append(f"semantic_actions[{index}].target is required for UI action")
+            if {"x", "y"} <= set(action.get("parameters", {}).keys()) and not action.get("parameters", {}).get("anchor_id"):
+                errors.append(f"semantic_actions[{index}] must not use raw x/y without anchor_id")
+        if skill.safety.get("risk_level") in {"high", "human_confirm"} and not skill.verifier_contracts:
+            errors.append("high risk skills require verifier_contracts")
+        if skill.semantic_actions and not skill.verifier_contracts:
+            errors.append("semantic skill requires verifier_contracts")
         profile = self._root / "configs" / "profiles" / f"{skill.environment_profile}.json"
         if not profile.exists():
             errors.append(f"referenced ROI/profile does not exist: {skill.environment_profile}")
