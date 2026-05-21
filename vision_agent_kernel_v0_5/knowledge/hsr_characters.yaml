@@ -1,4 +1,8 @@
 characters:
+  # ============================================================
+  # Astral Express — 星穹列车
+  # ============================================================
+
   - character_id: trailblazer_physical
     name: 开拓者·物理
     name_en: Trailblazer (Physical)
@@ -23,6 +27,30 @@ characters:
     skill_name: 烬煅之誓
     ultimate_name: 旷古的炬火
 
+  - character_id: trailblazer_harmony
+    name: 开拓者·虚数同谐
+    name_en: Trailblazer (Harmony)
+    rarity: 5
+    path: harmony
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 摇摆的节拍
+    ultimate_name: 伴游的间奏曲
+
+  - character_id: trailblazer_remembrance
+    name: 开拓者·记忆
+    name_en: Trailblazer (Remembrance)
+    rarity: 5
+    path: remembrance
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 忆迷
+    ultimate_name: 一起上吧，迷迷！
+
   - character_id: march_7th
     name: 三月七
     name_en: March 7th
@@ -35,6 +63,18 @@ characters:
     skill_name: 极寒的弓矢
     ultimate_name: 冻结一切的冰晶
 
+  - character_id: march_7th_hunt
+    name: 三月七·巡猎
+    name_en: March 7th (The Hunt)
+    rarity: 4
+    path: hunt
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 师父，请喝茶！
+    ultimate_name: 盖世女侠三月七
+
   - character_id: dan_heng
     name: 丹恒
     name_en: Dan Heng
@@ -46,6 +86,30 @@ characters:
     basic_sp_gain: 1
     skill_name: 云骑枪术·涧雨
     ultimate_name: 澂天枪彻
+
+  - character_id: dan_heng_il
+    name: 丹恒·饮月
+    name_en: Dan Heng · Imbibitor Lunae
+    rarity: 5
+    path: destruction
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 盘拏耀跃
+    ultimate_name: 游天转高
+
+  - character_id: dan_heng_permansor
+    name: 丹恒·腾荒
+    name_en: Dan Heng · Permansor Terrae
+    rarity: 5
+    path: preservation
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 渊渟岳峙，地载八荒
+    ultimate_name: 亢龙无悔，移山辟世
 
   - character_id: himeko
     name: 姬子
@@ -71,6 +135,126 @@ characters:
     skill_name: 虚空断界
     ultimate_name: 拟似黑洞
 
+  # ============================================================
+  # Stellaron Hunters — 星核猎手
+  # ============================================================
+
+  - character_id: kafka
+    name: 卡芙卡
+    name_en: Kafka
+    rarity: 5
+    path: nihility
+    element: lightning
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 夜阑听雨
+    ultimate_name: 终章的黄昏
+
+  - character_id: silver_wolf
+    name: 银狼
+    name_en: Silver Wolf
+    rarity: 5
+    path: nihility
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 允许更改
+    ultimate_name: 账号已封禁
+
+  - character_id: blade
+    name: 刃
+    name_en: Blade
+    rarity: 5
+    path: destruction
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 地狱变
+    ultimate_name: 大辟万死
+
+  - character_id: firefly
+    name: 流萤
+    name_en: Firefly
+    rarity: 5
+    path: destruction
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 指令-天火轰击
+    ultimate_name: 火萤Ⅳ型-完全燃烧
+
+  # ============================================================
+  # Herta Space Station — 黑塔空间站
+  # ============================================================
+
+  - character_id: arlan
+    name: 阿兰
+    name_en: Arlan
+    rarity: 4
+    path: destruction
+    element: lightning
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 禁锢解除
+    ultimate_name: 狂者制裁
+
+  - character_id: asta
+    name: 艾丝妲
+    name_en: Asta
+    rarity: 4
+    path: harmony
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 星辰引力
+    ultimate_name: 天象学奇迹
+
+  - character_id: herta
+    name: 黑塔
+    name_en: Herta
+    rarity: 4
+    path: erudition
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 一锤子买卖
+    ultimate_name: 掀起幻觉的未来
+
+  - character_id: ruan_mei
+    name: 阮梅
+    name_en: Ruan Mei
+    rarity: 5
+    path: harmony
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 弦外音
+    ultimate_name: 残梅绽
+
+  - character_id: the_herta
+    name: 大黑塔
+    name_en: The Herta
+    rarity: 5
+    path: erudition
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 格局打开
+    ultimate_name: 早说了是魔法吧
+
+  # ============================================================
+  # Jarilo-VI — 雅利洛-VI
+  # ============================================================
+
   - character_id: bronya
     name: 布洛妮娅
     name_en: Bronya
@@ -82,6 +266,18 @@ characters:
     basic_sp_gain: 1
     skill_name: 作战开始！
     ultimate_name: 覆写指令
+
+  - character_id: seele
+    name: 希儿
+    name_en: Seele
+    rarity: 5
+    path: hunt
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 刃锋交错
+    ultimate_name: 蝶火终焉
 
   - character_id: clara
     name: 克拉拉
@@ -107,17 +303,93 @@ characters:
     skill_name: 新生之礼
     ultimate_name: 慈悲永存
 
-  - character_id: seele
-    name: 希儿
-    name_en: Seele
+  - character_id: serval
+    name: 希露瓦
+    name_en: Serval
+    rarity: 4
+    path: erudition
+    element: lightning
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 闪电禁区
+    ultimate_name: 这里是摇滚！
+
+  - character_id: gepard
+    name: 杰帕德
+    name_en: Gepard
     rarity: 5
-    path: hunt
+    path: preservation
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 震慑之击
+    ultimate_name: 永屹之壁
+
+  - character_id: hook
+    name: 虎克
+    name_en: Hook
+    rarity: 4
+    path: destruction
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 嘿！记得虎克吗
+    ultimate_name: 嘭！飞上火星啦
+
+  - character_id: pela
+    name: 佩拉
+    name_en: Pela
+    rarity: 4
+    path: nihility
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 啧！别那么严肃
+    ultimate_name: 稍等！全屏通缉
+
+  - character_id: sampo
+    name: 桑博
+    name_en: Sampo
+    rarity: 4
+    path: nihility
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 风向偏转
+    ultimate_name: 惊喜呢，是好运来咯！
+
+  - character_id: luka
+    name: 卢卡
+    name_en: Luka
+    rarity: 4
+    path: nihility
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 直冲拳
+    ultimate_name: 冠军连拳·碎裂之舞
+
+  - character_id: lynx
+    name: 玲可
+    name_en: Lynx
+    rarity: 4
+    path: abundance
     element: quantum
     skill_sp_cost: 1
     ultimate_sp_cost: 0
     basic_sp_gain: 1
-    skill_name: 刃锋交错
-    ultimate_name: 蝶火终焉
+    skill_name: 盐渍野营地
+    ultimate_name: 雪原急救风暴
+
+  # ============================================================
+  # Xianzhou Alliance — 仙舟联盟
+  # ============================================================
 
   - character_id: jing_yuan
     name: 景元
@@ -131,41 +403,29 @@ characters:
     skill_name: 紫霄震雷
     ultimate_name: 神君天临
 
-  - character_id: kafka
-    name: 卡芙卡
-    name_en: Kafka
+  - character_id: bailu
+    name: 白露
+    name_en: Bailu
     rarity: 5
-    path: nihility
+    path: abundance
     element: lightning
     skill_sp_cost: 1
     ultimate_sp_cost: 0
     basic_sp_gain: 1
-    skill_name: 夜阑听雨
-    ultimate_name: 终章的黄昏
+    skill_name: 云吟乍涌坠珠露
+    ultimate_name: 匏蛟跃渊先雷音
 
-  - character_id: blade
-    name: 刃
-    name_en: Blade
+  - character_id: yanqing
+    name: 彦卿
+    name_en: Yanqing
     rarity: 5
-    path: destruction
-    element: wind
+    path: hunt
+    element: ice
     skill_sp_cost: 1
     ultimate_sp_cost: 0
     basic_sp_gain: 1
-    skill_name: 地狱变
-    ultimate_name: 大辟万死
-
-  - character_id: luocha
-    name: 罗刹
-    name_en: Luocha
-    rarity: 5
-    path: abundance
-    element: imaginary
-    skill_sp_cost: 1
-    ultimate_sp_cost: 0
-    basic_sp_gain: 1
-    skill_name: 棺的回响
-    ultimate_name: 死生之债
+    skill_name: 遥击三尺水
+    ultimate_name: 快雨燕相逐
 
   - character_id: fu_xuan
     name: 符玄
@@ -179,6 +439,18 @@ characters:
     skill_name: 斗转星移
     ultimate_name: 天算·否泰交济
 
+  - character_id: luocha
+    name: 罗刹
+    name_en: Luocha
+    rarity: 5
+    path: abundance
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 棺的回响
+    ultimate_name: 死生之债
+
   - character_id: huohuo
     name: 藿藿
     name_en: Huohuo
@@ -190,6 +462,230 @@ characters:
     basic_sp_gain: 1
     skill_name: 狐祈·禳灾
     ultimate_name: 镇妖祓魔
+
+  - character_id: jingliu
+    name: 镜流
+    name_en: Jingliu
+    rarity: 5
+    path: destruction
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 无罅飞光
+    ultimate_name: 昙华生灭，天河泻梦
+
+  - character_id: tingyun
+    name: 停云
+    name_en: Tingyun
+    rarity: 4
+    path: harmony
+    element: lightning
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 万事顺意
+    ultimate_name: 庆云光覆仪祷
+
+  - character_id: sushang
+    name: 素裳
+    name_en: Sushang
+    rarity: 4
+    path: hunt
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 云骑剑经·山倾
+    ultimate_name: 太虚形蕴·烛夜
+
+  - character_id: yukong
+    name: 驭空
+    name_en: Yukong
+    rarity: 4
+    path: harmony
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 飞军鸣弦
+    ultimate_name: 弦四重奏·惊弓
+
+  - character_id: qingque
+    name: 青雀
+    name_en: Qingque
+    rarity: 4
+    path: erudition
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 帝垣翔鳞
+    ultimate_name: 四幺暗刻？和！
+
+  - character_id: guinaifen
+    name: 桂乃芬
+    name_en: Guinaifen
+    rarity: 4
+    path: nihility
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 迎面开门红
+    ultimate_name: 给您来段看家戏
+
+  - character_id: hanya
+    name: 寒鸦
+    name_en: Hanya
+    rarity: 4
+    path: harmony
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 生灭系缚
+    ultimate_name: 十王敕令，遍土遵行
+
+  - character_id: xueyi
+    name: 雪衣
+    name_en: Xueyi
+    rarity: 4
+    path: destruction
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 摄伏诸恶
+    ultimate_name: 天罚贯身
+
+  - character_id: feixiao
+    name: 飞霄
+    name_en: Feixiao
+    rarity: 5
+    path: hunt
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 孤狩游星
+    ultimate_name: 凿破大荒
+
+  - character_id: jiaoqiu
+    name: 椒丘
+    name_en: Jiaoqiu
+    rarity: 5
+    path: nihility
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 燔骨烧炎
+    ultimate_name: 椒兰焚鼎
+
+  - character_id: moze
+    name: 貊泽
+    name_en: Moze
+    rarity: 4
+    path: hunt
+    element: lightning
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 迅羽掠袭
+    ultimate_name: 锋入幽渺，影出凌厉
+
+  - character_id: yunli
+    name: 云璃
+    name_en: Yunli
+    rarity: 5
+    path: destruction
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 翻风转日
+    ultimate_name: 剑为地纪，刃惊天宗
+
+  - character_id: lingsha
+    name: 灵砂
+    name_en: Lingsha
+    rarity: 5
+    path: abundance
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 烟斜雾横
+    ultimate_name: 唾绒·百态千状
+
+  - character_id: fugue
+    name: 忘归人
+    name_en: Fugue
+    rarity: 5
+    path: nihility
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 暮独摇，更澜催日
+    ultimate_name: 照彻万川，月映千山
+
+  - character_id: yao_guang
+    name: 瑶光
+    name_en: Yao Guang
+    rarity: 5
+    path: elation
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 展开结界
+    ultimate_name: 霓裳铁羽，六爻皆吉
+
+  # ============================================================
+  # Penacony — 匹诺康尼
+  # ============================================================
+
+  - character_id: robin
+    name: 知更鸟
+    name_en: Robin
+    rarity: 5
+    path: harmony
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 嗓音的回响
+    ultimate_name: 千音迭奏，群星赋格
+
+  - character_id: gallagher
+    name: 加拉赫
+    name_en: Gallagher
+    rarity: 4
+    path: abundance
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 罐装特调
+    ultimate_name: 香槟仪礼
+
+  - character_id: misha
+    name: 米沙
+    name_en: Misha
+    rarity: 4
+    path: destruction
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 客房服务！
+    ultimate_name: 要……要迟到了！
+
+  # ============================================================
+  # IPC — 星际和平公司
+  # ============================================================
 
   - character_id: topaz
     name: 托帕&账账
@@ -203,17 +699,33 @@ characters:
     skill_name: 报账时间！
     ultimate_name: 允准结算！
 
-  - character_id: dr_ratio
-    name: 真理医生
-    name_en: Dr. Ratio
+  - character_id: aventurine
+    name: 砂金
+    name_en: Aventurine
     rarity: 5
-    path: hunt
+    path: preservation
     element: imaginary
     skill_sp_cost: 1
     ultimate_sp_cost: 0
     basic_sp_gain: 1
-    skill_name: 精神助产术
-    ultimate_name: 演绎法推论
+    skill_name: 繁荣基石
+    ultimate_name: 轮盘勋爵
+
+  - character_id: jade
+    name: 翡翠
+    name_en: Jade
+    rarity: 5
+    path: erudition
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 宝石光华
+    ultimate_name: 慈玉典押
+
+  # ============================================================
+  # Cosmic — 宇宙
+  # ============================================================
 
   - character_id: acheron
     name: 黄泉
@@ -227,50 +739,290 @@ characters:
     skill_name: 四相断我
     ultimate_name: 飞来去刃
 
-  - character_id: robin
-    name: 知更鸟
-    name_en: Robin
+  - character_id: argenti
+    name: 银枝
+    name_en: Argenti
     rarity: 5
-    path: harmony
+    path: erudition
     element: physical
     skill_sp_cost: 1
     ultimate_sp_cost: 0
     basic_sp_gain: 1
-    skill_name: 嗓音的回响
-    ultimate_name: 二重唱
+    skill_name: 公正，此处盛放
+    ultimate_name: 驻于花庭，赐与尽美
 
-  - character_id: firefly
-    name: 流萤
-    name_en: Firefly
+  - character_id: black_swan
+    name: 黑天鹅
+    name_en: Black Swan
     rarity: 5
-    path: destruction
-    element: fire
+    path: nihility
+    element: wind
     skill_sp_cost: 1
     ultimate_sp_cost: 0
     basic_sp_gain: 1
-    skill_name: 焦土作战
-    ultimate_name: 萤火之矢
+    skill_name: 预言·欺瞒·威权
+    ultimate_name: 沉醉于彼界的臂湾
 
-  - character_id: asta
-    name: 艾丝妲
-    name_en: Asta
-    rarity: 4
-    path: harmony
-    element: fire
+  - character_id: boothill
+    name: 波提欧
+    name_en: Boothill
+    rarity: 5
+    path: hunt
+    element: physical
     skill_sp_cost: 1
     ultimate_sp_cost: 0
     basic_sp_gain: 1
-    skill_name: 星辰引力
-    ultimate_name: 天象学奇迹
+    skill_name: 枪口以对
+    ultimate_name: 牛仔很忙
 
-  - character_id: serval
-    name: 希露瓦
-    name_en: Serval
-    rarity: 4
+  - character_id: dr_ratio
+    name: 真理医生
+    name_en: Dr. Ratio
+    rarity: 5
+    path: hunt
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 精神助产术
+    ultimate_name: 悟者的见谛
+
+  - character_id: rappa
+    name: 乱破
+    name_en: Rappa
+    rarity: 5
     path: erudition
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 忍切·初志贯彻
+    ultimate_name: 忍道·极·爱死天流
+
+  - character_id: sparkle
+    name: 花火
+    name_en: Sparkle
+    rarity: 5
+    path: harmony
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 梦游鱼
+    ultimate_name: 四人转
+
+  - character_id: sunday
+    name: 星期日
+    name_en: Sunday
+    rarity: 5
+    path: harmony
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 纸与仪典的恩赐
+    ultimate_name: 轻与伤痕的赞颂
+
+  - character_id: the_dahlia
+    name: 大丽花
+    name_en: The Dahlia
+    rarity: 5
+    path: nihility
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 展开结界
+    ultimate_name: 沉溺……飞灰邀入墓床
+
+  # ============================================================
+  # Amphoreus — 翁法罗斯
+  # ============================================================
+
+  - character_id: aglaea
+    name: 阿格莱雅
+    name_en: Aglaea
+    rarity: 5
+    path: remembrance
     element: lightning
     skill_sp_cost: 1
     ultimate_sp_cost: 0
     basic_sp_gain: 1
-    skill_name: 闪电禁区
-    ultimate_name: 这里是摇滚！
+    skill_name: 高举吧，昇华的名諹
+    ultimate_name: 华珠凝滯的礼物
+
+  - character_id: anaxa
+    name: 阿那克萨
+    name_en: Anaxa
+    rarity: 5
+    path: erudition
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 无果之花的独白
+    ultimate_name: 百年孤寂的临终礼
+
+  - character_id: castorice
+    name: 遐蝶
+    name_en: Castorice
+    rarity: 5
+    path: remembrance
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 告死之翼的剪影
+    ultimate_name: 冥河的洗礼，死亡的荣耀
+
+  - character_id: cerydra
+    name: 刻律德菈
+    name_en: Cerydra
+    rarity: 5
+    path: harmony
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 升变，士皆可帅
+    ultimate_name: 世事如棋，四步堪杀
+
+  - character_id: cipher
+    name: 赛飞儿
+    name_en: Cipher
+    rarity: 5
+    path: nihility
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 嘿，空手套白银
+    ultimate_name: 猫咪怪盗，敬上！
+
+  - character_id: cyrene
+    name: 昔涟
+    name_en: Cyrene
+    rarity: 5
+    path: remembrance
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 盛放吧！来世的乐土
+    ultimate_name: 诗的「◦」誓约的「∞」
+
+  - character_id: evernight
+    name: 长夜月
+    name_en: Evernight
+    rarity: 5
+    path: remembrance
+    element: ice
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 白昼悄然离去
+    ultimate_name: 晚安，全世界
+
+  - character_id: hyacine
+    name: 风堇
+    name_en: Hyacine
+    rarity: 5
+    path: abundance
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 赐福之风的低语
+    ultimate_name: 荣光的凯旋回归
+
+  - character_id: hysilens
+    name: 海瑟音
+    name_en: Hysilens
+    rarity: 5
+    path: nihility
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 泛音，暗流后齐鸣
+    ultimate_name: 绝海回涛，噬魂舞曲
+
+  - character_id: mydei
+    name: 万敌
+    name_en: Mydei
+    rarity: 5
+    path: destruction
+    element: imaginary
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 万死无悔
+    ultimate_name: 诛天焚骨的王座
+
+  - character_id: phainon
+    name: 白厄
+    name_en: Phainon
+    rarity: 5
+    path: destruction
+    element: physical
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 逐火救世，行则将至
+    ultimate_name: 焚世形态
+
+  - character_id: tribbie
+    name: 缇宝
+    name_en: Tribbie
+    rarity: 5
+    path: harmony
+    element: quantum
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 礼物都去哪儿了
+    ultimate_name: 猜猜几只手
+
+  # ============================================================
+  # Planarcadia — 异梦仙境
+  # ============================================================
+
+  - character_id: sparxie
+    name: 斯帕克西
+    name_en: Sparxie
+    rarity: 5
+    path: elation
+    element: fire
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 开启直播
+    ultimate_name: 绽放！赢家通吃
+
+  # ============================================================
+  # Collaboration — 联动
+  # ============================================================
+
+  - character_id: archer
+    name: 卫宫
+    name_en: Archer
+    rarity: 5
+    path: hunt
+    element: quantum
+    skill_sp_cost: 2
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 幻想崩坏
+    ultimate_name: 无限剑制
+
+  - character_id: saber
+    name: Saber
+    name_en: Saber
+    rarity: 5
+    path: destruction
+    element: wind
+    skill_sp_cost: 1
+    ultimate_sp_cost: 0
+    basic_sp_gain: 1
+    skill_name: 风王铁锤
+    ultimate_name: 誓约胜利之剑

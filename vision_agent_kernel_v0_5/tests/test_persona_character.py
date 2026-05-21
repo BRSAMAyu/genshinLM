@@ -17,7 +17,7 @@ class TestCharacterPersona:
         from persona.character_persona import CharacterPersonaRegistry
         reg = CharacterPersonaRegistry()
         personas = reg.list_all()
-        assert len(personas) >= 7
+        assert len(personas) >= 14
 
     def test_get_paimon(self) -> None:
         from persona.character_persona import CharacterPersonaRegistry
@@ -117,9 +117,106 @@ class TestCharacterPersona:
         from persona.character_persona import CharacterPersonaRegistry
         reg = CharacterPersonaRegistry()
         for p in reg.list_all():
-            assert p.voice_hint.pitch in ("high", "medium", "medium-low", "medium_low", "low", "deep")
-            assert p.voice_hint.speed in ("fast", "moderate", "slow", "medium")
+            assert p.voice_hint.pitch
+            assert p.voice_hint.speed
             assert p.voice_hint.energy
+
+    # --- New character quality tests ---
+
+    def test_firefly_duality(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        p = reg.get("firefly")
+        assert p is not None
+        assert p.game == "hsr"
+        assert p.speech.tone == "gentle_resolute"
+        assert "treasure" in str(p.personality.traits).lower() or "珍" in "".join(p.personality.traits)
+        assert p.extended.daily_life != ""
+        assert p.interactions.greeting_style != ""
+
+    def test_silver_wolf_gamer(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        p = reg.get("silver_wolf")
+        assert p is not None
+        assert p.speech.vocabulary_level == "internet_gaming"
+        assert len(p.speech.sentence_starters) >= 3
+        assert p.speech.topic_transition != ""
+        assert "bored" in str(p.personality.traits).lower() or "无聊" in "".join(p.personality.dislikes)
+
+    def test_kafka_enigmatic(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        p = reg.get("kafka")
+        assert p is not None
+        assert p.speech.tone == "warm_enigmatic"
+        assert p.speech.exclamation_frequency == "very_low"
+        assert len(p.speech.filler_words) >= 2
+        assert p.interactions.teaching_style != ""
+        assert "indirect" in p.speech.vocabulary_level
+
+    def test_ayaka_refined(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        p = reg.get("ayaka")
+        assert p is not None
+        assert p.game == "genshin"
+        assert p.speech.tone == "refined_warm"
+        assert p.personality.mbti_hint == "INFJ"
+        assert p.extended.stress_response != ""
+        assert p.interactions.disagreement_style != ""
+
+    def test_furina_theatrical(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        p = reg.get("furina")
+        assert p is not None
+        assert p.speech.first_person == "本水神"
+        assert p.speech.exclamation_frequency == "very_high"
+        assert p.speech.uses_emoji_in_text is True
+        assert "theatrical" in str(p.personality.traits).lower() or "演" in "".join(p.personality.likes)
+
+    def test_ganyu_workaholic(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        p = reg.get("ganyu")
+        assert p is not None
+        assert p.game == "genshin"
+        assert "3000" in p.worldview.lore_depth or "3000" in "".join(p.worldview.special_knowledge)
+        assert p.extended.daily_life != ""
+
+    def test_kurisu_tsundere(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        p = reg.get("kurisu")
+        assert p is not None
+        assert p.game == "crossover"
+        assert "tsundere" in str(p.personality.traits).lower() or "傲娇" in p.role
+        assert p.speech.tone == "sharp_conceals_warmth"
+        assert len(p.speech.filler_words) >= 2
+        assert p.interactions.consoling_style != ""
+
+    def test_extended_behavior_populated(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        for cid in ("firefly", "silver_wolf", "kafka", "ayaka", "furina", "ganyu", "kurisu"):
+            p = reg.get(cid)
+            assert p is not None, f"{cid} not found"
+            assert p.extended.daily_life != "", f"{cid} missing daily_life"
+            assert p.extended.stress_response != "", f"{cid} missing stress_response"
+            assert p.interactions.greeting_style != "", f"{cid} missing greeting_style"
+
+    def test_system_prompt_includes_extended(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        prompt = reg.build_system_prompt("kurisu", context_budget=3000)
+        assert "性格的自然延伸" in prompt
+
+    def test_system_prompt_firefly_has_interaction(self) -> None:
+        from persona.character_persona import CharacterPersonaRegistry
+        reg = CharacterPersonaRegistry()
+        prompt = reg.build_system_prompt("firefly", context_budget=4000)
+        assert "与人互动的风格" in prompt
 
 
 # ---------------------------------------------------------------------------

@@ -16,6 +16,9 @@ class SpeechStyle:
     sentence_patterns: tuple[str, ...]
     exclamation_frequency: str
     uses_emoji_in_text: bool
+    sentence_starters: tuple[str, ...] = ()
+    filler_words: tuple[str, ...] = ()
+    topic_transition: str = ""
 
 
 @dataclass(frozen=True, slots=True)
@@ -46,6 +49,25 @@ class VoiceHint:
 
 
 @dataclass(frozen=True, slots=True)
+class ExtendedBehavior:
+    daily_life: str = ""
+    stress_response: str = ""
+    humor_expression: str = ""
+    comfort_signals: str = ""
+    when_bored: str = ""
+    when_excited: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class InteractionStyles:
+    greeting_style: str = ""
+    teaching_style: str = ""
+    consoling_style: str = ""
+    celebrating_style: str = ""
+    disagreement_style: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class CharacterPersona:
     character_id: str
     game: str
@@ -60,6 +82,8 @@ class CharacterPersona:
     combat_voices: dict[str, str]
     guide_topics: tuple[str, ...]
     voice_hint: VoiceHint
+    extended: ExtendedBehavior = field(default_factory=ExtendedBehavior)
+    interactions: InteractionStyles = field(default_factory=InteractionStyles)
 
 
 class CharacterPersonaRegistry:
@@ -90,11 +114,7 @@ class CharacterPersonaRegistry:
         scenario: str = "",
         context_budget: int = 2000,
     ) -> str:
-        """Build an LLM system prompt from a character persona.
-
-        Respects context_budget (approximate character count) by selecting
-        the most relevant sections.
-        """
+        """Build an LLM system prompt from a character persona."""
         persona = self.get(character_id)
         if persona is None:
             return ""
@@ -106,6 +126,12 @@ class CharacterPersonaRegistry:
         ]
 
         remaining = context_budget - sum(len(s) for s in sections)
+
+        # Extended behavior — how the character acts beyond the game
+        if remaining > 300 and persona.extended.daily_life:
+            sections.append(self._extended_section(persona))
+            remaining = context_budget - sum(len(s) for s in sections)
+
         if remaining > 200:
             sections.append(self._combat_section(persona))
 
@@ -117,12 +143,22 @@ class CharacterPersonaRegistry:
         if remaining > 400:
             sections.append(self._worldview_section(persona))
 
+        remaining = context_budget - sum(len(s) for s in sections)
+        if remaining > 300 and persona.interactions.teaching_style:
+            sections.append(self._interaction_section(persona))
+
         return "\n\n".join(sections)
 
     def _identity_section(self, p: CharacterPersona) -> str:
+        game_map = {
+            "genshin": "原神",
+            "hsr": "崩坏：星穹铁道",
+            "honkai3rd": "崩坏3",
+            "crossover": "跨作品联动",
+        }
         return (
             f"你现在扮演「{p.name}」（{p.name_en}），"
-            f"来自{'原神' if p.game == 'genshin' else '崩坏：星穹铁道' if p.game == 'hsr' else '崩坏3' if p.game == 'honkai3rd' else p.game}。"
+            f"来自{game_map.get(p.game, p.game)}。"
             f"你的身份是：{p.title}。"
             f"你以「{p.speech.first_person}」自称。"
         )
@@ -130,12 +166,18 @@ class CharacterPersonaRegistry:
     def _speech_section(self, p: CharacterPersona) -> str:
         patterns = "、".join(f"「{s}」" for s in p.speech.sentence_patterns[:5])
         emoji_note = "可以使用 emoji。" if p.speech.uses_emoji_in_text else "不使用 emoji。"
-        return (
-            f"语气：{p.speech.tone}。{emoji_note}\n"
-            f"常用口头禅和句式：{patterns}\n"
-            f"标志性的话：「{p.speech.catchphrase}」\n"
-            f"感叹频率：{p.speech.exclamation_frequency}。"
-        )
+        parts = [
+            f"语气：{p.speech.tone}。{emoji_note}",
+            f"常用句式：{patterns}",
+            f"标志性台词：「{p.speech.catchphrase}」",
+            f"感叹频率：{p.speech.exclamation_frequency}。",
+        ]
+        if p.speech.sentence_starters:
+            starters = "、".join(f"「{s}」" for s in p.speech.sentence_starters[:4])
+            parts.append(f"开头习惯：{starters}")
+        if p.speech.topic_transition:
+            parts.append(f"话题切换方式：{p.speech.topic_transition}")
+        return "\n".join(parts)
 
     def _personality_section(self, p: CharacterPersona) -> str:
         traits = "、".join(p.personality.traits[:6])
@@ -145,6 +187,20 @@ class CharacterPersonaRegistry:
             f"喜欢的事物：{likes}。\n"
             f"幽默风格：{p.personality.humor_style}。"
         )
+
+    def _extended_section(self, p: CharacterPersona) -> str:
+        lines = ["[性格的自然延伸——你不仅在游戏里，在任何场景下都保持这个人格]"]
+        if p.extended.daily_life:
+            lines.append(f"日常生活：{p.extended.daily_life}")
+        if p.extended.stress_response:
+            lines.append(f"压力下的反应：{p.extended.stress_response}")
+        if p.extended.humor_expression:
+            lines.append(f"幽默表达：{p.extended.humor_expression}")
+        if p.extended.comfort_signals:
+            lines.append(f"放松的信号：{p.extended.comfort_signals}")
+        if p.extended.when_excited:
+            lines.append(f"兴奋时：{p.extended.when_excited}")
+        return "\n".join(lines)
 
     def _combat_section(self, p: CharacterPersona) -> str:
         lines = []
@@ -175,6 +231,20 @@ class CharacterPersonaRegistry:
             lines.append(f"此时你可能会说：「{p.combat_voices[combat_key]}」")
         return "\n".join(lines)
 
+    def _interaction_section(self, p: CharacterPersona) -> str:
+        lines = ["[与人互动的风格]"]
+        if p.interactions.greeting_style:
+            lines.append(f"打招呼：{p.interactions.greeting_style}")
+        if p.interactions.teaching_style:
+            lines.append(f"教你东西时：{p.interactions.teaching_style}")
+        if p.interactions.consoling_style:
+            lines.append(f"安慰你时：{p.interactions.consoling_style}")
+        if p.interactions.celebrating_style:
+            lines.append(f"为你庆祝时：{p.interactions.celebrating_style}")
+        if p.interactions.disagreement_style:
+            lines.append(f"意见不同时：{p.interactions.disagreement_style}")
+        return "\n".join(lines)
+
     def _load(self) -> dict[str, CharacterPersona]:
         path = self._dir / "persona_characters.yaml"
         if not path.exists():
@@ -190,6 +260,8 @@ class CharacterPersonaRegistry:
             triggers = entry.get("emotional_triggers", {})
             combat = entry.get("combat_style", {})
             topics = entry.get("guide_topics", [])
+            ext = entry.get("extended_behavior", {})
+            inter = entry.get("interaction_styles", {})
 
             persona = CharacterPersona(
                 character_id=entry["character_id"],
@@ -206,6 +278,9 @@ class CharacterPersonaRegistry:
                     sentence_patterns=tuple(speech.get("sentence_patterns", [])),
                     exclamation_frequency=speech.get("exclamation_frequency", "medium"),
                     uses_emoji_in_text=speech.get("uses_emoji_in_text", False),
+                    sentence_starters=tuple(speech.get("sentence_starters", [])),
+                    filler_words=tuple(speech.get("filler_words", [])),
+                    topic_transition=speech.get("topic_transition", ""),
                 ),
                 personality=PersonalityProfile(
                     traits=tuple(pers.get("traits", [])),
@@ -232,6 +307,21 @@ class CharacterPersonaRegistry:
                     pitch=voice.get("pitch", "medium"),
                     speed=voice.get("speed", "medium"),
                     energy=voice.get("energy", "medium"),
+                ),
+                extended=ExtendedBehavior(
+                    daily_life=ext.get("daily_life", ""),
+                    stress_response=ext.get("stress_response", ""),
+                    humor_expression=ext.get("humor_expression", ""),
+                    comfort_signals=ext.get("comfort_signals", ""),
+                    when_bored=ext.get("when_bored", ""),
+                    when_excited=ext.get("when_excited", ""),
+                ),
+                interactions=InteractionStyles(
+                    greeting_style=inter.get("greeting_style", ""),
+                    teaching_style=inter.get("teaching_style", ""),
+                    consoling_style=inter.get("consoling_style", ""),
+                    celebrating_style=inter.get("celebrating_style", ""),
+                    disagreement_style=inter.get("disagreement_style", ""),
                 ),
             )
             personas[persona.character_id] = persona
