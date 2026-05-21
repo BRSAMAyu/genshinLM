@@ -175,7 +175,7 @@ class ClaimAdjudicator:
         conflict_threshold = 0.15
         if support_score > 0.5 and refute_score > 0.5 and abs(support_score - refute_score) < conflict_threshold:
             return AdjudicationResult(
-                claim_id=claim.claim_id, status="uncertain", confidence=support_score * 0.5,
+                claim_id=claim.claim_id, status="disputed", confidence=support_score * 0.5,
                 reason="disputed_evidence", support_score=support_score, refute_score=refute_score,
                 family_coverage=family_coverage, recipe_complete=recipe_complete,
                 next_action="alternate_verify",

@@ -10,7 +10,7 @@ from typing import Any, Callable, Literal
 RiskLevel = Literal["low", "medium", "high", "critical"]
 ClaimStatus = Literal[
     "asserted", "tentative", "verified", "locked", "audited",
-    "uncertain", "suspect", "demoted", "reverified", "rejected", "expired",
+    "uncertain", "disputed", "suspect", "demoted", "reverified", "rejected", "expired",
 ]
 AuditStatus = Literal["pending", "matched", "mismatch", "contaminated", "unverifiable"]
 CascadeAction = Literal["continue_with_warning", "revalidate_cluster", "pause_replan", "safe_abort_user_confirm"]
@@ -686,6 +686,9 @@ class StabilizationTracker:
             recommended_window_ms=current,
         )
 
+
+# Canonical DriftDetector lives in reliability/drift_detector.py.
+# Kept here for backward compat with existing tests importing from runtime.claim_runtime.
 
 @dataclass(frozen=True, slots=True)
 class DriftSignal:

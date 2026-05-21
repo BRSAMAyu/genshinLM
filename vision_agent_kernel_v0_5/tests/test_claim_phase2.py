@@ -141,7 +141,7 @@ class TestClaimAdjudicator:
         ]
         result = adj.adjudicate(claim, observations)
         # close support vs refute → disputed
-        assert result.status == "uncertain"
+        assert result.status == "disputed"
         assert "disputed" in result.reason
 
     def test_with_custom_recipe(self):
