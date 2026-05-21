@@ -178,7 +178,7 @@ resources:
 failure_bridge: app_service.apps.hsr_failure_bridge:HSRFailureBridge
 persona_bridge: app_service.apps.hsr_persona_bridge:HSRPersonaBridge
 profiles:
-  - hsr_1920x1080
+  - hsr
 benchmark_tasks:
   - aurorabench.hsr_combat
   - aurorabench.hsr_dialog

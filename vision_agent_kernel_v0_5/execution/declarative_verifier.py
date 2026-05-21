@@ -81,8 +81,8 @@ class DeclarativeVerifierEngine:
             matched = _match_text(nodes, step)
             return _step_result(step, bool(matched), "toast" if "toast" in step.roi else "ocr_text", _best_conf(matched), [n.node_id for n in matched], "text_matched" if matched else "text_missing")
         if step.type == "numeric_delta":
-            ok, quality, reason = _numeric_delta(context, step, claim)
-            return _step_result(step, ok, "inventory_delta", quality, [], reason)
+            ok, quality, reason, refs = _numeric_delta(context, step, claim, graph)
+            return _step_result(step, ok, "inventory_delta", quality, refs, reason)
         if step.type == "progress_threshold":
             nodes = graph.by_kind("navigation_signal")
             best = max((_float(n.payload.get("progress", 0.0)) for n in nodes), default=0.0)
@@ -94,13 +94,13 @@ class DeclarativeVerifierEngine:
             ok = best <= step.threshold
             return _step_result(step, ok, "combat_danger", _clamp(1.0 - best), [n.node_id for n in nodes], f"danger={best:.3f}")
         if step.type == "color_region_change":
-            current = _float(context.state.get("color_delta", context.metadata.get("color_delta", 0.0)))
+            current, refs = _graph_or_state_float(graph, "color_delta", "color_region_change", context)
             ok = current >= step.threshold
-            return _step_result(step, ok, "color", _clamp(current), [], f"color_delta={current:.3f}")
+            return _step_result(step, ok, "color", _clamp(current), refs, f"color_delta={current:.3f}")
         if step.type == "temporal_pattern_match":
-            current = _float(context.state.get("temporal_pattern_match", context.metadata.get("temporal_pattern_match", 0.0)))
+            current, refs = _graph_or_state_float(graph, "temporal_pattern_match", "temporal_pattern_match", context)
             ok = current >= max(step.threshold, 0.5)
-            return _step_result(step, ok, "temporal_pattern", _clamp(current), [], f"temporal_pattern={current:.3f}")
+            return _step_result(step, ok, "temporal_pattern", _clamp(current), refs, f"temporal_pattern={current:.3f}")
 
         return DeclarativeStepResult(step, False, "unknown_verifier_step", 0.0, [], f"unsupported_step:{step.type}")
 
@@ -215,18 +215,45 @@ def _numeric_delta(
     context: VerifierContext,
     step: VerifierStep,
     claim: StateDeltaClaim | None,
-) -> tuple[bool, float, str]:
-    observed = context.state.get("observed_delta", context.metadata.get("observed_delta", {}))
+    graph: ObservationGraph | None,
+) -> tuple[bool, float, str, list[str]]:
+    observed, refs = _graph_or_state_dict(graph, "observed_delta", "numeric_delta", context)
     expected_item = step.item or str((claim.claimed_delta if claim else {}).get("item", ""))
     expected_delta = step.expected_delta or (claim.claimed_delta if claim else {}).get("delta", 0)
     if isinstance(observed, dict):
         if "item" in observed and "delta" in observed:
             ok = (not expected_item or observed.get("item") == expected_item) and _float(observed.get("delta")) == _float(expected_delta)
-            return ok, 0.95 if ok else 0.2, f"observed_delta={observed}"
+            return ok, 0.95 if ok else 0.2, f"observed_delta={observed}", refs
         if expected_item and expected_item in observed:
             ok = _float(observed.get(expected_item)) == _float(expected_delta)
-            return ok, 0.95 if ok else 0.2, f"observed_item_delta={observed.get(expected_item)}"
-    return False, 0.0, "numeric_delta_missing"
+            return ok, 0.95 if ok else 0.2, f"observed_item_delta={observed.get(expected_item)}", refs
+    return False, 0.0, "numeric_delta_missing", []
+
+
+def _graph_or_state_float(
+    graph: ObservationGraph | None,
+    key: str,
+    extension_key: str,
+    context: VerifierContext,
+) -> tuple[float, list[str]]:
+    if graph is not None:
+        for node in graph.by_kind("capsule_extension"):
+            if node.payload.get("key") == extension_key:
+                return _float(node.payload.get("value", 0.0)), [node.node_id]
+    return _float(context.state.get(key, context.metadata.get(key, 0.0))), []
+
+
+def _graph_or_state_dict(
+    graph: ObservationGraph | None,
+    key: str,
+    extension_key: str,
+    context: VerifierContext,
+) -> tuple[Any, list[str]]:
+    if graph is not None:
+        for node in graph.by_kind("capsule_extension"):
+            if node.payload.get("key") == extension_key:
+                return node.payload.get("value", {}), [node.node_id]
+    return context.state.get(key, context.metadata.get(key, {})), []
 
 
 def _float(value: Any) -> float:

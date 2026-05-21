@@ -1,0 +1,82 @@
+{
+  "profile_id": "hsr",
+  "window_title": "崩坏：星穹铁道",
+  "alt_window_title": "Honkai: Star Rail",
+  "process_name": "StarRail.exe",
+  "source_resolution": [0, 0],
+  "normalized_resolution": [1280, 720],
+  "environment": "hsr",
+  "rois": {
+    "action_order_bar": {
+      "mode": "relative",
+      "x": 0.34,
+      "y": 0.81,
+      "w": 0.32,
+      "h": 0.07
+    },
+    "sp_indicator": {
+      "mode": "relative",
+      "x": 0.45,
+      "y": 0.85,
+      "w": 0.10,
+      "h": 0.04
+    },
+    "team_hp_bars": {
+      "mode": "relative",
+      "x": 0.01,
+      "y": 0.81,
+      "w": 0.15,
+      "h": 0.04
+    },
+    "dialog_text_area": {
+      "mode": "relative",
+      "x": 0.05,
+      "y": 0.65,
+      "w": 0.90,
+      "h": 0.19
+    },
+    "auto_battle_button": {
+      "mode": "relative",
+      "x": 0.94,
+      "y": 0.01,
+      "w": 0.05,
+      "h": 0.05
+    },
+    "speed_button": {
+      "mode": "relative",
+      "x": 0.89,
+      "y": 0.01,
+      "w": 0.04,
+      "h": 0.05
+    },
+    "character_portrait_1": {
+      "mode": "relative",
+      "x": 0.01,
+      "y": 0.88,
+      "w": 0.04,
+      "h": 0.07
+    },
+    "character_portrait_2": {
+      "mode": "relative",
+      "x": 0.05,
+      "y": 0.88,
+      "w": 0.04,
+      "h": 0.07
+    },
+    "character_portrait_3": {
+      "mode": "relative",
+      "x": 0.10,
+      "y": 0.88,
+      "w": 0.04,
+      "h": 0.07
+    },
+    "character_portrait_4": {
+      "mode": "relative",
+      "x": 0.15,
+      "y": 0.88,
+      "w": 0.04,
+      "h": 0.07
+    }
+  },
+  "created_at": "2026-05-22T00:00:00"
+}

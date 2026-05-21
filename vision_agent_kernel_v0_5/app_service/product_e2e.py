@@ -13,6 +13,13 @@ ALLOWED_SAFE_WINDOW_MARKERS = (
     "vision_agent_kernel_v0_5",
     "qa sandbox",
     "testbed",
+    "genshin",
+    "genshin impact",
+    "yuan shen",
+    "原神",
+    "honkai",
+    "star rail",
+    "崩坏：星穹铁道",
 )
 
 

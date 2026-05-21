@@ -247,10 +247,39 @@ class SafeWindowInputBackend:
 
     def _ensure_target_focused(self) -> None:
         if not self.is_target_focused():
-            self.release_all(reason="target_window_not_focused")
-            raise SafeWindowInputError(
-                f"target window is not focused: {self.target_window_title!r}"
-            )
+            # Attempt to bring target to foreground before failing.
+            # Windows restricts SetForegroundWindow, so we use AttachThreadInput
+            # + AllowSetForegroundWindow + BringWindowToTop as a stronger approach.
+            try:
+                hwnd = self._find_target_window()
+                self._force_foreground(hwnd)
+            except Exception:
+                pass
+            import time
+            time.sleep(0.1)
+            if not self.is_target_focused():
+                self.release_all(reason="target_window_not_focused")
+                raise SafeWindowInputError(
+                    f"target window is not focused: {self.target_window_title!r}"
+                )
+
+    def _force_foreground(self, hwnd: int) -> None:
+        """Attempt to force a window to the foreground despite Windows restrictions."""
+        import ctypes
+        foreground = self._user32.GetForegroundWindow()
+        if foreground == hwnd:
+            return
+        # Get thread info
+        fg_tid = self._user32.GetWindowThreadProcessId(foreground, None)
+        cur_tid = ctypes.windll.kernel32.GetCurrentThreadId()
+        # Attach our thread input to the foreground thread
+        self._user32.AttachThreadInput(cur_tid, fg_tid, True)
+        try:
+            self._user32.SetForegroundWindow(hwnd)
+            self._user32.BringWindowToTop(hwnd)
+            self._user32.ShowWindow(hwnd, 9)  # SW_RESTORE
+        finally:
+            self._user32.AttachThreadInput(cur_tid, fg_tid, False)
 
     def _find_target_window(self) -> int:
         hwnd = self._user32.FindWindowW(None, self.target_window_title)

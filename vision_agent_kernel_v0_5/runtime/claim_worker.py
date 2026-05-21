@@ -102,13 +102,25 @@ class ClaimGraphWorker:
             try:
                 result = self._apply(env.command)
             except Exception as exc:  # keep worker alive, surface event.
+                # Mark the affected claim as adjudication_error so downstream
+                # can detect it instead of seeing a stuck "asserted" claim.
+                error_claim_id = env.command.claim_id
+                if not error_claim_id and env.command.claim is not None:
+                    error_claim_id = env.command.claim.claim_id
+                if error_claim_id:
+                    try:
+                        claim = self.graph.get(error_claim_id)
+                        if claim is not None and claim.status not in ("verified", "rejected", "locked"):
+                            self.graph.update_claim(replace(claim, status="adjudication_error"))
+                    except Exception:
+                        pass
                 result = ClaimGraphCommandResult(
                     False,
                     env.command.command_type,
                     self.graph.snapshot(),
                     error=f"{exc.__class__.__name__}:{exc}",
                 )
-                self._publish_event("claim_adjudication_error", env.command.claim_id, "error", {"error": result.error})
+                self._publish_event("claim_adjudication_error", error_claim_id, "error", {"error": result.error})
             env.result = result
             env.done.set()
             if env.command.command_type == "stop":

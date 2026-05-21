@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import math
 import os
+import tempfile
 import time
 from collections import defaultdict
 from dataclasses import asdict, dataclass, field
@@ -493,6 +494,106 @@ class ThreeLayerReliabilityStore:
             dependency_health=dependency_health,
         )
 
+    @property
+    def _snapshot_path(self) -> str:
+        base, ext = os.path.splitext(self._persistence_path)
+        return base + "_snapshot.json"
+
+    def compact(self) -> bool:
+        """Write current state to snapshot JSON, then truncate JSONL.
+
+        Uses temp file + atomic os.replace for crash safety.
+        Returns True if compaction succeeded.
+        """
+        if not self._persistence_path:
+            return False
+        try:
+            snapshot = self._serialize_snapshot()
+            tmp_fd, tmp_path = tempfile.mkstemp(
+                dir=os.path.dirname(self._persistence_path) or ".",
+                suffix=".tmp",
+            )
+            try:
+                with os.fdopen(tmp_fd, "w", encoding="utf-8") as f:
+                    json.dump(snapshot, f, ensure_ascii=False)
+                os.replace(tmp_path, self._snapshot_path)
+            except BaseException:
+                try:
+                    os.unlink(tmp_path)
+                except OSError:
+                    pass
+                raise
+            with open(self._persistence_path, "w", encoding="utf-8") as f:
+                pass
+            return True
+        except OSError:
+            return False
+
+    def _serialize_snapshot(self) -> dict[str, Any]:
+        return {
+            "version": 1,
+            "created_at": time.time(),
+            "drift_demoted_skills": sorted(self._drift_demoted_skills),
+            "verifier": {
+                f"{vid}|{sf}": {
+                    "support_correct": entry.support_correct,
+                    "support_wrong": entry.support_wrong,
+                    "refute_correct": entry.refute_correct,
+                    "refute_wrong": entry.refute_wrong,
+                    "contaminated_count": entry.contaminated_count,
+                }
+                for (vid, sf), entry in self.verifier._entries.items()
+            },
+            "recipe": {
+                key: {
+                    "adjudicated_verified": entry.adjudicated_verified,
+                    "adjudicated_rejected": entry.adjudicated_rejected,
+                    "delayed_audit_matched": entry.delayed_audit_matched,
+                    "delayed_audit_mismatch": entry.delayed_audit_mismatch,
+                }
+                for key, entry in self.recipe._entries.items()
+            },
+            "skill_claim": {
+                key: {
+                    "counts": dict(entry.outcome_counts),
+                }
+                for key, entry in self.skill_claim._entries.items()
+            },
+        }
+
+    def _load_snapshot(self) -> bool:
+        if not os.path.exists(self._snapshot_path):
+            return False
+        try:
+            with open(self._snapshot_path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        except (OSError, json.JSONDecodeError):
+            return False
+        if data.get("version") != 1:
+            return False
+        self._drift_demoted_skills = set(data.get("drift_demoted_skills", []))
+        for compound_key, vals in data.get("verifier", {}).items():
+            if "|" not in compound_key:
+                continue
+            vid, sf = compound_key.split("|", 1)
+            entry = self.verifier._entries.get((vid, sf))
+            if entry is not None:
+                for k in ("support_correct", "support_wrong", "refute_correct", "refute_wrong", "contaminated_count"):
+                    if k in vals:
+                        setattr(entry, k, vals[k])
+        for key, vals in data.get("recipe", {}).items():
+            entry = self.recipe._entries.get(key)
+            if entry is not None:
+                for k in ("adjudicated_verified", "adjudicated_rejected", "delayed_audit_matched", "delayed_audit_mismatch"):
+                    if k in vals:
+                        setattr(entry, k, vals[k])
+        for key, vals in data.get("skill_claim", {}).items():
+            entry = self.skill_claim._entries.get(key)
+            if entry is not None and "counts" in vals:
+                for outcome, count in vals["counts"].items():
+                    entry.outcome_counts[outcome] = count
+        return True
+
     def _append_event(self, event: dict[str, Any]) -> None:
         try:
             with open(self._persistence_path, "a", encoding="utf-8") as f:
@@ -501,6 +602,7 @@ class ThreeLayerReliabilityStore:
             pass
 
     def _load_from_jsonl(self) -> None:
+        has_snapshot = self._load_snapshot()
         if not os.path.exists(self._persistence_path):
             return
         try:

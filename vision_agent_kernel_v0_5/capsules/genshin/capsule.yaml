@@ -139,8 +139,8 @@ ui_anchors:
 resources:
   - resource_id: genshin_profile
     kind: roi_profile
-    path: ../../configs/profiles/genshin_1920x1080.json
-    description: Genshin ROI calibration profile.
+    path: ../../configs/profiles/genshin.json
+    description: Genshin ROI calibration profile (resolution-independent, normalized coordinates).
   - resource_id: combat_profiles
     kind: yaml
     path: ../../data/combat_profiles/team_profiles.yaml
