@@ -1,0 +1,40 @@
+@import "./tokens.css";
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(70, 210, 255, 0.14), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(255, 86, 190, 0.12), transparent 32%),
+    linear-gradient(135deg, var(--bg-base) 0%, var(--bg-mid) 48%, var(--bg-deep) 100%);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+}
+
+button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+select { font: inherit; cursor: pointer; }
+a { color: var(--accent-primary); text-decoration: none; }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: var(--radius-full); }
+::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+
+/* Focus ring */
+:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
