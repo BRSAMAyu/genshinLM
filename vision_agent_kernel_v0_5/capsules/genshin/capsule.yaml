@@ -1,0 +1,166 @@
+capsule_id: genshin
+version: "0.1.0"
+display_name: "Genshin Impact Capability Pack"
+description: "Optional Genshin-specific detectors, skills, resources, and verifier declarations."
+runtime_package: "capsules.genshin"
+entrypoint: "capsule_entry:GenshinCapsule"
+providers:
+  screen_classifier: capsules.genshin.providers:GenshinScreenClassifierProvider
+  combat_planner: capsules.genshin.providers:GenshinCombatPlannerProvider
+  navigator: capsules.genshin.providers:GenshinNavigatorProvider
+  dialog_handler: capsules.genshin.providers:GenshinDialogHandlerProvider
+  knowledge: capsules.genshin.providers:GenshinKnowledgeProvider
+  verifier: capsules.genshin.providers:GenshinVerifierProvider
+capabilities:
+  - arpg_navigation
+  - arpg_combat
+  - danger_reflex
+  - quest_following
+frame_processors:
+  - genshin_perception_bridge
+slots:
+  - genshin.screen_state
+  - genshin.danger_signals
+  - genshin.cooldown_state
+  - genshin.failure_state
+  - genshin.persona_response
+skills:
+  - skill_id: genshin_combat
+    kind: runtime_skill
+    capabilities:
+      - arpg_combat
+      - combat_playbook_execution
+      - danger_aware_cancel
+    resources:
+      - combat_profiles
+      - combat_skill_yaml
+    verifiers:
+      - combat_state_clear
+      - danger_cleared
+    planner_tags:
+      - combat
+      - fast_reflex
+  - skill_id: genshin_dodge
+    kind: reflex_skill
+    capabilities:
+      - danger_reflex
+      - dodge_reflex
+      - danger_clearance
+    resources:
+      - genshin_profile
+    verifiers:
+      - danger_cleared
+    planner_tags:
+      - p0_reflex
+      - interruptible
+  - skill_id: genshin_navigation
+    kind: declarative_skill_pack
+    capabilities:
+      - arpg_navigation
+      - navigation
+      - quest_following
+      - route_to_marker
+      - dialog_progression
+    resources:
+      - navigation_skill_yaml
+      - world_graph
+    verifiers:
+      - marker_visible
+      - route_progress
+    planner_tags:
+      - long_horizon
+      - navigation
+transitions:
+  - from: GENSHIN_COMBAT
+    to: GENSHIN_DODGE
+    reason: DODGE_TRIGGERED
+  - from: GENSHIN_DODGE
+    to: GENSHIN_COMBAT
+    reason: SUCCESS
+verifiers:
+  - combat_state_clear
+  - danger_cleared
+  - marker_visible
+  - route_progress
+detectors:
+  - perception.genshin_screen_classifier:GenshinScreenClassifier
+  - combat.danger_detector:GenshinDangerSignalExtractor
+keymaps:
+  interact: F
+  normal_attack: LMB
+  elemental_skill: E
+  elemental_burst: Q
+  sprint: Shift
+  jump: Space
+ui_anchors:
+  - anchor_id: genshin_map_button
+    screen_state: overworld
+    semantic_role: open_map
+    candidate_roi: [0.0, 0.0, 0.18, 0.18]
+    matchers:
+      - kind: template
+        value: minimap
+        weight: 0.9
+      - kind: calibrated
+        roi: [0.03, 0.03, 0.08, 0.08]
+        weight: 0.72
+    post_action_verifier: marker_visible
+  - anchor_id: genshin_inventory_button
+    screen_state: menu
+    semantic_role: open_inventory
+    candidate_roi: [0.72, 0.0, 0.28, 0.22]
+    matchers:
+      - kind: ocr
+        value: Inventory
+        weight: 0.9
+      - kind: ocr
+        value: 背包
+        weight: 0.9
+      - kind: calibrated
+        roi: [0.82, 0.08, 0.1, 0.08]
+        weight: 0.7
+    post_action_verifier: route_progress
+  - anchor_id: genshin_teleport_confirm
+    screen_state: map
+    semantic_role: confirm_teleport
+    candidate_roi: [0.62, 0.72, 0.28, 0.18]
+    matchers:
+      - kind: ocr
+        value: Teleport
+        weight: 0.95
+      - kind: ocr
+        value: 传送
+        weight: 0.95
+      - kind: calibrated
+        roi: [0.72, 0.79, 0.13, 0.08]
+        weight: 0.7
+    post_action_verifier: route_progress
+resources:
+  - resource_id: genshin_profile
+    kind: roi_profile
+    path: ../../configs/profiles/genshin_1920x1080.json
+    description: Genshin ROI calibration profile.
+  - resource_id: combat_profiles
+    kind: yaml
+    path: ../../data/combat_profiles/team_profiles.yaml
+    description: Team and character combat profile declarations.
+  - resource_id: combat_skill_yaml
+    kind: skill_yaml
+    path: ../../data/skills/genshin_combat_skills.yaml
+    description: Declarative combat skills.
+  - resource_id: navigation_skill_yaml
+    kind: skill_yaml
+    path: ../../data/skills/genshin_navigation_skills.yaml
+    description: Declarative navigation skills.
+  - resource_id: world_graph
+    kind: world_graph
+    path: ../../knowledge/genshin_world_graph.yaml
+    description: Genshin world graph and route hints.
+profiles:
+  - genshin_1920x1080
+failure_bridge: app_service.apps.genshin_failure_bridge:GenshinFailureBridge
+persona_bridge: app_service.apps.genshin_persona_bridge:GenshinPersonaBridge
+benchmark_tasks:
+  - aurorabench.reflex
+  - aurorabench.long_horizon
+  - aurorabench.repair
