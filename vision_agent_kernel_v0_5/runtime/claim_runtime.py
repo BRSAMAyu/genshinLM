@@ -228,6 +228,9 @@ class ClaimGraph:
     def get_optional(self, claim_id: str) -> StateDeltaClaim | None:
         return self._claims.get(claim_id)
 
+    def update_claim(self, claim: StateDeltaClaim) -> None:
+        self._claims[claim.claim_id] = claim
+
     def downstream(self, claim_id: str) -> list[str]:
         seen: set[str] = set()
         queue: deque[str] = deque(sorted(self._children.get(claim_id, set())))
@@ -993,7 +996,7 @@ class ClaimProducingExecutor:
         claim = self.claim_graph.get(claim_id)
         new_status: ClaimStatus = "verified" if ok else "demoted"
         claim = replace(claim, status=new_status)
-        self.claim_graph._claims[claim_id] = claim
+        self.claim_graph.update_claim(claim)
         if not ok:
             self.claim_graph.demote(claim_id, reason="verifier_rejected")
             self._replan_counts[claim.node_id] = self._replan_counts.get(claim.node_id, 0) + 1

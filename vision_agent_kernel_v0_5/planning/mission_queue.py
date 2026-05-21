@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass, field
-from typing import Any
+from typing import Any, Literal
+
+RiskLevel = Literal["low", "medium", "high", "critical"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -20,7 +22,7 @@ class MissionNode:
     failure_policy: dict[str, Any]
     route_id: str | None = None
     playbook: str | None = None
-    risk_level: str = "medium"
+    risk_level: RiskLevel = "medium"
 
 
 @dataclass(frozen=True, slots=True)
