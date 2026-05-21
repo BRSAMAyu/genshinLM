@@ -1,0 +1,166 @@
+# Honkai: Star Rail Combat & Strategy Guide
+# Sparkle Project — Scenario-tagged tips for persona context injection
+
+guide_id: hsr_combat
+game: hsr
+version: "3.x"
+language: zh-CN
+
+sections:
+  - section_id: sp_management
+    title: 技能点(SP)管理
+    tags: [combat, sp, beginner, core_mechanic]
+    priority: 100
+    tips:
+      - tip_id: sp_basics
+        title: SP机制基础
+        content: |
+          全队共享SP，上限5点。战技消耗1SP，普攻恢复1SP。
+          核心策略：保证SP供给（产点角色）满足SP消耗（耗点角色）。
+          产点手：丰饶（娜塔莎/罗刹）、存护（三月七/符玄）、同谐辅助普攻时。
+          耗点手：毁灭C（刃/流萤）、巡猎C（希儿/银狼使用战技）。
+          判断标准：全队每回合净SP消耗是否<=0。
+        applicable_characters: [seele, natasha, luocha, march_7th, firefly]
+        difficulty: beginner
+
+      - tip_id: sp_economy_advanced
+        title: 高级SP经济
+        content: |
+          理想SP流转：辅助普攻产点→C位战技耗点→循环。
+          关键时机：波次切换时攒满SP，进入新波次全力输出。
+          特殊情况：藿藿大招可以产SP，翡翠战技不消耗SP。
+          常见失误：全员乱用战技导致SP枯竭，C位无法出手。
+          建议：至少保证1-2个角色做普攻产点，其余自由分配。
+        applicable_characters: [huohuo, silver_wolf, sparkle]
+        difficulty: intermediate
+
+  - section_id: weakness_break
+    title: 弱点击破机制
+    tags: [combat, weakness, elements, intermediate]
+    priority: 95
+    tips:
+      - tip_id: weakness_basics
+        title: 弱点击破基础
+        content: |
+          敌人头上有弱点图标，用对应元素攻击削减韧性条。
+          韧性条清空时触发击破：额外伤害+特殊效果+行动延迟。
+          七种击破效果：
+            物理→流血（持续伤害）
+            火→灼烧（持续伤害）
+            冰→冻结（跳过行动）
+            雷→触电（持续伤害）
+            风→风化（持续伤害）
+            量子→纠缠（行动延迟+额外伤害）
+            虚数→禁锢（行动延迟+降速）
+        applicable_characters: []
+        difficulty: beginner
+
+      - tip_id: break_team_building
+        title: 击破队构建
+        content: |
+          核心思路：高削韧角色+对应弱点元素=快速击破。
+          击破伤害与角色的击破特攻属性成正比。
+          代表队伍：流萤超击破队（流萤+同谐主+阮梅+加拉赫）。
+          关键：击破后的持续效果是主要输出来源，不是击破瞬间。
+          虚数击破对高行动频率Boss特别有效（如可可利亚）。
+        applicable_characters: [firefly, ruan_mei, harmony_trailblazer, gallagher]
+        difficulty: intermediate
+
+  - section_id: team_composition
+    title: 队伍构建指南
+    tags: [team, building, strategy]
+    priority: 90
+    tips:
+      - tip_id: team_archetypes
+        title: 主流队伍类型
+        content: |
+          1. 直伤队：主C+同谐增伤+虚无减防+生存位
+             代表：黄泉队（黄泉+花火+银狼/佩拉+加拉赫）
+          2. DoT队：卡芙卡+黑天鹅+减防+生存位
+             核心：卡芙卡引爆DoT，黑天鹅叠奥迹
+          3. 追击队：真理医生+托帕+知更鸟+砂金
+             核心：队友攻击触发追击，高频输出
+          4. 超击破队：流萤+同谐主+阮梅+加拉赫
+             核心：击破伤害作为主要输出
+        applicable_characters: [acheron, kafka, black_swan, firefly, ratio, topaz]
+        difficulty: intermediate
+
+      - tip_id: sustain_guide
+        title: 生存位选择
+        tags: [survival, healing, shield]
+        content: |
+          每队必带一个生存位（丰饶或存护）。
+          丰饶（治疗）：罗刹（群疗+自动奶）、藿藿（群疗+解控+产SP）
+          存护（护盾）：符玄（减伤+暴击加成）、砂金（护盾+追击）
+          选择标准：
+            - 高难度（混沌回忆）：符玄/砂金更稳
+            - 长线战斗（模拟宇宙）：罗刹续航更强
+            - 需要解控：藿藿是唯一选择
+        applicable_characters: [luocha, huohuo, fu_xuan, aventurine]
+        difficulty: beginner
+
+  - section_id: mode_guide
+    title: 游戏模式攻略
+    tags: [endgame, simulated_universe, forgotten_hall, advanced]
+    priority: 85
+    tips:
+      - tip_id: simulated_universe
+        title: 模拟宇宙攻略
+        content: |
+          核心策略：选对命途比角色练度更重要。
+          当前版本推荐命途：
+            毁灭命途：通用最强，高输出+生存
+            巡猎命途：Boss战首选，专注单体
+            虚无命途：DoT流，搭配卡芙卡
+          祝福选择优先级：
+            1. 对应命途的3星祝福（核心）
+            2. 通用增伤祝福
+            3. 生存祝福（低于阈值时优先）
+          奇物搭配要配合命途和队伍。
+        applicable_characters: []
+        difficulty: intermediate
+
+      - tip_id: forgotten_hall
+        title: 忘却之庭/混沌回忆
+        content: |
+          每期两个半区，需要两队分别攻略。
+          通用建议：
+            1. 根据敌人弱点和属性分配队伍
+            2. 一队一生存位是底线
+            3. 注意Boss的特殊机制（行动条控制、锁弱点等）
+            4. 配速很重要：确保辅助在C位之前行动
+          星级标准：10轮内通关拿满星。
+        applicable_characters: []
+        difficulty: advanced
+
+  - section_id: daily_tips
+    title: 日常效率
+    tags: [daily, efficiency, resources, beginner]
+    priority: 70
+    tips:
+      - tip_id: trailblaze_power
+        title: 开拓力使用
+        content: |
+          每日自然恢复240开拓力（上限240）。
+          优先级：
+            1. 角色突破材料（卡等级最急）
+            2. 光锥突破材料
+            3. 遗器本（后期大头）
+            4. 行迹材料
+          小贴士：开拓力满了会溢出，设闹钟提醒。
+          后续版本可以购买额外的开拓力补给。
+        applicable_characters: []
+        difficulty: beginner
+
+      - tip_id: daily_checklist
+        title: 每日清单
+        content: |
+          日常推荐顺序（约15分钟）：
+            1. 消耗开拓力（最优先，防溢出）
+            2. 完成每日委托（4个任务）
+            3. 领取每日派遣奖励+重新派遣
+            4. 检查商店更新（个月/周刷新）
+            5. 模拟宇宙每周积分（如果还没打满）
+          有活动时优先做活动任务，通常收益更高。
+        applicable_characters: []
+        difficulty: beginner

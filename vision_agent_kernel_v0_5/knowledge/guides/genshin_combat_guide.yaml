@@ -1,0 +1,150 @@
+# Genshin Impact Combat & Strategy Guide
+# Sparkle Project — Scenario-tagged tips for persona context injection
+
+guide_id: genshin_combat
+game: genshin
+version: "5.x"
+language: zh-CN
+
+sections:
+  - section_id: elemental_reactions
+    title: 元素反应机制
+    tags: [combat, elements, reactions, beginner, intermediate]
+    priority: 100
+    tips:
+      - tip_id: vaporize_basics
+        title: 蒸发反应基础
+        content: |
+          火+水触发蒸发。火打水1.5倍，水打火2.0倍。
+          核心输出手法：先挂火→切水C打出2.0倍蒸发。
+          推荐队伍：胡桃+夜兰+钟离+万叶（胡桃蒸发队）。
+        applicable_characters: [hu_tao, ayaka, tartaglia, xiangling]
+        difficulty: beginner
+
+      - tip_id: melt_basics
+        title: 融化反应基础
+        content: |
+          火+冰触发融化。冰打火1.5倍，火打冰2.0倍。
+          经典手法：甘雨大招挂冰→班尼特E挂火→甘雨蓄力箭2.0倍融化。
+          注意：冰先手火后手收益更高，但实战中火先手更常见。
+        applicable_characters: [ganyu, rosaria, bennett, xiangling]
+        difficulty: beginner
+
+      - tip_id: aggravate_spread
+        title: 激化反应（草+雷）
+        content: |
+          草+雷产生激化，提升雷/草伤害基础值。
+          超激化(Superconduct)提升雷伤，蔓激化(Spread)提升草伤。
+          代表队伍：纳西妲+八重神子+菲谢尔+钟离（激化队）。
+          关键：草元素先挂再切雷C输出。
+        applicable_characters: [nahida, yae_miko, fischl, tighnari, alhaitham]
+        difficulty: intermediate
+
+      - tip_id: hyperbloom_guide
+        title: 超绽放核心攻略
+        content: |
+          草+水产生草原核→雷触发超绽放，自动追踪敌人。
+          当前版本最强平民输出之一，无需高练度即可打出可观伤害。
+          核心配队：纳西妲+行秋/夜兰+久岐忍+第四人自由位。
+          久岐忍堆精通即可（建议900+），超绽放伤害只看触发者精通。
+        applicable_characters: [nahida, shinobu, xingqiu, yelan, raiden_shogun]
+        difficulty: intermediate
+
+      - tip_id: swirl_amplification
+        title: 扩散增伤机制
+        content: |
+          风元素扩散可以降低敌人对应元素抗性（翠绿之影4件套-40%对应抗性）。
+          万叶/砂糖扩火→减火抗→火C输出提升约40%。
+          关键操作：先给敌人挂目标元素→切风系角色EQ扩散→切C输出。
+          注意：扩散只减对应元素抗，不要扩错元素。
+        applicable_characters: [kazuha, sucrose, venti, Heizou]
+        difficulty: intermediate
+
+  - section_id: team_building
+    title: 队伍构建指南
+    tags: [team, building, strategy, intermediate]
+    priority: 90
+    tips:
+      - tip_id: national_team
+        title: 国家队与变种
+        content: |
+          经典国家队：香菱+行秋+班尼特+重云/砂糖。
+          香菱大招锁面板（班尼特Q后切香菱Q可锁攻击力加成）。
+          变种：雷神国家队（重云→雷电将军），武装队（砂糖站场）。
+          核心理念：利用元素反应倍率补偿四星角色基础伤害不足。
+        applicable_characters: [xiangling, xingqiu, bennett, raiden_shogun]
+        difficulty: intermediate
+
+      - tip_id: freeze_team
+        title: 永冻队攻略
+        content: |
+          核心逻辑：水+冰冻结→敌人无法行动→安全输出。
+          经典永冻：神里绫华+申鹤+万叶+心海。
+          替代方案：甘雨+莫娜+温迪+迪奥娜。
+          注意：对冻结免疫的Boss（如无相系列）不适用。
+        applicable_characters: [ayaka, shenhe, kazuha, kokomi, ganyu, mika]
+        difficulty: intermediate
+
+      - tip_id: hypercarry_guide
+        title: 主C站场队构建
+        content: |
+          核心思路：一个角色站场输出，其他三人提供辅助。
+          辅助位需求：增伤（班尼特/芙宁娜）+减抗（风套/钟离）+充能/副C。
+          代表：雷电将军超载队、那维莱特队、阿蕾奇诺队。
+          关键：站场时间分配要合理，辅助切出→EQ→切回主C。
+        applicable_characters: [neuvillette, raiden_shogun, arlecchino, hutao]
+        difficulty: intermediate
+
+  - section_id: boss_mechanics
+    title: Boss 战斗机制
+    tags: [boss, mechanics, advanced, combat]
+    priority: 80
+    tips:
+      - tip_id: weekly_boss_guide
+        title: 周本Boss要点
+        content: |
+          风魔龙：爬背攻击，避免被推下。
+          北风狼：冰风双属性，带对应护盾/治疗。
+          公子：三阶段，注意水雷免疫切换。
+          若陀龙王：注意脚下范围提示，利用冲刺无敌帧。
+          正机之神：利用雷种子机制，注意Boss的元素吸收。
+        applicable_characters: []
+        difficulty: intermediate
+
+      - tip_id: abyss_tips
+        title: 深境螺旋攻略要点
+        content: |
+          每期深渊有特定buff和敌人配置，关注当期深渊推荐角色。
+          通用建议：上下半各准备一队，每队至少一个治疗/护盾。
+          星级策略：先确保满星12层（本期），之前层数可后补。
+          时间管理：优先速通小怪波，留时间打Boss。
+        applicable_characters: []
+        difficulty: advanced
+
+  - section_id: exploration
+    title: 探索与资源
+    tags: [exploration, resources, beginner, farming]
+    priority: 70
+    tips:
+      - tip_id: resin_efficiency
+        title: 树脂高效使用
+        content: |
+          每日自然恢复180树脂。优先级建议：
+          1. 角色突破材料（卡等级最痛苦）
+          2. 天赋材料（周本+对应日）
+          3. 圣遗物本（后期大头，前期不急）
+          4. 摩拉/经验书（缺的时候再刷）
+          浓缩树脂在有双倍活动时使用效率最高。
+        applicable_characters: []
+        difficulty: beginner
+
+      - tip_id: artifact_farming
+        title: 圣遗物刷取指南
+        content: |
+          前期（AR<45）：不刷圣遗物，用散件过渡。
+          中期（AR45-50）：集中刷主C的绝缘/饰金等主流本。
+          后期（AR50+）：追求副词条（暴击率/暴击伤害/精通）。
+          关键：暴击率:暴击伤害 = 1:2 是黄金比例。
+          元素充能：大部分角色需要120%-150%，辅助看队友数量调整。
+        applicable_characters: []
+        difficulty: intermediate
