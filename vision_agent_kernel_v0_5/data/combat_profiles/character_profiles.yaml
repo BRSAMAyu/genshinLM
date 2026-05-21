@@ -1,6 +1,7 @@
 # Genshin Impact Character Combat Profiles
 # Sparkle Project - Vision Agent Kernel v0.5
-# Data cross-referenced from Genshin Wiki (fandom), gcsim, and in-game data.
+# Data cross-referenced from Genshin Wiki (fandom), HoYoWiki, Joytify, Mobalytics, and in-game data.
+# Updated through Version Luna V (6.x) — May 2026.
 # Cooldowns in milliseconds. Energy costs are burst energy requirement.
 
 characters:
@@ -880,6 +881,102 @@ characters:
     behavior_preference: conservative
     strategy_style: burst_swap
 
+  - character_id: durin
+    display_name: 杜林
+    name_en: Durin
+    rarity: 5
+    element: pyro
+    weapon_type: claymore
+    role: on_field_dps
+    normal_attack_name: Searing Claw
+    e_skill_name: Blazing Awakening
+    q_burst_name: Inferno Roar
+    e_skill_cd_ms: 14000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: zibai
+    display_name: 紫拜
+    name_en: Zibai
+    rarity: 5
+    element: geo
+    weapon_type: sword
+    role: on_field_dps
+    normal_attack_name: Froststeel Blade
+    e_skill_name: Lunar Edge Waltz
+    q_burst_name: Crystalline Cataclysm
+    e_skill_cd_ms: 14000
+    q_energy_cost: 70
+    q_duration_ms: 0
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: ineffa
+    display_name: 伊涅芙
+    name_en: Ineffa
+    rarity: 5
+    element: electro
+    weapon_type: polearm
+    role: support
+    normal_attack_name: Cyclonic Duster
+    e_skill_name: "Cleaning Mode: Carrier Frequency"
+    q_burst_name: "Supreme Instruction: Cyclonic Exterminator"
+    e_skill_cd_ms: 16000
+    q_energy_cost: 60
+    q_duration_ms: 20000
+    behavior_preference: balanced
+    strategy_style: skill_swap
+
+  - character_id: flins
+    display_name: 菲林斯
+    name_en: Flins
+    rarity: 5
+    element: electro
+    weapon_type: polearm
+    role: on_field_dps
+    normal_attack_name: Pocztowy Demonspear
+    e_skill_name: "Ancient Rite: Arcane Light"
+    q_burst_name: "Ancient Ritual: Cometh the Night"
+    e_skill_cd_ms: 16000
+    q_energy_cost: 80
+    q_duration_ms: 10000
+    behavior_preference: aggressive
+    strategy_style: on_field_dps
+
+  - character_id: lauma
+    display_name: 菈乌玛
+    name_en: Lauma
+    rarity: 5
+    element: dendro
+    weapon_type: catalyst
+    role: support
+    normal_attack_name: Moonlit Weaver
+    e_skill_name: "Sacred Chant: Eternal Slumber"
+    q_burst_name: "Sacred Chant: Moon of All Hearts"
+    e_skill_cd_ms: 12000
+    q_energy_cost: 80
+    q_duration_ms: 15000
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: nefer
+    display_name: 奈菲尔
+    name_en: Nefer
+    rarity: 5
+    element: dendro
+    weapon_type: bow
+    role: on_field_dps
+    normal_attack_name: Verdant Hunt
+    e_skill_name: Bloom of Eternity
+    q_burst_name: Garden of the Moon
+    e_skill_cd_ms: 14000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps
+
   # =====================================================================
   # 4-STAR CHARACTERS
   # =====================================================================
@@ -1210,7 +1307,7 @@ characters:
     element: cryo
     weapon_type: bow
     role: healer
-    normal_attack_name: Kätzlein Style
+    normal_attack_name: Katzlein Style
     e_skill_name: Icy Paws
     q_burst_name: Signature Mix
     e_skill_cd_ms: 6000
@@ -1587,22 +1684,6 @@ characters:
     behavior_preference: conservative
     strategy_style: heal_swap
 
-  - character_id: aloy
-    display_name: 埃洛伊
-    name_en: Aloy
-    rarity: 5
-    element: cryo
-    weapon_type: bow
-    role: on_field_dps
-    normal_attack_name: Rapid Fire
-    e_skill_name: Freezing Bomb
-    q_burst_name: Prophecy of Dawn
-    e_skill_cd_ms: 20000
-    q_energy_cost: 40
-    q_duration_ms: 0
-    behavior_preference: balanced
-    strategy_style: on_field_dps
-
   - character_id: yun_jin
     display_name: 云堇
     name_en: Yun Jin
@@ -1618,3 +1699,86 @@ characters:
     q_duration_ms: 12000
     behavior_preference: balanced
     strategy_style: burst_swap
+
+  - character_id: dahlia
+    display_name: 达莉亚
+    name_en: Dahlia
+    rarity: 4
+    element: hydro
+    weapon_type: catalyst
+    role: support
+    normal_attack_name: Holy Rite
+    e_skill_name: Blessing of the Dawn
+    q_burst_name: Hymn of the Sanctuary
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: aino
+    display_name: 艾诺
+    name_en: Aino
+    rarity: 4
+    element: hydro
+    weapon_type: claymore
+    role: support
+    normal_attack_name: Tidal Slash
+    e_skill_name: Moonflow Strike
+    q_burst_name: Abyssal Surge
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: reaction_enabler
+
+  - character_id: jahoda
+    display_name: 雅霍达
+    name_en: Jahoda
+    rarity: 4
+    element: anemo
+    weapon_type: bow
+    role: support
+    normal_attack_name: Frostwind Arrow
+    e_skill_name: Gale of the North
+    q_burst_name: Blizzard Anthem
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  - character_id: illuga
+    display_name: 伊露加
+    name_en: Illuga
+    rarity: 4
+    element: geo
+    weapon_type: sword
+    role: support
+    normal_attack_name: Nightwatch Blade
+    e_skill_name: Crystalline Ward
+    q_burst_name: Lunar Bastion
+    e_skill_cd_ms: 12000
+    q_energy_cost: 60
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: burst_swap
+
+  # =====================================================================
+  # COLLABORATION / SPECIAL CHARACTERS
+  # =====================================================================
+  - character_id: aloy
+    display_name: 埃洛伊
+    name_en: Aloy
+    rarity: 5
+    element: cryo
+    weapon_type: bow
+    role: on_field_dps
+    normal_attack_name: Rapid Fire
+    e_skill_name: Freezing Bomb
+    q_burst_name: Prophecy of Dawn
+    e_skill_cd_ms: 20000
+    q_energy_cost: 40
+    q_duration_ms: 0
+    behavior_preference: balanced
+    strategy_style: on_field_dps

@@ -1,0 +1,863 @@
+# Honkai: Star Rail Team Combat Profiles
+# Sparkle Project - Vision Agent Kernel v0.5
+# Data sourced from prydwen.gg, game8.co, HoYoLAB, and community meta discussions.
+# Covers Memory of Chaos (MoC), Pure Fiction (PF), and Apocalyptic Shadow (AS).
+# Character IDs use snake_case English names. Paths and elements match HSR terminology.
+
+teams:
+  # =====================================================================
+  # ACHERON TEAMS (Nihility hypercarry, debuff-stack into ultimate)
+  # =====================================================================
+  - team_id: acheron_hyper
+    name: 黄泉单核队
+    name_en: Acheron Hypercarry
+    characters: [acheron, jiaoqiu, cipher, aventurine]
+    elements: [lightning, fire, lightning, imaginary]
+    paths: [nihility, nihility, nihility, preservation]
+    playstyle: "Stack debuffs to charge Acheron ultimate, then unleash for massive AoE damage"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos, apocalyptic_shadow]
+    rotation:
+      - "Jiaoqiu skill (apply debuff zones)"
+      - "Cipher skill (DEF shred + debuff)"
+      - "Aventurine skill (shield + debuff on hit)"
+      - "Acheron skill (generate Slashed Dream stacks)"
+      - "Acheron ultimate (when fully charged, unleash Nine Rings)"
+    strengths:
+      - "Massive ultimate damage that ignores weakness type"
+      - "Multiple debuffers charge ultimate quickly"
+      - "Aventurine provides strong shielding and debuff"
+    weaknesses:
+      - "Requires two Nihility teammates for max trace bonus"
+      - "Energy generation is passive, no battery mechanic"
+      - "E2 recommended to replace one Nihility with Harmony"
+
+  - team_id: acheron_dual_nihility
+    name: 黄泉双虚无队
+    name_en: Acheron Dual Nihility
+    characters: [acheron, silver_wolf, pela, huohuo]
+    elements: [lightning, quantum, ice, wind]
+    paths: [nihility, nihility, nihility, abundance]
+    playstyle: "Pela + Silver Wolf stack debuffs for fast Acheron ultimate charging"
+    sp_balance: balanced
+    difficulty: easy
+    best_for: [memory_of_chaos, apocalyptic_shadow]
+    rotation:
+      - "Pela ultimate (AoE DEF shred)"
+      - "Silver Wolf skill (implant weakness + debuff)"
+      - "Huohuo skill (heal + cleanse)"
+      - "Acheron skill (Slashed Dream stacks)"
+      - "Acheron ultimate (full charge Nine Rings)"
+    strengths:
+      - "Silver Wolf weakness implant bypasses element restrictions"
+      - "Pela AoE DEF shred is very SP-efficient"
+      - "Huohuo provides energy restoration passive"
+    weaknesses:
+      - "Silver Wolf is single-target focused"
+      - "Lacks Jiaoqiu's superior debuff stacking"
+      - "Lower ceiling than premium variant"
+
+  # =====================================================================
+  # FIREFLY / BREAK TEAMS (Super Break focused)
+  # =====================================================================
+  - team_id: firefly_break
+    name: 流萤超击破队
+    name_en: Firefly Super Break
+    characters: [firefly, fugue, ruan_mei, lingsha]
+    elements: [fire, imaginary, ice, wind]
+    paths: [destruction, nihility, harmony, abundance]
+    playstyle: "Firefly enhances to SAM mode, break enemies, trigger Super Break with Fugue + Ruan Mei"
+    sp_balance: tight
+    difficulty: easy
+    best_for: [memory_of_chaos, apocalyptic_shadow]
+    rotation:
+      - "Ruan Mei skill (break efficiency + SPD buff)"
+      - "Fugue skill (weakness expose + break buff)"
+      - "Lingsha skill (AoE break + heal)"
+      - "Firefly ultimate (enter SAM mode, enhanced skill)"
+      - "Firefly enhanced skill (break enemy toughness)"
+    strengths:
+      - "Super Break deals damage proportional to toughness broken"
+      - "Very F2P-friendly, low investment high return"
+      - "Ruan Mei + Fugue massively boost break damage"
+    weaknesses:
+      - "Weak against enemies with high toughness or break resistance"
+      - "SP management is tight"
+      - "Firefly needs high break effect stat investment"
+
+  - team_id: firefly_break_f2p
+    name: 流萤超击破平民队
+    name_en: Firefly Break F2P
+    characters: [firefly, harmony_trailblazer, asta, natasha]
+    elements: [fire, imaginary, fire, physical]
+    paths: [destruction, harmony, harmony, abundance]
+    playstyle: "Budget Super Break using Harmony Trailblazer for break effect buffs"
+    sp_balance: tight
+    difficulty: easy
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Asta skill (SPD buff + fire damage)"
+      - "Harmony Trailblazer ultimate (Super Break trigger)"
+      - "Natasha skill (heal)"
+      - "Firefly ultimate (SAM mode)"
+      - "Firefly enhanced skill (break + super break)"
+    strengths:
+      - "Very accessible, uses free characters"
+      - "Harmony Trailblazer provides Super Break for free"
+      - "Asta SPD buff helps Firefly take more turns"
+    weaknesses:
+      - "Lower damage ceiling than premium variant"
+      - "Natasha healing is single-target"
+      - "No Fugue weakness expose"
+
+  - team_id: boothill_break
+    name: 波提欧击破队
+    name_en: Boothill Super Break
+    characters: [boothill, fugue, ruan_mei, lingsha]
+    elements: [physical, imaginary, ice, wind]
+    paths: [hunt, nihility, harmony, abundance]
+    playstyle: "Boothill triggers Pocket Trickshots on broken enemies for massive single-target break damage"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos, apocalyptic_shadow]
+    rotation:
+      - "Ruan Mei skill (break efficiency + SPD buff)"
+      - "Fugue skill (weakness expose)"
+      - "Lingsha skill (AoE break + heal)"
+      - "Boothill enhanced basic (Pocket Trickshot stack)"
+      - "Boothill ultimate (forced weakness break + true damage)"
+    strengths:
+      - "Boothill deals true damage on broken enemies"
+      - "Ruan Mei extends break delay for more turns"
+      - "Excellent boss killer with single-target focus"
+    weaknesses:
+      - "Needs to stack Pocket Trickshot before bursting"
+      - "Single-target focused, weaker in AoE"
+      - "Requires specific break-focused relic stats"
+
+  # =====================================================================
+  # DOT TEAMS (Damage over time)
+  # =====================================================================
+  - team_id: kafka_dot
+    name: 卡夫卡DoT队
+    name_en: Kafka DoT
+    characters: [kafka, black_swan, ruan_mei, huohuo]
+    elements: [lightning, wind, ice, wind]
+    paths: [nihility, nihility, harmony, abundance]
+    playstyle: "Kafka triggers allies' DoTs with her ultimate, Black Swan applies Arcana stacks"
+    sp_balance: balanced
+    difficulty: easy
+    best_for: [memory_of_chaos, pure_fiction]
+    rotation:
+      - "Black Swan skill (apply Arcana stacks)"
+      - "Ruan Mei skill (break efficiency + damage buff)"
+      - "Huohuo skill (heal + energy regen)"
+      - "Kafka skill (trigger DoTs)"
+      - "Kafka ultimate (detonate all DoTs for massive damage)"
+    strengths:
+      - "DoTs deal damage regardless of turn order"
+      - "Kafka ultimate detonates all DoTs simultaneously"
+      - "Black Swan Arcana stacks multiplicatively"
+    weaknesses:
+      - "DoT damage is backloaded, slow ramp"
+      - "Weak against DoT-immune enemies"
+      - "Huohuo recommended for energy restoration"
+
+  - team_id: kafka_triple_dot
+    name: 卡夫卡三DoT队
+    name_en: Kafka Triple DoT
+    characters: [kafka, black_swan, hysilens, huohuo]
+    elements: [lightning, wind, physical, wind]
+    paths: [nihility, nihility, nihility, abundance]
+    playstyle: "Triple DoT stacking with Kafka detonation and Hysilens physical DoT"
+    sp_balance: tight
+    difficulty: medium
+    best_for: [memory_of_chaos, pure_fiction]
+    rotation:
+      - "Hysilens skill (apply Bleed)"
+      - "Black Swan skill (apply Arcana)"
+      - "Kafka skill (trigger all DoTs)"
+      - "Huohuo ultimate (heal + energy)"
+      - "Kafka ultimate (detonate DoTs)"
+    strengths:
+      - "Three different DoT types stack multiplicatively"
+      - "Extremely high sustained AoE damage"
+      - "All units contribute DoT damage off-turn"
+    weaknesses:
+      - "Very SP-hungry with three Nihility units"
+      - "No Harmony buffer for direct damage amplification"
+      - "Requires heavy DoT stat investment on all three"
+
+  # =====================================================================
+  # CASTORICE TEAMS (Remembrance DPS, memosprite mechanic)
+  # =====================================================================
+  - team_id: castorice_hyper
+    name: 万象辉单核队
+    name_en: Castorice Hypercarry
+    characters: [castorice, evernight, cyrene, hyacine]
+    elements: [quantum, quantum, quantum, wind]
+    paths: [remembrance, remembrance, harmony, abundance]
+    playstyle: "Castorice summons memosprite, buffed by Evernight + Cyrene, sustained by Hyacine"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos, apocalyptic_shadow]
+    rotation:
+      - "Hyacine skill (heal + build Newbud for memosprite)"
+      - "Cyrene ultimate (party-wide damage buff)"
+      - "Evernight skill (memo buff + energy)"
+      - "Castorice skill (build memosprite energy)"
+      - "Castorice ultimate (summon/enhance memosprite for massive damage)"
+    strengths:
+      - "Castorice memosprite deals extraordinary burst damage"
+      - "Hyacine is best-in-slot healer for memosprite teams"
+      - "Quantum element provides flexibility"
+    weaknesses:
+      - "Requires specific memosprite-supporting teammates"
+      - "Memosprite energy management is crucial"
+      - "Premium team requires limited 5-star characters"
+
+  - team_id: castorice_dual_dps
+    name: 万象辉双核队
+    name_en: Castorice + Mydei Dual DPS
+    characters: [castorice, mydei, tribbie, gallagher]
+    elements: [quantum, quantum, quantum, fire]
+    paths: [remembrance, destruction, harmony, abundance]
+    playstyle: "Castorice and Mydei share DPS role, Tribbie buffs both, Gallagher sustains"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Tribbie ultimate (party buff)"
+      - "Gallagher skill (heal + break)"
+      - "Mydei skill (HP-based damage)"
+      - "Castorice skill + ultimate (memosprite burst)"
+    strengths:
+      - "Dual DPS covers both single-target and AoE"
+      - "Tribbie provides team-wide buffs"
+      - "More flexible than mono-Castorice"
+    weaknesses:
+      - "Requires both limited 5-star DPS"
+      - "SP management with two active DPS"
+      - "Gallagher healing is modest"
+
+  # =====================================================================
+  # THE HERTA / ERUDITION TEAMS (AoE focused)
+  # =====================================================================
+  - team_id: the_herta_erudition
+    name: 大黑塔智识队
+    name_en: The Herta Erudition
+    characters: [the_herta, anaxa, tribbie, permansor_terrae]
+    elements: [ice, wind, quantum, imaginary]
+    paths: [erudition, erudition, harmony, preservation]
+    playstyle: "The Herta stacks Interpretation with AoE hits from Anaxa, buffed by Tribbie"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [pure_fiction, memory_of_chaos]
+    rotation:
+      - "Tribbie ultimate (party-wide buff)"
+      - "Anaxa skill (AoE + weakness implant)"
+      - "The Herta skill (stack Interpretation)"
+      - "Permansor Terrae skill (shield)"
+      - "The Herta ultimate (massive AoE based on Interpretation stacks)"
+    strengths:
+      - "Best AoE damage dealer in the game"
+      - "Anaxa weakness implant covers any enemy"
+      - "Tribbie amplifies all Erudition damage"
+    weaknesses:
+      - "Requires Erudition teammates for max trace bonus"
+      - "Interpretation stacks need multiple AoE hits"
+      - "Single-target damage is lower"
+
+  - team_id: the_herta_pure_fiction
+    name: 大黑塔虚构叙事队
+    name_en: The Herta Pure Fiction
+    characters: [the_herta, jade, robin, lingsha]
+    elements: [ice, quantum, physical, wind]
+    paths: [erudition, erudition, harmony, abundance]
+    playstyle: "The Herta + Jade double Erudition for maximum Pure Fiction AoE clear"
+    sp_balance: balanced
+    difficulty: easy
+    best_for: [pure_fiction]
+    rotation:
+      - "Robin ultimate (team advance + damage buff)"
+      - "Lingsha skill (AoE break + heal)"
+      - "Jade skill (pawn collection + follow-up)"
+      - "The Herta skill (Interpretation stacking)"
+      - "The Herta ultimate (nuke)"
+    strengths:
+      - "Dominates Pure Fiction with constant AoE"
+      - "Jade follow-ups charge The Herta's Interpretation"
+      - "Robin provides massive team-wide buff"
+    weaknesses:
+      - "Single-target boss damage is lower"
+      - "SP management can be tight"
+      - "Both 5-star limited characters"
+
+  # =====================================================================
+  # FEIXIAO / FOLLOW-UP ATTACK TEAMS
+  # =====================================================================
+  - team_id: feixiao_follow_up
+    name: 飞霄追击队
+    name_en: Feixiao Follow-Up
+    characters: [feixiao, ashveil, robin, aventurine]
+    elements: [wind, wind, physical, imaginary]
+    paths: [hunt, hunt, harmony, preservation]
+    playstyle: "Feixiao builds Flying Aureus stacks from ally attacks, unleashes ultimate follow-up"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos, apocalyptic_shadow]
+    rotation:
+      - "Robin ultimate (team advance + buff)"
+      - "Aventurine skill (shield + follow-up trigger)"
+      - "Ashveil skill (follow-up attack + Flying Aureus stack)"
+      - "Feixiao skill (build Flying Aureus)"
+      - "Feixiao ultimate (launch when fully charged)"
+    strengths:
+      - "High frequency follow-up attack damage"
+      - "Robin amplifies all follow-up hits"
+      - "Aventurine adds his own follow-up + shielding"
+    weaknesses:
+      - "Needs teammates who attack frequently"
+      - "Single-target focused, weaker in AoE"
+      - "Multiple limited 5-stars required"
+
+  - team_id: ratio_follow_up
+    name: 真理医生追击队
+    name_en: Dr. Ratio Follow-Up
+    characters: [dr_ratio, topaz, robin, aventurine]
+    elements: [imaginary, fire, physical, imaginary]
+    paths: [hunt, hunt, harmony, preservation]
+    playstyle: "Dr. Ratio triggers follow-ups on debuffed enemies, Topaz + Robin amplify FUA damage"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Robin ultimate (team advance + buff)"
+      - "Aventurine skill (shield + debuff)"
+      - "Topaz skill (Proof of Debt debuff + Numby)"
+      - "Dr. Ratio skill (follow-up on debuffed target)"
+      - "Dr. Ratio ultimate (enhanced follow-up)"
+    strengths:
+      - "Classic follow-up attack team with strong synergy"
+      - "Topaz increases FUA damage taken by enemies"
+      - "Dr. Ratio synergizes with any debuff for follow-ups"
+    weaknesses:
+      - "Requires 3+ debuffs on enemies for max Ratio follow-up chance"
+      - "Imaginary + Fire only, limited element coverage"
+      - "Premium team with three limited 5-stars"
+
+  # =====================================================================
+  # PHAINON / SUMMON TEAMS
+  # =====================================================================
+  - team_id: phainon_hyper
+    name: 法厄同单核队
+    name_en: Phainon Hypercarry
+    characters: [phainon, sunday, cerydra, permansor_terrae]
+    elements: [physical, imaginary, imaginary, imaginary]
+    paths: [destruction, harmony, harmony, preservation]
+    playstyle: "Phainon transforms for massive DPS, Sunday action advances, Cerydra buffs"
+    sp_balance: tight
+    difficulty: hard
+    best_for: [memory_of_chaos, apocalyptic_shadow]
+    rotation:
+      - "Sunday skill (action advance Phainon)"
+      - "Cerydra skill (damage buff)"
+      - "Permansor Terrae skill (shield)"
+      - "Phainon ultimate (transform for enhanced state)"
+      - "Phainon enhanced skill (massive AoE damage)"
+    strengths:
+      - "Phainon has one of the highest damage ceilings"
+      - "Sunday action advance maximizes Phainon turns"
+      - "Can run sustainless for maximum damage"
+    weaknesses:
+      - "Very SP-hungry"
+      - "Requires precise turn ordering"
+      - "Sunday is nearly mandatory"
+
+  # =====================================================================
+  # AGLAEA / REMEMBRANCE TEAMS
+  # =====================================================================
+  - team_id: aglaea_premium
+    name: 阿格莱雅记忆队
+    name_en: Aglaea Premium
+    characters: [aglaea, sunday, robin, huohuo]
+    elements: [lightning, imaginary, physical, wind]
+    paths: [remembrance, harmony, harmony, abundance]
+    playstyle: "Aglaea uses memosprite for enhanced attacks, Sunday action advance + Robin buff"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Sunday skill (action advance Aglaea)"
+      - "Robin ultimate (team buff)"
+      - "Huohuo skill (heal + energy)"
+      - "Aglaea skill (memo enhancement)"
+      - "Aglaea ultimate (memosprite burst)"
+    strengths:
+      - "Aglaea memosprite has strong sustained DPS"
+      - "Sunday + Robin double buff amplifies damage"
+      - "Huohuo provides energy for frequent bursts"
+    weaknesses:
+      - "Sunday nearly mandatory for action advance"
+      - "Memosprite mechanics add complexity"
+      - "Lightning element only for DPS"
+
+  # =====================================================================
+  # JINGLIU / ICE TEAMS
+  # =====================================================================
+  - team_id: jingliu_hyper
+    name: 镜流单核队
+    name_en: Jingliu Hypercarry
+    characters: [jingliu, sunday, tribbie, hyacine]
+    elements: [ice, imaginary, quantum, wind]
+    paths: [destruction, harmony, harmony, abundance]
+    playstyle: "Jingliu enters Spectral Transmigration for enhanced attacks, buffed by Sunday + Tribbie"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Sunday skill (action advance Jingliu)"
+      - "Tribbie ultimate (party buff)"
+      - "Hyacine skill (heal)"
+      - "Jingliu skill (enter Spectral Transmigration)"
+      - "Jingliu enhanced skill (consume ally HP for massive ice damage)"
+    strengths:
+      - "Very high burst damage in Transmigration state"
+      - "Free crit rate from Transmigration"
+      - "Hyacine heals through HP drain mechanic"
+    weaknesses:
+      - "HP drain can kill teammates if not managed"
+      - "Needs specific support lineup"
+      - "Powercrept by newer DPS options"
+
+  - team_id: jingliu_blade_dual
+    name: 镜流刃双核队
+    name_en: Jingliu + Blade Dual DPS
+    characters: [jingliu, blade, tribbie, hyacine]
+    elements: [ice, wind, quantum, wind]
+    paths: [destruction, destruction, harmony, abundance]
+    playstyle: "Jingliu + Blade share DPS, both benefit from HP-based mechanics and Tribbie buffs"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Tribbie ultimate (party buff)"
+      - "Hyacine skill (heal both HP-drain DPS)"
+      - "Blade skill (HP sacrifice + enhanced attack)"
+      - "Jingliu skill (enter Transmigration)"
+      - "Jingliu enhanced skill (ice damage)"
+    strengths:
+      - "Both DPS have HP-drain synergy with Hyacine"
+      - "Tribbie buffs both equally"
+      - "Good element coverage with Ice + Wind"
+    weaknesses:
+      - "HP management is critical"
+      - "Moderate SP consumption"
+      - "Both DPS are older meta characters"
+
+  # =====================================================================
+  # SEELE / QUANTUM TEAMS
+  # =====================================================================
+  - team_id: seele_hyper
+    name: 希儿单核队
+    name_en: Seele Hypercarry
+    characters: [seele, sparkle, cerydra, permansor_terrae]
+    elements: [quantum, quantum, imaginary, imaginary]
+    paths: [hunt, harmony, harmony, preservation]
+    playstyle: "Seele uses Resurgence for extra turns, buffed by Sparkle + Cerydra"
+    sp_balance: balanced
+    difficulty: hard
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Sparkle skill (action advance Seele)"
+      - "Cerydra skill (damage buff)"
+      - "Permansor Terrae skill (shield)"
+      - "Seele skill (enhanced attack)"
+      - "Seele ultimate (finish off enemy, trigger Resurgence extra turn)"
+    strengths:
+      - "Resurgence gives extra turns on kills"
+      - "Sparkle + Seele is a classic strong pairing"
+      - "Mono-quantum variant can brute-force any element"
+    weaknesses:
+      - "Seele needs kills to trigger Resurgence"
+      - "Weaker in high HP single-target boss fights"
+      - "Older DPS, powercrept by newer options"
+
+  - team_id: mono_quantum
+    name: 纯量子队
+    name_en: Mono Quantum
+    characters: [seele, sparkle, silver_wolf, fu_xuan]
+    elements: [quantum, quantum, quantum, quantum]
+    paths: [hunt, harmony, nihility, preservation]
+    playstyle: "All-quantum team using Silver Wolf to implant quantum weakness on any enemy"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Silver Wolf skill (implant quantum weakness)"
+      - "Fu Xuan skill (matrix damage reduction + crit rate)"
+      - "Sparkle skill (action advance Seele)"
+      - "Seele skill (enhanced attack on quantum-weak enemy)"
+      - "Seele ultimate (burst + Resurgence)"
+    strengths:
+      - "Silver Wolf ensures quantum weakness on all enemies"
+      - "Fu Xuan provides crit rate + damage reduction"
+      - "Strong against any element weakness"
+    weaknesses:
+      - "Silver Wolf weakness implant is single-target"
+      - "No healer (Fu Xuan is preservation)"
+      - "All-quantum limits flexibility"
+
+  # =====================================================================
+  # JING YUAN / SUMMON TEAMS
+  # =====================================================================
+  - team_id: jing_yuan_follow_up
+    name: 景元追击队
+    name_en: Jing Yuan Follow-Up
+    characters: [jing_yuan, sunday, robin, aventurine]
+    elements: [lightning, imaginary, physical, imaginary]
+    paths: [erudition, harmony, harmony, preservation]
+    playstyle: "Jing Yuan stacks Lightning Lord hits, action-advanced by Sunday for rapid follow-up"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos, pure_fiction]
+    rotation:
+      - "Robin ultimate (team buff)"
+      - "Sunday skill (action advance Jing Yuan)"
+      - "Aventurine skill (shield + follow-up)"
+      - "Jing Yuan skill (stack Lightning Lord)"
+      - "Lightning Lord follow-up (massive AoE at 10 stacks)"
+    strengths:
+      - "Lightning Lord has huge AoE damage potential"
+      - "Sunday action advance speeds up Lightning Lord"
+      - "Works in both single-target and AoE content"
+    weaknesses:
+      - "Needs to stack Lightning Lord before unleashing"
+      - "Sunday is nearly mandatory"
+      - "Damage is delayed, not front-loaded"
+
+  # =====================================================================
+  # RAPPA / BREAK TEAMS (Imaginary Super Break)
+  # =====================================================================
+  - team_id: rappa_super_break
+    name: 乱破超击破队
+    name_en: Rappa Super Break
+    characters: [rappa, fugue, ruan_mei, lingsha]
+    elements: [imaginary, imaginary, ice, wind]
+    paths: [erudition, nihility, harmony, abundance]
+    playstyle: "Rappa uses AoE break attacks, Fugue + Ruan Mei amplify Super Break damage"
+    sp_balance: tight
+    difficulty: easy
+    best_for: [memory_of_chaos, pure_fiction]
+    rotation:
+      - "Ruan Mei skill (break efficiency + buff)"
+      - "Fugue skill (weakness expose)"
+      - "Lingsha skill (AoE break + heal)"
+      - "Rappa skill (AoE break + Super Break trigger)"
+      - "Rappa ultimate (enhanced AoE break)"
+    strengths:
+      - "Excellent AoE break damage"
+      - "Rappa erudition path provides AoE coverage"
+      - "Super Break is reliable regardless of enemy DEF"
+    weaknesses:
+      - "Break-focused, weak against break-resistant enemies"
+      - "Needs break effect stat investment"
+      - "SP management is tight"
+
+  # =====================================================================
+  # PURE FICTION SPECIALISTS
+  # =====================================================================
+  - team_id: herta_pure_fiction
+    name: 黑塔虚构队
+    name_en: Herta Pure Fiction
+    characters: [herta, serval, tribbie, lingsha]
+    elements: [ice, lightning, quantum, wind]
+    paths: [erudition, erudition, harmony, abundance]
+    playstyle: "Herta follow-up triggers at 50% HP threshold, Serval + Tribbie provide AoE support"
+    sp_balance: balanced
+    difficulty: easy
+    best_for: [pure_fiction]
+    rotation:
+      - "Tribbie ultimate (party buff)"
+      - "Lingsha skill (AoE break + heal)"
+      - "Serval skill (AoE lightning)"
+      - "Herta skill + follow-up (trigger at HP threshold)"
+      - "Herta ultimate (AoE finisher)"
+    strengths:
+      - "Herta follow-up is very efficient in multi-wave AoE"
+      - "Serval provides cheap AoE + DoT"
+      - "Budget-friendly team"
+    weaknesses:
+      - "Herta needs enemies below 50% HP for follow-up"
+      - "Weaker in single-target content"
+      - "Pure Fiction specialist, not generalist"
+
+  - team_id: jade_blade_pf
+    name: 翡翠刃虚构队
+    name_en: Jade + Blade Pure Fiction
+    characters: [jade, blade, sunday, lynx]
+    elements: [quantum, wind, imaginary, quantum]
+    paths: [erudition, destruction, harmony, abundance]
+    playstyle: "Jade collects pawn charges from Blade's HP attacks, Blade uses enhanced follow-ups"
+    sp_balance: balanced
+    difficulty: easy
+    best_for: [pure_fiction]
+    rotation:
+      - "Sunday skill (action advance)"
+      - "Lynx skill (heal + aggro on Blade)"
+      - "Blade skill (HP sacrifice enhanced attack)"
+      - "Jade skill (pawn charge follow-up)"
+      - "Blade follow-up (auto-triggered by HP loss)"
+    strengths:
+      - "Jade + Blade have natural synergy in AoE"
+      - "Blade HP mechanics charge Jade's pawn"
+      - "Relatively affordable team"
+    weaknesses:
+      - "Blade needs HP management"
+      - "Lynx healing is modest"
+      - "Mostly a Pure Fiction team"
+
+  # =====================================================================
+  # ARGENTI / ENERGY BURST TEAMS
+  # =====================================================================
+  - team_id: argenti_hyper
+    name: 银枝单核队
+    name_en: Argenti Hypercarry
+    characters: [argenti, sparkle, tingyun, huohuo]
+    elements: [physical, quantum, lightning, wind]
+    paths: [erudition, harmony, harmony, abundance]
+    playstyle: "Argenti charges ultimate with Tingyun energy battery, Sparkle action advance"
+    sp_balance: balanced
+    difficulty: easy
+    best_for: [pure_fiction, memory_of_chaos]
+    rotation:
+      - "Tingyun ultimate (energy battery for Argenti)"
+      - "Sparkle skill (action advance Argenti)"
+      - "Huohuo skill (heal + energy)"
+      - "Argenti skill (charge energy)"
+      - "Argenti ultimate (massive AoE, stronger at full energy)"
+    strengths:
+      - "Argenti ultimate has very high AoE multiplier"
+      - "Tingyun solves energy issues"
+      - "Physical element is rarely resisted"
+    weaknesses:
+      - "Energy hungry, needs Tingyun battery"
+      - "Moderate single-target damage"
+      - "Outclassed by The Herta in AoE"
+
+  # =====================================================================
+  # ANAXA / WEAKNESS IMPLANT TEAMS
+  # =====================================================================
+  - team_id: anaxa_hyper
+    name: 安纳克斯单核队
+    name_en: Anaxa Hypercarry
+    characters: [anaxa, cyrene, cerydra, permansor_terrae]
+    elements: [wind, quantum, imaginary, imaginary]
+    paths: [erudition, harmony, harmony, preservation]
+    playstyle: "Anaxa implants weaknesses and deals AoE wind damage, buffed by Cyrene + Cerydra"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos, pure_fiction]
+    rotation:
+      - "Cerydra skill (damage buff)"
+      - "Cyrene ultimate (party buff)"
+      - "Permansor Terrae skill (shield)"
+      - "Anaxa skill (weakness implant + AoE)"
+      - "Anaxa ultimate (massive wind AoE)"
+    strengths:
+      - "Weakness implant trivializes element matching"
+      - "Strong AoE damage with Erudition path"
+      - "Works as sub-DPS for The Herta teams"
+    weaknesses:
+      - "Needs team built around his mechanics"
+      - "Premium team with multiple limited 5-stars"
+      - "Wind element may not always be ideal"
+
+  # =====================================================================
+  # CLARA / COUNTER TEAMS
+  # =====================================================================
+  - team_id: clara_counter
+    name: 克拉拉反击队
+    name_en: Clara Counter
+    characters: [clara, topaz, robin, huohuo]
+    elements: [physical, fire, physical, wind]
+    paths: [destruction, hunt, harmony, abundance]
+    playstyle: "Clara counters enemy attacks with follow-ups, Topaz + Robin amplify FUA damage"
+    sp_balance: balanced
+    difficulty: easy
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Robin ultimate (team buff)"
+      - "Huohuo skill (heal + keep Clara healthy)"
+      - "Topaz skill (Proof of Debt on enemy)"
+      - "Clara skill (reduce damage taken + counter setup)"
+      - "Clara counter triggers automatically when hit"
+    strengths:
+      - "Clara counter is free damage, no SP cost"
+      - "Works well against aggressive enemies"
+      - "Topaz + Robin FUA amplification"
+    weaknesses:
+      - "Requires enemies to attack Clara"
+      - "Weak against enemies with slow attack patterns"
+      - "Clara is an older character, powercrept"
+
+  # =====================================================================
+  # IMBIBITOR LUNAE / SP-HUNGRY TEAMS
+  # =====================================================================
+  - team_id: imbibitor_lunae_hyper
+    name: 丹恒饮月单核队
+    name_en: Imbibitor Lunae Hypercarry
+    characters: [imbibitor_lunae, sparkle, tingyun, aventurine]
+    elements: [imaginary, quantum, lightning, imaginary]
+    paths: [destruction, harmony, harmony, preservation]
+    playstyle: "IL uses enhanced basic attacks costing SP, Sparkle generates SP and action advances"
+    sp_balance: tight
+    difficulty: hard
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Sparkle skill (action advance IL + generate SP)"
+      - "Tingyun ultimate (energy + buff for IL)"
+      - "Aventurine skill (shield)"
+      - "IL basic (3-stack enhanced, costs 3 SP)"
+      - "IL basic (2-stack enhanced, costs 2 SP)"
+    strengths:
+      - "Enhanced basic attacks have huge multipliers"
+      - "Imaginary element provides delay utility"
+      - "Sparkle SP generation enables IL playstyle"
+    weaknesses:
+      - "Extremely SP-hungry (3 SP per max enhanced basic)"
+      - "Needs Sparkle or Bronya for SP economy"
+      - "IL has no AoE, purely single-target"
+
+  # =====================================================================
+  # SABER / ENERGY BURST TEAMS (Collab character)
+  # =====================================================================
+  - team_id: saber_hyper
+    name: Saber单核队
+    name_en: Saber Hypercarry
+    characters: [saber, sunday, robin, huohuo]
+    elements: [wind, imaginary, physical, wind]
+    paths: [destruction, harmony, harmony, abundance]
+    playstyle: "Saber charges ultimate energy rapidly, Sunday action advances for frequent bursts"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Robin ultimate (team buff)"
+      - "Sunday skill (action advance Saber)"
+      - "Huohuo skill (heal + energy)"
+      - "Saber skill (charge energy)"
+      - "Saber ultimate (massive burst damage)"
+    strengths:
+      - "High burst ultimate damage"
+      - "Rapid energy cycling with Sunday + Huohuo"
+      - "Wind element provides useful delay"
+    weaknesses:
+      - "Burst-reliant, lower sustained DPS between ultimates"
+      - "Sunday is nearly mandatory"
+      - "Collab character, may not be available"
+
+  # =====================================================================
+  # F2P / BEGINNER TEAMS
+  # =====================================================================
+  - team_id: f2p_physical
+    name: 物理平民队
+    name_en: F2P Physical Team
+    characters: [trailblazer_physical, asta, pela, natasha]
+    elements: [physical, fire, ice, physical]
+    paths: [destruction, harmony, nihility, abundance]
+    playstyle: "Basic beginner team using free characters, Pela shreds DEF, Asta buffs SPD"
+    sp_balance: positive
+    difficulty: easy
+    best_for: [story, early_game]
+    rotation:
+      - "Pela skill (DEF shred)"
+      - "Asta skill (SPD buff)"
+      - "Natasha skill (heal)"
+      - "Trailblazer skill (enhanced attack)"
+    strengths:
+      - "100% free characters"
+      - "Easy to build and play"
+      - "Good for story and early content"
+    weaknesses:
+      - "Very low damage ceiling"
+      - "Cannot clear endgame content"
+      - "All 4-star or free units"
+
+  - team_id: f2p_fire
+    name: 火属性平民队
+    name_en: F2P Fire Team
+    characters: [hook, asta, trailblazer_fire, natasha]
+    elements: [fire, fire, fire, physical]
+    paths: [destruction, harmony, preservation, abundance]
+    playstyle: "Hook DPS with Asta SPD buff, Fire Trailblazer tanks, Natasha heals"
+    sp_balance: balanced
+    difficulty: easy
+    best_for: [story, early_game]
+    rotation:
+      - "Asta skill (SPD + fire damage buff)"
+      - "Fire Trailblazer skill (shield + taunt)"
+      - "Natasha skill (heal)"
+      - "Hook skill (enhanced fire attack)"
+    strengths:
+      - "Mono-fire team works well against fire-weak enemies"
+      - "Fire Trailblazer provides taunt + shield"
+      - "All free or easily obtainable"
+    weaknesses:
+      - "Weak against fire-resistant enemies"
+      - "Hook is a 4-star with limited damage"
+      - "Not viable for endgame"
+
+  - team_id: f2p_imaginary_break
+    name: 虚数击破平民队
+    name_en: F2P Imaginary Break
+    characters: [xueyi, trailblazer_imaginary, asta, lynx]
+    elements: [quantum, imaginary, fire, quantum]
+    paths: [destruction, harmony, harmony, abundance]
+    playstyle: "Xueyi break DPS with Imaginary Trailblazer Super Break, budget break team"
+    sp_balance: balanced
+    difficulty: easy
+    best_for: [memory_of_chaos]
+    rotation:
+      - "Asta skill (SPD buff)"
+      - "Imaginary Trailblazer ultimate (Super Break buff)"
+      - "Lynx skill (heal)"
+      - "Xueyi skill (break enemy toughness)"
+      - "Super Break triggers on broken enemies"
+    strengths:
+      - "Imaginary Trailblazer provides free Super Break"
+      - "Xueyi break damage is reliable"
+      - "Accessible team composition"
+    weaknesses:
+      - "Lower ceiling than Firefly break team"
+      - "Xueyi needs break effect investment"
+      - "Limited element coverage"
+
+  # =====================================================================
+  # MYDEI / HP-BASED TEAMS
+  # =====================================================================
+  - team_id: mydei_hyper
+    name: 迈迪欧单核队
+    name_en: Mydei Hypercarry
+    characters: [mydei, cyrene, cerydra, hyacine]
+    elements: [quantum, quantum, imaginary, wind]
+    paths: [destruction, harmony, harmony, abundance]
+    playstyle: "Mydei uses HP-consuming attacks for massive damage, Hyacine sustains through drain"
+    sp_balance: balanced
+    difficulty: medium
+    best_for: [memory_of_chaos, apocalyptic_shadow]
+    rotation:
+      - "Cerydra skill (damage buff)"
+      - "Cyrene ultimate (party buff)"
+      - "Hyacine skill (heal to sustain HP drain)"
+      - "Mydei skill (HP sacrifice enhanced attack)"
+      - "Mydei ultimate (massive burst)"
+    strengths:
+      - "Very high damage ceiling with HP sacrifice"
+      - "Hyacine perfectly sustains through HP drain"
+      - "Quantum element is versatile"
+    weaknesses:
+      - "HP management is critical"
+      - "Premium team requires multiple limited 5-stars"
+      - "Cannot run sustainless"

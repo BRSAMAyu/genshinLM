@@ -556,3 +556,358 @@ teams:
       - "Xianyun plunge buff has limited duration"
       - "No geo resonance or Zhongli shield for comfort"
       - "Higher rotation complexity than traditional Hu Tao teams"
+
+  # =====================================================================
+  # NATLAN ERA TEAMS (Version 5.x+)
+  # =====================================================================
+  - team_id: mavuika_melt
+    display_name: Mavuika Melt (玛薇卡融化)
+    members:
+      - mavuika
+      - xilonen
+      - citlali
+      - bennett
+    resonance: cryo_pyro
+    recommended_rotation:
+      - "Mavuika E (tap skill, set up Pyro aura)"
+      - "Xilonen E > N2 (Geo shred + buff)"
+      - "Bennett Q > E (ATK buff, Pyro application)"
+      - "Citlali E > Q (Cryo application for Melt + RES shred)"
+      - "Mavuika Q > 8 Charged Attacks (all hits Melt)"
+    strengths:
+      - "Mavuika charged attacks have enormous multipliers when Melting"
+      - "Citlali provides consistent Cryo application and RES shred"
+      - "Xilonen RES shred amplifies all damage"
+      - "Bennett ATK buff + Pyro resonance = massive ATK"
+    weaknesses:
+      - "Requires Citlali for consistent Cryo application"
+      - "Bennett circle-limited for ATK buff"
+      - "Mavuika burst needs fighting will charge"
+      - "Premium team with three limited 5-stars"
+
+  - team_id: mavuika_vape
+    display_name: Mavuika Vaporize (玛薇卡蒸发)
+    members:
+      - mavuika
+      - furina
+      - xilonen
+      - bennett
+    resonance: pyro_pyro
+    recommended_rotation:
+      - "Furina E > Q (salon members, fanfare stacks)"
+      - "Xilonen E > N2 (RES shred + buff)"
+      - "Bennett Q > E (ATK buff)"
+      - "Mavuika E (tap skill)"
+      - "Mavuika Q > Charged Attacks (Vaporize hits)"
+    strengths:
+      - "Furina fanfare provides massive DMG bonus"
+      - "Pyro resonance + Bennett = huge ATK"
+      - "Xilonen RES shred for Hydro and Pyro"
+      - "Strong sustained and burst damage"
+    weaknesses:
+      - "Furina needs fanfare ramp-up time"
+      - "Bennett circle-limited"
+      - "Less front-loaded than Melt variant"
+      - "Healing needed to maintain Furina fanfare"
+
+  - team_id: skirk_freeze
+    display_name: Skirk Freeze Premium (丝柯克永冻)
+    members:
+      - skirk
+      - escoffier
+      - furina
+      - columbina
+    resonance: hydro_cryo
+    recommended_rotation:
+      - "Furina E > Q (salon members, fanfare stacks)"
+      - "Escoffier E > Q (Cryo application + support buffs)"
+      - "Columbina E > Q (team damage amplification)"
+      - "Skirk E (enter Void state, generate Void Rifts)"
+      - "Skirk NA combo (Void Rift detonation on frozen enemies)"
+      - "Skirk Q (burst finisher)"
+    strengths:
+      - "Skirk Void Rifts deal massive damage on frozen targets"
+      - "Escoffier is best-in-slot support for Skirk"
+      - "Furina fanfare amplifies all damage"
+      - "Double Hydro/Cryo resonance boosts HP and CRIT"
+    weaknesses:
+      - "Ineffective against freeze-immune bosses"
+      - "Escoffier is nearly mandatory"
+      - "Requires three limited 5-star supports"
+      - "Complex Void Rift management"
+
+  - team_id: skirk_freeze_f2p
+    display_name: Skirk Freeze Budget (丝柯克永冻平民)
+    members:
+      - skirk
+      - xingqiu
+      - kaeya
+      - diona
+    resonance: cryo_cryo
+    recommended_rotation:
+      - "Diona E > Q (shield + heal + Cryo)"
+      - "Xingqiu E > Q (Hydro application)"
+      - "Kaeya E > Q (Cryo application for Freeze)"
+      - "Skirk E (Void state)"
+      - "Skirk NA combo (Void Rift on frozen enemies)"
+    strengths:
+      - "Uses accessible 4-star characters"
+      - "Cryo resonance provides CRIT rate bonus on frozen"
+      - "Diona shield + heal for comfort"
+      - "Kaeya provides off-field Cryo application"
+    weaknesses:
+      - "Much lower ceiling than premium variant"
+      - "Xingqiu Hydro application may be insufficient"
+      - "Kaeya has limited Cryo uptime"
+      - "No Furina for damage amplification"
+
+  - team_id: varesa_overload
+    display_name: Varesa Overload (瓦雷莎超载)
+    members:
+      - varesa
+      - iansan
+      - chevreuse
+      - mavuika
+    resonance: pyro_electro
+    recommended_rotation:
+      - "Chevreuse E > Q (heal + Overload buff)"
+      - "Iansan E (Electro application + support buff)"
+      - "Mavuika E (Pyro application, off-field)"
+      - "Varesa E > plunge attacks (Electro plunge DPS)"
+      - "Varesa Q (burst finisher)"
+    strengths:
+      - "Chevreuse heals and buffs Overload damage"
+      - "Varesa plunge attacks have high multipliers"
+      - "Iansan provides Electro application and buffs"
+      - "Mavuika adds Pyro for Overload triggers"
+    weaknesses:
+      - "Overload knocks enemies back, can scatter mobs"
+      - "Chevreuse is nearly mandatory for the archetype"
+      - "Limited defensive utility beyond Chevreuse heal"
+      - "Requires careful positioning"
+
+  - team_id: varesa_plunge
+    display_name: Varesa Plunge Hypercarry (瓦雷莎下落单核)
+    members:
+      - varesa
+      - furina
+      - xianyun
+      - bennett
+    resonance: none
+    recommended_rotation:
+      - "Furina E > Q (fanfare stacks)"
+      - "Xianyun E > Q (plunge buff + heal for fanfare)"
+      - "Bennett Q > E (ATK buff)"
+      - "Varesa E > plunge attacks (enhanced by Xianyun)"
+      - "Varesa Q (burst damage)"
+    strengths:
+      - "Xianyun enables powerful plunge attacks for Varesa"
+      - "Furina fanfare amplifies all damage"
+      - "Bennett ATK buff + Xianyun plunge buff"
+      - "High plunge multipliers"
+    weaknesses:
+      - "Xianyun plunge buff has limited duration"
+      - "Requires precise plunge timing"
+      - "Bennett circle-limited"
+      - "Varesa is stationary during plunge"
+
+  - team_id: mavuika_arlecchino_dual
+    display_name: Mavuika + Arlecchino Dual Pyro (双火队)
+    members:
+      - mavuika
+      - arlecchino
+      - citlali
+      - bennett
+    resonance: pyro_pyro
+    recommended_rotation:
+      - "Bennett Q > E (ATK buff + Pyro application)"
+      - "Citlali E > Q (Cryo for Melt)"
+      - "Mavuika Q > Charged Attacks (Melt hits)"
+      - "Arlecchino E (Blood-Debt activation)"
+      - "Arlecchino NA (Vaporize/Melt normal attacks)"
+    strengths:
+      - "Two strong Pyro DPS share on-field time"
+      - "Pyro resonance gives +25% ATK"
+      - "Citlali enables Melt for both"
+      - "Flexible rotation between two DPS"
+    weaknesses:
+      - "Two on-field DPS compete for field time"
+      - "Arlecchino cannot be healed by others"
+      - "Bennett buff only applies to active character"
+      - "Requires rotation optimization"
+
+  - team_id: xilonen_support_melt
+    display_name: Xilonen Melt Support (希诺宁融化辅助)
+    members:
+      - wriothesley
+      - xilonen
+      - citlali
+      - bennett
+    resonance: cryo_pyro
+    recommended_rotation:
+      - "Xilonen E > N2 (RES shred + buff)"
+      - "Bennett Q > E (ATK buff)"
+      - "Citlali E > Q (Cryo application + RES shred)"
+      - "Wriothesley E (enter Chassingeur state)"
+      - "Wriothesley NA/CA combo (Melt charged attacks)"
+    strengths:
+      - "Wriothesley sustained Cryo DPS with Melt amplification"
+      - "Xilonen + Citlali dual RES shred is very strong"
+      - "Bennett ATK buff amplifies Wriothesley damage"
+      - "Wriothesley is comfortable to play"
+    weaknesses:
+      - "Wriothesley needs field time for sustained DPS"
+      - "Cryo application may not keep up with Pyro"
+      - "Bennett circle-limited"
+      - "Premium team with multiple limited 5-stars"
+
+  - team_id: escoffier_freeze_support
+    display_name: Escoffier Freeze (爱可菲永冻)
+    members:
+      - kamisato_ayaka
+      - escoffier
+      - furina
+      - kaedehara_kazuha
+    resonance: hydro_cryo
+    recommended_rotation:
+      - "Furina E > Q (fanfare stacks)"
+      - "Escoffier E > Q (Cryo application + support)"
+      - "Kazuha E > Q (VV shred, group enemies)"
+      - "Ayaka E > dash > Q (freeze burst combo)"
+      - "Ayaka NA combo during burst"
+    strengths:
+      - "Escoffier enhances Cryo team performance"
+      - "Furina fanfare + Kazuha VV is enormous amplification"
+      - "Freeze provides crowd control and safety"
+      - "Ayaka burst deals massive damage"
+    weaknesses:
+      - "Ineffective against freeze-immune bosses"
+      - "Ayaka is energy hungry (80 cost burst)"
+      - "Escoffier is a limited 5-star support"
+      - "Complex rotation with multiple buff windows"
+
+  - team_id: kinich_burn
+    display_name: Kinich Burn (基尼奇燃烧)
+    members:
+      - kinich
+      - emilie
+      - dehya
+      - bennett
+    resonance: pyro_pyro
+    recommended_rotation:
+      - "Dehya E (fire field for burning)"
+      - "Emilie E > Q (Dendro application + burn support)"
+      - "Bennett Q > E (ATK buff + Pyro)"
+      - "Kinich E (enter canopy mode)"
+      - "Kinich NA + skill loop (Nightsoul burst on burning enemies)"
+    strengths:
+      - "Kinich excels in burning environments"
+      - "Emilie amplifies Dendro damage in burn teams"
+      - "Dehya provides damage sharing and Pyro application"
+      - "Bennett ATK buff + Pyro resonance"
+    weaknesses:
+      - "Burning can be difficult to sustain on some enemies"
+      - "Kinich is niche, wants burning specifically"
+      - "Dehya is a weaker off-field support"
+      - "AoE damage is limited"
+
+  - team_id: chasca_anemo_dps
+    display_name: Chasca Multi-Element (恰斯卡多元素)
+    members:
+      - chasca
+      - furina
+      - bennett
+      - fischl
+    resonance: none
+    recommended_rotation:
+      - "Furina E > Q (fanfare stacks)"
+      - "Bennett Q > E (ATK buff)"
+      - "Fischl E (Oz placement)"
+      - "Chasca E > Q (Anemo DPS, multi-element conversion)"
+      - "Chasca NA (enhanced Anemo attacks)"
+    strengths:
+      - "Chasca converts elements from teammates"
+      - "Multi-element damage coverage"
+      - "Furina + Bennett double buff"
+      - "Fischl off-field Electro damage"
+    weaknesses:
+      - "Chasca needs specific teammates for element conversion"
+      - "Anemo damage can be lower than dedicated elements"
+      - "No grouping utility from Chasca"
+      - "Moderate damage ceiling"
+
+  - team_id: mualani_vape
+    display_name: Mualani Vape (玛拉妮蒸发)
+    members:
+      - mualani
+      - xiangling
+      - nahida
+      - baizhu
+    resonance: none
+    recommended_rotation:
+      - "Nahida E > Q (mark enemies, EM share)"
+      - "Xiangling Q > E (Pyronado for Vaporize)"
+      - "Baizhu E > Q (heal + Dendro application)"
+      - "Mualani E > bite attacks (shark bite Vaporize)"
+      - "Mualani Q (burst finisher)"
+    strengths:
+      - "Mualani shark bite has enormous Vaporize multipliers"
+      - "Nahida provides consistent Dendro for reactions"
+      - "Baizhu healing and interruption resist"
+      - "Burgeon can add extra damage"
+    weaknesses:
+      - "Mualani is a niche on-field DPS"
+      - "Needs Hydro application management"
+      - "Burgeon damage competes with Vaporize"
+      - "Requires specific reaction setup"
+
+  - team_id: clorinde_aggravate
+    display_name: Clorinde Aggravate (克洛琳德激化)
+    members:
+      - clorinde
+      - nahida
+      - fischl
+      - kaedehara_kazuha
+    resonance: none
+    recommended_rotation:
+      - "Nahida E > Q (mark enemies, EM share)"
+      - "Fischl E (Oz placement)"
+      - "Kazuha E > Q (VV shred Electro)"
+      - "Clorinde E (enter pistol mode)"
+      - "Clorinde NA combo (Electro attacks trigger Aggravate)"
+      - "Clorinde Q (burst finisher)"
+    strengths:
+      - "Aggravate amplifies Clorinde Electro damage significantly"
+      - "Nahida + Fischl double off-field application"
+      - "Kazuha shreds Electro resistance"
+      - "Clorinde has flexible on-field playstyle"
+    weaknesses:
+      - "No healer or shielder"
+      - "Clorinde needs Bond of Life management"
+      - "Energy needs are moderate"
+      - "Lower AoE damage"
+
+  - team_id: columbina_support_hyper
+    display_name: Columbina Hyper Support (哥伦比娅辅助单核)
+    members:
+      - neuvillette
+      - columbina
+      - furina
+      - baizhu
+    resonance: hydro_hydro
+    recommended_rotation:
+      - "Furina E > Q (fanfare stacks)"
+      - "Columbina E > Q (team damage amplification)"
+      - "Baizhu E > Q (heal for fanfare + interruption resist)"
+      - "Neuvillette Q (charge sourcewater drops)"
+      - "Neuvillette charged attack (water beam sustained DPS)"
+    strengths:
+      - "Columbina provides strong team-wide damage amplification"
+      - "Furina + Columbina double buff is enormous"
+      - "Neuvillette has the highest sustained DPS"
+      - "Double Hydro resonance boosts HP for Furina and Neuvillette"
+    weaknesses:
+      - "Columbina is a limited 5-star support"
+      - "Furina fanfare needs healing ramp-up"
+      - "Neuvillette is stationary during charged attack"
+      - "Very premium team with four 5-stars"

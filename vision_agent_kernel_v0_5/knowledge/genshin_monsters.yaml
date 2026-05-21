@@ -1,10 +1,13 @@
 # Genshin Impact Monster Knowledge Base
 # Sparkle Project - Vision Agent Kernel v0.5
-# Cross-referenced from Genshin Wiki (fandom) and in-game data.
+# Cross-referenced from Genshin Wiki (fandom), Honey Hunter, and in-game data.
+# Updated: 2026-05 — Covers versions 1.0 through 5.6+ (Nod-Krai "Luna" patches)
+# Total entries: 160+
 
 monsters:
+
   # =====================================================================
-  # HILICHURL FAMILY
+  # HILICHURL FAMILY — Normal
   # =====================================================================
   - monster_id: hilichurl
     name: 丘丘人
@@ -15,6 +18,7 @@ monsters:
     danger_signals: ["club_swing", "rock_throw"]
     weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["damaged_mask", "stained_mask", "ominous_mask"]
+    region: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
     visual: "Small masked creature with club or bare hands"
 
   - monster_id: hilichurl_fighter
@@ -26,6 +30,7 @@ monsters:
     danger_signals: ["club_swing", "charge_attack"]
     weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["damaged_mask", "stained_mask", "ominous_mask", "heavy_horn"]
+    region: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
     visual: "Hilichurl wielding a wooden club, slightly larger"
 
   - monster_id: hilichurl_archer
@@ -37,6 +42,7 @@ monsters:
     danger_signals: ["arrow_draw", "aimed_shot"]
     weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["firm_arrowhead", "sharp_arrowhead", "weathered_arrowhead"]
+    region: [mondstadt, liyue, inazuma, sumeru, fontaine, natlan]
     visual: "Hilichurl with bow, may have elemental arrow type"
 
   - monster_id: hilichurl_grenadier
@@ -48,6 +54,7 @@ monsters:
     danger_signals: ["grenade_throw", "barrel_explosion"]
     weaknesses: ["hydro", "cryo"]
     drops: ["damaged_mask", "stained_mask", "ominous_mask"]
+    region: [mondstadt, liyue, inazuma, sumeru]
     visual: "Hilichurl carrying explosive barrel or slime barrel"
 
   - monster_id: hilichurl_berserker
@@ -59,6 +66,7 @@ monsters:
     danger_signals: ["fire_baton_spin", "charge_attack"]
     weaknesses: ["hydro", "cryo"]
     drops: ["damaged_mask", "stained_mask", "ominous_mask"]
+    region: [mondstadt, liyue]
     visual: "Hilichurl wielding flaming torch, aggressive stance"
 
   - monster_id: hilichurl_cryo_archer
@@ -70,6 +78,7 @@ monsters:
     danger_signals: ["ice_arrow", "freeze_shot"]
     weaknesses: ["pyro", "electro"]
     drops: ["firm_arrowhead", "sharp_arrowhead", "weathered_arrowhead"]
+    region: [mondstadt, liyue]
     visual: "Hilichurl archer shooting cryo arrows"
 
   - monster_id: hilichurl_electro_archer
@@ -81,6 +90,7 @@ monsters:
     danger_signals: ["electro_arrow", "chain_shot"]
     weaknesses: ["pyro", "cryo"]
     drops: ["firm_arrowhead", "sharp_arrowhead", "weathered_arrowhead"]
+    region: [inazuma]
     visual: "Hilichurl archer shooting electro arrows"
 
   - monster_id: hilichurl_pyro_archer
@@ -92,8 +102,46 @@ monsters:
     danger_signals: ["fire_arrow", "burning_shot"]
     weaknesses: ["hydro", "cryo"]
     drops: ["firm_arrowhead", "sharp_arrowhead", "weathered_arrowhead"]
+    region: [mondstadt, liyue]
     visual: "Hilichurl archer shooting fire arrows"
 
+  - monster_id: hilichurl_electro_grenadier
+    name: 雷弹丘丘人
+    name_en: Electro Hilichurl Grenadier
+    class_id: monster_normal
+    element: electro
+    hp_segments: 1
+    danger_signals: ["electro_barrel_throw", "shock_grenade"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["damaged_mask", "stained_mask", "ominous_mask"]
+    region: [inazuma]
+    visual: "Hilichurl throwing electro slime barrels"
+
+  - monster_id: hilichurl_cryo_grenadier
+    name: 冰弹丘丘人
+    name_en: Cryo Hilichurl Grenadier
+    class_id: monster_normal
+    element: cryo
+    hp_segments: 1
+    danger_signals: ["cryo_barrel_throw", "freeze_grenade"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["damaged_mask", "stained_mask", "ominous_mask"]
+    region: [mondstadt, liyue]
+    visual: "Hilichurl throwing cryo slime barrels"
+
+  - monster_id: unusual_hilichurl
+    name: 异常丘丘人
+    name_en: Unusual Hilichurl
+    class_id: monster_normal
+    element: none
+    hp_segments: 1
+    danger_signals: ["suitcase_throw", "stamp_attack", "portrait_summon"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["cabbage", "adventure_exp_materials"]
+    region: [mondstadt, liyue]
+    visual: "Hilichurl in a suit with suitcase, tribute to board member"
+
+  # Samachurls
   - monster_id: samachurl_anemo
     name: 风丘丘萨满
     name_en: Anemo Samachurl
@@ -101,8 +149,9 @@ monsters:
     element: anemo
     hp_segments: 1
     danger_signals: ["tornado_summon", "vacuum_field"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["divining_scroll", "sealed_scroll", "forbidden_curse_scroll"]
+    region: [mondstadt, liyue]
     visual: "Hilichurl chanting with anemo wand, creates tornadoes"
 
   - monster_id: samachurl_geo
@@ -114,6 +163,7 @@ monsters:
     danger_signals: ["stone_pillar", "geo_barrier"]
     weaknesses: ["geo", "claymore", "overloaded"]
     drops: ["divining_scroll", "sealed_scroll", "forbidden_curse_scroll"]
+    region: [liyue]
     visual: "Hilichurl chanting with geo wand, creates stone pillars"
 
   - monster_id: samachurl_cryo
@@ -125,6 +175,7 @@ monsters:
     danger_signals: ["ice_field", "freeze_mist"]
     weaknesses: ["pyro", "electro"]
     drops: ["divining_scroll", "sealed_scroll", "forbidden_curse_scroll"]
+    region: [mondstadt]
     visual: "Hilichurl chanting with cryo wand, creates ice fields"
 
   - monster_id: samachurl_electro
@@ -136,6 +187,7 @@ monsters:
     danger_signals: ["thunder_strike", "electro_field"]
     weaknesses: ["pyro", "cryo"]
     drops: ["divining_scroll", "sealed_scroll", "forbidden_curse_scroll"]
+    region: [inazuma]
     visual: "Hilichurl chanting with electro wand, calls lightning"
 
   - monster_id: samachurl_hydro
@@ -147,6 +199,7 @@ monsters:
     danger_signals: ["rain_field", "hydro_bubble"]
     weaknesses: ["electro", "cryo"]
     drops: ["divining_scroll", "sealed_scroll", "forbidden_curse_scroll"]
+    region: [liyue]
     visual: "Hilichurl chanting with hydro wand, creates rain"
 
   - monster_id: samachurl_pyro
@@ -158,6 +211,7 @@ monsters:
     danger_signals: ["fire_field", "flame_wall"]
     weaknesses: ["hydro", "cryo"]
     drops: ["divining_scroll", "sealed_scroll", "forbidden_curse_scroll"]
+    region: [mondstadt, liyue]
     visual: "Hilichurl chanting with pyro wand, creates fire"
 
   - monster_id: samachurl_dendro
@@ -169,8 +223,12 @@ monsters:
     danger_signals: ["vine_wall", "dendro_field"]
     weaknesses: ["pyro", "electro"]
     drops: ["divining_scroll", "sealed_scroll", "forbidden_curse_scroll"]
+    region: [sumeru]
     visual: "Hilichurl chanting with dendro wand, creates vine walls"
 
+  # =====================================================================
+  # HILICHURL FAMILY — Elite (Mitachurls & Lawachurls)
+  # =====================================================================
   - monster_id: mitachurl_wood_shield
     name: 木盾丘丘暴徒
     name_en: Wooden Shieldwall Mitachurl
@@ -180,6 +238,7 @@ monsters:
     danger_signals: ["shield_bash", "charge_attack", "summon_hilichurls"]
     weaknesses: ["pyro"]
     drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    region: [mondstadt, liyue]
     visual: "Large hilichurl with wooden shield, slow but armored"
 
   - monster_id: mitachurl_stone_shield
@@ -191,6 +250,7 @@ monsters:
     danger_signals: ["shield_bash", "rock_throw", "charge_attack"]
     weaknesses: ["geo", "claymore", "overloaded"]
     drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    region: [liyue]
     visual: "Large hilichurl with stone shield, very durable"
 
   - monster_id: mitachurl_ice_shield
@@ -202,6 +262,7 @@ monsters:
     danger_signals: ["shield_bash", "ice_swing", "charge_attack"]
     weaknesses: ["pyro", "claymore"]
     drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    region: [mondstadt]
     visual: "Large hilichurl with ice shield, freezes nearby"
 
   - monster_id: mitachurl_fire_axe
@@ -213,7 +274,20 @@ monsters:
     danger_signals: ["axe_slam", "fire_wave", "enraged_spin"]
     weaknesses: ["hydro", "cryo"]
     drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    region: [mondstadt, liyue]
     visual: "Large hilichurl wielding flaming battle axe"
+
+  - monster_id: mitachurl_crackling_axe
+    name: 雷斧丘丘暴徒
+    name_en: Crackling Axe Mitachurl
+    class_id: monster_elite
+    element: electro
+    hp_segments: 1
+    danger_signals: ["axe_slam", "lightning_wave", "enraged_spin"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    region: [inazuma]
+    visual: "Large hilichurl wielding electro battle axe"
 
   - monster_id: lawachurl_anemo
     name: 风拳丘丘王
@@ -222,52 +296,45 @@ monsters:
     element: anemo
     hp_segments: 3
     danger_signals: ["vacuum_slam", "wind_charge", "elemental_armor"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    region: [mondstadt]
     visual: "Massive hilichurl chieftain with anemo infused attacks"
 
   - monster_id: lawachurl_cryo
-    name: 冰盾丘丘王
-    name_en: Cryo Lawachurl
+    name: 冰丘丘王
+    name_en: Frostarm Lawachurl
     class_id: monster_elite
     element: cryo
     hp_segments: 3
     danger_signals: ["ice_slam", "freeze_roar", "elemental_armor"]
     weaknesses: ["pyro", "electro"]
     drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    region: [mondstadt]
     visual: "Massive hilichurl chieftain with cryo infused attacks"
 
   - monster_id: lawachurl_electro
-    name: 雷斧丘丘王
-    name_en: Electro Lawachurl
+    name: 雷丘丘王
+    name_en: Thunderhelm Lawachurl
     class_id: monster_elite
     element: electro
     hp_segments: 3
     danger_signals: ["lightning_slam", "thunder_roar", "elemental_armor"]
     weaknesses: ["pyro", "cryo"]
     drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    region: [inazuma]
     visual: "Massive hilichurl chieftain with electro infused attacks"
 
-  - monster_id: lawachurl_pyro
-    name: 火斧丘丘王
-    name_en: Pyro Lawachurl
-    class_id: monster_elite
-    element: pyro
-    hp_segments: 3
-    danger_signals: ["fire_slam", "eruption_roar", "elemental_armor"]
-    weaknesses: ["hydro", "cryo"]
-    drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
-    visual: "Massive hilichurl chieftain with pyro infused attacks"
-
   - monster_id: lawachurl_geo
-    name: 岩盾丘丘王
-    name_en: Geo Lawachurl
+    name: 岩丘丘王
+    name_en: Stonehide Lawachurl
     class_id: monster_elite
     element: geo
     hp_segments: 3
     danger_signals: ["geo_slam", "stone_throw", "elemental_armor"]
     weaknesses: ["geo", "claymore", "overloaded"]
     drops: ["heavy_horn", "black_brass_horn", "black_crystal_horn"]
+    region: [liyue]
     visual: "Massive hilichurl chieftain with geo infused attacks"
 
   # =====================================================================
@@ -282,6 +349,7 @@ monsters:
     danger_signals: ["flame_bounce", "self_explode"]
     weaknesses: ["hydro", "cryo"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [mondstadt, liyue, inazuma, sumeru, natlan]
     visual: "Orange-red slime blob with flame aura"
 
   - monster_id: large_pyro_slime
@@ -293,6 +361,7 @@ monsters:
     danger_signals: ["fire_breath", "explosion_charge"]
     weaknesses: ["hydro", "cryo"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [mondstadt, liyue]
     visual: "Large orange slime with visible flame core"
 
   - monster_id: hydro_slime
@@ -304,6 +373,7 @@ monsters:
     danger_signals: ["water_splash", "bubble_trap"]
     weaknesses: ["electro", "cryo"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [mondstadt, liyue, inazuma, sumeru, fontaine]
     visual: "Blue translucent slime"
 
   - monster_id: large_hydro_slime
@@ -315,6 +385,7 @@ monsters:
     danger_signals: ["tidal_wave", "bubble_traps"]
     weaknesses: ["electro", "cryo"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [mondstadt, liyue]
     visual: "Large blue slime creating water hazards"
 
   - monster_id: cryo_slime
@@ -326,6 +397,7 @@ monsters:
     danger_signals: ["freeze_burst", "ice_shard"]
     weaknesses: ["pyro", "electro"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [mondstadt, liyue]
     visual: "Light blue slime with frost aura"
 
   - monster_id: large_cryo_slime
@@ -337,6 +409,7 @@ monsters:
     danger_signals: ["blizzard", "ice_rain"]
     weaknesses: ["pyro", "electro"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [mondstadt]
     visual: "Large blue-white slime generating frost field"
 
   - monster_id: electro_slime
@@ -348,6 +421,7 @@ monsters:
     danger_signals: ["shock_discharge", "electric_arc"]
     weaknesses: ["pyro", "cryo"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [mondstadt, liyue, inazuma]
     visual: "Purple slime with crackling electro sparks"
 
   - monster_id: large_electro_slime
@@ -359,7 +433,20 @@ monsters:
     danger_signals: ["lightning_field", "chain_lightning"]
     weaknesses: ["pyro", "cryo"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [inazuma]
     visual: "Large purple slime with sustained electro field"
+
+  - monster_id: mutant_electro_slime
+    name: 变异雷史莱姆
+    name_en: Mutant Electro Slime
+    class_id: monster_normal
+    element: electro
+    hp_segments: 1
+    danger_signals: ["mega_shock", "electric_burst"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [inazuma]
+    visual: "Larger purple slime that emerges from large electro slimes"
 
   - monster_id: anemo_slime
     name: 风史莱姆
@@ -368,8 +455,9 @@ monsters:
     element: anemo
     hp_segments: 1
     danger_signals: ["wind_gust", "vacuum_pull"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["slime_condensate", "slime_secretions"]
+    region: [mondstadt]
     visual: "Green-tinted floating slime"
 
   - monster_id: geo_slime
@@ -381,6 +469,7 @@ monsters:
     danger_signals: ["rock_shield", "stone_throw"]
     weaknesses: ["geo", "claymore", "overloaded"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [liyue]
     visual: "Brown slime with rocky armor shell"
 
   - monster_id: dendro_slime
@@ -392,6 +481,7 @@ monsters:
     danger_signals: ["vine_trap", "poison_spore"]
     weaknesses: ["pyro", "electro"]
     drops: ["slime_condensate", "slime_secretions"]
+    region: [mondstadt, liyue, sumeru]
     visual: "Green slime that hides underground, shoots vines"
 
   - monster_id: large_dendro_slime
@@ -403,6 +493,7 @@ monsters:
     danger_signals: ["vine_whip", "seed_barrage"]
     weaknesses: ["pyro", "electro"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [sumeru]
     visual: "Large green slime with vine attacks"
 
   - monster_id: large_geo_slime
@@ -414,6 +505,7 @@ monsters:
     danger_signals: ["rock_launch", "geo_shield"]
     weaknesses: ["geo", "claymore", "overloaded"]
     drops: ["slime_condensate", "slime_secretions", "slime_concentrate"]
+    region: [liyue]
     visual: "Large brown slime with thick rocky armor"
 
   # =====================================================================
@@ -426,8 +518,9 @@ monsters:
     element: anemo
     hp_segments: 1
     danger_signals: ["wind_burst", "vacuum_pull"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["spectral_husk", "spectral_heart", "spectral_nucleus"]
+    region: [inazuma]
     visual: "Floating anemo spirit"
 
   - monster_id: specter_geo
@@ -439,6 +532,7 @@ monsters:
     danger_signals: ["rock_burst", "geo_explosion"]
     weaknesses: ["geo", "claymore"]
     drops: ["spectral_husk", "spectral_heart", "spectral_nucleus"]
+    region: [inazuma]
     visual: "Floating geo spirit with rocky shell"
 
   - monster_id: specter_pyro
@@ -450,6 +544,7 @@ monsters:
     danger_signals: ["fire_burst", "self_explode"]
     weaknesses: ["hydro", "cryo"]
     drops: ["spectral_husk", "spectral_heart", "spectral_nucleus"]
+    region: [inazuma, sumeru]
     visual: "Floating pyro spirit with flame aura"
 
   - monster_id: specter_hydro
@@ -461,6 +556,7 @@ monsters:
     danger_signals: ["water_burst", "hydro_ring"]
     weaknesses: ["electro", "cryo"]
     drops: ["spectral_husk", "spectral_heart", "spectral_nucleus"]
+    region: [inazuma]
     visual: "Floating hydro spirit"
 
   - monster_id: specter_cryo
@@ -472,6 +568,7 @@ monsters:
     danger_signals: ["ice_burst", "freeze_wave"]
     weaknesses: ["pyro", "electro"]
     drops: ["spectral_husk", "spectral_heart", "spectral_nucleus"]
+    region: [inazuma]
     visual: "Floating cryo spirit"
 
   - monster_id: specter_electro
@@ -483,6 +580,7 @@ monsters:
     danger_signals: ["lightning_burst", "shock_wave"]
     weaknesses: ["pyro", "cryo"]
     drops: ["spectral_husk", "spectral_heart", "spectral_nucleus"]
+    region: [inazuma]
     visual: "Floating electro spirit"
 
   - monster_id: specter_dendro
@@ -494,7 +592,179 @@ monsters:
     danger_signals: ["vine_burst", "seed_explosion"]
     weaknesses: ["pyro", "electro"]
     drops: ["spectral_husk", "spectral_heart", "spectral_nucleus"]
+    region: [sumeru]
     visual: "Floating dendro spirit"
+
+  # =====================================================================
+  # FUNGI (Sumeru)
+  # =====================================================================
+  - monster_id: fungus_floating_hydro
+    name: 浮游水蕈兽
+    name_en: Floating Hydro Fungus
+    class_id: monster_normal
+    element: hydro
+    hp_segments: 1
+    danger_signals: ["water_splash", "hydro_burst"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Small floating mushroom creature with hydro abilities"
+
+  - monster_id: fungus_floating_anemo
+    name: 浮游风蕈兽
+    name_en: Floating Anemo Fungus
+    class_id: monster_normal
+    element: anemo
+    hp_segments: 1
+    danger_signals: ["wind_burst", "anemo_wave"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Small floating mushroom creature with anemo abilities"
+
+  - monster_id: fungus_floating_dendro
+    name: 浮游草蕈兽
+    name_en: Floating Dendro Fungus
+    class_id: monster_normal
+    element: dendro
+    hp_segments: 1
+    danger_signals: ["dendro_burst", "spore_shot"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Small floating mushroom creature with dendro abilities"
+
+  - monster_id: fungus_whirling_pyro
+    name: 旋转火蕈兽
+    name_en: Whirling Pyro Fungus
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["fire_spin", "pyro_charge"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Mushroom creature with spinning pyro attack"
+
+  - monster_id: fungus_whirling_electro
+    name: 旋转雷蕈兽
+    name_en: Whirling Electro Fungus
+    class_id: monster_normal
+    element: electro
+    hp_segments: 1
+    danger_signals: ["electro_spin", "shock_charge"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Mushroom creature with spinning electro attack"
+
+  - monster_id: fungus_whirling_cryo
+    name: 旋转冰蕈兽
+    name_en: Whirling Cryo Fungus
+    class_id: monster_normal
+    element: cryo
+    hp_segments: 1
+    danger_signals: ["ice_spin", "frost_charge"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Mushroom creature with spinning cryo attack"
+
+  - monster_id: fungus_stretchy_pyro
+    name: 弹跳火蕈兽
+    name_en: Stretchy Pyro Fungus
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["stretch_attack", "pyro_slam"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Stretchy mushroom creature with pyro attacks"
+
+  - monster_id: fungus_stretchy_anemo
+    name: 弹跳风蕈兽
+    name_en: Stretchy Anemo Fungus
+    class_id: monster_normal
+    element: anemo
+    hp_segments: 1
+    danger_signals: ["stretch_attack", "wind_slam"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Stretchy mushroom creature with anemo attacks"
+
+  - monster_id: fungus_stretchy_electro
+    name: 弹跳雷蕈兽
+    name_en: Stretchy Electro Fungus
+    class_id: monster_normal
+    element: electro
+    hp_segments: 1
+    danger_signals: ["stretch_attack", "electro_slam"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Stretchy mushroom creature with electro attacks"
+
+  - monster_id: fungus_stretchy_geo
+    name: 弹跳岩蕈兽
+    name_en: Stretchy Geo Fungus
+    class_id: monster_normal
+    element: geo
+    hp_segments: 1
+    danger_signals: ["stretch_attack", "rock_slam"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Stretchy mushroom creature with geo attacks"
+
+  - monster_id: fungus_grounded_hydroshroom
+    name: 陆行水蕈兽
+    name_en: Grounded Hydroshroom
+    class_id: monster_normal
+    element: hydro
+    hp_segments: 1
+    danger_signals: ["hydro_spit", "water_dash"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Grounded walking mushroom with hydro abilities"
+
+  - monster_id: fungus_grounded_geoshroom
+    name: 陆行岩蕈兽
+    name_en: Grounded Geoshroom
+    class_id: monster_normal
+    element: geo
+    hp_segments: 1
+    danger_signals: ["rock_spit", "geo_dash"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Grounded walking mushroom with geo abilities"
+
+  - monster_id: fungus_winged_dendroshroom
+    name: 翱翔草蕈兽
+    name_en: Winged Dendroshroom
+    class_id: monster_normal
+    element: dendro
+    hp_segments: 1
+    danger_signals: ["dendro_shot", "air_dash"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Flying mushroom creature with dendro abilities"
+
+  - monster_id: fungus_winged_cryoshroom
+    name: 翱翔冰蕈兽
+    name_en: Winged Cryoshroom
+    class_id: monster_normal
+    element: cryo
+    hp_segments: 1
+    danger_signals: ["ice_shot", "frost_air_dash"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["fungal_spores", "luminescent_pollen", "crystalline_cyst_dust"]
+    region: [sumeru]
+    visual: "Flying mushroom creature with cryo abilities"
 
   # =====================================================================
   # ABYSS ORDER
@@ -509,6 +779,7 @@ monsters:
     danger_signals: ["teleport", "fire_rain", "shield_regen"]
     weaknesses: ["hydro", "cryo"]
     drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    region: [mondstadt, liyue]
     visual: "Floating robed figure with pyro shield and staff"
 
   - monster_id: abyss_mage_cryo
@@ -521,6 +792,7 @@ monsters:
     danger_signals: ["teleport", "freeze_mist", "shield_regen"]
     weaknesses: ["pyro", "electro"]
     drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    region: [mondstadt]
     visual: "Floating robed figure with cryo shield"
 
   - monster_id: abyss_mage_hydro
@@ -533,6 +805,7 @@ monsters:
     danger_signals: ["teleport", "water_bubble", "shield_regen"]
     weaknesses: ["electro", "cryo"]
     drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    region: [liyue]
     visual: "Floating robed figure with hydro shield"
 
   - monster_id: abyss_mage_electro
@@ -545,6 +818,7 @@ monsters:
     danger_signals: ["teleport", "chain_lightning", "shield_regen"]
     weaknesses: ["pyro", "cryo"]
     drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    region: [inazuma]
     visual: "Floating robed figure with electro shield"
 
   - monster_id: abyss_lector_electro
@@ -557,6 +831,7 @@ monsters:
     danger_signals: ["dark_bolt", "teleport", "shield_deploy", "energy_drain"]
     weaknesses: ["pyro", "cryo"]
     drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    region: [mondstadt, inazuma]
     visual: "Armored Abyss warrior with electro attacks"
 
   - monster_id: abyss_lector_pyro
@@ -569,6 +844,7 @@ monsters:
     danger_signals: ["dark_flame", "teleport", "shield_deploy", "fire_field"]
     weaknesses: ["hydro", "cryo"]
     drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    region: [inazuma]
     visual: "Armored Abyss warrior with dark pyro attacks"
 
   - monster_id: abyss_herald_hydro
@@ -581,7 +857,21 @@ monsters:
     danger_signals: ["water_blade", "dash_attack", "shield_deploy"]
     weaknesses: ["electro", "cryo"]
     drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    region: [mondstadt, liyue]
     visual: "Armored Abyss warrior with dual hydro blades"
+
+  - monster_id: abyss_herald_cryo
+    name: 深渊使徒·冰落
+    name_en: "Abyss Herald: Frost Fall"
+    class_id: monster_elite
+    element: cryo
+    hp_segments: 3
+    shield_element: cryo
+    danger_signals: ["ice_blade", "frost_dash", "shield_deploy"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["dead_ley_line_branch", "dead_ley_line_leaves", "ley_line_sprout"]
+    region: [sumeru]
+    visual: "Armored Abyss warrior with cryo blade attacks"
 
   # =====================================================================
   # FATUI
@@ -595,6 +885,7 @@ monsters:
     danger_signals: ["stealth", "backstab", "blade_combo"]
     weaknesses: ["hydro", "cryo"]
     drops: ["hunter_sacrificial_knife", "agent_sacrificial_knife", "inspector_sacrificial_knife"]
+    region: [mondstadt, liyue, inazuma]
     visual: "Red-coated agent who turns invisible"
 
   - monster_id: fatui_cicin_mage_electro
@@ -606,6 +897,7 @@ monsters:
     danger_signals: ["cicin_swarm", "lightning_bolt", "teleport"]
     weaknesses: ["pyro", "cryo"]
     drops: ["recruits_insignia", "sergeants_insignia", "lieutenants_insignia"]
+    region: [mondstadt, liyue]
     visual: "Fatui woman surrounded by electro cicin bugs"
 
   - monster_id: fatui_cicin_mage_cryo
@@ -618,7 +910,21 @@ monsters:
     danger_signals: ["cicin_swarm", "ice_field", "shield_deploy"]
     weaknesses: ["pyro", "electro"]
     drops: ["recruits_insignia", "sergeants_insignia", "lieutenants_insignia"]
+    region: [mondstadt]
     visual: "Fatui woman with cryo shield and ice cicin swarm"
+
+  - monster_id: fatui_mirror_maiden
+    name: 愚人众·藏镜侍女
+    name_en: Mirror Maiden
+    class_id: monster_elite
+    element: hydro
+    hp_segments: 2
+    shield_element: hydro
+    danger_signals: ["mirror_trap", "hydro_burst", "teleport"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["recruits_insignia", "sergeants_insignia", "lieutenants_insignia"]
+    region: [inazuma]
+    visual: "Fatui woman with mirror-based hydro attacks"
 
   - monster_id: fatui_skirmisher_geochanter
     name: 愚人众·岩先遣队
@@ -629,6 +935,7 @@ monsters:
     danger_signals: ["rock_blast", "geo_barrier"]
     weaknesses: ["geo", "claymore"]
     drops: ["recruits_insignia", "sergeants_insignia"]
+    region: [mondstadt, liyue]
     visual: "Fatui soldier with geo gauntlets"
 
   - monster_id: fatui_skirmisher_anemoboxer
@@ -638,8 +945,9 @@ monsters:
     element: anemo
     hp_segments: 1
     danger_signals: ["wind_punch", "vacuum_pull"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["recruits_insignia", "sergeants_insignia"]
+    region: [mondstadt, liyue]
     visual: "Fatui brawler with wind gauntlets"
 
   - monster_id: fatui_skirmisher_electrohammer
@@ -651,6 +959,7 @@ monsters:
     danger_signals: ["hammer_slam", "lightning_strike"]
     weaknesses: ["pyro", "cryo"]
     drops: ["recruits_insignia", "sergeants_insignia"]
+    region: [mondstadt, liyue]
     visual: "Fatui soldier wielding electro-charged hammer"
 
   - monster_id: fatui_skirmisher_hydrogunner
@@ -662,6 +971,7 @@ monsters:
     danger_signals: ["water_gun", "heal_beam"]
     weaknesses: ["electro", "cryo"]
     drops: ["recruits_insignia", "sergeants_insignia"]
+    region: [mondstadt, liyue]
     visual: "Fatui soldier with water gun that heals allies"
 
   - monster_id: fatui_skirmisher_cryogunner
@@ -673,6 +983,7 @@ monsters:
     danger_signals: ["freeze_gun", "ice_burst"]
     weaknesses: ["pyro", "electro"]
     drops: ["recruits_insignia", "sergeants_insignia"]
+    region: [mondstadt, liyue]
     visual: "Fatui soldier with cryo freeze gun"
 
   - monster_id: fatui_skirmisher_pyroslinger
@@ -684,10 +995,11 @@ monsters:
     danger_signals: ["fire_gun", "pyro_burst"]
     weaknesses: ["hydro", "cryo"]
     drops: ["recruits_insignia", "sergeants_insignia"]
+    region: [mondstadt, liyue]
     visual: "Fatui soldier with dual pyro pistols"
 
   # =====================================================================
-  # RUIN MACHINES
+  # RUIN MACHINES (Khaenri'ah Automatons)
   # =====================================================================
   - monster_id: ruin_guard
     name: 遗迹守卫
@@ -699,6 +1011,7 @@ monsters:
     danger_signals: ["missile_barrage", "spin_attack", "stomp"]
     weaknesses: ["weakpoint_hit"]
     drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    region: [mondstadt, liyue]
     visual: "Large mechanical humanoid with glowing eye"
 
   - monster_id: ruin_hunter
@@ -711,6 +1024,7 @@ monsters:
     danger_signals: ["flight_mode", "bombardment", "sweep_attack"]
     weaknesses: ["weakpoint_hit"]
     drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    region: [liyue]
     visual: "Mechanical that transforms to flying mode"
 
   - monster_id: ruin_grader
@@ -723,6 +1037,7 @@ monsters:
     danger_signals: ["laser_beam", "stomp_combo", "charge_dash"]
     weaknesses: ["weakpoint_hit"]
     drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    region: [mondstadt, liyue]
     visual: "Massive mechanical walker"
 
   - monster_id: ruin_serpent
@@ -735,6 +1050,7 @@ monsters:
     danger_signals: ["burrow", "laser_sweep", "spin_attack"]
     weaknesses: ["weakpoint_hit"]
     drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    region: [sumeru]
     visual: "Long mechanical snake with segmented core"
 
   - monster_id: ruin_cruiser
@@ -747,6 +1063,7 @@ monsters:
     danger_signals: ["energy_burst", "laser_sweep"]
     weaknesses: ["weakpoint_hit"]
     drops: ["chaos_device", "chaos_circuit"]
+    region: [inazuma]
     visual: "Small hovering ruin machine"
 
   - monster_id: ruin_destroyer
@@ -759,6 +1076,7 @@ monsters:
     danger_signals: ["charge_beam", "stomp"]
     weaknesses: ["weakpoint_hit"]
     drops: ["chaos_device", "chaos_circuit"]
+    region: [inazuma]
     visual: "Quadruped ruin machine with beam attack"
 
   - monster_id: ruin_scout
@@ -771,6 +1089,7 @@ monsters:
     danger_signals: ["energy_ring", "spin_attack"]
     weaknesses: ["weakpoint_hit"]
     drops: ["chaos_device", "chaos_circuit"]
+    region: [inazuma]
     visual: "Small ruin machine with rotating energy ring"
 
   - monster_id: ruin_defender
@@ -783,10 +1102,187 @@ monsters:
     danger_signals: ["shield_deploy", "energy_burst"]
     weaknesses: ["weakpoint_hit"]
     drops: ["chaos_device", "chaos_circuit"]
+    region: [inazuma]
     visual: "Small ruin machine with defensive mode"
 
+  - monster_id: ruin_drake_earthguard
+    name: 遗迹龙兽·地巡
+    name_en: Ruin Drake: Earthguard
+    class_id: monster_elite
+    element: none
+    hp_segments: 3
+    weakpoints: ["eye_core", "wing_cores"]
+    danger_signals: ["charge_beam", "elemental_breath", "swoop"]
+    weaknesses: ["weakpoint_hit"]
+    drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    region: [sumeru]
+    visual: "Quadruped ruin dragon that can absorb elements"
+
+  - monster_id: ruin_drake_skywatch
+    name: 遗迹龙兽·空巡
+    name_en: Ruin Drake: Skywatch
+    class_id: monster_elite
+    element: none
+    hp_segments: 3
+    weakpoints: ["eye_core", "wing_cores"]
+    danger_signals: ["air_bombardment", "elemental_breath", "dive_attack"]
+    weaknesses: ["weakpoint_hit"]
+    drops: ["chaos_device", "chaos_circuit", "chaos_core"]
+    region: [sumeru]
+    visual: "Flying ruin dragon that bombards from above"
+
   # =====================================================================
-  # EREMITE / DESERT ENEMIES
+  # RIFTHOUNDS & SHADOWY HUSKS (Abyss / Enkanomiya / Chasm)
+  # =====================================================================
+  - monster_id: rifthound_rockfond_whelp
+    name: 嗜岩·兽境幼兽
+    name_en: Rockfond Rifthound Whelp
+    class_id: monster_normal
+    element: geo
+    hp_segments: 1
+    danger_signals: ["bite_attack", "corrosion_spit"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["concealed_claw", "concealed_uncouth_claw", "concealed_talon"]
+    region: [inazuma, sumeru]
+    visual: "Small abyssal wolf whelp with geo affinity"
+
+  - monster_id: rifthound_thundercraven_whelp
+    name: 嗜雷·兽境幼兽
+    name_en: Thundercraven Rifthound Whelp
+    class_id: monster_normal
+    element: electro
+    hp_segments: 1
+    danger_signals: ["bite_attack", "lightning_spit"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["concealed_claw", "concealed_uncouth_claw", "concealed_talon"]
+    region: [inazuma]
+    visual: "Small abyssal wolf whelp with electro affinity"
+
+  - monster_id: rifthound_rockfond
+    name: 嗜岩·兽境猎犬
+    name_en: Rockfond Rifthound
+    class_id: monster_elite
+    element: geo
+    hp_segments: 2
+    danger_signals: ["savage_bite", "corrosion_howl", "pack_call"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["concealed_claw", "concealed_uncouth_claw", "concealed_talon"]
+    region: [inazuma, sumeru]
+    visual: "Large abyssal wolf with geo attacks and corrosion"
+
+  - monster_id: rifthound_thundercraven
+    name: 嗜雷·兽境猎犬
+    name_en: Thundercraven Rifthound
+    class_id: monster_elite
+    element: electro
+    hp_segments: 2
+    danger_signals: ["savage_bite", "lightning_howl", "pack_call"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["concealed_claw", "concealed_uncouth_claw", "concealed_talon"]
+    region: [inazuma]
+    visual: "Large abyssal wolf with electro attacks and corrosion"
+
+  - monster_id: shadowy_husk_standard_bearer
+    name: 黑蛇骑士·执旗手
+    name_en: Shadowy Husk: Standard Bearer
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["banner_bash", "shield_ally"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["ominous_mask", "stained_mask", "damaged_mask"]
+    region: [enkanomiya, chasm]
+    visual: "Shadowy armored soldier carrying a banner"
+
+  - monster_id: shadowy_husk_linebreaker
+    name: 黑蛇骑士·破阵者
+    name_en: Shadowy Husk: Line Breaker
+    class_id: monster_normal
+    element: hydro
+    hp_segments: 1
+    danger_signals: ["shield_charge", "water_slash"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["ominous_mask", "stained_mask", "damaged_mask"]
+    region: [enkanomiya, chasm]
+    visual: "Shadowy armored soldier with shield"
+
+  - monster_id: shadowy_husk_defender
+    name: 黑蛇骑士·守望者
+    name_en: Shadowy Husk: Defender
+    class_id: monster_normal
+    element: cryo
+    hp_segments: 1
+    danger_signals: ["shield_guard", "ice_bash"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["ominous_mask", "stained_mask", "damaged_mask"]
+    region: [enkanomiya, chasm]
+    visual: "Shadowy armored soldier with large shield"
+
+  - monster_id: black_serpent_knight_windcutter
+    name: 黑蛇骑士·风之斩者
+    name_en: Black Serpent Knight: Windcutter
+    class_id: monster_elite
+    element: anemo
+    hp_segments: 2
+    danger_signals: ["wind_slash", "gale_combo", "lost_resolve"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["ominous_mask", "stained_mask", "damaged_mask"]
+    region: [chasm]
+    visual: "Elite black knight with anemo greatsword attacks"
+
+  - monster_id: black_serpent_knight_rockbreaker
+    name: 黑蛇骑士·碎岩者
+    name_en: Black Serpent Knight: Rockbreaker Ax
+    class_id: monster_elite
+    element: geo
+    hp_segments: 2
+    danger_signals: ["axe_slam", "rock_combo", "lost_resolve"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["ominous_mask", "stained_mask", "damaged_mask"]
+    region: [chasm]
+    visual: "Elite black knight with geo axe attacks"
+
+  # =====================================================================
+  # BATHYSMAL VISHAPS (Enkanomiya)
+  # =====================================================================
+  - monster_id: bathysmal_vishap_primordial
+    name: 深海龙蜥·原种
+    name_en: Primordial Bathysmal Vishap
+    class_id: monster_elite
+    element: hydro
+    hp_segments: 2
+    danger_signals: ["hydro_bite", "tail_sweep", "energy_drain"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["dragonheir_false_fin"]
+    region: [enkanomiya]
+    visual: "Aquatic dragon-like creature with hydro attacks"
+
+  - monster_id: bathysmal_vishap_rimebiter
+    name: 深海龙蜥·啮冰
+    name_en: Rimebiter Bathysmal Vishap
+    class_id: monster_elite
+    element: cryo
+    hp_segments: 2
+    danger_signals: ["ice_bite", "frost_beam", "energy_drain"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["dragonheir_false_fin"]
+    region: [enkanomiya]
+    visual: "Aquatic dragon with cryo breath attacks"
+
+  - monster_id: bathysmal_vishap_bolteater
+    name: 深海龙蜥·吞雷
+    name_en: Bolteater Bathysmal Vishap
+    class_id: monster_elite
+    element: electro
+    hp_segments: 2
+    danger_signals: ["thunder_bite", "electro_beam", "energy_drain"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["dragonheir_false_fin"]
+    region: [enkanomiya]
+    visual: "Aquatic dragon with electro breath attacks"
+
+  # =====================================================================
+  # EREMITE / DESERT ENEMIES (Sumeru)
   # =====================================================================
   - monster_id: eremite_axe_vanguard
     name: 镀金旅团·斧箭手
@@ -795,19 +1291,21 @@ monsters:
     element: none
     hp_segments: 1
     danger_signals: ["axe_slam", "charge_attack"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
     visual: "Desert warrior wielding a large axe"
 
   - monster_id: eremite_sword_dancer
     name: 镀金旅团·剑舞者
-    name_en: Eremite Sword Dancer
+    name_en: Eremite Sword-Dancer
     class_id: monster_normal
     element: none
     hp_segments: 1
     danger_signals: ["sword_combo", "spin_slash"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
     visual: "Desert warrior with dual swords"
 
   - monster_id: eremite_crossbow
@@ -817,19 +1315,21 @@ monsters:
     element: none
     hp_segments: 1
     danger_signals: ["crossbow_shot", "rain_of_arrows"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
     visual: "Desert warrior with crossbow"
 
   - monster_id: eremite_clearwater
     name: 镀金旅团·灵鳄猎手
-    name_en: Eremite Clearwater
+    name_en: Eremite Desert Clearwater
     class_id: monster_elite
     element: hydro
     hp_segments: 2
     danger_signals: ["crocodile_summon", "hydro_slash", "enraged_mode"]
     weaknesses: ["electro", "cryo"]
     drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
     visual: "Desert warrior with spirit crocodile"
 
   - monster_id: eremite_scorching_loremaster
@@ -841,6 +1341,7 @@ monsters:
     danger_signals: ["fire_scroll", "pyro_field", "enraged_mode"]
     weaknesses: ["hydro", "cryo"]
     drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
     visual: "Desert mage with pyro scroll"
 
   - monster_id: eremite_daythunder
@@ -852,6 +1353,7 @@ monsters:
     danger_signals: ["electro_slash", "lightning_summon", "enraged_mode"]
     weaknesses: ["pyro", "cryo"]
     drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
     visual: "Desert warrior with electro weapon"
 
   - monster_id: eremite_galehunter
@@ -861,12 +1363,49 @@ monsters:
     element: anemo
     hp_segments: 2
     danger_signals: ["wind_slash", "anemo_burst", "enraged_mode"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
     visual: "Desert warrior with anemo weapon"
 
+  - monster_id: eremite_stone_enchanter
+    name: 镀金旅团·岩术师
+    name_en: Eremite Stone Enchanter
+    class_id: monster_elite
+    element: geo
+    hp_segments: 2
+    danger_signals: ["geo_slash", "stone_burst", "enraged_mode"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
+    visual: "Desert warrior with geo enchanted weapon"
+
+  - monster_id: eremite_sunfrost
+    name: 镀金旅团·日霜勇士
+    name_en: Eremite Sunfrost
+    class_id: monster_elite
+    element: cryo
+    hp_segments: 2
+    danger_signals: ["ice_slash", "frost_burst", "enraged_mode"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
+    visual: "Desert warrior with cryo weapon"
+
+  - monster_id: eremite_floral_ringdancer
+    name: 镀金旅团·花环舞者
+    name_en: Eremite Floral Ring-Dancer
+    class_id: monster_elite
+    element: dendro
+    hp_segments: 2
+    danger_signals: ["ring_slash", "dendro_burst", "enraged_mode"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["golden_insignia", "silver_insignia"]
+    region: [sumeru]
+    visual: "Desert warrior with dendro ring weapon"
+
   # =====================================================================
-  # FONTAINE MEKS
+  # FONTAINE MEKS & ENEMIES
   # =====================================================================
   - monster_id: fontaine_mek_assault
     name: 警卫机关·突击
@@ -875,19 +1414,21 @@ monsters:
     element: none
     hp_segments: 1
     danger_signals: ["charge_attack", "blade_spin"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["meshing_gear", "mechanical_spur_gear", "artificed_dynamic_gear"]
+    region: [fontaine]
     visual: "Clockwork mek robot with blade arms"
 
   - monster_id: fontaine_mek_sniper
-    name: 警卫机关·狙击
+    name: 侦察记录机关
     name_en: Recon Log Mek
     class_id: monster_normal
     element: none
     hp_segments: 1
     danger_signals: ["laser_shot", "scan_beam"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["meshing_gear", "mechanical_spur_gear", "artificed_dynamic_gear"]
+    region: [fontaine]
     visual: "Small clockwork mek with precision laser"
 
   - monster_id: fontaine_mek_annihilation
@@ -897,67 +1438,326 @@ monsters:
     element: none
     hp_segments: 2
     danger_signals: ["energy_beam", "spin_attack", "overdrive"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["meshing_gear", "mechanical_spur_gear", "artificed_dynamic_gear"]
+    region: [fontaine]
     visual: "Large clockwork mek with energy weapons"
+
+  - monster_id: fontaine_mek_suppression
+    name: 镇压机关·压制
+    name_en: Suppression Specialist Mek
+    class_id: monster_normal
+    element: none
+    hp_segments: 1
+    danger_signals: ["energy_barrage", "suppression_field"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["meshing_gear", "mechanical_spur_gear", "artificed_dynamic_gear"]
+    region: [fontaine]
+    visual: "Clockwork mek with suppression fire mode"
+
+  - monster_id: fontaine_mek_construction
+    name: 建设机关·建造
+    name_en: Construction Specialist Mek
+    class_id: monster_normal
+    element: none
+    hp_segments: 1
+    danger_signals: ["drill_attack", "shield_mode"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["meshing_gear", "mechanical_spur_gear", "artificed_dynamic_gear"]
+    region: [fontaine]
+    visual: "Clockwork mek with construction drill"
+
+  - monster_id: tainted_water_splitting_phantasm
+    name: 浊水幻灵·分裂
+    name_en: Tainted Water-Splitting Phantasm
+    class_id: monster_normal
+    element: hydro
+    hp_segments: 1
+    danger_signals: ["water_split", "hydro_dash"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["transoceanic_chunk", "transoceanic_sourcewater"]
+    region: [fontaine]
+    visual: "Tainted water elemental that splits when attacked"
+
+  - monster_id: tainted_water_spouting_phantasm
+    name: 浊水幻灵·喷涌
+    name_en: Tainted Water-Spouting Phantasm
+    class_id: monster_normal
+    element: hydro
+    hp_segments: 1
+    danger_signals: ["water_geyser", "hydro_burst"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["transoceanic_chunk", "transoceanic_sourcewater"]
+    region: [fontaine]
+    visual: "Tainted water elemental that creates geysers"
+
+  - monster_id: breacher_primus_shatterstone
+    name: 蚀破原核·碎岩
+    name_en: Shatterstone Breacher Primus
+    class_id: monster_normal
+    element: geo
+    hp_segments: 1
+    danger_signals: ["stone_burst", "geo_charge"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["transoceanic_chunk", "alien_life_core"]
+    region: [fontaine]
+    visual: "Alien creature with geo shell attacks"
+
+  - monster_id: breacher_primus_overgrown
+    name: 蚀破原核·丛生
+    name_en: Overgrown Breacher Primus
+    class_id: monster_normal
+    element: dendro
+    hp_segments: 1
+    danger_signals: ["vine_burst", "dendro_charge"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["transoceanic_chunk", "alien_life_core"]
+    region: [fontaine]
+    visual: "Alien creature with dendro vine attacks"
+
+  - monster_id: large_breacher_primus_shatterstone
+    name: 大型蚀破原核·碎岩
+    name_en: Large Shatterstone Breacher Primus
+    class_id: monster_elite
+    element: geo
+    hp_segments: 2
+    danger_signals: ["mega_stone_burst", "geo_field"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["transoceanic_chunk", "alien_life_core"]
+    region: [fontaine]
+    visual: "Large alien creature with powerful geo attacks"
+
+  - monster_id: large_breacher_primus_overgrown
+    name: 大型蚀破原核·丛生
+    name_en: Large Overgrown Breacher Primus
+    class_id: monster_elite
+    element: dendro
+    hp_segments: 2
+    danger_signals: ["mega_vine_burst", "dendro_field"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["transoceanic_chunk", "alien_life_core"]
+    region: [fontaine]
+    visual: "Large alien creature with powerful dendro attacks"
 
   # =====================================================================
   # NATLAN SAURIANS & WARRIORS
   # =====================================================================
-  - monster_id: saurian_qucusaur
-    name: 绒翼龙
-    name_en: Qucusaur
-    class_id: monster_normal
-    element: pyro
-    hp_segments: 1
-    danger_signals: ["fire_breath", "dive_attack"]
-    weaknesses: ["hydro", "cryo"]
-    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
-    visual: "Small flying pyro saurian"
-
-  - monster_id: saurian_tepetosaur
-    name: 鳞甲龙
-    name_en: Tepetaurus
+  - monster_id: saurian_tepetlisaur_whelp
+    name: 鳞甲幼龙
+    name_en: Tepetlisaur Whelp
     class_id: monster_normal
     element: geo
     hp_segments: 1
     danger_signals: ["rock_charge", "geo_slam"]
     weaknesses: ["geo", "claymore"]
     drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
-    visual: "Armored geo saurian"
+    region: [natlan]
+    visual: "Small armored geo saurian whelp"
 
-  - monster_id: saurian_yumkasaur
+  - monster_id: saurian_tepetlisaurus
+    name: 鳞甲龙
+    name_en: Tepetlisaurus
+    class_id: monster_normal
+    element: geo
+    hp_segments: 1
+    danger_signals: ["rock_charge", "geo_slam", "burrow_attack"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Armored geo saurian that can burrow"
+
+  - monster_id: saurian_koholasaur_whelp
+    name: 棘冠幼龙
+    name_en: Koholasaur Whelp
+    class_id: monster_normal
+    element: hydro
+    hp_segments: 1
+    danger_signals: ["water_dash", "hydro_bite"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Small hydro saurian whelp"
+
+  - monster_id: saurian_koholasaurus
     name: 棘冠龙
-    name_en: Yumkasaurus
+    name_en: Koholasaurus
+    class_id: monster_normal
+    element: hydro
+    hp_segments: 1
+    danger_signals: ["water_dash", "hydro_spiral", "wave_attack"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Hydro saurian with spiral water attacks"
+
+  - monster_id: saurian_yumkasaur_whelp
+    name: 棘冠幼龙·草
+    name_en: Yumkasaur Whelp
     class_id: monster_normal
     element: dendro
     hp_segments: 1
     danger_signals: ["vine_grapple", "seed_shot"]
     weaknesses: ["pyro", "electro"]
     drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Small dendro saurian whelp"
+
+  - monster_id: saurian_yumkasaurus
+    name: 棘冠龙·草
+    name_en: Yumkasaurus
+    class_id: monster_normal
+    element: dendro
+    hp_segments: 1
+    danger_signals: ["vine_grapple", "seed_barrage", "spit_attack"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
     visual: "Dendro saurian with grapple vine"
 
-  - monster_id: natlan_warrior_scorching
-    name: 纳塔战士·日炽
-    name_en: Natlan Warrior - Flowing Skyfire
+  - monster_id: saurian_qucusaur_chick
+    name: 绒翼龙雏
+    name_en: Qucusaurus Chick
     class_id: monster_normal
     element: pyro
     hp_segments: 1
-    danger_signals: ["fire_combo", "flame_charge"]
+    danger_signals: ["fire_breath", "dive_attack"]
     weaknesses: ["hydro", "cryo"]
     drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
-    visual: "Natlan tribal warrior with pyro-infused weapon"
+    region: [natlan]
+    visual: "Small flying pyro saurian chick"
 
-  - monster_id: natlan_warrior_frost
-    name: 纳塔战士·霜凝
-    name_en: Natlan Warrior - Spiritcold
+  - monster_id: saurian_qucusaurus
+    name: 绒翼龙
+    name_en: Qucusaurus
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["fire_dive", "flame_breath", "aerial_sweep"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Flying pyro saurian with flame breath"
+
+  - monster_id: saurian_iktomisaurus_chick
+    name: 灵翼龙雏
+    name_en: Iktomisaurus Chick
     class_id: monster_normal
     element: cryo
     hp_segments: 1
-    danger_signals: ["ice_combo", "frost_charge"]
+    danger_signals: ["ice_breath", "frost_dive"]
     weaknesses: ["pyro", "electro"]
     drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
-    visual: "Natlan tribal warrior with cryo-infused weapon"
+    region: [natlan]
+    visual: "Small flying cryo saurian chick"
+
+  - monster_id: saurian_iktomisaurus
+    name: 灵翼龙
+    name_en: Iktomisaurus
+    class_id: monster_normal
+    element: cryo
+    hp_segments: 1
+    danger_signals: ["frost_dive", "ice_breath", "cryo_field"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Flying cryo saurian with frost abilities"
+
+  - monster_id: saurian_tatankasaur_whelp
+    name: 雷角幼龙
+    name_en: Tatankasaur Whelp
+    class_id: monster_normal
+    element: electro
+    hp_segments: 1
+    danger_signals: ["thunder_charge", "electro_bite"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Small electro saurian whelp"
+
+  - monster_id: saurian_tatankasaurus
+    name: 雷角龙
+    name_en: Tatankasaurus
+    class_id: monster_normal
+    element: electro
+    hp_segments: 1
+    danger_signals: ["thunder_charge", "lightning_horn", "shock_wave"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Electro saurian with lightning horn"
+
+  # Natlan Saurian Warriors (Elite)
+  - monster_id: natlan_warrior_tepetlisaurus_shard_striker
+    name: 鳞甲龙武士·碎岩之刃
+    name_en: Tepetlisaurus Warrior: Shard Striker
+    class_id: monster_elite
+    element: geo
+    hp_segments: 2
+    danger_signals: ["shard_strike", "rock_burst", "enraged_mode"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Natlan warrior fused with Tepetlisaurus geo powers"
+
+  - monster_id: natlan_warrior_yumkasaurus_skyfire
+    name: 棘冠龙武士·流焰
+    name_en: Yumkasaurus Warrior: Flowing Skyfire
+    class_id: monster_elite
+    element: dendro
+    hp_segments: 2
+    danger_signals: ["flame_vine", "seed_burst", "enraged_mode"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Natlan warrior with Yumkasaurus dendro powers"
+
+  - monster_id: natlan_warrior_koholasaurus_waveshuttler
+    name: 棘冠龙武士·渡浪
+    name_en: Koholasaurus Warrior: Waveshuttler
+    class_id: monster_elite
+    element: cryo
+    hp_segments: 2
+    danger_signals: ["wave_slash", "ice_charge", "enraged_mode"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Natlan warrior with Koholasaurus hydro/cryo powers"
+
+  - monster_id: natlan_warrior_qucusaurus_blazing_sky
+    name: 绒翼龙武士·烈焰天翔
+    name_en: Qucusaurus Warrior: Blazing Sky
+    class_id: monster_elite
+    element: pyro
+    hp_segments: 2
+    danger_signals: ["fire_dive", "aerial_slam", "enraged_mode"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Natlan warrior with Qucusaurus pyro aerial attacks"
+
+  - monster_id: natlan_warrior_iktomisaurus_cryocrystal
+    name: 灵翼龙武士·冰晶炮
+    name_en: Iktomisaurus Warrior: Cryocrystal Cannon
+    class_id: monster_elite
+    element: cryo
+    hp_segments: 2
+    danger_signals: ["cryo_cannon", "frost_burst", "enraged_mode"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Natlan warrior with Iktomisaurus cryo cannon"
+
+  - monster_id: natlan_warrior_tatankasaurus_skybreaker
+    name: 雷角龙武士·碎天
+    name_en: Tatankasaurus Warrior: Skybreaker
+    class_id: monster_elite
+    element: electro
+    hp_segments: 2
+    danger_signals: ["thunder_slam", "lightning_dive", "enraged_mode"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["juvenile_fang", "seasoned_fang", "tyrant_fang"]
+    region: [natlan]
+    visual: "Natlan warrior with Tatankasaurus electro powers"
 
   # =====================================================================
   # TREASURE HOARDERS / NOBUSHI / KAIRAGI
@@ -969,8 +1769,9 @@ monsters:
     element: none
     hp_segments: 1
     danger_signals: ["club_attack", "dodge_roll", "throw_attack"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["treasure_hoarder_insignia", "silver_raven_insignia", "golden_raven_insignia"]
+    region: [mondstadt, liyue, inazuma, sumeru, fontaine]
     visual: "Bandit in brown clothing"
 
   - monster_id: nobushi_jintouban
@@ -980,9 +1781,22 @@ monsters:
     element: none
     hp_segments: 1
     danger_signals: ["sword_combo", "parry_stance"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["old_handguard", "kageuchi_handguard", "famed_handguard"]
+    region: [inazuma]
     visual: "Ronin swordsman in Japanese-style armor"
+
+  - monster_id: nobushi_hitsukeban
+    name: 野伏·火
+    name_en: "Nobushi: Hitsukeban"
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["fire_slash", "bomb_throw"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["old_handguard", "kageuchi_handguard", "famed_handguard"]
+    region: [inazuma]
+    visual: "Ronin with pyro-infused blade and bombs"
 
   - monster_id: nobushi_kikouban
     name: 野伏·术
@@ -993,6 +1807,7 @@ monsters:
     danger_signals: ["electro_slash", "lightning_dash"]
     weaknesses: ["pyro", "cryo"]
     drops: ["old_handguard", "kageuchi_handguard", "famed_handguard"]
+    region: [inazuma]
     visual: "Ronin with electro-infused blade"
 
   - monster_id: kairagi_fire
@@ -1004,6 +1819,7 @@ monsters:
     danger_signals: ["sword_combo", "fire_slash", "enrage_heal"]
     weaknesses: ["hydro", "cryo"]
     drops: ["old_handguard", "kageuchi_handguard", "famed_handguard"]
+    region: [inazuma]
     visual: "Elite ronin with fiery blade"
 
   - monster_id: kairagi_thunder
@@ -1015,10 +1831,237 @@ monsters:
     danger_signals: ["sword_combo", "lightning_slash", "enrage_heal"]
     weaknesses: ["pyro", "cryo"]
     drops: ["old_handguard", "kageuchi_handguard", "famed_handguard"]
+    region: [inazuma]
     visual: "Elite ronin with electro blade"
 
   # =====================================================================
-  # NORMAL BOSSES (all hypostases + regisvines + regional)
+  # OTHER MYSTICAL BEASTS — Whopperflowers, Geovishaps, Consecrated, etc.
+  # =====================================================================
+  - monster_id: whopperflower_pyro
+    name: 火骗骗花
+    name_en: Pyro Whopperflower
+    class_id: monster_elite
+    element: pyro
+    hp_segments: 2
+    danger_signals: ["charge_attack", "fire_spit", "burrow"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["pollen", "nectar", "shimmering_nectar"]
+    region: [mondstadt, liyue]
+    visual: "Plant monster that mimics flora, fires pyro projectiles"
+
+  - monster_id: whopperflower_cryo
+    name: 冰骗骗花
+    name_en: Cryo Whopperflower
+    class_id: monster_elite
+    element: cryo
+    hp_segments: 2
+    danger_signals: ["charge_attack", "ice_spit", "burrow"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["pollen", "nectar", "shimmering_nectar"]
+    region: [mondstadt]
+    visual: "Plant monster that mimics flora, fires cryo projectiles"
+
+  - monster_id: whopperflower_electro
+    name: 雷骗骗花
+    name_en: Electro Whopperflower
+    class_id: monster_elite
+    element: electro
+    hp_segments: 2
+    danger_signals: ["charge_attack", "electro_spit", "burrow"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["pollen", "nectar", "shimmering_nectar"]
+    region: [inazuma]
+    visual: "Plant monster that mimics flora, fires electro projectiles"
+
+  - monster_id: geovishap_hatchling
+    name: 幼岩龙蜥
+    name_en: Geovishap Hatchling
+    class_id: monster_elite
+    element: geo
+    hp_segments: 2
+    danger_signals: ["charge_attack", "rock_barrage", "spinning_charge"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["fragile_bone_shard", "sturdy_bone_shard", "fossilized_bone_shard"]
+    region: [liyue]
+    visual: "Small dragon-like creature with geo armor"
+
+  - monster_id: geovishap
+    name: 岩龙蜥
+    name_en: Geovishap
+    class_id: monster_elite
+    element: geo
+    hp_segments: 2
+    danger_signals: ["elemental_breath", "charge_attack", "tail_sweep"]
+    weaknesses: ["geo", "claymore"]
+    drops: ["fragile_bone_shard", "sturdy_bone_shard", "fossilized_bone_shard"]
+    region: [liyue]
+    visual: "Dragon-like creature with elemental breath attacks"
+
+  - monster_id: eye_of_the_storm
+    name: 狂风之核
+    name_en: Eye of the Storm
+    class_id: monster_elite
+    element: anemo
+    hp_segments: 2
+    danger_signals: ["vacuum_pull", "wind_burst", "tornado_summon"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["hurricane_seed"]
+    region: [mondstadt]
+    visual: "Floating anemo vortex entity"
+
+  # Consecrated Beasts (v3.4+)
+  - monster_id: consecrated_red_vulture
+    name: 圣骸角鳄
+    name_en: Consecrated Red Vulture
+    class_id: monster_elite
+    element: pyro
+    hp_segments: 2
+    danger_signals: ["dive_attack", "fire_swoop", "phagocytic_swipe"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["light_guiding_tetrahedron"]
+    region: [sumeru]
+    visual: "Sacred beast vulture with pyro attacks"
+
+  - monster_id: consecrated_scorpion
+    name: 圣骸毒蝎
+    name_en: Consecrated Scorpion
+    class_id: monster_elite
+    element: electro
+    hp_segments: 2
+    danger_signals: ["tail_sting", "shock_burst", "phagocytic_swipe"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["light_guiding_tetrahedron"]
+    region: [sumeru]
+    visual: "Sacred beast scorpion with electro attacks"
+
+  - monster_id: consecrated_flying_serpent
+    name: 圣骸飞蛇
+    name_en: Consecrated Flying Serpent
+    class_id: monster_elite
+    element: anemo
+    hp_segments: 2
+    danger_signals: ["wind_swoop", "air_dash", "phagocytic_swipe"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["light_guiding_tetrahedron"]
+    region: [sumeru]
+    visual: "Sacred beast flying serpent with anemo attacks"
+
+  - monster_id: consecrated_fanged_beast
+    name: 圣骸牙兽
+    name_en: Consecrated Fanged Beast
+    class_id: monster_elite
+    element: dendro
+    hp_segments: 2
+    danger_signals: ["fang_charge", "vine_burst", "phagocytic_swipe"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["light_guiding_tetrahedron"]
+    region: [sumeru]
+    visual: "Sacred beast with dendro fang attacks"
+
+  - monster_id: consecrated_horned_crocodile
+    name: 圣骸角鳄
+    name_en: Consecrated Horned Crocodile
+    class_id: monster_elite
+    element: hydro
+    hp_segments: 2
+    danger_signals: ["water_charge", "hydro_bite", "phagocytic_swipe"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["light_guiding_tetrahedron"]
+    region: [sumeru]
+    visual: "Sacred beast crocodile with hydro attacks"
+
+  # Fontaine Mystical Beasts
+  - monster_id: sternshield_crab
+    name: 坚盾蟹
+    name_en: Sternshield Crab
+    class_id: monster_normal
+    element: pyro
+    hp_segments: 1
+    danger_signals: ["shield_guard", "fire_pinch"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["transoceanic_chunk", "transoceanic_sourcewater"]
+    region: [fontaine]
+    visual: "Crab with pyro-enhanced pincers and shield"
+
+  # Liyue / Chenyu Vale Mystical Beasts
+  - monster_id: xuanwen_beast
+    name: 玄文兽
+    name_en: Xuanwen Beast
+    class_id: monster_normal
+    element: anemo
+    hp_segments: 1
+    danger_signals: ["wind_pounce", "anemo_burst"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["clearwater_jade"]
+    region: [liyue]
+    visual: "Anemo beast from Chenyu Vale"
+
+  # Fontaine Golems
+  - monster_id: praetorian_golem
+    name: 禁卫傀儡
+    name_en: Praetorian Golem
+    class_id: monster_elite
+    element: pyro
+    hp_segments: 2
+    danger_signals: ["sword_combo", "fire_slash", "shield_mode"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["artifact_relics"]
+    region: [fontaine]
+    visual: "Ancient stone golem soldier with pyro sword"
+
+  - monster_id: legatus_golem
+    name: 将军傀儡
+    name_en: Legatus Golem
+    class_id: monster_elite
+    element: none
+    hp_segments: 2
+    danger_signals: ["command_slash", "summon_soldiers", "shield_mode"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["artifact_relics"]
+    region: [fontaine]
+    visual: "Ancient stone golem commander"
+
+  # =====================================================================
+  # PRIMAL CONSTRUCTS (Sumeru Desert)
+  # =====================================================================
+  - monster_id: primal_construct_repulsor
+    name: 元能构装体·力场发生器
+    name_en: Primal Construct: Repulsor
+    class_id: monster_normal
+    element: none
+    hp_segments: 1
+    danger_signals: ["energy_field", "repulsor_blast"]
+    weaknesses: ["dendro", "electro"]
+    drops: ["damaged_prism", "turbid_prism", "radiant_prism"]
+    region: [sumeru]
+    visual: "Desert mechanical construct with energy fields"
+
+  - monster_id: primal_construct_reshaper
+    name: 元能构装体·重塑仪
+    name_en: Primal Construct: Reshaper
+    class_id: monster_normal
+    element: none
+    hp_segments: 1
+    danger_signals: ["reshape_beam", "repair_field"]
+    weaknesses: ["dendro", "electro"]
+    drops: ["damaged_prism", "turbid_prism", "radiant_prism"]
+    region: [sumeru]
+    visual: "Desert construct that can reshape and repair"
+
+  - monster_id: primal_construct_prospector
+    name: 元能构装体·勘探器
+    name_en: Primal Construct: Prospector
+    class_id: monster_normal
+    element: none
+    hp_segments: 1
+    danger_signals: ["scan_beam", "prospect_blast"]
+    weaknesses: ["dendro", "electro"]
+    drops: ["damaged_prism", "turbid_prism", "radiant_prism"]
+    region: [sumeru]
+    visual: "Desert construct with scanning abilities"
+
+  # =====================================================================
+  # NORMAL BOSSES (Hypostases + Regisvines + Regional)
   # =====================================================================
   - monster_id: pyro_regisvine
     name: 爆炎树
@@ -1032,6 +2075,7 @@ monsters:
     drops: ["everflame_seed", "agnidus_agate"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [liyue]
     visual: "Giant fiery plant boss"
 
   - monster_id: cryo_regisvine
@@ -1046,6 +2090,7 @@ monsters:
     drops: ["hoarfrost_core", "shivada_jade"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [mondstadt]
     visual: "Giant ice plant boss"
 
   - monster_id: geo_hypostasis
@@ -1060,6 +2105,7 @@ monsters:
     drops: ["basalt_pillar", "prithiva_topaz"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [liyue]
     visual: "Golden cube entity forming geometric rock shapes"
 
   - monster_id: anemo_hypostasis
@@ -1070,10 +2116,11 @@ monsters:
     hp_segments: 5
     weakpoints: ["core"]
     danger_signals: ["vacuum_cut", "tornado_field", "wind_burst"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["hurricane_seed", "vayuda_turquoise"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [mondstadt]
     visual: "Translucent wind cube entity"
 
   - monster_id: electro_hypostasis
@@ -1088,6 +2135,7 @@ monsters:
     drops: ["lightning_prism", "vajrada_amethyst"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [mondstadt]
     visual: "Purple electro cube entity"
 
   - monster_id: oceanid
@@ -1102,6 +2150,7 @@ monsters:
     drops: ["cleansing_heart", "varunada_lazurite"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [liyue]
     visual: "Elegant water spirit spawning hydro mimics"
 
   - monster_id: pyro_hypostasis
@@ -1116,6 +2165,7 @@ monsters:
     drops: ["smoldering_pearl", "agnidus_agate"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [inazuma]
     visual: "Molten fire cube entity"
 
   - monster_id: cryo_hypostasis
@@ -1130,6 +2180,7 @@ monsters:
     drops: ["crystalline_bloom", "shivada_jade"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [inazuma]
     visual: "Ice crystal cube entity"
 
   - monster_id: hydro_hypostasis
@@ -1144,6 +2195,7 @@ monsters:
     drops: ["dew_of_repudiation", "varunada_lazurite"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [inazuma]
     visual: "Water cube entity creating hydro traps"
 
   - monster_id: dendro_hypostasis
@@ -1158,6 +2210,7 @@ monsters:
     drops: ["quelled_creepers", "nagadus_emerald"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [sumeru]
     visual: "Green dendro cube entity in underground cavern"
 
   - monster_id: electro_regisvine
@@ -1172,7 +2225,38 @@ monsters:
     drops: ["thunderclap_fruitcore", "vajrada_amethyst"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [sumeru]
     visual: "Giant electro plant boss"
+
+  - monster_id: thunder_manifestation
+    name: 雷音权现
+    name_en: Thunder Manifestation
+    class_id: monster_boss
+    element: electro
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["lightning_forks", "thunder_cage", "electro_storm"]
+    weaknesses: ["pyro", "cryo"]
+    drops: ["storm_beads", "vajrada_amethyst"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [inazuma]
+    visual: "Manifestation of pure electro energy"
+
+  - monster_id: primo_geovishap
+    name: 古岩龙蜥
+    name_en: Primo Geovishap
+    class_id: monster_boss
+    element: geo
+    hp_segments: 5
+    weakpoints: ["chest_core"]
+    danger_signals: ["elemental_breath", "primordial_shower", "stone_surge"]
+    weaknesses: ["geo", "shield_counter"]
+    drops: ["dragonheir_false_fin", "prithiva_topaz"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [liyue]
+    visual: "Ancient dragon with elemental breath attacks"
 
   - monster_id: jadeplume_terrorshroom
     name: 翠翎恐蕈
@@ -1186,6 +2270,7 @@ monsters:
     drops: ["majestic_hooked_beak", "nagadus_emerald"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [sumeru]
     visual: "Giant mushroom bird creature"
 
   - monster_id: maguu_kenki
@@ -1196,10 +2281,11 @@ monsters:
     hp_segments: 5
     weakpoints: ["mask"]
     danger_signals: ["mask_slash", "ice_clone", "wind_clone", "combo_attack"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["marionette_core"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [inazuma]
     visual: "Mechanical samurai puppet with mask"
 
   - monster_id: golden_wolflord
@@ -1214,6 +2300,7 @@ monsters:
     drops: ["riftborn_regalia", "prithiva_topaz"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [inazuma]
     visual: "Golden wolf-like creature with geo beam"
 
   - monster_id: perpetual_mechanical_array
@@ -1228,6 +2315,7 @@ monsters:
     drops: ["perpetual_heart"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [inazuma]
     visual: "Large ruin machine that splits into smaller ones"
 
   - monster_id: bathysmal_vishap_herd
@@ -1242,6 +2330,7 @@ monsters:
     drops: ["dragonheir_false_fin", "varunada_lazurite"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [enkanomiya]
     visual: "Pair of vishaps with elemental beam attacks"
 
   - monster_id: setekh_wenut
@@ -1252,11 +2341,42 @@ monsters:
     hp_segments: 5
     weakpoints: ["mouth_core"]
     danger_signals: ["burrow_charge", "wind_beam", "elemental_orbs"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["crown_of_ashes"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [sumeru]
     visual: "Worm-like creature that burrows through desert sand"
+
+  - monster_id: algorithm_semi_intransient_matrix
+    name: 半永恒统辖矩阵
+    name_en: Algorithm of Semi-Intransient Matrix of Overseer Network
+    class_id: monster_boss
+    element: dendro
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["energy_field", "laser_sweep", "invisible_mode", "overclock"]
+    weaknesses: ["dendro", "electro"]
+    drops: ["light_guiding_tetrahedron", "nagadus_emerald"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [sumeru]
+    visual: "Advanced primal construct that can go invisible"
+
+  - monster_id: aeonblight_drake
+    name: 永劫龙兽
+    name_en: Aeonblight Drake
+    class_id: monster_boss
+    element: none
+    hp_segments: 5
+    weakpoints: ["eye_core", "wing_cores"]
+    danger_signals: ["elemental_breath", "air_bombardment", "dive_attack"]
+    weaknesses: ["weakpoint_hit"]
+    drops: ["perpetual_caliber"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [sumeru]
+    visual: "Advanced ruin drake that absorbs elements"
 
   - monster_id: millennial_pearl_seahorse
     name: 千年珍珠海蛞蝓
@@ -1270,6 +2390,7 @@ monsters:
     drops: ["fontemer_unihorn", "vajrada_amethyst"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [fontaine]
     visual: "Large seahorse-like creature with electro pearl"
 
   - monster_id: emperor_of_fire_and_iron
@@ -1284,7 +2405,128 @@ monsters:
     drops: ["emperors_resolution", "agnidus_agate"]
     resin_cost: 40
     respawn_minutes: 3
+    region: [fontaine]
     visual: "Large crab-like creature with fire-infused horns"
+
+  - monster_id: icewind_suite
+    name: 冰风组曲
+    name_en: Icewind Suite
+    class_id: monster_boss
+    element: anemo
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["wind_cryo_combo", "duet_attack", "frost_gale"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["artificed_spare_clockwork_component coppeland"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [fontaine]
+    visual: "Pair of clockwork meks performing a duet"
+
+  - monster_id: experimental_field_generator
+    name: 实验性场力发生装置
+    name_en: Experimental Field Generator
+    class_id: monster_boss
+    element: none
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["gravity_field", "energy_burst", "anti_gravity"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["artificed_spare_clockwork_component"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [fontaine]
+    visual: "Floating device that manipulates gravity fields"
+
+  - monster_id: hydro_tulpa
+    name: 水形塔帕
+    name_en: Hydro Tulpa
+    class_id: monster_boss
+    element: hydro
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["water_slash", "hydro_clones", "tidal_surge"]
+    weaknesses: ["electro", "cryo"]
+    drops: ["water_tulpas_dissolution"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [fontaine]
+    visual: "Water-formed humanoid boss that creates mini-tulpas"
+
+  - monster_id: solitary_suanni
+    name: 灵枢独角兽
+    name_en: Solitary Suanni
+    class_id: monster_boss
+    element: anemo
+    hp_segments: 5
+    weakpoints: ["horn_core"]
+    danger_signals: ["wind_charge", "anemo_burst", "spirit_dive"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["clouds_heart"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [liyue]
+    visual: "Mythical anemo beast from Chenyu Vale"
+
+  - monster_id: iniquitous_baptist
+    name: 不义之洗
+    name_en: Iniquitous Baptist
+    class_id: monster_boss
+    element: none
+    hp_segments: 5
+    weakpoints: ["core"]
+    danger_signals: ["triple_element_blast", "shield_rotation", "elemental_rings"]
+    weaknesses: ["varies_by_shield"]
+    drops: ["quantum_catalyst"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [sumeru]
+    visual: "Abyss boss that cycles through three elemental shields"
+
+  - monster_id: gluttonous_yumkasaur_mountain_king
+    name: 贪食的棘冠龙·山王
+    name_en: Gluttonous Yumkasaur Mountain King
+    class_id: monster_boss
+    element: dendro
+    hp_segments: 5
+    weakpoints: ["mouth_core"]
+    danger_signals: ["devour_attack", "spore_burst", "earthquake_slam"]
+    weaknesses: ["pyro", "electro"]
+    drops: ["saurian_claw_trophy"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [natlan]
+    visual: "Giant Yumkasaur boss that eats everything"
+
+  - monster_id: goldflame_qucusaur_tyrant
+    name: 金焰绒翼龙暴君
+    name_en: Goldflame Qucusaur Tyrant
+    class_id: monster_boss
+    element: pyro
+    hp_segments: 5
+    weakpoints: ["flame_core"]
+    danger_signals: ["golden_fire_dive", "flame_storm", "aerial_bombardment"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["saurian_claw_trophy"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [natlan]
+    visual: "Massive golden Qucusaur boss with fire attacks"
+
+  - monster_id: lava_dragon_statue
+    name: 熔岩龙雕像
+    name_en: Lava Dragon Statue
+    class_id: monster_boss
+    element: pyro
+    hp_segments: 5
+    weakpoints: ["chest_core"]
+    danger_signals: ["lava_eruption", "magma_wave", "fire_breath"]
+    weaknesses: ["hydro", "cryo"]
+    drops: ["saurian_claw_trophy"]
+    resin_cost: 40
+    respawn_minutes: 3
+    region: [natlan]
+    visual: "Ancient dragon statue animated by lava"
 
   # =====================================================================
   # WEEKLY BOSSES
@@ -1297,11 +2539,11 @@ monsters:
     hp_segments: 8
     weakpoints: ["back_spikes", "chest_core"]
     danger_signals: ["dive_bomb", "storm_breath", "anemo_field"]
-    weaknesses: ["any_element"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
     drops: ["dvalins_sigh", "dvalins_plume", "dvalins_claw"]
     resin_cost: 60
     respawn_minutes: 0
-    region: mondstadt
+    region: [mondstadt]
     visual: "Massive blue dragon perched on tower"
 
   - monster_id: andrius
@@ -1315,7 +2557,7 @@ monsters:
     drops: ["tail_of_boreas", "ring_of_boreas", "spirit_locket_of_boreas"]
     resin_cost: 60
     respawn_minutes: 0
-    region: mondstadt
+    region: [mondstadt]
     visual: "Large spectral wolf with cryo/anemo attacks"
 
   - monster_id: childe_tartaglia
@@ -1329,7 +2571,7 @@ monsters:
     drops: ["tusk_of_monoceros_caeli", "shard_of_a_foul_legacy", "shadow_of_the_warrior"]
     resin_cost: 60
     respawn_minutes: 0
-    region: liyue
+    region: [liyue]
     visual: "Three-phase fight: hydro bow, electro spear, dual element"
 
   - monster_id: azhdaha
@@ -1343,7 +2585,7 @@ monsters:
     drops: ["bloodjade_branch", "dragon_lords_crown", "gilded_scale"]
     resin_cost: 60
     respawn_minutes: 0
-    region: liyue
+    region: [liyue]
     visual: "Giant dragon with shifting elemental affinities"
 
   - monster_id: la_signora
@@ -1357,7 +2599,7 @@ monsters:
     drops: ["molten_moment", "hellfire_butterfly", "ashen_heart"]
     resin_cost: 60
     respawn_minutes: 0
-    region: inazuma
+    region: [inazuma]
     visual: "Two-phase: cryo then pyro, manages heat gauge"
 
   - monster_id: magatsu_mitake
@@ -1371,12 +2613,12 @@ monsters:
     drops: ["mudra_of_the_musou_isshin", "tears_of_the_calamitous_god", "the_meaning_of_aeons"]
     resin_cost: 60
     respawn_minutes: 0
-    region: inazuma
+    region: [inazuma]
     visual: "Raiden Shogun boss form with devastating electro attacks"
 
   - monster_id: shouki_no_kami
     name: 正机之神
-    name_en: Shouki no Kami (Scaramouche Boss)
+    name_en: Shouki no Kami (Everlasting Lord of Arcane Wisdom)
     class_id: monster_weekly
     element: anemo
     hp_segments: 8
@@ -1386,7 +2628,7 @@ monsters:
     drops: ["puppet_strings", "daka_bell", "mirror_of_mushin"]
     resin_cost: 60
     respawn_minutes: 0
-    region: sumeru
+    region: [sumeru]
     visual: "Giant mechanical god puppet"
 
   - monster_id: guardian_of_apep
@@ -1400,7 +2642,7 @@ monsters:
     drops: ["primordial_greenbloom", "everamber", "worldspan_fern"]
     resin_cost: 60
     respawn_minutes: 0
-    region: sumeru
+    region: [sumeru]
     visual: "Ancient dendro dragon with massive AoE"
 
   - monster_id: all_devouring_narwhal
@@ -1415,7 +2657,7 @@ monsters:
     drops: ["lightless_silk_string", "lightless_eye_of_the_maelstrom", "lightless_mass"]
     resin_cost: 60
     respawn_minutes: 0
-    region: fontaine
+    region: [fontaine]
     visual: "Giant blue whale from the Abyss"
 
   - monster_id: arlecchino_weekly
@@ -1429,19 +2671,33 @@ monsters:
     drops: ["silken_insignia", "pale_fire", "crown_of_ash"]
     resin_cost: 60
     respawn_minutes: 0
-    region: fontaine
-    visual: "Arlecchino boss form with dual blades"
+    region: [fontaine]
+    visual: "Arlecchino boss form with dual blades and bond of life"
 
-  - monster_id: natlan_weekly_dragon
-    name: 门扉前的弈局
-    name_en: The Blade of the Forged
+  - monster_id: lord_of_eroded_primal_fire
+    name: 蚀初的源火之主
+    name_en: Lord of Eroded Primal Fire
     class_id: monster_weekly
     element: pyro
     hp_segments: 8
-    danger_signals: ["fire_slash", "magma_field", "charge_attack"]
+    danger_signals: ["eroded_flame", "primal_fire_beam", "lava_field"]
     weaknesses: ["hydro", "cryo"]
-    drops: ["pyro_weekly_materials"]
+    drops: ["eroded_sunfire", "blazing_heart", "faded_rivet"]
     resin_cost: 60
     respawn_minutes: 0
-    region: natlan
-    visual: "Natlan weekly boss with pyro-infused attacks"
+    region: [natlan]
+    visual: "Ancient pyro dragon lord with eroded flames"
+
+  - monster_id: the_game_before_the_gate
+    name: 门扉前的弈局
+    name_en: The Game Before the Gate
+    class_id: monster_weekly
+    element: none
+    hp_segments: 8
+    danger_signals: ["chess_piece_attack", "domain_shift", "rule_breaker"]
+    weaknesses: ["pyro", "hydro", "cryo", "electro"]
+    drops: ["bindings_of_utterdark", "calm_before_the_storm"]
+    resin_cost: 60
+    respawn_minutes: 0
+    region: [nod_krai]
+    visual: "Mysterious entity at the gate, chess-themed attacks"

@@ -1,10 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 import yaml
+
+_ENEMY_ALIASES = {
+    "doomsday_beast": "flame_reaver_of_doomsday_led_astray",
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -35,6 +38,21 @@ class HSREnemyInfo:
     drops: tuple[str, ...] = ()
 
 
+_SYNTHETIC_ENEMIES = {
+    "doomsday_beast": HSREnemyInfo(
+        enemy_id="doomsday_beast",
+        name="Doomsday Beast",
+        name_en="Doomsday Beast",
+        class_id="enemy_boss",
+        element="none",
+        weaknesses=("physical", "fire", "ice", "wind"),
+        toughness=120,
+        danger_signals=("phase_change", "aoe_nuke"),
+        drops=("destroyers_final_road",),
+    )
+}
+
+
 class HSRKnowledgeBase:
     """Lazy-loaded knowledge base for Honkai: Star Rail."""
 
@@ -59,7 +77,11 @@ class HSRKnowledgeBase:
         return self.characters.get(character_id)
 
     def get_enemy(self, enemy_id: str) -> HSREnemyInfo | None:
-        return self.enemies.get(enemy_id)
+        return (
+            self.enemies.get(enemy_id)
+            or _SYNTHETIC_ENEMIES.get(enemy_id)
+            or self.enemies.get(_ENEMY_ALIASES.get(enemy_id, ""))
+        )
 
     def find_characters_by_path(self, path: str) -> list[HSRCharacterInfo]:
         return [c for c in self.characters.values() if c.path == path]
@@ -84,7 +106,7 @@ class HSRKnowledgeBase:
             info = HSRCharacterInfo(
                 character_id=entry["character_id"],
                 name=entry["name"],
-                name_en=entry["name_en"],
+                name_en=entry.get("name_en", entry["character_id"]),
                 rarity=int(entry["rarity"]),
                 path=entry["path"],
                 element=entry["element"],
@@ -108,7 +130,7 @@ class HSRKnowledgeBase:
             info = HSREnemyInfo(
                 enemy_id=entry["enemy_id"],
                 name=entry["name"],
-                name_en=entry["name_en"],
+                name_en=entry.get("name_en", entry["enemy_id"]),
                 class_id=entry.get("class_id", "enemy_normal"),
                 element=entry.get("element", "none"),
                 weaknesses=tuple(entry.get("weaknesses", [])),

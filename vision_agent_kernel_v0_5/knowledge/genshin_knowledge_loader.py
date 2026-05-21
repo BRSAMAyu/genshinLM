@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+import re
 
 import yaml
 
@@ -92,7 +93,7 @@ def _build_monster(data: dict[str, Any]) -> MonsterInfo:
     return MonsterInfo(
         monster_id=str(data["monster_id"]),
         name=str(data["name"]),
-        name_en=str(data["name_en"]),
+        name_en=str(data.get("name_en", data["monster_id"])),
         class_id=str(data.get("class_id", "")),
         element=str(data.get("element", "")),
         hp_segments=int(data.get("hp_segments", 1)),
@@ -141,6 +142,7 @@ def _build_edge(data: dict[str, Any]) -> EdgeInfo:
 
 def _load_yaml(path: Path) -> dict[str, Any]:
     text = path.read_text(encoding="utf-8")
+    text = re.sub(r"^(\s*name_en:\s*)([^\"'\[\{].*:.*)$", r'\1"\2"', text, flags=re.MULTILINE)
     result: dict[str, Any] = yaml.safe_load(text) or {}
     return result
 
