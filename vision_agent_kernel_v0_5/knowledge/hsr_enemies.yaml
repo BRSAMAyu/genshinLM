@@ -764,17 +764,17 @@ enemies:
     class_id: enemy_normal
     element: ice
     weaknesses: [physical, lightning, wind]
-    toughness: 30
+    toughness: 120
     danger_signals: [hallucination]
     drops: [thief_instinct, usurper_scheme]
 
   - enemy_id: daythunder_raven
-    name: 昼雷渡鸦
+    name: 阳雷之鸦
     name_en: Daythunder Raven
     class_id: enemy_normal
     element: lightning
     weaknesses: [physical, wind, quantum]
-    toughness: 30
+    toughness: 60
     danger_signals: [thunder_dive]
     drops: [thief_instinct, usurper_scheme]
 
@@ -1081,7 +1081,7 @@ enemies:
     drops: [thief_instinct, usurper_scheme, conquerors_will]
 
   - enemy_id: dark_sun_gryphon
-    name: 暗日鹰狮
+    name: 黑日狮鹫
     name_en: Dark Sun Gryphon
     class_id: enemy_elite
     element: wind
