@@ -177,7 +177,7 @@ enemies:
     name_en: "Cocolia, Mother of Deception"
     class_id: enemy_boss
     element: lightning
-    weaknesses: [physical, wind, imaginary]
+    weaknesses: [fire, lightning, quantum]
     toughness: 90
     danger_signals: [summon_spawn, lightning_field, shield_phase]
     drops: [endurance_ash, broken_teeth, conquerors_will]
@@ -187,7 +187,7 @@ enemies:
     name_en: "Phantylia the Undying"
     class_id: enemy_boss
     element: fire
-    weaknesses: [ice, lightning, wind]
+    weaknesses: [lightning, wind, imaginary]
     toughness: 90
     danger_signals: [summon_spawn, aoe_nuke, hp_recovery]
     drops: [endurance_ash, broken_teeth, conquerors_will]
@@ -197,7 +197,7 @@ enemies:
     name_en: Svarog
     class_id: enemy_boss
     element: lightning
-    weaknesses: [physical, fire, wind]
+    weaknesses: [fire, lightning, wind]
     toughness: 90
     danger_signals: [grab_attack, summon_spawn, laser_beam]
     drops: [endurance_ash, broken_teeth, conquerors_will]
