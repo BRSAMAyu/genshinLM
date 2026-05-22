@@ -57,7 +57,7 @@ class HSRKnowledgeBase:
     """Lazy-loaded knowledge base for Honkai: Star Rail."""
 
     def __init__(self, knowledge_dir: Path | None = None) -> None:
-        self._dir = knowledge_dir or Path(__file__).resolve().parent
+        self._dir = _resolve_knowledge_dir(knowledge_dir)
         self._characters: dict[str, HSRCharacterInfo] | None = None
         self._enemies: dict[str, HSREnemyInfo] | None = None
 
@@ -140,3 +140,19 @@ class HSRKnowledgeBase:
             )
             enemies[info.enemy_id] = info
         return enemies
+
+
+def _resolve_knowledge_dir(knowledge_dir: Path | None) -> Path:
+    module_dir = Path(__file__).resolve().parent
+    if knowledge_dir is None:
+        return module_dir
+    path = Path(knowledge_dir)
+    if path.exists():
+        return path
+    if not path.is_absolute():
+        fallback = module_dir.parent / path
+        if fallback.exists():
+            return fallback
+        if path.name == module_dir.name:
+            return module_dir
+    return path

@@ -2,31 +2,20 @@ from __future__ import annotations
 
 import logging
 import re
-from dataclasses import dataclass
 
 import numpy as np
+
+from perception.ocr_base import OcrConfig, OcrResult, ProviderStatus
+
+__all__ = ["OcrEngine", "PaddleOcrProvider", "OcrResult", "OcrConfig"]
 
 log = logging.getLogger(__name__)
 
 
-@dataclass(frozen=True, slots=True)
-class OcrResult:
-    text: str
-    confidence: float
-    bbox: tuple[int, int, int, int]
+class PaddleOcrProvider:
+    """PaddleOCR backend implementing the OCRProvider protocol."""
 
-
-@dataclass(frozen=True, slots=True)
-class OcrConfig:
-    language: str = "ch"
-    use_gpu: bool = False
-    det_limit_side_len: int = 960
-    rec_batch_num: int = 6
-    enable_mkldnn: bool = True
-
-
-class OcrEngine:
-    """PaddleOCR wrapper with lazy initialization and ROI-based scanning."""
+    name = "paddle_ocr"
 
     def __init__(self, config: OcrConfig | None = None) -> None:
         self._config = config or OcrConfig()
@@ -55,48 +44,49 @@ class OcrEngine:
             self._available = False
             log.warning("PaddleOCR not available — OCR features will return empty results")
 
-    def detect_text(self, image: np.ndarray) -> list[OcrResult]:
+    def detect_text(
+        self,
+        image: np.ndarray,
+        roi: tuple[int, int, int, int] | None = None,
+    ) -> list[OcrResult]:
         self._ensure_initialized()
         if not self._available or self._ocr is None:
             return []
-        raw = self._run_ocr(image)
-        return self._parse_results(raw)
+        target = self._crop_roi(image, roi) if roi else image
+        raw = self._run_ocr(target)
+        results = self._parse_results(raw)
+        if roi:
+            x1, y1 = roi[0], roi[1]
+            results = [
+                OcrResult(
+                    text=r.text,
+                    confidence=r.confidence,
+                    bbox=(r.bbox[0] + x1, r.bbox[1] + y1, r.bbox[2] + x1, r.bbox[3] + y1),
+                    source=self.name,
+                )
+                for r in results
+            ]
+        else:
+            results = [OcrResult(r.text, r.confidence, r.bbox, self.name) for r in results]
+        return results
 
-    def detect_text_roi(
-        self, image: np.ndarray, roi: tuple[int, int, int, int]
-    ) -> list[OcrResult]:
+    def status(self) -> ProviderStatus:
+        self._ensure_initialized()
+        return ProviderStatus(
+            provider=self.name,
+            ok=self._available,
+            message="ready" if self._available else "PaddleOCR not available",
+        )
+
+    @staticmethod
+    def _crop_roi(image: np.ndarray, roi: tuple[int, int, int, int]) -> np.ndarray:
         x1, y1, x2, y2 = roi
         h, w = image.shape[:2]
         x1, y1 = max(0, x1), max(0, y1)
         x2, y2 = min(w, x2), min(h, y2)
         if x2 <= x1 or y2 <= y1:
-            return []
-        cropped = image[y1:y2, x1:x2]
-        results = self.detect_text(cropped)
-        return [
-            OcrResult(
-                text=r.text,
-                confidence=r.confidence,
-                bbox=(r.bbox[0] + x1, r.bbox[1] + y1, r.bbox[2] + x1, r.bbox[3] + y1),
-            )
-            for r in results
-        ]
-
-    def read_number(self, image: np.ndarray) -> int | None:
-        results = self.detect_text(image)
-        for r in results:
-            digits = re.sub(r"\D", "", r.text)
-            if digits:
-                return int(digits)
-        return None
-
-    def contains_text(self, image: np.ndarray, keywords: list[str]) -> tuple[bool, str]:
-        results = self.detect_text(image)
-        joined = " ".join(r.text.strip() for r in results).lower()
-        for keyword in keywords:
-            if keyword.strip().lower() in joined:
-                return (True, keyword)
-        return (False, "")
+            return image
+        return image[y1:y2, x1:x2]
 
     def _run_ocr(self, image: np.ndarray) -> list[list[list | tuple]]:
         assert self._ocr is not None
@@ -105,7 +95,8 @@ class OcrEngine:
             return []
         return result[0]
 
-    def _parse_results(self, raw: list[list[list | tuple]]) -> list[OcrResult]:
+    @staticmethod
+    def _parse_results(raw: list[list[list | tuple]]) -> list[OcrResult]:
         out: list[OcrResult] = []
         for item in raw:
             if len(item) != 2:
@@ -127,3 +118,28 @@ class OcrEngine:
                 )
             )
         return out
+
+
+class OcrEngine(PaddleOcrProvider):
+    """Backward-compatible wrapper preserving the original OcrEngine API."""
+
+    def detect_text_roi(
+        self, image: np.ndarray, roi: tuple[int, int, int, int]
+    ) -> list[OcrResult]:
+        return self.detect_text(image, roi=roi)
+
+    def read_number(self, image: np.ndarray) -> int | None:
+        results = self.detect_text(image)
+        for r in results:
+            digits = re.sub(r"\D", "", r.text)
+            if digits:
+                return int(digits)
+        return None
+
+    def contains_text(self, image: np.ndarray, keywords: list[str]) -> tuple[bool, str]:
+        results = self.detect_text(image)
+        joined = " ".join(r.text.strip() for r in results).lower()
+        for keyword in keywords:
+            if keyword.strip().lower() in joined:
+                return (True, keyword)
+        return (False, "")

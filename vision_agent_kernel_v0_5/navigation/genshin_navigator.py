@@ -43,7 +43,7 @@ class GenshinNavigator:
         self._waypoint_regions: dict[str, str] = {}
         self._waypoint_positions: dict[str, list[float]] = {}
         self._loaded = False
-        self._knowledge_dir = knowledge_dir or Path("knowledge")
+        self._knowledge_dir = _resolve_knowledge_dir(knowledge_dir)
 
     def _ensure_graph(self) -> None:
         if self._loaded:
@@ -225,3 +225,19 @@ def _to_hsv(image: np.ndarray) -> np.ndarray:
         image = image[:, :, :3]
     import cv2
     return cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+
+
+def _resolve_knowledge_dir(knowledge_dir: Path | None) -> Path:
+    module_dir = Path(__file__).resolve().parents[1] / "knowledge"
+    if knowledge_dir is None:
+        return module_dir
+    path = Path(knowledge_dir)
+    if path.exists():
+        return path
+    if not path.is_absolute():
+        fallback = module_dir.parent / path
+        if fallback.exists():
+            return fallback
+        if path.name == module_dir.name:
+            return module_dir
+    return path

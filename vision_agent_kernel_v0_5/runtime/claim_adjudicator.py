@@ -179,7 +179,7 @@ def _check_structural_gates(
 
 class ClaimAdjudicator:
     def __init__(self, default_recipes: dict[str, ClaimRecipe] | None = None) -> None:
-        self._recipes: dict[str, ClaimRecipe] = dict(default_recipes or {})
+        self._recipes: dict[str, ClaimRecipe] = dict(CORE_RECIPES if default_recipes is None else default_recipes)
         self._verifier_reliability: dict[str, float] = {}
         self._adjudication_count: int = 0
 

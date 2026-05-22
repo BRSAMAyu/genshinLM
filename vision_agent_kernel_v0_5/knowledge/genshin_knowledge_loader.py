@@ -168,7 +168,7 @@ class GenshinKnowledgeBase:
     }
 
     def __init__(self, knowledge_dir: Path | None = None) -> None:
-        self._dir = knowledge_dir or Path("knowledge")
+        self._dir = _resolve_knowledge_dir(knowledge_dir)
         self._resources: dict[str, ResourceInfo] | None = None
         self._monsters: dict[str, MonsterInfo] | None = None
         self._regions: dict[str, RegionInfo] | None = None
@@ -270,3 +270,19 @@ class GenshinKnowledgeBase:
         if monster is None:
             return []
         return list(monster.weaknesses)
+
+
+def _resolve_knowledge_dir(knowledge_dir: Path | None) -> Path:
+    module_dir = Path(__file__).resolve().parent
+    if knowledge_dir is None:
+        return module_dir
+    path = Path(knowledge_dir)
+    if path.exists():
+        return path
+    if not path.is_absolute():
+        fallback = module_dir.parent / path
+        if fallback.exists():
+            return fallback
+        if path.name == module_dir.name:
+            return module_dir
+    return path
