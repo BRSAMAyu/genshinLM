@@ -69,9 +69,14 @@ class HSRPlaybookExecutor:
         action = plan.turn_rotation[self._state.current_step]
 
         # Check SP availability before executing skill
-        if action.action == "skill" and self._state.sp_level < 1:
-            _log.warning("SP exhausted at step %d, falling back to basic", self._state.current_step)
-            # Would need to modify action, but for now just note it
+        effective_action = action.action
+        if action.action == "skill" and self._state.sp_level < action.sp_cost:
+            _log.warning(
+                "SP exhausted at step %d (need %d, have %d), falling back to basic",
+                self._state.current_step, action.sp_cost, self._state.sp_level,
+            )
+            effective_action = "basic_attack"
+            self._state.sp_level = min(self._state.sp_level + 1, self._max_sp)
         elif action.action == "basic_attack":
             self._state.sp_level = min(self._state.sp_level + action.sp_gain, self._max_sp)
         elif action.action == "skill":
@@ -84,7 +89,7 @@ class HSRPlaybookExecutor:
             total_steps=len(plan.turn_rotation),
             current_sp=self._state.sp_level,
             wave=self._state.wave,
-            action=action.action,
+            action=effective_action,
             complete=False,
         )
 

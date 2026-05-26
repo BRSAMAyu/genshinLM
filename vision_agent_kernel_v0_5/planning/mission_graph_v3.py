@@ -57,7 +57,7 @@ class MissionGraph:
     root_node_id: str
     nodes: dict[str, MissionNode] = field(default_factory=dict)
     edges: list[MissionEdge] = field(default_factory=list)
-    created_at: float = field(default_factory=time.time)
+    created_at: float = field(default_factory=time.perf_counter)
     status: str = "planned"
 
     def add_node(self, node: MissionNode) -> None:

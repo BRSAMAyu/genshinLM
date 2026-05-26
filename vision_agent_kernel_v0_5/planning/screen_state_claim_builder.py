@@ -76,7 +76,7 @@ class ScreenStateClaimBuilder:
             interaction_prompt=interaction_prompt,
             scene_description=scene_description,
             frame_id=frame_id,
-            timestamp=time.time(),
+            timestamp=time.perf_counter(),
             raw_vlm_text=raw_vlm,
             raw_ocr_texts=raw_ocr,
         )
@@ -199,9 +199,11 @@ class ScreenStateClaimBuilder:
         if ocr_results:
             for ocr in ocr_results:
                 t = ocr.text.lower()
-                if any(kw in t for kw in ("talk", "interact", "f -", "按 f", "按f", "press", "交互", "互动", "对话")):
-                    return ocr.text
-                if any(kw in t for kw in ("talk", "interact", "f -", "对话", "交互", "按 f", "press")):
+                if any(kw in t for kw in (
+                    "talk", "interact", "f -", "按 f", "按f", "press",
+                    "交互", "互动", "对话", "采集", "开启", "激活",
+                    "烹饪", "锻造", "合成",
+                )):
                     return ocr.text
         return ""
 
@@ -230,13 +232,5 @@ def _infer_role_from_text(text: str) -> str:
     if any(w in t for w in ("奖励", "reward", "奖励已领取", "已完成", "领取成功", "获得")):
         return "notification"
     if any(w in t for w in ("委托", "任务", "quest", "mission", "每日", "追踪")):
-        return "quest_text"
-    if any(w in t for w in ("领取", "claim", "确认", "confirm", "确定", "ok", "开始", "start", "接受", "accept")):
-        return "button"
-    if any(w in t for w in ("f -", "按 f", "press", "交互", "interact", "talk", "对话")):
-        return "interaction_prompt"
-    if any(w in t for w in ("奖励", "reward", "奖励已领取", "已完成")):
-        return "notification"
-    if any(w in t for w in ("委托", "任务", "quest", "mission", "每日")):
         return "quest_text"
     return "text"

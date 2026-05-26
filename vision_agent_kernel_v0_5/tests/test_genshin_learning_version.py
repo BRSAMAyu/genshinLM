@@ -5,7 +5,7 @@ import pytest
 from app_service.genshin_version_adapter import GenshinVersionAdapter, VersionProfile
 from learning.genshin_failure_analyzer import (
     FailureCategory,
-    FailureSignature,
+    GameFailureSignature,
     GenshinFailureAnalyzer,
     make_failure_signature,
 )

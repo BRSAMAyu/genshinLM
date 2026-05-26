@@ -219,20 +219,4 @@ class AffordanceDeriver:
             return "buy_item"
         if any(w in t for w in ("使用", "打开", "use", "open")):
             return "use_item"
-        if any(w in t for w in ("领取", "claim", "领取全部", "claim all", "一键领取")):
-            return "claim_reward"
-        if any(w in t for w in ("确认", "confirm", "确定", "ok", "accept")):
-            return "confirm"
-        if any(w in t for w in ("取消", "cancel", "返回", "back", "关闭", "close")):
-            return "go_back"
-        if any(w in t for w in ("传送", "teleport", "前往")):
-            return "teleport"
-        if any(w in t for w in ("追踪", "track", "导航", "navigate")):
-            return "track_quest"
-        if any(w in t for w in ("自动", "auto", "自动战斗")):
-            return "toggle_auto"
-        if any(w in t for w in ("购买", "buy", "兑换", "exchange")):
-            return "buy_item"
-        if any(w in t for w in ("使用", "use", "打开", "open")):
-            return "use_item"
         return "click"

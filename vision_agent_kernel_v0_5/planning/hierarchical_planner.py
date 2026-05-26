@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import logging
 import os
@@ -149,7 +150,13 @@ class HierarchicalPlanner:
             method="POST",
         )
         with urllib.request.urlopen(request, timeout=self._timeout) as response:
-            return json.loads(response.read().decode("utf-8"))
+            with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+                future = pool.submit(response.read)
+                try:
+                    body = future.result(timeout=self._timeout)
+                except concurrent.futures.TimeoutError:
+                    raise TimeoutError("LLM response read timeout")
+            return json.loads(body.decode("utf-8"))
 
     @staticmethod
     def _extract_content(data: dict[str, Any]) -> str:

@@ -107,14 +107,22 @@ class InputWorker:
                 self._run_focus_check()
         except BaseException as exc:
             self._log(f"fatal worker exception: {exc!r}; forcing release_all")
+            cleared = self._lease_store.clear()
+            for lease in cleared:
+                for key, state in lease.key_states.items():
+                    if state == DOWN:
+                        self._backend.key_up(key, reason="input_worker_exception")
             self._backend.release_all(reason="input_worker_exception")
-            self._lease_store.clear()
             raise
         finally:
             if self._release_on_stop:
                 self._log("finally release_all on worker exit")
+                cleared = self._lease_store.clear()
+                for lease in cleared:
+                    for key, state in lease.key_states.items():
+                        if state == DOWN:
+                            self._backend.key_up(key, reason="input_worker_exit")
                 self._backend.release_all(reason="input_worker_exit")
-                self._lease_store.clear()
             self._log("background input event loop exited")
 
     def _drain_one_command(self) -> None:
@@ -170,6 +178,10 @@ class InputWorker:
                 f"interrupt requires release_all; cleared_leases={len(cleared)} "
                 f"code={interrupt.code}"
             )
+            for lease in cleared:
+                for key, state in lease.key_states.items():
+                    if state == DOWN:
+                        self._backend.key_up(key, reason=f"interrupt:{interrupt.code}")
             self._backend.release_all(reason=f"interrupt:{interrupt.code}")
 
     def _run_deadman_check(self) -> None:
@@ -197,7 +209,11 @@ class InputWorker:
 
             if not focused and not self._focus_lost_published:
                 self._log("Target window focus lost! Activating physical deadman safety switch.")
-                self._lease_store.clear()
+                cleared = self._lease_store.clear()
+                for lease in cleared:
+                    for key, state in lease.key_states.items():
+                        if state == DOWN:
+                            self._backend.key_up(key, reason="focus_lost")
                 self._backend.release_all(reason="focus_lost")
                 self._focus_lost_published = True
                 if self._state_bus is not None:

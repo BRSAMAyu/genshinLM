@@ -86,7 +86,7 @@ class TestExplorationAndInduction:
 
         entry = gate.induce_skill_from_trace(events, "click_quest", "menu")
         assert entry is not None
-        assert entry.skill_id == "click_quest"
+        assert entry.skill_id.startswith("induced_click_quest_")
         assert len(entry.verifiers) == 1
         assert entry.verifiers[0] == "quest_button_post_click"
         assert entry.ui_anchors == ["quest_button"]

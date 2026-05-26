@@ -539,7 +539,14 @@ class ZeroShotAgent:
             if action.key in ("mouse_move", "look"):
                 return
             self._input.key_down(action.key, reason=action.reason)
-            time.sleep(action.duration_ms / 1000.0)
+            remaining = action.duration_ms / 1000.0
+            while remaining > 0:
+                chunk = min(0.05, remaining)
+                time.sleep(chunk)
+                remaining -= chunk
+                if not self._input.is_target_focused():
+                    self._input.key_up(action.key, reason="focus_lost")
+                    return
             self._input.key_up(action.key, reason=action.reason)
         except Exception as exc:
             print(f"  [Action] Failed: {exc}", flush=True)

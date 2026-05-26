@@ -1,9 +1,12 @@
 from __future__ import annotations
 
 import json
+import logging
 from pathlib import Path
 
 from learning.failure_signature import FailureSignature, FailureSignatureBuilder
+
+log = logging.getLogger(__name__)
 
 
 class TelemetryFailureIngestor:
@@ -17,7 +20,11 @@ class TelemetryFailureIngestor:
         for line in path.read_text(encoding="utf-8").splitlines():
             if not line.strip():
                 continue
-            event = json.loads(line)
+            try:
+                event = json.loads(line)
+            except json.JSONDecodeError:
+                log.warning("Skipping malformed JSON line: %s", line[:120])
+                continue
             code = event.get("failure_code") or event.get("failure") or ("TARGET_LOST" if event.get("event") == "target_lost" else None)
             if not code:
                 continue

@@ -21,6 +21,7 @@ class ConsoleInputBackend:
         self._lock = threading.RLock()
         self._events: list[ConsoleInputEvent] = []
         self._down_keys: set[str] = set()
+        self._max_events = 10000
 
     def key_down(self, key: str, reason: str = "") -> None:
         with self._lock:
@@ -64,4 +65,6 @@ class ConsoleInputBackend:
             payload=payload,
         )
         self._events.append(event)
+        if len(self._events) > self._max_events:
+            self._events = self._events[-self._max_events:]
         print(f"[ConsoleInputBackend] {event.timestamp:.6f} {action} {payload}", flush=True)

@@ -98,10 +98,17 @@ class GenshinSkillLoader:
         self._cache.update(results)
         return results
 
-    def _resolve_inheritance(self, skill_data: dict[str, Any], all_skills: dict[str, Any]) -> dict[str, Any]:
+    def _resolve_inheritance(self, skill_data: dict[str, Any], all_skills: dict[str, Any], visited: set[str] | None = None) -> dict[str, Any]:
         extends_id = skill_data.get("extends")
         if not extends_id:
             return skill_data
+
+        if visited is None:
+            visited = set()
+        skill_id = skill_data.get("skill_id", "")
+        if skill_id in visited:
+            raise SkillInheritanceError(f"Circular inheritance: {skill_id}")
+        visited.add(skill_id)
 
         parent_data = all_skills.get(extends_id)
         if parent_data is None:
@@ -109,7 +116,7 @@ class GenshinSkillLoader:
                 f"Skill '{skill_data.get('skill_id')}' extends '{extends_id}', but parent not found"
             )
 
-        resolved_parent = self._resolve_inheritance(parent_data, all_skills)
+        resolved_parent = self._resolve_inheritance(parent_data, all_skills, visited)
 
         merged_steps: list[dict[str, Any]] = list(resolved_parent.get("steps", []))
         child_step_ids: set[str] = set()

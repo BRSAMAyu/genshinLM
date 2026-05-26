@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -7,7 +8,7 @@ from typing import Any
 from combat.boss_schema import BossProfile, BossSignal, boss_signal_from_observation, conservative_unknown_boss
 from combat.checkpoint_runtime import CheckpointRuntime
 from combat.genshin_combat_planner import CombatAction, CombatPlaybook, FallbackStrategy
-from combat.genshin_playbook_executor import PlaybookExecutor, PlaybookState
+from combat.genshin_playbook_executor import PlaybookExecutor, PlaybookSnapshot, PlaybookState
 from combat.survival_runtime import SurvivalDecision, SurvivalPolicyEngine, SurvivalState
 from combat.team_capability import TeamCombatPlan, TeamProfile
 from core.types import InputLease
@@ -80,9 +81,11 @@ class BossCombatRuntime:
         self.checkpoints = CheckpointRuntime()
         self.executor = PlaybookExecutor()
         self.state = BossCombatState.INIT
-        self._target_lost_count = 0
+        self._target_lost_window: deque[bool] = deque(maxlen=10)
         self._combo_break_count = 0
         self._active_token: PreemptionToken | None = None
+        self._preempt_snapshot: PlaybookSnapshot | None = None
+        self._combo_snapshot: PlaybookSnapshot | None = None
         self.executor.start(self._build_playbook())
 
     def tick(self, sample: BossCombatInput, now: float) -> BossCombatDecision:
@@ -100,17 +103,19 @@ class BossCombatRuntime:
         )
 
         if not sample.target_visible:
-            self._target_lost_count += 1
-            if self._target_lost_count <= 2:
+            self._target_lost_window.append(True)
+            lost_count = sum(self._target_lost_window)
+            if lost_count <= 2:
                 self.state = BossCombatState.TARGET_REACQUIRE
                 return BossCombatDecision(self.state.value, "re_acquire_target", "target_lost", True, evidence_ids=sample.evidence_ids, boss_signal=boss_signal)
             return self._safe_abort("TARGET_LOST_REACQUIRE_FAILED", sample.evidence_ids, boss_signal)
-        self._target_lost_count = 0
+        self._target_lost_window.append(False)
 
         token = self.reflex.evaluate(sample.danger_score, boss_signal.attack_pattern_id, sample.frame_id)
         if token is not None:
             self._active_token = token
-            self.checkpoints.save("boss_reflex_checkpoint", self.executor.snapshot().state, "target_visible")
+            self._preempt_snapshot = self.executor.snapshot()
+            self.checkpoints.save("boss_reflex_checkpoint", self._preempt_snapshot.state, "target_visible")
             self.state = BossCombatState.REFLEX_PREEMPTED
             return BossCombatDecision(
                 self.state.value,
@@ -158,11 +163,17 @@ class BossCombatRuntime:
             self._combo_break_count += 1
             if self._combo_break_count > 3:
                 return self._safe_abort("COMBO_BREAK_REPEATED", sample.evidence_ids, boss_signal)
-            self.executor.restore(self.executor.snapshot())
+            if self._combo_snapshot is not None:
+                self.executor.restore(self._combo_snapshot)
             self.state = BossCombatState.EXECUTE_TACTIC
             return BossCombatDecision(self.state.value, "reset_tactic", "combo_break", False, evidence_ids=sample.evidence_ids, boss_signal=boss_signal)
 
+        # Save snapshot before normal rotation tick so combo breaks can restore
+        self._combo_snapshot = self.executor.snapshot()
+
         action = self.executor.tick(100.0, {"overall_danger": sample.danger_score}, sample.cooldown_states, sample.hp_ratios)
+        if action is not None:
+            self._combo_break_count = 0
         self.state = BossCombatState.EXECUTE_TACTIC
         if self.executor.state == PlaybookState.FAILED:
             return self._safe_abort("PLAYBOOK_FAILED", sample.evidence_ids, boss_signal)

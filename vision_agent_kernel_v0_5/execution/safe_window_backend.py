@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ctypes
+import threading
 from ctypes import wintypes
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
@@ -40,7 +41,7 @@ class MOUSEINPUT(ctypes.Structure):
         ("mouseData", wintypes.DWORD),
         ("dwFlags", wintypes.DWORD),
         ("time", wintypes.DWORD),
-        ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
+        ("dwExtraInfo", ctypes.c_void_p),
     ]
 
 
@@ -50,7 +51,7 @@ class KEYBDINPUT(ctypes.Structure):
         ("wScan", wintypes.WORD),
         ("dwFlags", wintypes.DWORD),
         ("time", wintypes.DWORD),
-        ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
+        ("dwExtraInfo", ctypes.c_void_p),
     ]
 
 
@@ -97,6 +98,8 @@ class SafeWindowInputBackend:
         self._user32 = ctypes.windll.user32
         self._configure_win32()
         self._released = True
+        self._down_keys: set[str] = set()
+        self._lock = threading.RLock()
 
     @classmethod
     def from_profile(
@@ -119,7 +122,6 @@ class SafeWindowInputBackend:
         self._ensure_target_focused()
         pixel_dx = int(round(dx * self.pixels_per_degree))
         pixel_dy = int(round(dy * self.pixels_per_degree))
-        extra = ctypes.c_ulong(0)
         input_packet = INPUT(
             type=INPUT_MOUSE,
             union=INPUT_UNION(
@@ -129,7 +131,7 @@ class SafeWindowInputBackend:
                     mouseData=0,
                     dwFlags=MOUSEEVENTF_MOVE,
                     time=0,
-                    dwExtraInfo=ctypes.pointer(extra),
+                    dwExtraInfo=ctypes.c_void_p(0),
                 )
             ),
         )
@@ -147,7 +149,6 @@ class SafeWindowInputBackend:
     def key_down(self, key: str, reason: str = "") -> None:
         self._ensure_target_focused()
         vk = self._resolve_vk(key)
-        extra = ctypes.c_ulong(0)
         input_packet = INPUT(
             type=INPUT_KEYBOARD,
             union=INPUT_UNION(
@@ -156,7 +157,7 @@ class SafeWindowInputBackend:
                     wScan=0,
                     dwFlags=0,
                     time=0,
-                    dwExtraInfo=ctypes.pointer(extra),
+                    dwExtraInfo=ctypes.c_void_p(0),
                 )
             ),
         )
@@ -164,6 +165,8 @@ class SafeWindowInputBackend:
         if sent != 1:
             raise SafeWindowInputError(f"SendInput key_down failed for key={key!r}")
         self._released = False
+        with self._lock:
+            self._down_keys.add(key)
         print(
             "[SafeWindowInputBackend] "
             f"{self._timebase.now():.6f} key_down key={key!r} vk=0x{vk:02X} reason={reason!r}",
@@ -173,7 +176,6 @@ class SafeWindowInputBackend:
     def key_up(self, key: str, reason: str = "") -> None:
         self._ensure_target_focused()
         vk = self._resolve_vk(key)
-        extra = ctypes.c_ulong(0)
         input_packet = INPUT(
             type=INPUT_KEYBOARD,
             union=INPUT_UNION(
@@ -182,13 +184,15 @@ class SafeWindowInputBackend:
                     wScan=0,
                     dwFlags=KEYEVENTF_KEYUP,
                     time=0,
-                    dwExtraInfo=ctypes.pointer(extra),
+                    dwExtraInfo=ctypes.c_void_p(0),
                 )
             ),
         )
         sent = self._user32.SendInput(1, ctypes.byref(input_packet), ctypes.sizeof(INPUT))
         if sent != 1:
             raise SafeWindowInputError(f"SendInput key_up failed for key={key!r}")
+        with self._lock:
+            self._down_keys.discard(key)
         print(
             "[SafeWindowInputBackend] "
             f"{self._timebase.now():.6f} key_up key={key!r} vk=0x{vk:02X} reason={reason!r}",
@@ -205,10 +209,28 @@ class SafeWindowInputBackend:
         raise SafeWindowInputError(f"unknown key: {key!r}")
 
     def release_all(self, reason: str = "") -> None:
+        with self._lock:
+            snapshot = sorted(self._down_keys)
+            self._down_keys.clear()
         self._released = True
+        for key in snapshot:
+            vk = self._resolve_vk(key)
+            input_packet = INPUT(
+                type=INPUT_KEYBOARD,
+                union=INPUT_UNION(
+                    ki=KEYBDINPUT(
+                        wVk=vk,
+                        wScan=0,
+                        dwFlags=KEYEVENTF_KEYUP,
+                        time=0,
+                        dwExtraInfo=ctypes.c_void_p(0),
+                    )
+                ),
+            )
+            self._user32.SendInput(1, ctypes.byref(input_packet), ctypes.sizeof(INPUT))
         print(
             "[SafeWindowInputBackend] "
-            f"{self._timebase.now():.6f} release_all reason={reason!r}",
+            f"{self._timebase.now():.6f} release_all keys={snapshot} reason={reason!r}",
             flush=True,
         )
 

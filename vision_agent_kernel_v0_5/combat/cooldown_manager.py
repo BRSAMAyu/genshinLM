@@ -18,7 +18,7 @@ class CooldownManager:
         self._last_used: dict[str, float] = {}
 
     def mark_used(self, skill_id: str) -> None:
-        self._last_used[skill_id] = time.time()
+        self._last_used[skill_id] = time.perf_counter()
 
     def update_from_ocr(self, skill_id: str, text: str, confidence: float = 0.8) -> CooldownState:
         digits = "".join(ch for ch in text if ch.isdigit())
@@ -33,7 +33,7 @@ class CooldownManager:
 
     def estimate(self, skill_id: str) -> CooldownState:
         config = self._configs.get(skill_id, SkillCooldownConfig(skill_id, 0))
-        elapsed_ms = int((time.time() - self._last_used.get(skill_id, 0.0)) * 1000)
+        elapsed_ms = int((time.perf_counter() - self._last_used.get(skill_id, 0.0)) * 1000)
         remaining = max(0, config.base_cooldown_ms - elapsed_ms)
         return CooldownState(remaining == 0, remaining, 0.55)
 

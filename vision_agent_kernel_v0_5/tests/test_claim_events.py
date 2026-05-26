@@ -67,6 +67,30 @@ def test_worker_without_publisher_submits_successfully_without_events() -> None:
         worker.stop()
 
 
+def test_worker_snapshot_goes_through_single_writer_queue() -> None:
+    worker = ClaimGraphWorker(mission_id="m1", graph_id="g1")
+    worker.start()
+    try:
+        result = worker.submit(ClaimGraphCommand(
+            "add_claim",
+            claim=StateDeltaClaim(
+                claim_id="c_snapshot",
+                mission_id="m1",
+                node_id="n1",
+                skill_id="s1",
+                claim_type="screen_state_transition",
+                claimed_delta={"screen_state": "inventory"},
+                status="asserted",
+            ),
+        ))
+        assert result.ok
+        snapshot = worker.snapshot()
+        assert snapshot["claim_count"] == 1
+        assert snapshot["claims"]["c_snapshot"] == "asserted"
+    finally:
+        worker.stop()
+
+
 def test_from_snapshot_handles_empty_and_malformed_snapshots() -> None:
     state = ClaimGraphState.from_snapshot(
         mission_id="m1",

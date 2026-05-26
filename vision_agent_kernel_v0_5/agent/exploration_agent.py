@@ -19,6 +19,7 @@ SAFE_EXPLORATION_ACTIONS = {
     "confirm_dialog",
     "back",
     "open_menu",
+    "skip_cutscene",
 }
 
 

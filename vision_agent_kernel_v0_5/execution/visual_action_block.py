@@ -162,7 +162,8 @@ class VisualActionBlockExecutor:
         if step.key is None:
             raise ValueError("press_key step requires key")
         now = self._timebase.now()
-        lease = InputLease(
+        # Submit key DOWN lease
+        down_lease = InputLease(
             lease_id=str(uuid.uuid4()),
             owner=f"visual_action_block:{block_name}",
             priority=30,
@@ -172,8 +173,21 @@ class VisualActionBlockExecutor:
             expires_at=now + step.lease_ms / 1000.0,
             reason=f"visual_action_block:{block_name}:press_key:{step.key}",
         )
-        if not self._input_worker.submit_lease(lease):
+        if not self._input_worker.submit_lease(down_lease):
             raise RuntimeError("input worker rejected lease command")
+        # Submit matching key UP lease to release key promptly after press
+        up_lease = InputLease(
+            lease_id=str(uuid.uuid4()),
+            owner=f"visual_action_block:{block_name}:release",
+            priority=30,
+            key_states={step.key: "UP"},
+            mouse_delta=None,
+            created_at=now,
+            expires_at=now + step.lease_ms / 1000.0 + 0.05,
+            reason=f"visual_action_block:{block_name}:key_up:{step.key}",
+        )
+        if not self._input_worker.submit_lease(up_lease):
+            raise RuntimeError("input worker rejected release lease command")
 
     def _wait_visual_trigger(self, step: VisualActionStep) -> None:
         if step.trigger is None:

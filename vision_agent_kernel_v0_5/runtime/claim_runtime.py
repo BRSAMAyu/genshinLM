@@ -246,6 +246,7 @@ class ClaimGraph:
         self._children: dict[str, set[str]] = defaultdict(set)
         self._evidence: dict[str, list[str]] = defaultdict(list)
         self._dependency_gaps: list[DependencyGap] = []
+        self._latest_claim_id: str = ""
 
     def add_claim(self, claim: StateDeltaClaim, inferred_dependencies: list[str] | None = None) -> list[DependencyGap]:
         gaps: list[DependencyGap] = []
@@ -256,6 +257,7 @@ class ClaimGraph:
             gaps = [DependencyGap(claim.claim_id, dep) for dep in missing]
             self._dependency_gaps.extend(gaps)
         self._claims[claim.claim_id] = claim
+        self._latest_claim_id = claim.claim_id
         for dep in claim.all_dependencies:
             self._children[dep].add(claim.claim_id)
         return gaps
@@ -288,7 +290,7 @@ class ClaimGraph:
             "observation_count": len(self._observations),
             "adjudication_count": len(self._adjudications),
             "claims": {cid: c.status for cid, c in self._claims.items()},
-            "latest_claim_id": max(self._claims.keys()) if self._claims else "",
+            "latest_claim_id": self._latest_claim_id,
         }
 
     def get(self, claim_id: str) -> StateDeltaClaim:
@@ -373,6 +375,24 @@ class ClaimGraph:
                 reason="downstream_verified_upstream_demoted" if not revalidated else "upstream_revalidated_via_downstream",
             ))
         return reports
+
+    def compact(self, max_age_sec: float = 3600.0) -> int:
+        terminal = {"rejected", "expired", "demoted", "unverifiable"}
+        removed = 0
+        to_remove = [cid for cid, claim in self._claims.items() if claim.status in terminal]
+        for cid in to_remove:
+            # Remove observations keyed by their actual observation_id, not claim_id
+            evidence_ids = self._evidence.get(cid, [])
+            for obs_id in evidence_ids:
+                self._observations.pop(obs_id, None)
+            del self._claims[cid]
+            self._adjudications.pop(cid, None)
+            self._children.pop(cid, None)
+            self._evidence.pop(cid, None)
+            removed += 1
+        if self._dependency_gaps:
+            self._dependency_gaps = [g for g in self._dependency_gaps if g.claim_id in self._claims]
+        return removed
 
 
 @dataclass(frozen=True, slots=True)
@@ -564,9 +584,11 @@ class ReliabilityStore:
         self.min_samples = min_samples
         self._counts: dict[tuple[str, tuple[str, ...]], dict[str, int]] = defaultdict(lambda: {"success": 0, "total": 0})
         self._drift_demoted_skills: set[str] = set()
+        self._contaminated_count = 0
 
     def record(self, skill_id: str, context: dict[str, str], outcome: AuditStatus) -> None:
         if outcome == "contaminated":
+            self._contaminated_count += 1
             return
         success = 1 if outcome == "matched" else 0
         for level in range(0, 6):
@@ -596,6 +618,10 @@ class ReliabilityStore:
 
     def mark_version_drift(self, skill_id: str) -> None:
         self._drift_demoted_skills.add(skill_id)
+
+    @property
+    def contaminated_count(self) -> int:
+        return self._contaminated_count
 
     @staticmethod
     def _context_key(skill_id: str, context: dict[str, str], level: int) -> tuple[str, ...]:

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import sqlite3
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -59,6 +60,8 @@ class DecisionMemory:
             db_path = str(data_dir / "decision_memory.db")
         self._db_path = db_path
         self._conn: sqlite3.Connection | None = None
+        self._conn_lock = threading.Lock()
+        self._insert_count = 0
         self._init_db()
 
     def close(self) -> None:
@@ -67,8 +70,9 @@ class DecisionMemory:
             self._conn = None
 
     def _conn_ctx(self) -> sqlite3.Connection:
-        if self._conn is None:
-            self._conn = sqlite3.connect(self._db_path)
+        with self._conn_lock:
+            if self._conn is None:
+                self._conn = sqlite3.connect(self._db_path)
         return self._conn
 
     def _init_db(self) -> None:
@@ -105,9 +109,9 @@ class DecisionMemory:
         attempts: int = 1,
         confidence: float = 0.5,
     ) -> str:
-        strategy_id = f"{capsule_id}:{int(time.time() * 1000)}:{uuid.uuid4().hex[:8]}"
+        strategy_id = f"{capsule_id}:{uuid.uuid4().hex[:12]}"
         plan_json = json.dumps(plan, ensure_ascii=False)
-        now = time.time()
+        now = time.time()  # Wall-clock to match prune()'s wall-clock comparison
         conn = self._conn_ctx()
         conn.execute(
             "INSERT INTO strategies VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -115,6 +119,9 @@ class DecisionMemory:
              int(success), duration_sec, attempts, confidence, now),
         )
         conn.commit()
+        self._insert_count += 1
+        if self._insert_count % 500 == 0:
+            self.prune()
         return strategy_id
 
     def query(self, query: DecisionQuery) -> list[StrategyRecord]:
@@ -189,6 +196,7 @@ class DecisionMemory:
         )
 
     def prune(self, max_age_days: int = 30) -> int:
+        # Intentional use of wall-clock time for calendar-day age calculation.
         cutoff = time.time() - (max_age_days * 86400)
         conn = self._conn_ctx()
         cursor = conn.execute("DELETE FROM strategies WHERE created_at < ?", (cutoff,))

@@ -5,7 +5,7 @@ from collections import defaultdict
 from learning.genshin_failure_analyzer import (
     FailureCategory,
     FailurePattern,
-    FailureSignature,
+    GameFailureSignature,
     _PATTERN_THRESHOLD,
     _common_keys,
 )
@@ -14,12 +14,16 @@ from learning.genshin_failure_analyzer import (
 class HSRFailureAnalyzer:
     """Analyze HSR-specific failure patterns: wave-based encounters, SP exhaustion, weakness exploitation."""
 
+    _MAX_FAILURES = 1000
+
     def __init__(self) -> None:
-        self._failures: list[FailureSignature] = []
+        self._failures: list[GameFailureSignature] = []
         self._patterns: dict[str, FailurePattern] = {}
 
-    def record_failure(self, signature: FailureSignature) -> None:
+    def record_failure(self, signature: GameFailureSignature) -> None:
         self._failures.append(signature)
+        if len(self._failures) > self._MAX_FAILURES:
+            self._failures = self._failures[-self._MAX_FAILURES:]
         self._patterns.clear()
 
     def analyze_patterns(self) -> list[FailurePattern]:
@@ -27,7 +31,7 @@ class HSRFailureAnalyzer:
             return list(self._patterns.values())
 
         patterns: list[FailurePattern] = []
-        by_category: dict[FailureCategory, list[FailureSignature]] = defaultdict(list)
+        by_category: dict[FailureCategory, list[GameFailureSignature]] = defaultdict(list)
         for f in self._failures:
             by_category[f.category].append(f)
 
@@ -53,8 +57,8 @@ class HSRFailureAnalyzer:
             stats[f.category.value] += 1
         return dict(stats)
 
-    def _detect_enemy_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
-        by_enemy: dict[str, list[FailureSignature]] = defaultdict(list)
+    def _detect_enemy_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
+        by_enemy: dict[str, list[GameFailureSignature]] = defaultdict(list)
         for f in failures:
             if f.enemy_id:
                 by_enemy[f.enemy_id].append(f)
@@ -77,8 +81,8 @@ class HSRFailureAnalyzer:
             patterns.append(pattern)
         return patterns
 
-    def _detect_region_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
-        by_region: dict[str, list[FailureSignature]] = defaultdict(list)
+    def _detect_region_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
+        by_region: dict[str, list[GameFailureSignature]] = defaultdict(list)
         for f in failures:
             if f.region:
                 by_region[f.region].append(f)
@@ -101,8 +105,8 @@ class HSRFailureAnalyzer:
             patterns.append(pattern)
         return patterns
 
-    def _detect_team_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
-        by_team: dict[str, list[FailureSignature]] = defaultdict(list)
+    def _detect_team_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
+        by_team: dict[str, list[GameFailureSignature]] = defaultdict(list)
         for f in failures:
             key = ",".join(sorted(f.team_composition))
             by_team[key].append(f)
@@ -126,8 +130,8 @@ class HSRFailureAnalyzer:
             patterns.append(pattern)
         return patterns
 
-    def _detect_step_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
-        by_step: dict[int, list[FailureSignature]] = defaultdict(list)
+    def _detect_step_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
+        by_step: dict[int, list[GameFailureSignature]] = defaultdict(list)
         for f in failures:
             by_step[f.step_index].append(f)
         patterns: list[FailurePattern] = []
@@ -150,9 +154,9 @@ class HSRFailureAnalyzer:
             patterns.append(pattern)
         return patterns
 
-    def _detect_wave_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
+    def _detect_wave_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
         """Detect patterns tied to specific wave numbers in multi-wave encounters."""
-        by_wave: dict[int, list[FailureSignature]] = defaultdict(list)
+        by_wave: dict[int, list[GameFailureSignature]] = defaultdict(list)
         for f in failures:
             wave = f.context.get("wave_number")
             if wave is not None:
@@ -175,7 +179,7 @@ class HSRFailureAnalyzer:
             patterns.append(pattern)
         return patterns
 
-    def _detect_sp_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
+    def _detect_sp_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
         """Detect patterns tied to SP exhaustion."""
         sp_failures = [f for f in failures if f.category == FailureCategory.STAMINA_EXHAUSTED]
         if len(sp_failures) < _PATTERN_THRESHOLD:
@@ -193,7 +197,7 @@ class HSRFailureAnalyzer:
         )
         return [pattern]
 
-    def _detect_weakness_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
+    def _detect_weakness_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
         """Detect patterns tied to incorrect element usage (weakness not exploited)."""
         weak_failures = [f for f in failures if f.category == FailureCategory.ELEMENT_MISMATCH]
         if len(weak_failures) < _PATTERN_THRESHOLD:

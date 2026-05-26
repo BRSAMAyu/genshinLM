@@ -21,7 +21,7 @@ class DodgePolicy:
         self._state = DodgePolicyState()
 
     def choose_dodge(self, danger: DangerState) -> dict[str, object]:
-        now = time.time()
+        now = time.perf_counter()
         if now - self._state.last_dodge_at < self._min_interval:
             cooldown_ms = int((self._min_interval - (now - self._state.last_dodge_at)) * 1000)
             self._state.last_result = "cooldown"
@@ -59,7 +59,7 @@ class DodgePolicy:
         }
 
     def snapshot(self) -> dict[str, object]:
-        now = time.time()
+        now = time.perf_counter()
         cooldown_ms = max(0, int((self._min_interval - (now - self._state.last_dodge_at)) * 1000))
         return {
             "cooldown_ms": cooldown_ms,

@@ -146,11 +146,13 @@ class AutonomousTaskBrain:
         reliability_store: ReliabilityStore | None = None,
         exploration_agent: ExplorationAgent | None = None,
         skill_induction_gate: SkillInductionGate | None = None,
+        viewport: tuple[int, int] | None = None,
     ) -> None:
         self._perception = perception
         self._executor = executor
         self._config = config
         self._planner = planner or HierarchicalPlanner()
+        self._viewport: tuple[int, int] = viewport or (1920, 1080)
         self._memory = decision_memory or DecisionMemory()
         self._claim_builder = ScreenStateClaimBuilder()
         self._affordance_deriver = AffordanceDeriver()
@@ -182,6 +184,12 @@ class AutonomousTaskBrain:
         )
         # H3: accumulate exploration events across iterations for richer trace induction
         self._exploration_trace: list[RecordedEvent] = []
+        self._MAX_EXPLORATION_TRACE = 50
+        # Register task state slot once at init instead of every publish call
+        if self._state_bus is not None:
+            self._state_bus.register_slot("agent.task_state_snapshot")
+        # Replan loop detection
+        self._replan_count: int = 0
 
     def request_stop(self) -> None:
         self._shutdown.set()
@@ -206,135 +214,154 @@ class AutonomousTaskBrain:
 
         try:
             for i in range(1, self._config.max_iterations + 1):
-                if self._state_bus is not None and self._state_bus.shutdown_flag.is_set():
-                    error = "state_bus_shutdown_requested"
-                    self._shutdown.set()
-                    break
+                try:
+                    if self._state_bus is not None and self._state_bus.shutdown_flag.is_set():
+                        error = "state_bus_shutdown_requested"
+                        self._shutdown.set()
+                        break
 
-                active_goal = self._goal_stack.peek()
-                if not active_goal:
-                    return self._build_result(True, goal, i, total_actions, started)
-                self._frame_id = i
-                if i % 10 == 0 or i == 1:
-                    log.info("[TaskBrain] Iteration %d/%d — goal: %s", i, self._config.max_iterations, goal)
+                    active_goal = self._goal_stack.peek()
+                    if not active_goal:
+                        return self._build_result(True, goal, i, total_actions, started)
+                    self._frame_id = i
+                    if i % 10 == 0 or i == 1:
+                        log.info("[TaskBrain] Iteration %d/%d — goal: %s", i, self._config.max_iterations, goal)
 
-                # 1. Capture frame
-                frame = self._perception.capture_frame()
-                if frame is None:
-                    log.warning("[TaskBrain] No frame, waiting")
-                    self._interruptible_wait(1.0)
-                    continue
-
-                # 2. Build screen state claim (perception fusion)
-                now = time.perf_counter()
-                if now - last_state_time >= self._config.state_sample_interval_sec:
-                    vlm = self._perception.analyze_vlm(frame, self._config.game_id)
-                    classifier = self._perception.classify_screen(frame)
-                    ocr = self._perception.ocr_scan(frame)
-                    self._current_claim = self._claim_builder.build(
-                        game_id=self._config.game_id,
-                        frame_id=i,
-                        vlm=vlm,
-                        classifier=classifier,
-                        ocr_results=ocr,
-                    )
-                    # Update QuestState Tracker
-                    quest_state = self._quest_tracker.update_state(self._current_claim)
-                    if quest_state.objective_text and quest_state.objective_text != active_goal:
-                        self._goal_stack.push(quest_state.objective_text)
-                        active_goal = quest_state.objective_text
-
-                    self._publish_task_state(())
-                    last_state_time = now
-
-                if self._current_claim is None:
-                    self._interruptible_wait(0.5)
-                    continue
-
-                # 3. Derive affordances
-                affordances = self._affordance_deriver.derive(self._current_claim)
-                self._publish_task_state(tuple(affordances))
-
-                # 4. Plan if needed
-                if self._current_graph is None or self._current_graph.is_complete():
-                    if self._current_graph is not None and self._current_graph.is_complete():
-                        exec_done, exec_total = self._current_graph.executable_progress()
-                        if exec_done == exec_total and not self._current_graph.failed_nodes():
-                            self._record_strategy(goal, True, started)
-                            return self._build_result(True, goal, i, total_actions, started)
-
-                    now = time.perf_counter()
-                    if now - last_plan_time >= self._config.plan_interval_sec:
-                        best = self._memory.best_strategy_for(
-                            goal, self._config.capsule_id, self._current_claim.screen_state,
-                        )
-                        plan_result = self._planner.plan(
-                            goal=goal,
-                            capsule_id=self._config.capsule_id,
-                            current_state=self._current_claim,
-                            available_actions=[a.semantic_action for a in affordances],
-                        )
-                        self._current_graph = plan_result.graph
-                        last_plan_time = now
-                        log.info(
-                            "[TaskBrain] Planned: %d nodes, confidence=%.2f, complexity=%s",
-                            len(self._current_graph.nodes), plan_result.confidence, plan_result.complexity,
-                        )
-                        if best:
-                            log.info("[TaskBrain] Historical best: confidence=%.2f", best.confidence)
-
-                # 5. Execute next mission node
-                node = self._current_graph.next_pending() if self._current_graph else None
-                if node is None:
-                    if self._current_graph and self._current_graph.failed_nodes():
-                        log.warning("[TaskBrain] Mission has failed nodes, re-planning")
-                        self._current_graph = None
+                    # 1. Capture frame
+                    frame = self._perception.capture_frame()
+                    if frame is None:
+                        log.warning("[TaskBrain] No frame, waiting")
+                        self._interruptible_wait(1.0)
                         continue
-                    self._interruptible_wait(self._config.action_interval_sec)
-                    continue
 
-                success = self._execute_node(node, affordances)
-                node.attempts += 1
-                if success:
-                    node.status = "completed"
-                    total_actions += 1
-                    if self._current_claim:
-                        context = {
-                            "capsule_id": self._config.capsule_id,
+                    # 2. Build screen state claim (perception fusion)
+                    now = time.perf_counter()
+                    if now - last_state_time >= self._config.state_sample_interval_sec:
+                        vlm = self._perception.analyze_vlm(frame, self._config.game_id)
+                        classifier = self._perception.classify_screen(frame)
+                        ocr = self._perception.ocr_scan(frame)
+                        self._current_claim = self._claim_builder.build(
+                            game_id=self._config.game_id,
+                            frame_id=i,
+                            vlm=vlm,
+                            classifier=classifier,
+                            ocr_results=ocr,
+                        )
+                        # Update QuestState Tracker
+                        quest_state = self._quest_tracker.update_state(self._current_claim)
+                        if quest_state.objective_text and quest_state.objective_text != active_goal:
+                            self._goal_stack.push(quest_state.objective_text)
+                            active_goal = quest_state.objective_text
+
+                        self._publish_task_state(())
+                        last_state_time = now
+
+                    if self._current_claim is None:
+                        self._interruptible_wait(0.5)
+                        continue
+
+                    # 3. Derive affordances
+                    affordances = self._affordance_deriver.derive(self._current_claim)
+                    self._publish_task_state(tuple(affordances))
+
+                    # 4. Plan if needed
+                    if self._current_graph is None or self._current_graph.is_complete():
+                        if self._current_graph is not None and self._current_graph.is_complete():
+                            exec_done, exec_total = self._current_graph.executable_progress()
+                            if exec_done == exec_total and not self._current_graph.failed_nodes():
+                                self._record_strategy(goal, True, started)
+                                return self._build_result(True, goal, i, total_actions, started)
+
+                        now = time.perf_counter()
+                        if now - last_plan_time >= self._config.plan_interval_sec:
+                            best = self._memory.best_strategy_for(
+                                goal, self._config.capsule_id, self._current_claim.screen_state,
+                            )
+                            plan_result = self._planner.plan(
+                                goal=goal,
+                                capsule_id=self._config.capsule_id,
+                                current_state=self._current_claim,
+                                available_actions=[a.semantic_action for a in affordances],
+                            )
+                            self._current_graph = plan_result.graph
+                            last_plan_time = now
+                            log.info(
+                                "[TaskBrain] Planned: %d nodes, confidence=%.2f, complexity=%s",
+                                len(self._current_graph.nodes), plan_result.confidence, plan_result.complexity,
+                            )
+                            if best:
+                                log.info("[TaskBrain] Historical best: confidence=%.2f", best.confidence)
+
+                    # 5. Execute next mission node
+                    node = self._current_graph.next_pending() if self._current_graph else None
+                    if node is None:
+                        if self._current_graph and self._current_graph.failed_nodes():
+                            self._replan_count += 1
+                            if self._replan_count >= 3:
+                                log.warning(
+                                    "[TaskBrain] %d consecutive replans without progress, "
+                                    "skipping to conserve iterations",
+                                    self._replan_count,
+                                )
+                                self._interruptible_wait(self._config.plan_interval_sec)
+                            log.warning("[TaskBrain] Mission has failed nodes, re-planning")
+                            self._current_graph = None
+                            continue
+                        self._interruptible_wait(self._config.action_interval_sec)
+                        continue
+
+                    success = self._execute_node(node, affordances)
+                    node.attempts += 1
+                    if success:
+                        node.status = "completed"
+                        total_actions += 1
+                        self._replan_count = 0  # progress made, reset replan counter
+                        if self._current_claim:
+                            context = {
+                                "capsule_id": self._config.capsule_id,
+                                "screen_state": self._current_claim.screen_state,
+                                "mission_phase": node.semantic_action,
+                                "target_class": node.semantic_action,
+                            }
+                            self._reliability_store.record(node.semantic_action, context, "matched")
+                        self._history.append({
+                            "iteration": i,
+                            "node": node.label,
+                            "action": node.semantic_action,
                             "screen_state": self._current_claim.screen_state,
-                            "mission_phase": node.semantic_action,
-                            "target_class": node.semantic_action,
-                        }
-                        self._reliability_store.record(node.semantic_action, context, "matched")
+                            "success": True,
+                        })
+                    else:
+                        if self._current_claim:
+                            context = {
+                                "capsule_id": self._config.capsule_id,
+                                "screen_state": self._current_claim.screen_state,
+                                "mission_phase": node.semantic_action,
+                                "target_class": node.semantic_action,
+                            }
+                            self._reliability_store.record(node.semantic_action, context, "mismatch")
+                        if node.attempts >= node.max_attempts:
+                            node.status = "failed"
+                            log.warning("[TaskBrain] Node %s failed after %d attempts", node.node_id, node.attempts)
+                        self._history.append({
+                            "iteration": i,
+                            "node": node.label,
+                            "action": node.semantic_action,
+                            "screen_state": self._current_claim.screen_state,
+                            "success": False,
+                            "attempts": node.attempts,
+                        })
+
+                except Exception as iter_exc:
+                    log.warning("[TaskBrain] Transient error at iteration %d: %s", i, iter_exc)
                     self._history.append({
                         "iteration": i,
-                        "node": node.label,
-                        "action": node.semantic_action,
-                        "screen_state": self._current_claim.screen_state,
-                        "success": True,
-                    })
-                else:
-                    if self._current_claim:
-                        context = {
-                            "capsule_id": self._config.capsule_id,
-                            "screen_state": self._current_claim.screen_state,
-                            "mission_phase": node.semantic_action,
-                            "target_class": node.semantic_action,
-                        }
-                        self._reliability_store.record(node.semantic_action, context, "mismatch")
-                    if node.attempts >= node.max_attempts:
-                        node.status = "failed"
-                        log.warning("[TaskBrain] Node %s failed after %d attempts", node.node_id, node.attempts)
-                    self._history.append({
-                        "iteration": i,
-                        "node": node.label,
-                        "action": node.semantic_action,
-                        "screen_state": self._current_claim.screen_state,
+                        "action": "iteration_error",
+                        "error": str(iter_exc),
                         "success": False,
-                        "attempts": node.attempts,
                     })
-
-                self._interruptible_wait(self._config.action_interval_sec)
+                finally:
+                    self._interruptible_wait(self._config.action_interval_sec)
 
         except KeyboardInterrupt:
             error = "interrupted"
@@ -384,6 +411,16 @@ class AutonomousTaskBrain:
                     )
                     if success:
                         # H3: append to trace buffer — induction runs on the full batch
+                        # Compute click coordinates from UI element bbox if available
+                        click_x, click_y = -1.0, -1.0
+                        if self._current_claim is not None:
+                            for el in self._current_claim.ui_elements:
+                                if el.element_id == explore_action.target:
+                                    cx = el.bbox_norm[0] + el.bbox_norm[2] / 2
+                                    cy = el.bbox_norm[1] + el.bbox_norm[3] / 2
+                                    click_x = cx * self._viewport[0]
+                                    click_y = cy * self._viewport[1]
+                                    break
                         event = RecordedEvent(
                             event_type="mouse_click" if "click" in explore_action.action_type else explore_action.action_type,
                             timestamp=time.time(),
@@ -396,12 +433,16 @@ class AutonomousTaskBrain:
                             target_state="TRACKED",
                             payload={
                                 "action_type": explore_action.action_type,
-                                "anchor_id": explore_action.target if explore_action.action_type == "click_anchor" else "",
+                                "anchor_id": explore_action.target if explore_action.action_type.startswith(("click", "select", "confirm")) else "",
                                 "params": {},
+                                "x": click_x,
+                                "y": click_y,
                             },
                             observation_frame_id=self._current_claim.frame_id,
                         )
                         self._exploration_trace.append(event)
+                        if len(self._exploration_trace) > self._MAX_EXPLORATION_TRACE:
+                            self._exploration_trace = self._exploration_trace[-self._MAX_EXPLORATION_TRACE:]
                         # Attempt induction on the accumulated trace (not a single event)
                         induced = self._skill_induction_gate.induce_skill_from_trace(
                             list(self._exploration_trace), node.semantic_action, self._current_claim.screen_state
@@ -595,8 +636,9 @@ class AutonomousTaskBrain:
         if self._state_bus is None or self._current_claim is None:
             return
         snapshot = TaskStateSnapshot(claim=self._current_claim, available_actions=affordances)
-        slot = self._state_bus.register_slot("agent.task_state_snapshot")
-        slot.put(snapshot)
+        slot = self._state_bus.get_slot("agent.task_state_snapshot")
+        if slot is not None:
+            slot.put(snapshot)
         self._state_bus.publish("agent_task_state", snapshot)
 
 

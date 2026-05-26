@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
 
 from combat.boss_schema import BossProfile, conservative_unknown_boss
 from combat.genshin_element_reactions import GenshinReactionTable
 from combat.team_capability import TeamCapabilityAnalyzer, TeamCombatPlan
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -43,18 +46,27 @@ class CombatPlaybook:
     elemental_chain: list[str]
 
 
-_ELEMENT_TO_SLOT: dict[str, int] = {
-    "pyro": 1, "hydro": 2, "cryo": 3, "electro": 4,
-    "anemo": 1, "geo": 2, "dendro": 3,
-}
+# Default slot assignment when no team_config is provided:
+# slot 1-4 in team order (matches in-game party position).
+_DEFAULT_SLOT_ORDER = {1, 2, 3, 4}
 
 
 class GenshinCombatPlanner:
-    """Generate combat playbooks for Genshin Impact encounters."""
+    """Generate combat playbooks for Genshin Impact encounters.
 
-    def __init__(self, team_analyzer: TeamCapabilityAnalyzer | None = None) -> None:
+    ``team_config`` maps element names to character slot numbers (1-4)
+    based on the player's actual party setup.  When omitted, slots are
+    assigned positionally from the *team_elements* list.
+    """
+
+    def __init__(
+        self,
+        team_analyzer: TeamCapabilityAnalyzer | None = None,
+        team_config: dict[str, int] | None = None,
+    ) -> None:
         self._reactions = GenshinReactionTable()
         self._team_analyzer = team_analyzer or TeamCapabilityAnalyzer()
+        self._team_config: dict[str, int] = team_config or {}
 
     def generate_playbook(
         self,
@@ -163,7 +175,7 @@ class GenshinCombatPlanner:
         actions: list[CombatAction] = []
 
         if not reaction_chain:
-            slot = _ELEMENT_TO_SLOT.get(team_elements[0], 1) if team_elements else 1
+            slot = self._slot_for_element(team_elements[0], team_elements) if team_elements else 1
             actions.append(CombatAction(
                 action="normal_attack", character=slot, repeat=5, priority=50,
             ))
@@ -205,7 +217,7 @@ class GenshinCombatPlanner:
             seen_elements.add(rxn.trigger_element)
 
         for elem in team_elements:
-            slot = _ELEMENT_TO_SLOT.get(elem, 1)
+            slot = self._slot_for_element(elem, team_elements)
             actions.append(CombatAction(
                 action="q_burst", character=slot,
                 condition="energy_full", priority=30,
@@ -246,8 +258,8 @@ class GenshinCombatPlanner:
                     "weaknesses": monster.weaknesses,
                     "danger_signals": monster.danger_signals,
                 }
-        except Exception:
-            pass
+        except Exception as exc:
+            log.warning("[GenshinCombatPlanner] Failed to get enemy info: %s", exc)
         return {}
 
     def _get_weaknesses_from_kb(self, enemy_id: str) -> list[str]:
@@ -296,8 +308,16 @@ class GenshinCombatPlanner:
                 return rxn
         return None
 
-    @staticmethod
-    def _slot_for_element(element: str, team_elements: list[str]) -> int:
+    def _slot_for_element(self, element: str, team_elements: list[str]) -> int:
+        """Resolve element to a party slot (1-4).
+
+        Priority:
+        1. Explicit ``team_config`` mapping (element -> slot).
+        2. Positional fallback based on *team_elements* list order.
+        3. Default to slot 1.
+        """
+        if self._team_config and element in self._team_config:
+            return self._team_config[element]
         if element in team_elements:
-            return _ELEMENT_TO_SLOT.get(element, team_elements.index(element) + 1)
-        return _ELEMENT_TO_SLOT.get(element, 1)
+            return team_elements.index(element) + 1
+        return 1

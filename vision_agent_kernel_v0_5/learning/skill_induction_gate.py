@@ -5,7 +5,9 @@ import uuid
 from typing import Any
 
 from app_service.skill_manager import RecordedEvent, SkillDraft
+from interaction.ui_anchor import UIAnchor, UIAnchorMatcher, NormalizedRect, UIElement
 from learning.evolution_engine import EvolutionEngine
+from planning.screen_state_claim import ScreenStateClaim
 from planning.skill_capability_catalog import SkillCatalogEntry
 from recording.semantic_distiller import SemanticSkillDistiller, SemanticSkillDraft
 
@@ -28,6 +30,8 @@ class SkillInductionGate:
         goal: str,
         screen_state: str,
         viewport: tuple[int, int] = (1920, 1080),
+        ui_elements: list | None = None,
+        screen_claim: ScreenStateClaim | None = None,
     ) -> SkillCatalogEntry | None:
         """Processes a successful sequence of exploration steps into a verified Skill catalog entry.
 
@@ -55,10 +59,23 @@ class SkillInductionGate:
         )
 
         try:
+            # Synthesize UIAnchors from screen_claim if available
+            synthetic_anchors: list[UIAnchor] = []
+            synthetic_elements: list[UIElement] = []
+            if screen_claim is not None:
+                for el in screen_claim.ui_elements:
+                    if el.text:
+                        synthetic_anchors.append(UIAnchor(
+                            anchor_id=el.element_id,
+                            screen_state=screen_state,
+                            semantic_role=el.role,
+                            candidate_roi=NormalizedRect(el.bbox_norm[0], el.bbox_norm[1], el.bbox_norm[2], el.bbox_norm[3]),
+                            matchers=[UIAnchorMatcher(kind="ocr", value=el.text, weight=1.0, min_confidence=0.3)],
+                        ))
             semantic_draft = self._distiller.distill(
                 draft=skill_draft,
-                anchors=[],  # We pass empty anchors list, so distiller can fallback or bind nearest
-                elements=[],
+                anchors=synthetic_anchors,
+                elements=synthetic_elements or [],
                 viewport=viewport,
                 screen_state=screen_state,
             )
@@ -92,7 +109,7 @@ class SkillInductionGate:
 
         # Create a catalog entry candidate
         entry = SkillCatalogEntry(
-            skill_id=goal,
+            skill_id=f"induced_{goal}_{uuid.uuid4().hex[:6]}",
             capsule_id="core",
             source="induced_skill",
             kind="ui",

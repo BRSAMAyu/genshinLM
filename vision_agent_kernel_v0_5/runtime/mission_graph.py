@@ -151,7 +151,7 @@ class MissionGraph:
     def find_path_to(self, target: str, avoid: set[str] | None = None) -> list[str] | None:
         avoid_set = (avoid or set()) | set(self._blocked.keys())
         start = self._find_root()
-        if start is None:
+        if start is None or start in avoid_set:
             return None
         visited: set[str] = set()
         queue: deque[tuple[str, list[str]]] = deque([(start, [start])])
@@ -237,10 +237,7 @@ class MissionGraph:
             sources.add(src)
             targets.update(dsts)
         roots = sources - targets
-        for node_id in self._nodes:
-            if node_id not in targets:
-                return node_id
-        return None
+        return next(iter(roots), None)
 
     def _find_terminal(self) -> str | None:
         all_sources: set[str] = set()

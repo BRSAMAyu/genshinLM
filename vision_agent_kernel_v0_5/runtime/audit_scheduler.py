@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 import time
 from collections import defaultdict
 from dataclasses import dataclass, field, replace
@@ -80,6 +81,7 @@ class DelayedAuditScheduler:
         self._completed: dict[str, AuditRecord] = {}
         self._low_activity_queue: list[str] = []
         self._retry_counts: dict[str, int] = defaultdict(int)
+        self._lock = threading.Lock()
         if persistence_path:
             self._load_from_jsonl()
 
@@ -95,46 +97,48 @@ class DelayedAuditScheduler:
         expected_delta: dict[str, Any],
         stabilization_window_ms: int = 1000,
     ) -> AuditRecord:
-        now = time.time()
-        if audit_type == "post_node":
-            due_at = now + (max(stabilization_window_ms, self.config.post_node_delay_ms) / 1000.0)
-        elif audit_type == "mission_terminal":
-            due_at = now + (self.config.mission_terminal_delay_ms / 1000.0)
-        else:
-            due_at = now + self.config.low_activity_idle_s
+        with self._lock:
+            now = time.time()
+            if audit_type == "post_node":
+                due_at = now + (max(stabilization_window_ms, self.config.post_node_delay_ms) / 1000.0)
+            elif audit_type == "mission_terminal":
+                due_at = now + (self.config.mission_terminal_delay_ms / 1000.0)
+            else:
+                due_at = now + self.config.low_activity_idle_s
 
-        deadline_at = due_at + (self.config.deadline_extension_ms / 1000.0)
-        record = AuditRecord(
-            audit_id=audit_id,
-            claim_id=claim_id,
-            skill_id=skill_id,
-            claim_type=claim_type,
-            audit_type=audit_type,
-            due_at=due_at,
-            deadline_at=deadline_at,
-            snapshot_ref=snapshot.metadata.get("snapshot_ref", audit_id),
-            expected_delta=expected_delta,
-        )
-        self._pending[audit_id] = record
-        if audit_type == "low_activity":
-            self._low_activity_queue.append(audit_id)
-        self._persist_record("scheduled", record)
-        return record
+            deadline_at = due_at + (self.config.deadline_extension_ms / 1000.0)
+            record = AuditRecord(
+                audit_id=audit_id,
+                claim_id=claim_id,
+                skill_id=skill_id,
+                claim_type=claim_type,
+                audit_type=audit_type,
+                due_at=due_at,
+                deadline_at=deadline_at,
+                snapshot_ref=snapshot.metadata.get("snapshot_ref", audit_id),
+                expected_delta=expected_delta,
+            )
+            self._pending[audit_id] = record
+            if audit_type == "low_activity":
+                self._low_activity_queue.append(audit_id)
+            self._persist_record("scheduled", record)
+            return record
 
     def check_due(self, current_time: float | None = None) -> list[AuditRecord]:
-        now = current_time or time.time()
-        due: list[AuditRecord] = []
-        expired: list[str] = []
-        for audit_id, record in self._pending.items():
-            if now > record.deadline_at:
-                expired.append(audit_id)
-            elif now >= record.due_at:
-                due.append(record)
-        for audit_id in expired:
-            record = self._pending.pop(audit_id)
-            self._completed[audit_id] = replace(record, status="expired", completed_at=now)
-            self._persist_record("expired", self._completed[audit_id])
-        return due
+        with self._lock:
+            now = current_time or time.time()
+            due: list[AuditRecord] = []
+            expired: list[str] = []
+            for audit_id, record in self._pending.items():
+                if now > record.deadline_at:
+                    expired.append(audit_id)
+                elif now >= record.due_at:
+                    due.append(record)
+            for audit_id in expired:
+                record = self._pending.pop(audit_id)
+                self._completed[audit_id] = replace(record, status="expired", completed_at=now)
+                self._persist_record("expired", self._completed[audit_id])
+            return due
 
     def complete(
         self,
@@ -143,80 +147,109 @@ class DelayedAuditScheduler:
         contamination_reasons: list[str] | None = None,
         current_time: float | None = None,
     ) -> AuditCompletion:
-        record = self._pending.pop(audit_id, None)
-        if record is None:
-            return AuditCompletion(audit_id, "", False, False, True)
-        now = current_time or time.time()
-        contamination = contamination_reasons or []
-        if contamination:
-            status: AuditRecordStatus = "contaminated"
-            matched = False
-            contaminated = True
-            unverifiable = False
-        elif observed_delta == record.expected_delta:
-            status = "completed"
-            matched = True
-            contaminated = False
-            unverifiable = False
-        else:
-            status = "completed"
-            matched = False
-            contaminated = False
-            unverifiable = False
-        completed = replace(
-            record,
-            status=status,
-            observed_delta=observed_delta,
-            contamination_reasons=contamination,
-            completed_at=now,
-            result="matched" if matched else ("contaminated" if contaminated else "mismatch"),
-        )
-        self._completed[audit_id] = completed
-        self._persist_record("completed", completed)
-        return AuditCompletion(audit_id, record.claim_id, matched, contaminated, unverifiable)
+        with self._lock:
+            record = self._pending.pop(audit_id, None)
+            if record is None:
+                return AuditCompletion(audit_id, "", False, False, True)
+            now = current_time or time.time()
+            contamination = contamination_reasons or []
+            if contamination:
+                status: AuditRecordStatus = "contaminated"
+                matched = False
+                contaminated = True
+                unverifiable = False
+            elif observed_delta == record.expected_delta:
+                status = "completed"
+                matched = True
+                contaminated = False
+                unverifiable = False
+            else:
+                status = "completed"
+                matched = False
+                contaminated = False
+                unverifiable = False
+            completed = replace(
+                record,
+                status=status,
+                observed_delta=observed_delta,
+                contamination_reasons=contamination,
+                completed_at=now,
+                result="matched" if matched else ("contaminated" if contaminated else "mismatch"),
+            )
+            self._completed[audit_id] = completed
+            self._persist_record("completed", completed)
+            # Remove old completed entries (older than 24h)
+            cutoff = time.time() - 86400
+            stale = [aid for aid, rec in self._completed.items() if rec.created_at < cutoff]
+            for aid in stale:
+                del self._completed[aid]
+                self._retry_counts.pop(aid, None)
+            self._low_activity_queue = [aid for aid in self._low_activity_queue if aid in self._pending]
+            return AuditCompletion(audit_id, record.claim_id, matched, contaminated, unverifiable)
 
     def mark_unverifiable(self, audit_id: str, reason: str = "", current_time: float | None = None) -> AuditCompletion:
-        record = self._pending.pop(audit_id, None)
-        if record is None:
-            return AuditCompletion(audit_id, "", False, False, True)
-        now = current_time or time.time()
-        completed = replace(
-            record, status="unverifiable", completed_at=now,
-            result=f"unverifiable:{reason}",
-        )
-        self._completed[audit_id] = completed
-        self._persist_record("unverifiable", completed)
-        return AuditCompletion(audit_id, record.claim_id, False, False, True)
+        with self._lock:
+            record = self._pending.pop(audit_id, None)
+            if record is None:
+                return AuditCompletion(audit_id, "", False, False, True)
+            now = current_time or time.time()
+            completed = replace(
+                record, status="unverifiable", completed_at=now,
+                result=f"unverifiable:{reason}",
+            )
+            self._completed[audit_id] = completed
+            self._persist_record("unverifiable", completed)
+            # Remove old completed entries (older than 24h)
+            cutoff = time.time() - 86400
+            stale = [aid for aid, rec in self._completed.items() if rec.created_at < cutoff]
+            for aid in stale:
+                del self._completed[aid]
+                self._retry_counts.pop(aid, None)
+            self._low_activity_queue = [aid for aid in self._low_activity_queue if aid in self._pending]
+            return AuditCompletion(audit_id, record.claim_id, False, False, True)
 
     def retry(self, audit_id: str, current_time: float | None = None) -> AuditRecord | None:
-        record = self._pending.get(audit_id)
-        if record is None:
-            return None
-        retry_count = self._retry_counts[audit_id] + 1
-        if retry_count > self.config.max_retries:
-            self.mark_unverifiable(audit_id, "max_retries_exceeded", current_time)
-            return None
-        self._retry_counts[audit_id] = retry_count
-        now = current_time or time.time()
-        new_due = now + self.config.post_node_delay_ms / 1000.0
-        record = replace(record, due_at=new_due, retry_count=retry_count)
-        self._pending[audit_id] = record
-        return record
+        with self._lock:
+            record = self._pending.get(audit_id)
+            if record is None:
+                return None
+            retry_count = self._retry_counts[audit_id] + 1
+            if retry_count > self.config.max_retries:
+                self._pending.pop(audit_id, None)
+                now = current_time or time.time()
+                completed = replace(
+                    record, status="unverifiable", completed_at=now,
+                    result="unverifiable:max_retries_exceeded",
+                )
+                self._completed[audit_id] = completed
+                self._persist_record("unverifiable", completed)
+                return None
+            self._retry_counts[audit_id] = retry_count
+            now = current_time or time.time()
+            new_due = now + self.config.post_node_delay_ms / 1000.0
+            record = replace(record, due_at=new_due, retry_count=retry_count)
+            self._pending[audit_id] = record
+            return record
 
     def get_pending(self) -> list[AuditRecord]:
-        return list(self._pending.values())
+        with self._lock:
+            return list(self._pending.values())
 
     def get_completed(self) -> list[AuditRecord]:
-        return list(self._completed.values())
+        with self._lock:
+            return list(self._completed.values())
 
     def get_low_activity_pending(self) -> list[AuditRecord]:
-        return [self._pending[aid] for aid in self._low_activity_queue if aid in self._pending]
+        with self._lock:
+            return [self._pending[aid] for aid in self._low_activity_queue if aid in self._pending]
 
     def pending_count(self) -> int:
-        return len(self._pending)
+        with self._lock:
+            return len(self._pending)
 
     def completed_count(self) -> int:
-        return len(self._completed)
+        with self._lock:
+            return len(self._completed)
 
     def _persist_record(self, event_type: str, record: AuditRecord) -> None:
         if not self._persistence_path:

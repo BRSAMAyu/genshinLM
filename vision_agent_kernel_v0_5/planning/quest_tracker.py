@@ -43,8 +43,9 @@ class QuestStateTracker:
         # 2. Extract quest line or task objectives using regex patterns
         # Look for English (Quest, Task, Track) and Chinese (任务, 委托, 目标, 追踪) keywords
         quest_patterns = [
-            r"(?:quest|task|track|objective)\s*:\s*(.*)",
-            r"(?:任务|委托|目标|追踪)\s*:\s*(.*)",
+            r"(?:quest|task|track|objective)\s*[：:]\s*(.*)",
+            r"(?:任务|委托|目标|追踪)\s*[：:]\s*(.*)",
+            r"(?:传说任务|活动任务|深渊|指引)\s*[：:]*\s*(.*)",
             r"委托\s*(.*)",
             r"追踪\s*(.*)",
         ]
@@ -93,6 +94,9 @@ class QuestStateTracker:
         elif self._current_state.objective_text != objective_text:
             # Objective changed, reset failure count
             failure_count = 0
+        else:
+            # Not blocked and same objective: gradual decay of failure count
+            failure_count = max(0, failure_count - 1)
 
         self._current_state = QuestState(
             active_quest_id=active_quest_id,

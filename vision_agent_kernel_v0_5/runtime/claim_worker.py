@@ -12,7 +12,7 @@ from runtime.claim_events import ClaimEvent, ClaimEventPublisher, ClaimGraphStat
 from runtime.claim_runtime import AdjudicationEvent, ClaimGraph, ObservationClaim, StateDeltaClaim
 
 
-ClaimGraphCommandType = Literal["add_claim", "add_observation", "adjudicate", "demote", "stop"]
+ClaimGraphCommandType = Literal["add_claim", "add_observation", "adjudicate", "demote", "snapshot", "stop"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -67,6 +67,7 @@ class ClaimGraphWorker:
         self._thread: threading.Thread | None = None
         self._started = threading.Event()
         self._stopped = threading.Event()
+        self._cmd_count = 0
 
     def start(self) -> None:
         if self._thread and self._thread.is_alive():
@@ -89,11 +90,13 @@ class ClaimGraphWorker:
         self._queue.put(env)
         if not env.done.wait(timeout=timeout):
             return ClaimGraphCommandResult(False, command.command_type, self.graph.snapshot(), error="claim_worker_timeout")
-        assert env.result is not None
+        if env.result is None:
+            return ClaimGraphCommandResult(False, command.command_type, self.graph.snapshot(), error="claim_worker_no_result")
         return env.result
 
     def snapshot(self) -> dict[str, Any]:
-        return dict(self.graph.snapshot())
+        result = self.submit(ClaimGraphCommand("snapshot"))
+        return dict(result.snapshot)
 
     def _run(self) -> None:
         self._started.set()
@@ -111,7 +114,7 @@ class ClaimGraphWorker:
                     try:
                         claim = self.graph.get(error_claim_id)
                         if claim is not None and claim.status not in ("verified", "rejected", "locked"):
-                            self.graph.update_claim(replace(claim, status="adjudication_error"))
+                            self.graph.update_claim(replace(claim, status="error"))
                     except Exception:
                         pass
                 result = ClaimGraphCommandResult(
@@ -123,11 +126,17 @@ class ClaimGraphWorker:
                 self._publish_event("claim_adjudication_error", error_claim_id, "error", {"error": result.error})
             env.result = result
             env.done.set()
+            if env.command.command_type != "stop":
+                self._cmd_count += 1
+                if self._cmd_count % 100 == 0:
+                    self.graph.compact()
             if env.command.command_type == "stop":
                 self._stopped.set()
                 return
 
     def _apply(self, command: ClaimGraphCommand) -> ClaimGraphCommandResult:
+        if command.command_type == "snapshot":
+            return ClaimGraphCommandResult(True, "snapshot", self.graph.snapshot())
         if command.command_type == "stop":
             return ClaimGraphCommandResult(True, "stop", self.graph.snapshot())
         if command.command_type == "add_claim":
@@ -151,7 +160,9 @@ class ClaimGraphWorker:
             return ClaimGraphCommandResult(True, command.command_type, self.graph.snapshot())
         if command.command_type == "adjudicate":
             claim_id = command.claim_id
-            claim = self.graph.get(claim_id)
+            claim = self.graph.get_optional(claim_id)
+            if claim is None:
+                return ClaimGraphCommandResult(False, command.command_type, self.graph.snapshot(), error="claim_not_found")
             observations = self.graph.get_observations_for(claim_id)
             adjudication = self.adjudicator.adjudicate(claim, observations)
             updated = replace(

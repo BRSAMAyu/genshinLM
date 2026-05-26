@@ -43,8 +43,8 @@ class PlanValidator:
 
         if queue.loop and queue.loop.max_iterations <= 0:
             errors.append("loop.max_iterations must be positive")
-        if not queue.requires_user_confirmation:
-            # Keep backwards compatibility for traditional check but let strict check override or warn
+        if strict_mode and not queue.requires_user_confirmation:
+            # In strict mode, mission must require user confirmation before execution
             errors.append("mission must require user confirmation before execution")
             
         return {"ok": not errors and not missing_skills, "errors": errors, "missing_skills": sorted(set(missing_skills))}

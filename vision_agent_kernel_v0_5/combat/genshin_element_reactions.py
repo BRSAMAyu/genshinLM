@@ -51,8 +51,14 @@ class GenshinReactionTable:
     def get_shield_counter(self, shield_element: str) -> str:
         """Get the element that counters a given shield type.
 
-        Counter rules: Hydro > Pyro, Cryo > Hydro, Pyro > Cryo,
-        Electro > Hydro, Pyro > Dendro, Electro > Electro shields
+        Counter rules based on in-game elemental shield mechanics:
+        - Pyro shield    -> Hydro (water puts out fire)
+        - Hydro shield   -> Cryo (freeze)
+        - Cryo shield    -> Pyro (melt)
+        - Electro shield -> Pyro (overloaded) or Cryo (superconduct)
+        - Dendro shield  -> Pyro (burning)
+        - Anemo shield   -> none  (cannot swirl shields)
+        - Geo shield     -> none  (use claymore / blunt instead)
         """
         counters: dict[str, str] = {
             "pyro": "hydro",
@@ -60,8 +66,8 @@ class GenshinReactionTable:
             "cryo": "pyro",
             "electro": "pyro",
             "dendro": "pyro",
-            "geo": "geo",
-            "anemo": "anemo",
+            "geo": "none",
+            "anemo": "none",
         }
         return counters.get(shield_element, "pyro")
 

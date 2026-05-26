@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import threading
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -60,19 +61,24 @@ class SkillClaimDeclaration:
 
 
 _REGISTRY: dict[str, SkillClaimDeclaration] = {}
+_REGISTRY_LOCK = threading.Lock()
 
 
 def register_skill_declaration(decl: SkillClaimDeclaration) -> None:
-    _REGISTRY[decl.skill_id] = decl
+    with _REGISTRY_LOCK:
+        _REGISTRY[decl.skill_id] = decl
 
 
 def get_skill_declaration(skill_id: str) -> SkillClaimDeclaration | None:
-    return _REGISTRY.get(skill_id)
+    with _REGISTRY_LOCK:
+        return _REGISTRY.get(skill_id)
 
 
 def all_declarations() -> dict[str, SkillClaimDeclaration]:
-    return dict(_REGISTRY)
+    with _REGISTRY_LOCK:
+        return dict(_REGISTRY)
 
 
 def clear_registry() -> None:
-    _REGISTRY.clear()
+    with _REGISTRY_LOCK:
+        _REGISTRY.clear()

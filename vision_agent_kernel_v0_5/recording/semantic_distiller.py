@@ -38,6 +38,12 @@ class SemanticSkillDistiller:
             if event.event_type != "mouse_click":
                 continue
             anchor_id = self._nearest_anchor(event, anchors, elements, viewport, screen_state)
+            # Fallback: when anchors list is empty, try to extract anchor_id
+            # from the event payload directly (payload-based anchors).
+            if anchor_id is None:
+                payload_anchor = event.payload.get("anchor_id")
+                if isinstance(payload_anchor, str) and payload_anchor:
+                    anchor_id = payload_anchor
             if anchor_id is None:
                 notes.append("mouse_click could not be bound to UIAnchor; retained as fallback material")
                 continue

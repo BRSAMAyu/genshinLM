@@ -20,7 +20,7 @@ class FailureCategory(Enum):
 
 
 @dataclass(frozen=True, slots=True)
-class FailureSignature:
+class GameFailureSignature:
     failure_id: str
     category: FailureCategory
     timestamp: float
@@ -63,13 +63,17 @@ _PATTERN_THRESHOLD = 3
 class GenshinFailureAnalyzer:
     """Analyze combat failures and generate improvement suggestions."""
 
+    _MAX_FAILURES = 1000
+
     def __init__(self) -> None:
-        self._failures: list[FailureSignature] = []
+        self._failures: list[GameFailureSignature] = []
         self._patterns: dict[str, FailurePattern] = {}
 
-    def record_failure(self, signature: FailureSignature) -> None:
+    def record_failure(self, signature: GameFailureSignature) -> None:
         """Record a new failure event."""
         self._failures.append(signature)
+        if len(self._failures) > self._MAX_FAILURES:
+            self._failures = self._failures[-self._MAX_FAILURES:]
         self._patterns.clear()
 
     def analyze_patterns(self) -> list[FailurePattern]:
@@ -78,7 +82,7 @@ class GenshinFailureAnalyzer:
             return list(self._patterns.values())
 
         patterns: list[FailurePattern] = []
-        by_category: dict[FailureCategory, list[FailureSignature]] = defaultdict(list)
+        by_category: dict[FailureCategory, list[GameFailureSignature]] = defaultdict(list)
         for f in self._failures:
             by_category[f.category].append(f)
 
@@ -176,9 +180,9 @@ class GenshinFailureAnalyzer:
         patterns = self.analyze_patterns()
         return [p.suggested_fix for p in patterns if p.suggested_fix]
 
-    def _detect_enemy_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
+    def _detect_enemy_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
         """Detect patterns tied to specific enemies."""
-        by_enemy: dict[str, list[FailureSignature]] = defaultdict(list)
+        by_enemy: dict[str, list[GameFailureSignature]] = defaultdict(list)
         for f in failures:
             if f.enemy_id:
                 by_enemy[f.enemy_id].append(f)
@@ -202,9 +206,9 @@ class GenshinFailureAnalyzer:
             patterns.append(pattern.with_fix(self._generate_fix(pattern)))
         return patterns
 
-    def _detect_region_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
+    def _detect_region_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
         """Detect patterns tied to specific regions."""
-        by_region: dict[str, list[FailureSignature]] = defaultdict(list)
+        by_region: dict[str, list[GameFailureSignature]] = defaultdict(list)
         for f in failures:
             if f.region:
                 by_region[f.region].append(f)
@@ -228,9 +232,9 @@ class GenshinFailureAnalyzer:
             patterns.append(pattern.with_fix(self._generate_fix(pattern)))
         return patterns
 
-    def _detect_team_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
+    def _detect_team_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
         """Detect patterns tied to specific team compositions."""
-        by_team: dict[str, list[FailureSignature]] = defaultdict(list)
+        by_team: dict[str, list[GameFailureSignature]] = defaultdict(list)
         for f in failures:
             key = ",".join(sorted(f.team_composition))
             by_team[key].append(f)
@@ -255,9 +259,9 @@ class GenshinFailureAnalyzer:
             patterns.append(pattern.with_fix(self._generate_fix(pattern)))
         return patterns
 
-    def _detect_step_pattern(self, failures: list[FailureSignature]) -> list[FailurePattern]:
+    def _detect_step_pattern(self, failures: list[GameFailureSignature]) -> list[FailurePattern]:
         """Detect patterns tied to specific playbook step indices."""
-        by_step: dict[int, list[FailureSignature]] = defaultdict(list)
+        by_step: dict[int, list[GameFailureSignature]] = defaultdict(list)
         for f in failures:
             by_step[f.step_index].append(f)
 
@@ -318,9 +322,9 @@ def make_failure_signature(
     region: str = "",
     duration_ms: float = 0.0,
     context: dict | None = None,
-) -> FailureSignature:
-    """Convenience factory for FailureSignature."""
-    return FailureSignature(
+) -> GameFailureSignature:
+    """Convenience factory for GameFailureSignature."""
+    return GameFailureSignature(
         failure_id=str(uuid.uuid4()),
         category=category,
         timestamp=time.perf_counter(),
