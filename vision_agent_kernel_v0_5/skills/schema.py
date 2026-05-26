@@ -1,0 +1,193 @@
+"""Skill OS Schema — unified skill definition.
+
+A SkillDef describes an executable skill with:
+- Applicability: screen states, required anchors, required claims
+- Steps: semantic action sequence with wait conditions
+- Produced claims: what state changes the skill produces
+- Belief templates: BAGEL beliefs that must be committed before execution
+- Fallbacks: recovery recipes when execution fails
+- Promotion: reliability thresholds for promotion ladder
+"""
+from __future__ import annotations
+
+from dataclasses import dataclass, field
+from typing import Any, Literal
+
+from runtime.claim_runtime import RiskLevel
+
+
+SkillKind = Literal["procedure", "macro", "composite", "exploration"]
+PromotionTier = Literal["raw_trace", "draft", "experimental", "candidate", "stable", "trusted"]
+StepAction = Literal[
+    "click_anchor", "click_text", "press_key", "select_list_item",
+    "confirm_dialog", "wait_for", "observe", "navigate_to", "interact",
+]
+
+
+@dataclass(frozen=True, slots=True)
+class SkillStep:
+    """A single step in a skill's action sequence."""
+    action: StepAction
+    target: str = ""
+    wait_until: str = ""
+    timeout_ms: int = 5000
+    params: dict[str, Any] = field(default_factory=dict)
+
+
+@dataclass(frozen=True, slots=True)
+class SkillApplicability:
+    """Conditions under which a skill can execute."""
+    screen_states: tuple[str, ...] = ()
+    required_anchors: tuple[str, ...] = ()
+    required_claims: tuple[str, ...] = ()  # claim_type values
+
+
+@dataclass(frozen=True, slots=True)
+class SkillProducedClaim:
+    """A claim produced by successful skill execution."""
+    claim_type: str
+    target: str = ""
+    claim_role: str = "local"
+    verifier_recipe: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class SkillBeliefTemplate:
+    """BAGEL belief that must be committed before skill execution."""
+    target_object: str
+    causal_role: str
+    hypothesis: str = ""
+    falsification_condition: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class SkillFallback:
+    """Recovery recipe or replan policy for skill failure."""
+    recovery_recipe: str = ""
+    replan_policy: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class PromotionConfig:
+    """Thresholds for skill promotion between tiers."""
+    min_replays: int = 3
+    min_wilson_lower_bound: float = 0.70
+    required_profiles: tuple[str, ...] = ("default_1920x1080",)
+
+
+@dataclass(frozen=True, slots=True)
+class SkillDef:
+    """Unified skill definition.
+
+    Serializable to/from dict for JSON/YAML storage and exchange.
+    """
+    skill_id: str
+    version: int = 1
+    capsule_id: str = "core"
+    kind: SkillKind = "procedure"
+    risk_level: RiskLevel = "medium"
+    tier: PromotionTier = "draft"
+
+    applicability: SkillApplicability = field(default_factory=SkillApplicability)
+    steps: tuple[SkillStep, ...] = ()
+    produced_claims: tuple[SkillProducedClaim, ...] = ()
+    belief_templates: tuple[SkillBeliefTemplate, ...] = ()
+    fallbacks: tuple[SkillFallback, ...] = ()
+    promotion: PromotionConfig = field(default_factory=PromotionConfig)
+
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "skill_id": self.skill_id,
+            "version": self.version,
+            "capsule_id": self.capsule_id,
+            "kind": self.kind,
+            "risk_level": self.risk_level,
+            "tier": self.tier,
+            "applicability": {
+                "screen_states": list(self.applicability.screen_states),
+                "required_anchors": list(self.applicability.required_anchors),
+                "required_claims": list(self.applicability.required_claims),
+            },
+            "steps": [
+                {"action": s.action, "target": s.target, "wait_until": s.wait_until,
+                 "timeout_ms": s.timeout_ms, "params": s.params}
+                for s in self.steps
+            ],
+            "produced_claims": [
+                {"claim_type": c.claim_type, "target": c.target,
+                 "claim_role": c.claim_role, "verifier_recipe": c.verifier_recipe}
+                for c in self.produced_claims
+            ],
+            "belief_templates": [
+                {"target_object": bt.target_object, "causal_role": bt.causal_role,
+                 "hypothesis": bt.hypothesis, "falsification_condition": bt.falsification_condition}
+                for bt in self.belief_templates
+            ],
+            "fallbacks": [
+                {"recovery_recipe": f.recovery_recipe, "replan_policy": f.replan_policy}
+                for f in self.fallbacks
+            ],
+            "promotion": {
+                "min_replays": self.promotion.min_replays,
+                "min_wilson_lower_bound": self.promotion.min_wilson_lower_bound,
+                "required_profiles": list(self.promotion.required_profiles),
+            },
+            "metadata": dict(self.metadata),
+        }
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> SkillDef:
+        app = data.get("applicability", {})
+        promo = data.get("promotion", {})
+        return cls(
+            skill_id=data["skill_id"],
+            version=data.get("version", 1),
+            capsule_id=data.get("capsule_id", "core"),
+            kind=data.get("kind", "procedure"),
+            risk_level=data.get("risk_level", "medium"),
+            tier=data.get("tier", "draft"),
+            applicability=SkillApplicability(
+                screen_states=tuple(app.get("screen_states", [])),
+                required_anchors=tuple(app.get("required_anchors", [])),
+                required_claims=tuple(app.get("required_claims", [])),
+            ),
+            steps=tuple(
+                SkillStep(
+                    action=s["action"], target=s.get("target", ""),
+                    wait_until=s.get("wait_until", ""), timeout_ms=s.get("timeout_ms", 5000),
+                    params=s.get("params", {}),
+                )
+                for s in data.get("steps", [])
+            ),
+            produced_claims=tuple(
+                SkillProducedClaim(
+                    claim_type=c["claim_type"], target=c.get("target", ""),
+                    claim_role=c.get("claim_role", "local"),
+                    verifier_recipe=c.get("verifier_recipe", ""),
+                )
+                for c in data.get("produced_claims", [])
+            ),
+            belief_templates=tuple(
+                SkillBeliefTemplate(
+                    target_object=bt["target_object"], causal_role=bt["causal_role"],
+                    hypothesis=bt.get("hypothesis", ""),
+                    falsification_condition=bt.get("falsification_condition", ""),
+                )
+                for bt in data.get("belief_templates", [])
+            ),
+            fallbacks=tuple(
+                SkillFallback(
+                    recovery_recipe=f.get("recovery_recipe", ""),
+                    replan_policy=f.get("replan_policy", ""),
+                )
+                for f in data.get("fallbacks", [])
+            ),
+            promotion=PromotionConfig(
+                min_replays=promo.get("min_replays", 3),
+                min_wilson_lower_bound=promo.get("min_wilson_lower_bound", 0.70),
+                required_profiles=tuple(promo.get("required_profiles", ["default_1920x1080"])),
+            ),
+            metadata=data.get("metadata", {}),
+        )
