@@ -40,7 +40,9 @@ class SkillCapabilityCatalog:
     """Unified catalog for planner selection across core skills and installed capsules."""
 
     def __init__(self, entries: Iterable[SkillCatalogEntry] = ()) -> None:
+        import threading
         self._entries = list(entries)
+        self._lock = threading.Lock()
 
     @classmethod
     def from_sources(
@@ -103,22 +105,36 @@ class SkillCapabilityCatalog:
         return cls(entries_by_id.values())
 
     def entries(self) -> list[SkillCatalogEntry]:
-        return list(self._entries)
+        with self._lock:
+            return list(self._entries)
 
     def by_capability(self, capability: str) -> list[SkillCatalogEntry]:
-        return [
-            entry
-            for entry in self._entries
-            if capability in set(entry.capabilities) | set(entry.capabilities_provided)
-        ]
+        with self._lock:
+            return [
+                entry
+                for entry in self._entries
+                if capability in set(entry.capabilities) | set(entry.capabilities_provided)
+            ]
 
     def by_capsule(self, capsule_id: str) -> list[SkillCatalogEntry]:
-        return [entry for entry in self._entries if entry.capsule_id == capsule_id]
+        with self._lock:
+            return [entry for entry in self._entries if entry.capsule_id == capsule_id]
 
     def missing_capabilities(self, required: Iterable[str]) -> list[str]:
-        available = {
-            capability
-            for entry in self._entries
-            for capability in set(entry.capabilities) | set(entry.capabilities_provided)
-        }
-        return [capability for capability in required if capability not in available]
+        with self._lock:
+            available = {
+                capability
+                for entry in self._entries
+                for capability in set(entry.capabilities) | set(entry.capabilities_provided)
+            }
+            return [capability for capability in required if capability not in available]
+
+    def register_induced_skill(self, entry: SkillCatalogEntry) -> None:
+        """Dynamically add or update a skill in the catalog at runtime."""
+        with self._lock:
+            for i, existing in enumerate(self._entries):
+                if existing.skill_id == entry.skill_id:
+                    self._entries[i] = entry
+                    return
+            self._entries.append(entry)
+

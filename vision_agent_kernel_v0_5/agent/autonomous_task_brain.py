@@ -26,8 +26,17 @@ from planning.screen_state_claim_builder import (
     VLMOutput,
 )
 from runtime.claim_events import ClaimEventPublisher
-from runtime.claim_runtime import ObservationClaim, RiskLevel, StateDeltaClaim
+from runtime.claim_runtime import ObservationClaim, RiskLevel, StateDeltaClaim, ReliabilityStore
 from runtime.claim_worker import ClaimGraphCommand, ClaimGraphWorker
+from planning.applicability_gate import SkillApplicabilityGate
+from planning.skill_capability_catalog import SkillCapabilityCatalog
+from planning.goal_stack import GoalStack
+from planning.quest_tracker import QuestStateTracker
+from agent.exploration_agent import ExplorationAgent
+from learning.skill_induction_gate import SkillInductionGate
+from recording.semantic_distiller import SemanticSkillDistiller
+from learning.evolution_engine import EvolutionEngine
+from app_service.skill_manager import RecordedEvent
 
 try:
     from core.state_bus import StateBus
@@ -115,6 +124,18 @@ class AutonomousTaskBrain:
             publisher=ClaimEventPublisher(state_bus) if state_bus is not None else None,
             mission_id=f"taskbrain:{config.capsule_id}",
         )
+        self._reliability_store = ReliabilityStore()
+        self._catalog = SkillCapabilityCatalog()
+        self._applicability_gate = SkillApplicabilityGate(self._catalog, self._reliability_store)
+        self._goal_stack = GoalStack()
+        self._quest_tracker = QuestStateTracker()
+        self._exploration_agent = ExplorationAgent(self._perception, risk_level=self._config.require_confirmation_risk)
+        from unittest.mock import MagicMock
+        self._evolution_engine = EvolutionEngine(
+            self._state_bus if self._state_bus is not None else MagicMock()
+        )
+        self._distiller = SemanticSkillDistiller()
+        self._skill_induction_gate = SkillInductionGate(self._distiller, self._evolution_engine)
 
     def request_stop(self) -> None:
         self._shutdown.set()
@@ -134,12 +155,19 @@ class AutonomousTaskBrain:
         last_plan_time = 0.0
         last_state_time = 0.0
 
+        self._goal_stack.clear()
+        self._goal_stack.push(goal)
+
         try:
             for i in range(1, self._config.max_iterations + 1):
                 if self._state_bus is not None and self._state_bus.shutdown_flag.is_set():
                     error = "state_bus_shutdown_requested"
                     self._shutdown.set()
                     break
+
+                active_goal = self._goal_stack.peek()
+                if not active_goal:
+                    return self._build_result(True, goal, i, total_actions, started)
                 self._frame_id = i
                 if i % 10 == 0 or i == 1:
                     log.info("[TaskBrain] Iteration %d/%d — goal: %s", i, self._config.max_iterations, goal)
@@ -164,6 +192,12 @@ class AutonomousTaskBrain:
                         classifier=classifier,
                         ocr_results=ocr,
                     )
+                    # Update QuestState Tracker
+                    quest_state = self._quest_tracker.update_state(self._current_claim)
+                    if quest_state.objective_text and quest_state.objective_text != active_goal:
+                        self._goal_stack.push(quest_state.objective_text)
+                        active_goal = quest_state.objective_text
+
                     self._publish_task_state(())
                     last_state_time = now
 
@@ -218,6 +252,14 @@ class AutonomousTaskBrain:
                 if success:
                     node.status = "completed"
                     total_actions += 1
+                    if self._current_claim:
+                        context = {
+                            "capsule_id": self._config.capsule_id,
+                            "screen_state": self._current_claim.screen_state,
+                            "mission_phase": node.semantic_action,
+                            "target_class": node.semantic_action,
+                        }
+                        self._reliability_store.record(node.semantic_action, context, "matched")
                     self._history.append({
                         "iteration": i,
                         "node": node.label,
@@ -226,6 +268,14 @@ class AutonomousTaskBrain:
                         "success": True,
                     })
                 else:
+                    if self._current_claim:
+                        context = {
+                            "capsule_id": self._config.capsule_id,
+                            "screen_state": self._current_claim.screen_state,
+                            "mission_phase": node.semantic_action,
+                            "target_class": node.semantic_action,
+                        }
+                        self._reliability_store.record(node.semantic_action, context, "mismatch")
                     if node.attempts >= node.max_attempts:
                         node.status = "failed"
                         log.warning("[TaskBrain] Node %s failed after %d attempts", node.node_id, node.attempts)
@@ -256,6 +306,52 @@ class AutonomousTaskBrain:
             return False
 
         matched = [a for a in affordances if a.semantic_action == node.semantic_action]
+
+        if self._current_claim:
+            scores = self._applicability_gate.evaluate_skills(
+                node.semantic_action,
+                self._current_claim,
+                risk_policy=self._config.require_confirmation_risk,
+            )
+            if scores:
+                best_score = scores[0]
+                if not best_score.allowed:
+                    log.warning(
+                        "[TaskBrain] Skill applicability gate blocked %s: %s",
+                        node.semantic_action, best_score.reason
+                    )
+                    return False
+            elif not matched and node.semantic_action not in ("observe", "wait", "move", "look"):
+                # SLOW PATH: Direct exploratory probe and dynamic induction when no screen affordance matches
+                log.info("[TaskBrain] Entering slow exploration for goal: %s", node.semantic_action)
+                frame = self._perception.capture_frame()
+                if frame is not None:
+                    explore_action = self._exploration_agent.explore_next_step(frame, node.semantic_action, self._current_claim)
+                    log.info("[TaskBrain] Exploration agent suggests: %s", explore_action.rationale)
+                    if explore_action.requires_human_approval:
+                        log.warning("[TaskBrain] Human approval required for exploration action")
+                        return False
+                    success = self._executor.execute_semantic(
+                        action=explore_action.action_type,
+                        target=explore_action.target,
+                        context={"source": "exploration"},
+                    )
+                    if success:
+                        event = RecordedEvent(
+                            event_type="mouse_click" if "click" in explore_action.action_type else explore_action.action_type,
+                            timestamp=time.time(),
+                            active_window_title=self._config.game_id,
+                            observation_summary={},
+                            target_state="TRACKED",
+                            payload={"x": 960.0, "y": 540.0, "action_type": explore_action.action_type, "params": {}},
+                        )
+                        induced = self._skill_induction_gate.induce_skill_from_trace(
+                            [event], node.semantic_action, self._current_claim.screen_state
+                        )
+                        if induced:
+                            self._catalog.register_induced_skill(induced)
+                            log.info("[TaskBrain] Dynamic skill induction successful for: %s", node.semantic_action)
+                    return success
         if self._requires_human_confirmation(node, matched):
             log.warning("[TaskBrain] Human confirmation required for node %s", node.node_id)
             return False
