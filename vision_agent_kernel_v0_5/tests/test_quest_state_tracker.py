@@ -47,6 +47,7 @@ class TestQuestAndGoalStack:
         assert state.active_quest_id != "unknown"
         assert state.objective_text == "Talk to Katheryne"
         assert not state.is_blocked
+        assert state.active_quest_id == QuestStateTracker().update_state(claim).active_quest_id
 
         # Test Chinese pattern
         claim_zh = ScreenStateClaim(

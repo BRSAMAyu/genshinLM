@@ -67,9 +67,9 @@ class TestSkillApplicabilityGate:
         assert len(scores) == 1
         score_record = scores[0]
         assert score_record.skill_entry.skill_id == "claim_reward_fast"
-        # Anchor coverage is 0.5. reliability is 0.0 ( Wilson bound for 0/0 is 0.0 )
-        # score = 0.4 * 1.0 + 0.3 * 0.0 + 0.3 * 0.5 = 0.55
-        assert abs(score_record.score - 0.55) < 0.01
+        # Anchor coverage is 0.5. reliability is 0.0 (Wilson bound for 0/0 is 0.0)
+        # score = goal .25 + precondition .20 + reliability 0 + anchor .125 + verifier .05 = .625
+        assert abs(score_record.score - 0.625) < 0.01
 
     def test_evaluate_skills_reliability_safeguard(self, catalog, store):
         # We record some outcomes for open_menu_low to increase/decrease its reliability

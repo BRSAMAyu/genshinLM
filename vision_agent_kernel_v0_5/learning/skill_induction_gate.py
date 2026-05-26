@@ -66,19 +66,29 @@ class SkillInductionGate:
             log.error("[SkillInductionGate] Distillation failed: %s", exc)
             return None
 
-        # Fallback: if semantic distillation produced no anchors (because we passed empty list),
-        # we can synthesize a fallback click based on coordinate text click
-        # to ensure induction can bootstrap without pre-existing catalog anchors
-        verifiers = list(semantic_draft.ui_anchors)
-        if not verifiers:
-            # Look at mouse_clicks in session events to extract coordinate labels
-            clicks = [e for e in session_events if e.event_type == "mouse_click"]
-            if clicks:
-                # Generate a dynamic coordinate anchor
-                verifiers = [f"anchor_coord_{draft_id[:4]}"]
-            else:
-                log.warning("[SkillInductionGate] No interactive mouse clicks in trace, induction aborted")
-                return None
+        bound_anchors = list(semantic_draft.ui_anchors)
+        for event in session_events:
+            payload_anchor = (
+                event.payload.get("anchor_id")
+                or event.payload.get("ui_anchor")
+                or event.payload.get("target_anchor")
+            )
+            if isinstance(payload_anchor, str) and payload_anchor:
+                bound_anchors.append(payload_anchor)
+
+        bound_anchors = list(dict.fromkeys(bound_anchors))
+        if not bound_anchors:
+            # Coordinate-only traces are raw material, not reusable skills. They
+            # can be stored for human review, but they must not be promoted into
+            # the runtime catalog because they are not portable across
+            # resolution, UI drift, or profile changes.
+            log.warning(
+                "[SkillInductionGate] Trace has no bound UIAnchor; coordinate-only induction rejected for %s",
+                goal,
+            )
+            return None
+
+        verifiers = [f"{anchor_id}_post_click" for anchor_id in bound_anchors]
 
         # Create a catalog entry candidate
         entry = SkillCatalogEntry(
@@ -87,7 +97,9 @@ class SkillInductionGate:
             source="induced_skill",
             kind="ui",
             capabilities=[goal],
+            resources=[f"ui_anchor:{anchor_id}" for anchor_id in bound_anchors],
             verifiers=verifiers,
+            ui_anchors=bound_anchors,
             risk_level="medium",
         )
 

@@ -64,6 +64,7 @@ class CapsuleSkillSpec:
     capabilities: list[str] = field(default_factory=list)
     resources: list[str] = field(default_factory=list)
     verifiers: list[str] = field(default_factory=list)
+    ui_anchors: list[str] = field(default_factory=list)
     planner_tags: list[str] = field(default_factory=list)
     capabilities_required: list[str] = field(default_factory=list)
     capabilities_provided: list[str] = field(default_factory=list)
@@ -140,6 +141,7 @@ def load_manifest_from_yaml(path: str) -> CapsuleManifest:
             capabilities=caps,
             resources=list(item.get("resources", [])),
             verifiers=list(item.get("verifiers", [])),
+            ui_anchors=list(item.get("ui_anchors", [])),
             planner_tags=list(item.get("planner_tags", [])),
             capabilities_required=list(item.get("capabilities_required", [])),
             capabilities_provided=caps_prov,

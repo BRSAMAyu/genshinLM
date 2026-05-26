@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import logging
 import re
+import hashlib
 from dataclasses import dataclass
 from typing import Any
 
@@ -63,7 +64,7 @@ class QuestStateTracker:
                 match = re.search(pattern, line_str, re.IGNORECASE)
                 if match:
                     objective_text = match.group(1).strip()
-                    active_quest_id = f"quest_{abs(hash(objective_text)) % 10000}"
+                    active_quest_id = _quest_id(objective_text)
                     break
             if objective_text:
                 break
@@ -73,14 +74,14 @@ class QuestStateTracker:
             vlm_match = re.search(r"(?:quest|task|objective|goal is)\s*([a-zA-Z0-9\s]+)", claim.scene_description, re.IGNORECASE)
             if vlm_match:
                 objective_text = vlm_match.group(1).strip()
-                active_quest_id = f"quest_{abs(hash(objective_text)) % 10000}"
+                active_quest_id = _quest_id(objective_text)
 
         # Fallback 2: Default to first text line with "委" or "任" or just first text element
         if not objective_text:
             for line in ocr_lines:
                 if any(kw in line for kw in ("委托", "任务", "目标", "Quest", "Task")):
                     objective_text = line.strip()
-                    active_quest_id = f"quest_{abs(hash(objective_text)) % 10000}"
+                    active_quest_id = _quest_id(objective_text)
                     break
 
         # Check if the quest goal changed from previous state. If blocked, increment failure_count
@@ -101,3 +102,8 @@ class QuestStateTracker:
 
     def get_current_state(self) -> QuestState:
         return self._current_state
+
+
+def _quest_id(objective_text: str) -> str:
+    digest = hashlib.sha1(objective_text.strip().casefold().encode("utf-8")).hexdigest()[:10]
+    return f"quest_{digest}"

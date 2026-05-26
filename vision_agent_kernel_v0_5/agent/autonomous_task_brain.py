@@ -106,6 +106,10 @@ class AutonomousTaskBrain:
         decision_memory: DecisionMemory | None = None,
         state_bus: StateBus | None = None,
         claim_worker: ClaimGraphWorker | None = None,
+        skill_catalog: SkillCapabilityCatalog | None = None,
+        reliability_store: ReliabilityStore | None = None,
+        exploration_agent: ExplorationAgent | None = None,
+        skill_induction_gate: SkillInductionGate | None = None,
     ) -> None:
         self._perception = perception
         self._executor = executor
@@ -124,18 +128,24 @@ class AutonomousTaskBrain:
             publisher=ClaimEventPublisher(state_bus) if state_bus is not None else None,
             mission_id=f"taskbrain:{config.capsule_id}",
         )
-        self._reliability_store = ReliabilityStore()
-        self._catalog = SkillCapabilityCatalog()
+        self._reliability_store = reliability_store or ReliabilityStore()
+        self._catalog = skill_catalog or SkillCapabilityCatalog()
         self._applicability_gate = SkillApplicabilityGate(self._catalog, self._reliability_store)
         self._goal_stack = GoalStack()
         self._quest_tracker = QuestStateTracker()
-        self._exploration_agent = ExplorationAgent(self._perception, risk_level=self._config.require_confirmation_risk)
+        self._exploration_agent = exploration_agent or ExplorationAgent(
+            self._perception,
+            risk_level=self._config.require_confirmation_risk,
+        )
         from unittest.mock import MagicMock
         self._evolution_engine = EvolutionEngine(
             self._state_bus if self._state_bus is not None else MagicMock()
         )
         self._distiller = SemanticSkillDistiller()
-        self._skill_induction_gate = SkillInductionGate(self._distiller, self._evolution_engine)
+        self._skill_induction_gate = skill_induction_gate or SkillInductionGate(
+            self._distiller,
+            self._evolution_engine,
+        )
 
     def request_stop(self) -> None:
         self._shutdown.set()
@@ -341,9 +351,18 @@ class AutonomousTaskBrain:
                             event_type="mouse_click" if "click" in explore_action.action_type else explore_action.action_type,
                             timestamp=time.time(),
                             active_window_title=self._config.game_id,
-                            observation_summary={},
+                            observation_summary={
+                                "screen_state": self._current_claim.screen_state,
+                                "frame_id": self._current_claim.frame_id,
+                                "source": "exploration_agent",
+                            },
                             target_state="TRACKED",
-                            payload={"x": 960.0, "y": 540.0, "action_type": explore_action.action_type, "params": {}},
+                            payload={
+                                "action_type": explore_action.action_type,
+                                "anchor_id": explore_action.target if explore_action.action_type == "click_anchor" else "",
+                                "params": {},
+                            },
+                            observation_frame_id=self._current_claim.frame_id,
                         )
                         induced = self._skill_induction_gate.induce_skill_from_trace(
                             [event], node.semantic_action, self._current_claim.screen_state
@@ -351,6 +370,10 @@ class AutonomousTaskBrain:
                         if induced:
                             self._catalog.register_induced_skill(induced)
                             log.info("[TaskBrain] Dynamic skill induction successful for: %s", node.semantic_action)
+                        if self._config.post_action_resample:
+                            self._resample_current_state_after_action()
+                        if self._config.require_claim_verification:
+                            return self._verify_node_claim(node, [])
                     return success
         if self._requires_human_confirmation(node, matched):
             log.warning("[TaskBrain] Human confirmation required for node %s", node.node_id)

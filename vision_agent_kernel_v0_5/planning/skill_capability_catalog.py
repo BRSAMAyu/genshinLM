@@ -15,6 +15,7 @@ class SkillLike(Protocol):
     resources: list[dict[str, object]]
     verifier_contracts: list[dict[str, object]]
     planner: dict[str, object]
+    ui_anchors: list[str]
 
 
 @dataclass(frozen=True, slots=True)
@@ -28,6 +29,7 @@ class SkillCatalogEntry:
     capabilities: list[str] = field(default_factory=list)
     resources: list[str] = field(default_factory=list)
     verifiers: list[str] = field(default_factory=list)
+    ui_anchors: list[str] = field(default_factory=list)
     planner_tags: list[str] = field(default_factory=list)
     risk_level: str = "medium"
     capabilities_required: list[str] = field(default_factory=list)
@@ -71,6 +73,7 @@ class SkillCapabilityCatalog:
                     for contract in skill.verifier_contracts
                     if contract.get("verifier_id")
                 ],
+                ui_anchors=list(getattr(skill, "ui_anchors", [])),
                 planner_tags=list(planner.get("tags", [])),
                 risk_level=str(planner.get("risk_level", "medium")),
                 capabilities_required=list(planner.get("capabilities_required", [])),
@@ -92,8 +95,9 @@ class SkillCapabilityCatalog:
                     kind=spec.kind,
                     capabilities=list(spec.capabilities),
                     resources=list(spec.resources),
-                    verifiers=list(spec.verifiers),
-                    planner_tags=list(spec.planner_tags),
+                verifiers=list(spec.verifiers),
+                ui_anchors=list(getattr(spec, "ui_anchors", [])),
+                planner_tags=list(spec.planner_tags),
                     risk_level=spec.risk_level,
                     capabilities_required=list(spec.capabilities_required),
                     capabilities_provided=caps_prov,
@@ -137,4 +141,3 @@ class SkillCapabilityCatalog:
                     self._entries[i] = entry
                     return
             self._entries.append(entry)
-

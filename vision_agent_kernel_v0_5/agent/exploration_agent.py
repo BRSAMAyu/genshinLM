@@ -10,6 +10,17 @@ from planning.screen_state_claim import ScreenStateClaim
 
 log = logging.getLogger(__name__)
 
+SAFE_EXPLORATION_ACTIONS = {
+    "observe",
+    "wait",
+    "click_anchor",
+    "click_text",
+    "select_list_item",
+    "confirm_dialog",
+    "back",
+    "open_menu",
+}
+
 
 @dataclass(frozen=True, slots=True)
 class ExplorationAction:
@@ -35,12 +46,22 @@ class ExplorationAgent:
         actionable = state.actionable_elements()
 
         # Check safety/approval level
-        requires_approval = self._risk_level in ("high", "critical")
+        requires_approval = self._risk_level in ("high", "critical") or state.confidence < 0.55
 
         # Try to call high-accuracy VLM
         try:
             vlm_res = self._perception.analyze_vlm(frame, state.game_id)
             if vlm_res is not None and hasattr(vlm_res, "suggested_action") and vlm_res.suggested_action:
+                suggested_action = str(vlm_res.suggested_action)
+                if suggested_action not in SAFE_EXPLORATION_ACTIONS:
+                    log.warning("[ExplorationAgent] Unsafe VLM action rejected: %s", suggested_action)
+                    return ExplorationAction(
+                        action_type="observe",
+                        target="screen",
+                        rationale=f"Rejected unsafe VLM action: {suggested_action}",
+                        expected_claim={"screen_state": state.screen_state},
+                        requires_human_approval=True,
+                    )
                 target_prompt = "target"
                 if isinstance(vlm_res.ui_elements, dict):
                     target_prompt = vlm_res.ui_elements.get("interaction_prompt", "target")
@@ -48,7 +69,7 @@ class ExplorationAgent:
                     target_prompt = vlm_res.ui_elements.get("interaction_prompt", "target")
 
                 return ExplorationAction(
-                    action_type=vlm_res.suggested_action,
+                    action_type=suggested_action,
                     target=target_prompt,
                     rationale=getattr(vlm_res, "scene_description", "VLM suggestion"),
                     expected_claim={"screen_state": getattr(vlm_res, "screen_state", state.screen_state)},

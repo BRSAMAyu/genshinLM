@@ -43,10 +43,13 @@ class SkillApplicabilityGate:
         risk_policy: RiskLevel = "medium",
     ) -> list[ApplicabilityScore]:
         """Filters, scores, and ranks skills based on current state and goal context."""
+        goal_tokens = _normalize_tokens(goal)
         matched_entries = self.catalog.by_capability(goal)
         if not matched_entries:
-            # Fallback to direct skill_id match
-            matched_entries = [e for e in self.catalog.entries() if e.skill_id == goal]
+            matched_entries = [
+                e for e in self.catalog.entries()
+                if e.skill_id == goal or goal in set(e.planner_tags)
+            ]
 
         if not matched_entries:
             log.debug("[ApplicabilityGate] No matching skills found for goal: %s", goal)
@@ -59,12 +62,15 @@ class SkillApplicabilityGate:
 
         scores: list[ApplicabilityScore] = []
         for entry in matched_entries:
+            missing_caps = [
+                cap for cap in entry.capabilities_required
+                if cap and cap not in {state.screen_state, state.game_id, *state.raw_ocr_texts}
+            ]
+
             # 1. Compute anchor coverage
-            anchors_found = 0
-            for v in entry.verifiers:
-                if state.find_elements_by_text(v) or state.find_element(v):
-                    anchors_found += 1
-            anchor_coverage = anchors_found / len(entry.verifiers) if entry.verifiers else 1.0
+            anchor_refs = _anchor_references(entry)
+            anchors_found = sum(1 for anchor in anchor_refs if _screen_has_anchor(state, anchor))
+            anchor_coverage = anchors_found / len(anchor_refs) if anchor_refs else 1.0
 
             # 2. Query ReliabilityStore
             context = {
@@ -75,10 +81,18 @@ class SkillApplicabilityGate:
             }
             estimate = self.store.estimate(entry.skill_id, context)
 
-            # 3. Compute dynamic score
-            # score = 0.4 * goal_match + 0.3 * reliability + 0.3 * anchor_coverage
-            goal_match = 1.0  # Since it's in matched_entries
-            score = 0.4 * goal_match + 0.3 * estimate.reliability + 0.3 * anchor_coverage
+            # 3. Compute dynamic score. Goal match is intentionally lexical and
+            # conservative; the LLM can propose candidates, but runtime ranking
+            # must be explainable from catalog metadata and screen evidence.
+            goal_match = _goal_match(goal_tokens, entry)
+            precondition_score = 0.0 if missing_caps else 1.0
+            score = (
+                0.25 * goal_match
+                + 0.20 * precondition_score
+                + 0.25 * estimate.reliability
+                + 0.25 * anchor_coverage
+                + 0.05 * min(1.0, len(entry.verifiers) / 2)
+            )
 
             # 4. Check safety rules
             allowed = True
@@ -88,6 +102,12 @@ class SkillApplicabilityGate:
             if estimate.reliability < threshold.min_auto_execution_confidence:
                 allowed = False
                 reason = f"reliability {estimate.reliability:.2f} below threshold {threshold.min_auto_execution_confidence:.2f}"
+            if missing_caps:
+                allowed = False
+                reason = "missing_required_capabilities:" + ",".join(missing_caps)
+            if anchor_refs and anchor_coverage <= 0.0:
+                allowed = False
+                reason = "required_ui_anchor_not_visible"
 
             # High or critical risk checks
             entry_risk = entry.risk_level
@@ -114,3 +134,40 @@ class SkillApplicabilityGate:
         # Rank by score descending, putting allowed skills first
         scores.sort(key=lambda x: (x.allowed, x.score), reverse=True)
         return scores
+
+
+def _normalize_tokens(text: str) -> set[str]:
+    normalized = text.lower().replace("_", " ").replace("-", " ")
+    return {token for token in normalized.split() if token}
+
+
+def _goal_match(goal_tokens: set[str], entry: SkillCatalogEntry) -> float:
+    corpus = " ".join([
+        entry.skill_id,
+        *entry.capabilities,
+        *entry.capabilities_provided,
+        *entry.planner_tags,
+    ]).lower().replace("_", " ").replace("-", " ")
+    if not goal_tokens:
+        return 1.0
+    matched = sum(1 for token in goal_tokens if token in corpus)
+    return matched / len(goal_tokens)
+
+
+def _anchor_references(entry: SkillCatalogEntry) -> list[str]:
+    refs: list[str] = []
+    refs.extend(entry.ui_anchors)
+    refs.extend(res.removeprefix("ui_anchor:") for res in entry.resources if res.startswith("ui_anchor:"))
+    # Legacy compatibility: older tests and manifests used verifier ids as
+    # text anchors. Keep this fallback, but prefer explicit ui_anchors/resources.
+    if not refs:
+        refs.extend(entry.verifiers)
+    return [ref for ref in dict.fromkeys(refs) if ref]
+
+
+def _screen_has_anchor(state: ScreenStateClaim, anchor: str) -> bool:
+    if state.find_element(anchor) is not None:
+        return True
+    if state.find_elements_by_text(anchor):
+        return True
+    return any(element.element_id == anchor for element in state.ui_elements)
