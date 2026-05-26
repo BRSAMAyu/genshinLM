@@ -4,7 +4,6 @@ import logging
 import re
 import hashlib
 from dataclasses import dataclass
-from typing import Any
 
 from planning.screen_state_claim import ScreenStateClaim
 
@@ -15,7 +14,6 @@ log = logging.getLogger(__name__)
 class QuestState:
     active_quest_id: str
     objective_text: str
-    tracked_target: str
     is_blocked: bool
     failure_count: int
 
@@ -27,13 +25,12 @@ class QuestStateTracker:
     """
 
     def __init__(self) -> None:
-        self._current_state = QuestState("unknown", "", "", False, 0)
+        self._current_state = QuestState("unknown", "", False, 0)
 
     def update_state(self, claim: ScreenStateClaim) -> QuestState:
         """Parses screen claims to extract quest titles, objectives, and blocked status."""
         active_quest_id = "unknown"
         objective_text = ""
-        tracked_target = ""
         is_blocked = False
         failure_count = self._current_state.failure_count
 
@@ -52,9 +49,15 @@ class QuestStateTracker:
             r"追踪\s*(.*)",
         ]
 
-        # First sweep: Check for blocked indicators across all lines
+        # First sweep: Check for blocked indicators across all lines.
+        # Use \b word-boundary assertions to avoid false positives such as
+        # "cannot miss" or "无法可能" where the keyword is part of a positive sentence.
+        _BLOCKED_RE = re.compile(
+            r"\b(?:blocked|stuck|failed|无法|卡住|障碍)\b",
+            re.IGNORECASE,
+        )
         for line in ocr_lines:
-            if re.search(r"(?:blocked|stuck|failed|cannot|无法|卡住|障碍)", line.strip(), re.IGNORECASE):
+            if _BLOCKED_RE.search(line.strip()):
                 is_blocked = True
 
         # Second sweep: Match quest objective
@@ -94,7 +97,6 @@ class QuestStateTracker:
         self._current_state = QuestState(
             active_quest_id=active_quest_id,
             objective_text=objective_text or self._current_state.objective_text or "No active quest",
-            tracked_target=tracked_target,
             is_blocked=is_blocked,
             failure_count=failure_count,
         )

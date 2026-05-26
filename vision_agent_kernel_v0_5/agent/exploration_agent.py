@@ -65,8 +65,6 @@ class ExplorationAgent:
                 target_prompt = "target"
                 if isinstance(vlm_res.ui_elements, dict):
                     target_prompt = vlm_res.ui_elements.get("interaction_prompt", "target")
-                elif hasattr(vlm_res, "ui_elements") and isinstance(vlm_res.ui_elements, dict):
-                    target_prompt = vlm_res.ui_elements.get("interaction_prompt", "target")
 
                 return ExplorationAction(
                     action_type=suggested_action,

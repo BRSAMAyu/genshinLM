@@ -238,6 +238,15 @@ class EvolutionEngine:
         """Retrieve the BenchmarkDelta for a skill, if any."""
         return self._benchmark_deltas.get(skill_id)
 
+    def verify_in_sandbox(self, patch: dict[str, Any]) -> bool:
+        """Public entry point for sandboxed pytest verification of a patch record.
+
+        Delegates to the internal implementation. Callers outside this module
+        (e.g. SkillInductionGate) should use this public method rather than
+        accessing ``_verify_in_sandbox`` directly.
+        """
+        return self._verify_in_sandbox(patch)
+
     # -- internals -----------------------------------------------------------
 
     def _next_version(self, skill_id: str) -> str:

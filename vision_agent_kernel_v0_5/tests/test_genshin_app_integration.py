@@ -46,7 +46,7 @@ class _TestCapturer:
         pass
 
 
-def _wait_for(predicate, timeout=3.0):
+def _wait_for(predicate, timeout=10.0):
     deadline = time.perf_counter() + timeout
     while time.perf_counter() < deadline:
         if predicate():

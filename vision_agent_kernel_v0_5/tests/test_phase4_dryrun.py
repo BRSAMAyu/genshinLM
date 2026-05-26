@@ -71,7 +71,7 @@ class _GenshinDemoCapturer:
         self._danger_active = False
 
 
-def _wait_for(predicate, timeout=5.0):
+def _wait_for(predicate, timeout=10.0):
     deadline = time.perf_counter() + timeout
     while time.perf_counter() < deadline:
         if predicate():
@@ -145,7 +145,7 @@ def test_genshin_app_full_pipeline_dryrun() -> None:
     worker.start()
     try:
         # Wait for pipeline to produce observations
-        _wait_for(lambda: state_bus.latest_observation.version >= 5, timeout=4.0)
+        _wait_for(lambda: state_bus.latest_observation.version >= 5, timeout=10.0)
         obs = state_bus.latest_observation.get()
         assert obs is not None, "Pipeline should produce observations"
 

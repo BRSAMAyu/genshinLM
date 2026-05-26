@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from typing import Any
 
 from planning.screen_state_claim import ScreenStateClaim
 from planning.skill_capability_catalog import SkillCatalogEntry, SkillCapabilityCatalog

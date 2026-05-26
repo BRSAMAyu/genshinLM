@@ -112,8 +112,8 @@ class SkillInductionGate:
             "approved": False,
         }
 
-        # Run verification in sandbox
-        verified = self._engine._verify_in_sandbox(patch_record)
+        # Run verification in sandbox via the public API
+        verified = self._engine.verify_in_sandbox(patch_record)
         if verified:
             log.info("[SkillInductionGate] Sandbox dry-run validated successfully for skill: %s", goal)
             return entry

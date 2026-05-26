@@ -43,6 +43,42 @@ try:
 except Exception:  # pragma: no cover
     StateBus = Any  # type: ignore[assignment]
 
+
+class _NullStateBus:
+    """Minimal null-object satisfying the StateBus interface used by EvolutionEngine.
+
+    Used when no real StateBus is provided so that EvolutionEngine can be
+    constructed without importing unittest.mock in production code.
+    """
+
+    class _NullShutdown:
+        def is_set(self) -> bool:
+            return False
+
+    shutdown_flag = _NullShutdown()
+
+    def subscribe(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        pass
+
+    def get_slot(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        return None
+
+    def register_slot(self, *args: Any, **kwargs: Any) -> "_NullSlot":  # noqa: ANN401
+        return _NullSlot()
+
+    def publish(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        pass
+
+
+class _NullSlot:
+    """Null slot that silently swallows puts."""
+
+    def put(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        pass
+
+    def get(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        return None
+
 log = logging.getLogger(__name__)
 
 
@@ -137,15 +173,15 @@ class AutonomousTaskBrain:
             self._perception,
             risk_level=self._config.require_confirmation_risk,
         )
-        from unittest.mock import MagicMock
-        self._evolution_engine = EvolutionEngine(
-            self._state_bus if self._state_bus is not None else MagicMock()
-        )
+        _bus_for_engine: Any = self._state_bus if self._state_bus is not None else _NullStateBus()
+        self._evolution_engine = EvolutionEngine(_bus_for_engine)
         self._distiller = SemanticSkillDistiller()
         self._skill_induction_gate = skill_induction_gate or SkillInductionGate(
             self._distiller,
             self._evolution_engine,
         )
+        # H3: accumulate exploration events across iterations for richer trace induction
+        self._exploration_trace: list[RecordedEvent] = []
 
     def request_stop(self) -> None:
         self._shutdown.set()
@@ -347,6 +383,7 @@ class AutonomousTaskBrain:
                         context={"source": "exploration"},
                     )
                     if success:
+                        # H3: append to trace buffer — induction runs on the full batch
                         event = RecordedEvent(
                             event_type="mouse_click" if "click" in explore_action.action_type else explore_action.action_type,
                             timestamp=time.time(),
@@ -364,11 +401,14 @@ class AutonomousTaskBrain:
                             },
                             observation_frame_id=self._current_claim.frame_id,
                         )
+                        self._exploration_trace.append(event)
+                        # Attempt induction on the accumulated trace (not a single event)
                         induced = self._skill_induction_gate.induce_skill_from_trace(
-                            [event], node.semantic_action, self._current_claim.screen_state
+                            list(self._exploration_trace), node.semantic_action, self._current_claim.screen_state
                         )
                         if induced:
                             self._catalog.register_induced_skill(induced)
+                            self._exploration_trace.clear()  # trace promoted → reset buffer
                             log.info("[TaskBrain] Dynamic skill induction successful for: %s", node.semantic_action)
                         if self._config.post_action_resample:
                             self._resample_current_state_after_action()

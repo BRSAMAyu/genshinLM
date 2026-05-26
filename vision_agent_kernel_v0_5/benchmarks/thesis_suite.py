@@ -5,7 +5,6 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 from agent.autonomous_task_brain import AutonomousTaskBrain, TaskBrainConfig
 from planning.screen_state_claim import ScreenStateClaim
