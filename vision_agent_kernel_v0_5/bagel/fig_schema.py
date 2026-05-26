@@ -12,6 +12,7 @@ Post-hoc belief insertion is rejected or tagged posthoc_invalid.
 """
 from __future__ import annotations
 
+import threading
 import time
 import uuid
 from dataclasses import dataclass, field, replace
@@ -20,14 +21,16 @@ from typing import Any, Literal
 # -- Lifecycle states -----------------------------------------------------
 
 BeliefLifecycleState = Literal[
-    "provisional",    # intent-level, not yet fingerprinted
-    "committed",      # fingerprint confirmed, driving actions
-    "confirmed",      # feedback received, still valid
-    "suspect",        # at least one falsification signal
-    "falsified",      # falsification probe succeeded
-    "retired",        # no longer active
-    "stale",          # downstream of a falsified belief, needs JIT regeneration
-    "posthoc_invalid", # inserted after action, not usable for attribution
+    "provisional",       # intent-level, not yet fingerprinted
+    "committed",         # fingerprint confirmed, driving actions (Nominal)
+    "confirmed",         # positive feedback received (Attributed)
+    "survived",          # passed falsification probe, high confidence
+    "suspect",           # at least one falsification signal
+    "falsified",         # falsification probe succeeded
+    "noise_disturbance", # failed feedback coupling, not a useful belief
+    "retired",           # no longer active
+    "stale",             # downstream of a falsified belief, needs JIT regeneration
+    "posthoc_invalid",   # inserted after action, not usable for attribution
 ]
 
 BeliefCausalRole = Literal[
@@ -209,6 +212,7 @@ class FalsifiableInterventionGraph:
     edges: list[TypedEdge] = field(default_factory=list)
     version: int = 0
     _ordering_lock: dict[str, int] = field(default_factory=dict)
+    _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def __post_init__(self) -> None:
         if not self.graph_id:
@@ -218,6 +222,10 @@ class FalsifiableInterventionGraph:
 
     def commit_belief(self, belief: BeliefNode) -> None:
         """Insert a belief. Rejects if post-hoc relative to existing actions."""
+        with self._lock:
+            self._commit_belief_unlocked(belief)
+
+    def _commit_belief_unlocked(self, belief: BeliefNode) -> None:
         if belief.lifecycle == "posthoc_invalid":
             self.beliefs[belief.belief_id] = belief
             self._bump()
@@ -235,6 +243,10 @@ class FalsifiableInterventionGraph:
 
     def propose_action(self, action: ActionNode) -> None:
         """Insert an action. Requires all driving beliefs to be committed."""
+        with self._lock:
+            self._propose_action_unlocked(action)
+
+    def _propose_action_unlocked(self, action: ActionNode) -> None:
         for bid in action.belief_ids:
             belief = self.beliefs.get(bid)
             if belief is None:
@@ -247,47 +259,53 @@ class FalsifiableInterventionGraph:
         self._bump()
 
     def add_feedback(self, feedback: FeedbackNode) -> None:
-        self.feedbacks[feedback.feedback_id] = feedback
-        self._bump()
+        with self._lock:
+            self.feedbacks[feedback.feedback_id] = feedback
+            self._bump()
 
     def add_probe(self, probe: ProbeNode) -> None:
-        self.probes[probe.probe_id] = probe
-        self._bump()
+        with self._lock:
+            self.probes[probe.probe_id] = probe
+            self._bump()
 
     def add_edge(self, edge: TypedEdge) -> None:
-        self.edges.append(edge)
-        self._bump()
+        with self._lock:
+            self.edges.append(edge)
+            self._bump()
 
     def update_belief(self, belief_id: str, **overrides: Any) -> BeliefNode | None:
         """Update a belief with field overrides. Returns updated node."""
-        belief = self.beliefs.get(belief_id)
-        if belief is None:
-            return None
-        import dataclasses as _dc
-        updated = _dc.replace(belief, updated_at=time.perf_counter(), **overrides)
-        self.beliefs[belief_id] = updated
-        self._bump()
-        return updated
+        with self._lock:
+            belief = self.beliefs.get(belief_id)
+            if belief is None:
+                return None
+            import dataclasses as _dc
+            updated = _dc.replace(belief, updated_at=time.perf_counter(), **overrides)
+            self.beliefs[belief_id] = updated
+            self._bump()
+            return updated
 
     def update_action(self, action_id: str, **overrides: Any) -> ActionNode | None:
-        action = self.actions.get(action_id)
-        if action is None:
-            return None
-        import dataclasses as _dc
-        updated = _dc.replace(action, updated_at=time.perf_counter(), **overrides)
-        self.actions[action_id] = updated
-        self._bump()
-        return updated
+        with self._lock:
+            action = self.actions.get(action_id)
+            if action is None:
+                return None
+            import dataclasses as _dc
+            updated = _dc.replace(action, updated_at=time.perf_counter(), **overrides)
+            self.actions[action_id] = updated
+            self._bump()
+            return updated
 
     def update_probe(self, probe_id: str, **overrides: Any) -> ProbeNode | None:
-        probe = self.probes.get(probe_id)
-        if probe is None:
-            return None
-        import dataclasses as _dc
-        updated = _dc.replace(probe, **overrides)
-        self.probes[probe_id] = updated
-        self._bump()
-        return updated
+        with self._lock:
+            probe = self.probes.get(probe_id)
+            if probe is None:
+                return None
+            import dataclasses as _dc
+            updated = _dc.replace(probe, **overrides)
+            self.probes[probe_id] = updated
+            self._bump()
+            return updated
 
     # -- Query methods --
 

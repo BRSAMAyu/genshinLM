@@ -96,7 +96,7 @@ class ProbePolicy:
         1. Tests a declared invariant (has failure_criteria).
         2. Has clear failure criteria.
         3. Not irreversible.
-        4. Can distinguish beliefs (has belief_id).
+        4. Can distinguish beliefs (has two candidates or at least belief_id).
         5. Has timeout/noise risk declared.
         """
         if not probe.failure_criteria:
@@ -114,6 +114,10 @@ class ProbePolicy:
         if not probe.falsification_invariant:
             return ProbeSanityCheck(
                 probe.probe_id, False, "probe has no falsification invariant",
+            )
+        if not probe.timeout_risk and not probe.noise_risk:
+            return ProbeSanityCheck(
+                probe.probe_id, False, "probe has no timeout or noise risk declared",
             )
         return ProbeSanityCheck(probe.probe_id, True, "passed")
 
