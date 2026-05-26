@@ -13,7 +13,7 @@ class MiniMaxProvider:
     def __init__(self) -> None:
         self._client = ChatHTTPClient(
             api_key_env="MINIMAX_API_KEY",
-            default_base_url="https://api.minimax.io/v1/text/chatcompletion_v2",
+            default_base_url="https://api.minimaxi.com/v1/text/chatcompletion_v2",
             default_model="MiniMax-M2.7",
             base_url_env="MINIMAX_BASE_URL",
             model_env="MINIMAX_MODEL",
