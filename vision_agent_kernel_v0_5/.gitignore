@@ -9,3 +9,22 @@ benchmark_reports/
 data/skill_patches/
 logs/
 knowledge/genshin_world_graph.yaml.bak
+
+# Rust / Tauri build artifacts
+desktop/src-tauri/target/
+
+# Node / JS build artifacts
+node_modules/
+desktop/dist/
+desktop/.next/
+
+# Python test / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
