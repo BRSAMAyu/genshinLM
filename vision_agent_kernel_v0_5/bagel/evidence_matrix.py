@@ -12,7 +12,10 @@ Formula:
     C_i = max_j(w_j * I[M_ij == +1])
     S_i = sum_j(w_j * I[M_ij == -1])
     R_i = sum_j(w_j * I[M_ij != 0])
-    score_i = C_i + alpha * R_i / (epsilon + S_i)
+    score_i = C_i - S_i + alpha * R_i / (epsilon + S_i)
+
+Core probes with weight >= core_probe_veto_threshold triple the refute
+weight, making S_i dominate the score (effective falsification veto).
 
 Constraints:
 - One core failure signal cannot be drowned by 100 irrelevant pass signals.

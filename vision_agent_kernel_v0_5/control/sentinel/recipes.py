@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from control.sentinel.recovery_recipe import RecoveryRecipe, RecoveryResult
+from control.sentinel.recovery_recipe import RecoveryRecipe, RecoveryResult, RecoveryPolicy
 from control.sentinel.somatic_state import SomaticState
 
 
@@ -31,7 +31,7 @@ class UILostRecovery(RecoveryRecipe):
         return True
 
     @property
-    def failure_policy(self) -> str:
+    def failure_policy(self) -> RecoveryPolicy:
         return "ask_user"
 
 
@@ -55,7 +55,7 @@ class StuckRecovery(RecoveryRecipe):
         return True
 
     @property
-    def failure_policy(self) -> str:
+    def failure_policy(self) -> RecoveryPolicy:
         return "replan"
 
 
@@ -78,7 +78,7 @@ class TargetLostRecovery(RecoveryRecipe):
         return True
 
     @property
-    def failure_policy(self) -> str:
+    def failure_policy(self) -> RecoveryPolicy:
         return "replan"
 
 
@@ -101,7 +101,7 @@ class LoadingTimeoutRecovery(RecoveryRecipe):
         return True
 
     @property
-    def failure_policy(self) -> str:
+    def failure_policy(self) -> RecoveryPolicy:
         return "ask_user"
 
 
@@ -125,7 +125,7 @@ class CombatDefeatRecovery(RecoveryRecipe):
         return True
 
     @property
-    def failure_policy(self) -> str:
+    def failure_policy(self) -> RecoveryPolicy:
         return "replan"
 
 
@@ -151,7 +151,7 @@ class LowHealthRecovery(RecoveryRecipe):
         return True
 
     @property
-    def failure_policy(self) -> str:
+    def failure_policy(self) -> RecoveryPolicy:
         return "replan"
 
 
@@ -174,7 +174,7 @@ class DriftRecovery(RecoveryRecipe):
         return True
 
     @property
-    def failure_policy(self) -> str:
+    def failure_policy(self) -> RecoveryPolicy:
         return "replan"
 
 
@@ -198,7 +198,7 @@ class ModelProviderFailureRecovery(RecoveryRecipe):
         return True
 
     @property
-    def failure_policy(self) -> str:
+    def failure_policy(self) -> RecoveryPolicy:
         return "ask_user"
 
 

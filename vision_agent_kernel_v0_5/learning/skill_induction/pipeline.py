@@ -66,14 +66,25 @@ class InductionPipeline:
 
             self.registry.register(result.skill)
 
-            # Try promotion if target tier is above draft
+            # Try iterative promotion toward target tier
             if target_tier not in ("raw_trace", "draft"):
-                from skills.promotion import PromotionTier
-                promo = self.gate.try_promote(
-                    result.skill, target_tier,  # type: ignore
-                )
-                promotion_results.append((result.skill.skill_id, promo.success, promo.reason))
-                if promo.success:
+                from skills.promotion import PromotionTier, _TIER_ORDER, _TIER_INDEX
+                current = result.skill
+                current_idx = _TIER_INDEX[current.tier]
+                target_idx = _TIER_INDEX.get(target_tier, current_idx + 1)  # type: ignore
+                for next_idx in range(current_idx + 1, target_idx + 1):
+                    next_tier = _TIER_ORDER[next_idx]
+                    promo = self.gate.try_promote(current, next_tier)
+                    promotion_results.append(
+                        (current.skill_id, promo.success, promo.reason),
+                    )
+                    if promo.success:
+                        # Get the promoted version from registry
+                        promoted = self.registry.get(current.skill_id)
+                        current = promoted if promoted is not None else current
+                    else:
+                        break
+                if current.tier != result.skill.tier:
                     skills_produced += 1
             else:
                 skills_produced += 1

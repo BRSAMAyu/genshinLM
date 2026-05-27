@@ -381,6 +381,21 @@ class FalsifiableInterventionGraph:
                 "edges": [_node_to_dict(e) for e in self.edges],
             }
 
+    def snapshot(self) -> dict[str, Any]:
+        """Return a consistent point-in-time snapshot of all FIG data.
+
+        The snapshot is a shallow copy of the internal dicts and lists,
+        suitable for multi-query operations that need atomicity.
+        """
+        with self._lock:
+            return {
+                "beliefs": dict(self.beliefs),
+                "actions": dict(self.actions),
+                "feedbacks": dict(self.feedbacks),
+                "probes": dict(self.probes),
+                "edges": list(self.edges),
+            }
+
     # -- Internal --
 
     def _bump(self) -> None:

@@ -13,6 +13,7 @@ from __future__ import annotations
 
 import logging
 import time
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -171,7 +172,7 @@ class BagelArbiter:
             if not result.probe_requested:
                 continue
             probe = ProbeNode(
-                probe_id=f"probe_{result.belief_id[:16]}_{int(time.perf_counter())}",
+                probe_id=f"probe_{uuid.uuid4().hex[:12]}",
                 belief_id=result.belief_id,
                 description=result.probe_description,
                 failure_criteria=f"Score for {result.belief_id} remains in conflict zone",

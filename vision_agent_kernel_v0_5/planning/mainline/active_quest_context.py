@@ -93,8 +93,7 @@ class ActiveQuestContext:
 
     def evolve(self, **overrides: Any) -> ActiveQuestContext:
         """Create next version with updated fields."""
-        import dataclasses
-        return dataclasses.replace(
+        return replace(
             self,
             version=self.version + 1,
             updated_at=time.perf_counter(),

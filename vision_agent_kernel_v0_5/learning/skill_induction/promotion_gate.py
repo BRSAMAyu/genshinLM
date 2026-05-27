@@ -67,7 +67,11 @@ class PromotionGate:
         """Determine the highest tier the skill can promote to.
 
         Returns the target tier, or None if no promotion is possible.
+        Applies the same raw_trace block as try_promote().
         """
+        if skill.tier == "raw_trace":
+            return None
+
         from skills.promotion import _TIER_ORDER, _TIER_INDEX
         current_idx = _TIER_INDEX[skill.tier]
         highest: PromotionTier | None = None

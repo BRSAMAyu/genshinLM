@@ -202,6 +202,35 @@ class BagelEventStore:
                 node = _dict_to_probe(payload)
                 if node:
                     fig.add_probe(node)
+            elif event.event_type in ("BeliefRevised", "BeliefStaled", "BeliefRetired",
+                                      "ArbiterUpdated"):
+                # Lifecycle transition — apply update to existing belief
+                bid = payload.get("belief_id", "")
+                new_lc = payload.get("lifecycle")
+                if bid and new_lc:
+                    fig.update_belief(bid, lifecycle=new_lc)
+            elif event.event_type == "ActionMaterialized":
+                aid = payload.get("action_id", "")
+                if aid:
+                    overrides: dict = {}
+                    if payload.get("status"):
+                        overrides["status"] = payload["status"]
+                    if payload.get("fingerprint"):
+                        overrides["fingerprint"] = payload["fingerprint"]
+                    if payload.get("claim_id"):
+                        overrides["claim_id"] = payload["claim_id"]
+                    if overrides:
+                        fig.update_action(aid, **overrides)
+            elif event.event_type == "ProbeExecuted":
+                pid = payload.get("probe_id", "")
+                if pid:
+                    probe_overrides: dict = {}
+                    if payload.get("status"):
+                        probe_overrides["status"] = payload["status"]
+                    if payload.get("result"):
+                        probe_overrides["result"] = payload["result"]
+                    if probe_overrides:
+                        fig.update_probe(pid, **probe_overrides)
 
         return fig.to_dict()
 
@@ -279,12 +308,23 @@ def _dict_to_feedback(data: dict[str, Any]) -> Any:
 def _dict_to_probe(data: dict[str, Any]) -> Any:
     from bagel.fig_schema import ProbeNode
     try:
+        can_distinguish_raw = data.get("can_distinguish", ("", ""))
+        can_distinguish: tuple[str, ...] = ("", "")
+        if isinstance(can_distinguish_raw, list) and len(can_distinguish_raw) >= 2:
+            can_distinguish = (can_distinguish_raw[0], can_distinguish_raw[1])
+        elif isinstance(can_distinguish_raw, tuple) and len(can_distinguish_raw) >= 2:
+            can_distinguish = (can_distinguish_raw[0], can_distinguish_raw[1])
         return ProbeNode(
             probe_id=data["probe_id"],
             belief_id=data["belief_id"],
             description=data.get("description", ""),
             failure_criteria=data.get("failure_criteria", ""),
             status=data.get("status", "generated"),
+            falsification_invariant=data.get("falsification_invariant", ""),
+            irreversible=data.get("irreversible", False),
+            can_distinguish=can_distinguish,
+            timeout_risk=data.get("timeout_risk", ""),
+            noise_risk=data.get("noise_risk", ""),
             result=data.get("result", {}),
             created_at=data.get("created_at", 0.0),
             executed_at=data.get("executed_at", 0.0),

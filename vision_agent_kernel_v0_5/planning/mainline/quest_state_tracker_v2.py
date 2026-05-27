@@ -10,6 +10,7 @@ Key improvements over V1:
 from __future__ import annotations
 
 import hashlib
+import math
 import logging
 import re
 import time
@@ -39,7 +40,8 @@ _QUEST_PATTERNS = [
 ]
 
 _BLOCKED_RE = re.compile(
-    r"(?:blocked|stuck|failed|无法|卡住|障碍|锁定|未解锁)",
+    r"(?:(?:^|[\s,.;!?])blocked|(?:^|[\s,.;!?])stuck|(?:^|[\s,.;!?])failed"
+    r"|无法|卡住|障碍物|(?:^|[\s,.;!?])锁定|未解锁)",
     re.IGNORECASE,
 )
 
@@ -62,7 +64,7 @@ class QuestContextDelta:
 class QuestStateTrackerV2:
     """Upgraded quest tracker producing ActiveQuestContext."""
 
-    def __init__(self, confidence_decay_rate: float = 0.02) -> None:
+    def __init__(self, confidence_decay_rate: float = 2.0) -> None:
         self._context = ActiveQuestContext(
             quest_id="unknown",
             quest_title="",
@@ -72,6 +74,7 @@ class QuestStateTrackerV2:
         )
         self._confidence_decay_rate = confidence_decay_rate
         self._last_ocr_had_quest = False
+        self._last_update_time: float = time.perf_counter()
 
     def update(
         self,
@@ -111,7 +114,7 @@ class QuestStateTrackerV2:
         # Fallback: VLM scene description
         if not objective_text and claim.scene_description:
             vlm_match = re.search(
-                r"(?:quest|task|objective|goal is)\s*([a-zA-Z0-9\s]+)",
+                r"(?:quest|task|objective|goal is|任务|目标)\s*([\w\s一-鿿]+)",
                 claim.scene_description,
                 re.IGNORECASE,
             )
@@ -147,18 +150,24 @@ class QuestStateTrackerV2:
                             turn_index=len(parsed_dialogue),
                         ))
 
-        # 5. Compute confidence
+        # 5. Compute confidence (time-based exponential decay)
+        now = time.perf_counter()
+        elapsed = now - self._last_update_time
         confidence = self._context.confidence
         if has_quest_text:
             # Boost confidence when quest text is found
             confidence = min(1.0, 0.7 + 0.3 * min(len(objective_text) / 20.0, 1.0))
             self._last_ocr_had_quest = True
         elif self._last_ocr_had_quest:
-            # Decay confidence when OCR is missing
-            confidence = max(0.1, confidence - self._confidence_decay_rate)
+            # First dropout: moderate decay
+            decay = 1.0 - math.exp(-self._confidence_decay_rate * elapsed)
+            confidence = max(0.1, confidence * (1.0 - decay))
             self._last_ocr_had_quest = False
         else:
-            confidence = max(0.05, confidence - self._confidence_decay_rate * 2)
+            # Sustained dropout: faster decay
+            decay = 1.0 - math.exp(-self._confidence_decay_rate * 2 * elapsed)
+            confidence = max(0.05, confidence * (1.0 - decay))
+        self._last_update_time = now
 
         # 6. Build new context
         if objective_text:

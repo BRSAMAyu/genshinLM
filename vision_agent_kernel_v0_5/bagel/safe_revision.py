@@ -41,6 +41,8 @@ class CascadeReport:
     belief_id: str
     affected_actions: int
     affected_beliefs: int
+    affected_action_ids: tuple[str, ...]
+    affected_belief_ids: tuple[str, ...]
     total_actions: int
     total_beliefs: int
     affected_ratio: float
@@ -66,6 +68,7 @@ class RevisionDecision:
 @dataclass(slots=True)
 class SafeRevisionEngine:
     """Evaluates cascade risk of belief revisions and applies safe protocol."""
+
     kappa: float = 0.5       # Max acceptable cascade risk
     max_impact: float = 10   # Max acceptable affected nodes
     coupling_weight: float = 1.0
@@ -75,35 +78,43 @@ class SafeRevisionEngine:
         fig: FalsifiableInterventionGraph,
         belief_id: str,
     ) -> CascadeReport:
-        """Compute cascade risk for revising a belief."""
-        belief = fig.beliefs.get(belief_id)
+        """Compute cascade risk for revising a belief.
+
+        All FIG queries are performed atomically via snapshot() to
+        avoid TOCTOU from concurrent mutations.
+        """
+        snap = fig.snapshot()
+
+        belief = snap["beliefs"].get(belief_id)
         if belief is None:
             return CascadeReport(
                 belief_id=belief_id,
                 affected_actions=0, affected_beliefs=0,
-                total_actions=len(fig.actions), total_beliefs=len(fig.beliefs),
+                affected_action_ids=(), affected_belief_ids=(),
+                total_actions=len(snap["actions"]), total_beliefs=len(snap["beliefs"]),
                 affected_ratio=0.0, coupling=0.0,
                 verification_coverage=1.0, cascade_risk=0.0,
                 is_safe=True, reason="belief_not_found",
             )
 
-        # Find downstream beliefs
-        downstream_belief_ids = fig.downstream_beliefs(belief_id)
+        # Find downstream beliefs from snapshot
+        downstream_belief_ids = self._downstream_from_snapshot(snap, belief_id)
 
         # Find all affected actions (direct + downstream)
         affected_actions: set[str] = set()
-        for bid in [belief_id] + downstream_belief_ids:
-            for action in fig.actions_for_belief(bid):
-                affected_actions.add(action.action_id)
+        for bid in [belief_id] + list(downstream_belief_ids):
+            for action in snap["actions"].values():
+                if bid in action.belief_ids:
+                    affected_actions.add(action.action_id)
 
-        total_actions = max(len(fig.actions), 1)
-        total_beliefs = max(len(fig.beliefs), 1)
+        total_actions = max(len(snap["actions"]), 1)
+        total_beliefs = max(len(snap["beliefs"]), 1)
         affected_ratio = len(affected_actions) / total_actions
 
         # Coupling: how many beliefs drive each affected action
         coupling_scores: list[float] = []
         for aid in affected_actions:
-            action = fig.actions.get(aid)
+            action = snap["actions"].get(aid)
             if action:
                 coupling_scores.append(len(action.belief_ids))
         coupling = (
@@ -113,7 +124,7 @@ class SafeRevisionEngine:
         # Verification coverage: ratio of affected actions with claims
         verified_count = sum(
             1 for aid in affected_actions
-            if fig.actions.get(aid) and fig.actions[aid].claim_id
+            if snap["actions"].get(aid) and snap["actions"][aid].claim_id
         )
         verification_coverage = verified_count / max(len(affected_actions), 1)
 
@@ -127,6 +138,8 @@ class SafeRevisionEngine:
             belief_id=belief_id,
             affected_actions=len(affected_actions),
             affected_beliefs=len(downstream_belief_ids),
+            affected_action_ids=tuple(sorted(affected_actions)),
+            affected_belief_ids=tuple(downstream_belief_ids),
             total_actions=total_actions,
             total_beliefs=total_beliefs,
             affected_ratio=affected_ratio,
@@ -147,17 +160,13 @@ class SafeRevisionEngine:
         report = self.assess_cascade(fig, belief_id)
 
         if new_lifecycle == "falsified" and not report.is_safe:
-            # High cascade — mark downstream stale instead of immediate revision
             return RevisionDecision(
                 belief_id=belief_id,
                 safe=False,
                 strategy="stale_marking",
                 cascade_report=report,
-                affected_action_ids=tuple(
-                    fig.actions_for_belief(belief_id)[i].action_id
-                    for i in range(len(fig.actions_for_belief(belief_id)))
-                ),
-                affected_belief_ids=tuple(fig.downstream_beliefs(belief_id)),
+                affected_action_ids=report.affected_action_ids,
+                affected_belief_ids=report.affected_belief_ids,
                 estimated_cost=report.cascade_risk * 10,
             )
 
@@ -196,15 +205,40 @@ class SafeRevisionEngine:
             for bid in decision.affected_belief_ids:
                 fig.update_belief(bid, lifecycle="stale")
                 changed.append(bid)
+            # Also mark affected actions as needing regeneration
+            for aid in decision.affected_action_ids:
+                fig.update_action(aid, status="aborted")
+                changed.append(aid)
             log.info(
-                "[SafeRevision] Stale marking for %d downstream beliefs of %s",
-                len(decision.affected_belief_ids), decision.belief_id,
+                "[SafeRevision] Stale marking for %d downstream beliefs, "
+                "%d affected actions of %s",
+                len(decision.affected_belief_ids),
+                len(decision.affected_action_ids),
+                decision.belief_id,
             )
         elif decision.strategy == "local_revision":
-            # Only the target belief is changed — downstream untouched
             log.info(
                 "[SafeRevision] Local revision for belief %s -> %s",
                 decision.belief_id, new_lifecycle,
             )
 
         return changed
+
+    @staticmethod
+    def _downstream_from_snapshot(
+        snap: dict[str, Any], belief_id: str,
+    ) -> list[str]:
+        """BFS for downstream beliefs using a snapshot instead of live FIG."""
+        visited: set[str] = {belief_id}
+        queue = [belief_id]
+        result: list[str] = []
+        while queue:
+            current = queue.pop(0)
+            for edge in snap["edges"]:
+                if edge.kind == "belief_depends_on_belief" and edge.target_id == current:
+                    downstream_id = edge.source_id
+                    if downstream_id not in visited and downstream_id in snap["beliefs"]:
+                        visited.add(downstream_id)
+                        result.append(downstream_id)
+                        queue.append(downstream_id)
+        return result
