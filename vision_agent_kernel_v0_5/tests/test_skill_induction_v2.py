@@ -240,7 +240,7 @@ class TestPromotionGate:
         gate = PromotionGate(registry)
         skill = SkillDef(
             skill_id="test", tier="experimental",
-            produced_claims=(SkillProducedClaim("x"),),
+            produced_claims=(SkillProducedClaim("x", verifier_recipe="verify_x"),),
         )
         target = gate.evaluate(skill)
         assert target == "candidate"

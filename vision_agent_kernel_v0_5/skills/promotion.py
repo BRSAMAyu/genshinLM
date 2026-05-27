@@ -68,13 +68,13 @@ def can_promote_to(
     if target == "candidate":
         if not skill.produced_claims:
             return False, "candidate requires at least one produced_claim"
-        # Hard rule: skills without verifiers on terminal claims cannot be unattended
+        # Hard rule: skills without verifiers on claims cannot be unattended
         missing_verifiers = [
-            c.claim_id for c in skill.produced_claims
-            if c.claim_role == "terminal" and not c.verifier_recipe
+            c.claim_type for c in skill.produced_claims
+            if not c.verifier_recipe
         ]
         if missing_verifiers:
-            return False, f"terminal claims missing verifiers: {missing_verifiers}"
+            return False, f"claims missing verifiers: {missing_verifiers}"
         return True, "has produced claims with verifiers"
 
     # candidate → stable: must meet replay + Wilson thresholds

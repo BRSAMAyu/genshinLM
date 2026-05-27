@@ -29,7 +29,7 @@ def _step(action: str = "click_anchor", target: str = "btn") -> SkillStep:
 
 
 def _claim(claim_type: str = "dialogue_advanced") -> SkillProducedClaim:
-    return SkillProducedClaim(claim_type=claim_type)
+    return SkillProducedClaim(claim_type=claim_type, verifier_recipe="verify_dialogue")
 
 
 def _dialogue_skill(tier: str = "draft") -> SkillDef:
