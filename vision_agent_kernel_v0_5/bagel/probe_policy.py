@@ -119,6 +119,14 @@ class ProbePolicy:
             return ProbeSanityCheck(
                 probe.probe_id, False, "probe has no timeout or noise risk declared",
             )
+        # Check can_distinguish has two distinct belief IDs
+        if (not probe.can_distinguish
+                or len(probe.can_distinguish) < 2
+                or probe.can_distinguish[0] == probe.can_distinguish[1]):
+            return ProbeSanityCheck(
+                probe.probe_id, False,
+                "probe cannot distinguish beliefs (need two distinct candidates)",
+            )
         return ProbeSanityCheck(probe.probe_id, True, "passed")
 
     def execute_probe(

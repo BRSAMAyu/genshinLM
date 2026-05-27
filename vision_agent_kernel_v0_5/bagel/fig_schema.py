@@ -274,8 +274,8 @@ class FalsifiableInterventionGraph:
             self.edges.append(edge)
             self._bump()
 
-    # Terminal lifecycle states — transitions from these are forbidden.
-    _TERMINAL_LIFECYCLES: frozenset[str] = frozenset({"retired", "posthoc_invalid"})
+    # Terminal lifecycle states — no updates allowed from these.
+    _TERMINAL_LIFECYCLES: frozenset[str] = frozenset({"retired", "posthoc_invalid", "falsified"})
 
     def update_belief(self, belief_id: str, **overrides: Any) -> BeliefNode | None:
         """Update a belief with field overrides. Returns updated node."""
@@ -284,9 +284,7 @@ class FalsifiableInterventionGraph:
             if belief is None:
                 return None
             if belief.lifecycle in self._TERMINAL_LIFECYCLES:
-                new_lc = overrides.get("lifecycle")
-                if new_lc is not None and new_lc != belief.lifecycle:
-                    return None
+                return None
             updated = _dc.replace(belief, updated_at=time.perf_counter(), **overrides)
             self.beliefs[belief_id] = updated
             self._bump()

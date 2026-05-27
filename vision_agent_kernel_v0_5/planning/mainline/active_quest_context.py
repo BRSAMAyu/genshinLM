@@ -105,7 +105,7 @@ class ActiveQuestContext:
 def classify_objective(text: str) -> ObjectiveType:
     """Classify an objective text into a type using keyword heuristics."""
     lower = text.lower()
-    dialog_kw = ("对话", "交谈", "talk", "speak", "dialogue", "对话完成", "go to")
+    dialog_kw = ("对话", "交谈", "talk", "speak", "dialogue", "对话完成")
     combat_kw = ("击败", "消灭", "战斗", "defeat", "kill", "combat", "fight", "boss")
     collect_kw = ("收集", "采集", "找到", "collect", "gather", "find", "obtain")
     marker_kw = ("前往", "到达", "go to", "reach", "navigate", "抵达", "移动到")

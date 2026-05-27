@@ -22,6 +22,7 @@ Constraints:
 from __future__ import annotations
 
 import math
+import threading
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -80,17 +81,21 @@ class EvidenceMatrix:
     conflict_threshold: float = 0.3
 
     _signals: dict[str, list[EvidenceSignal]] = field(default_factory=dict)
+    _lock: threading.Lock = field(default_factory=threading.Lock)
 
     def add_signal(self, signal: EvidenceSignal) -> None:
-        self._signals.setdefault(signal.belief_id, []).append(signal)
+        with self._lock:
+            self._signals.setdefault(signal.belief_id, []).append(signal)
 
     def add_signals(self, signals: list[EvidenceSignal]) -> None:
-        for s in signals:
-            self.add_signal(s)
+        with self._lock:
+            for s in signals:
+                self._signals.setdefault(s.belief_id, []).append(s)
 
     def score_belief(self, belief_id: str) -> EvidenceScore:
         """Compute the evidence score for a single belief."""
-        signals = self._signals.get(belief_id, [])
+        with self._lock:
+            signals = list(self._signals.get(belief_id, []))
         if not signals:
             return EvidenceScore(
                 belief_id=belief_id, score=0.0,
@@ -161,7 +166,9 @@ class EvidenceMatrix:
 
     def score_all(self) -> dict[str, EvidenceScore]:
         """Score all beliefs in the matrix."""
-        return {bid: self.score_belief(bid) for bid in self._signals}
+        with self._lock:
+            belief_ids = list(self._signals.keys())
+        return {bid: self.score_belief(bid) for bid in belief_ids}
 
     def top_suspects(self, limit: int = 10) -> list[EvidenceScore]:
         """Return beliefs sorted by most negative score (most falsified)."""
@@ -170,9 +177,11 @@ class EvidenceMatrix:
         return ranked[:limit]
 
     def clear(self) -> None:
-        self._signals.clear()
+        with self._lock:
+            self._signals.clear()
 
     def signal_count(self, belief_id: str | None = None) -> int:
-        if belief_id:
-            return len(self._signals.get(belief_id, []))
-        return sum(len(v) for v in self._signals.values())
+        with self._lock:
+            if belief_id:
+                return len(self._signals.get(belief_id, []))
+            return sum(len(v) for v in self._signals.values())

@@ -9,6 +9,7 @@ Key improvements over V1:
 """
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
 import time
@@ -128,7 +129,7 @@ class QuestStateTrackerV2:
         for line in ocr_lines:
             if _BLOCKED_RE.search(line.strip()):
                 blocked.append(QuestBlocker(
-                    blocker_id=f"blocker_{hash(line.strip()) % 10000:04d}",
+                    blocker_id=f"blocker_{hashlib.md5(line.strip().encode()).hexdigest()[:4]}",
                     blocker_type="unknown",
                     description=line.strip(),
                 ))
