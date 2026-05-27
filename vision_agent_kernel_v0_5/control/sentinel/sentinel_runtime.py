@@ -81,21 +81,24 @@ class SentinelRuntime:
         """Detect anomaly and execute recovery if needed.
 
         Returns a SentinelEvent if intervention occurred, None if healthy.
+        Thread-safe: anomaly detection and budget check are atomic.
         """
-        recipe = self.detect_anomaly(snapshot)
-        if recipe is None:
-            return None
-
         with self._lock:
+            recipe = self.detect_anomaly(snapshot)
+            if recipe is None:
+                return None
+
             if self._global_budget_used >= self._max_global_budget:
                 log.warning("[Sentinel] Global budget exhausted (%d)", self._max_global_budget)
-                return SentinelEvent(
+                event = SentinelEvent(
                     event_id=f"sentinel_{int(time.perf_counter())}",
                     recipe_id="BUDGET_EXHAUSTED",
                     snapshot=snapshot,
                     result=RecoveryResult("BUDGET_EXHAUSTED", "budget_exhausted"),
                     budget_used=self._global_budget_used,
                 )
+                self._history.append(event)
+                return event
 
             event = SentinelEvent(
                 event_id=f"sentinel_{int(time.perf_counter())}",

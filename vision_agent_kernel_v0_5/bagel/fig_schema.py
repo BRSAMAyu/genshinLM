@@ -15,7 +15,8 @@ from __future__ import annotations
 import threading
 import time
 import uuid
-from dataclasses import dataclass, field, replace
+import dataclasses as _dc
+from dataclasses import dataclass, field
 from typing import Any, Literal
 
 # -- Lifecycle states -----------------------------------------------------
@@ -233,7 +234,7 @@ class FalsifiableInterventionGraph:
         # Check: if any action already exists driven by this belief, it's post-hoc.
         for action in self.actions.values():
             if belief.belief_id in action.belief_ids:
-                tagged = replace(belief, lifecycle="posthoc_invalid")
+                tagged = _dc.replace(belief, lifecycle="posthoc_invalid")
                 self.beliefs[belief.belief_id] = tagged
                 self._bump()
                 return
@@ -273,13 +274,19 @@ class FalsifiableInterventionGraph:
             self.edges.append(edge)
             self._bump()
 
+    # Terminal lifecycle states — transitions from these are forbidden.
+    _TERMINAL_LIFECYCLES: frozenset[str] = frozenset({"retired", "posthoc_invalid"})
+
     def update_belief(self, belief_id: str, **overrides: Any) -> BeliefNode | None:
         """Update a belief with field overrides. Returns updated node."""
         with self._lock:
             belief = self.beliefs.get(belief_id)
             if belief is None:
                 return None
-            import dataclasses as _dc
+            if belief.lifecycle in self._TERMINAL_LIFECYCLES:
+                new_lc = overrides.get("lifecycle")
+                if new_lc is not None and new_lc != belief.lifecycle:
+                    return None
             updated = _dc.replace(belief, updated_at=time.perf_counter(), **overrides)
             self.beliefs[belief_id] = updated
             self._bump()
@@ -290,7 +297,6 @@ class FalsifiableInterventionGraph:
             action = self.actions.get(action_id)
             if action is None:
                 return None
-            import dataclasses as _dc
             updated = _dc.replace(action, updated_at=time.perf_counter(), **overrides)
             self.actions[action_id] = updated
             self._bump()
@@ -301,7 +307,6 @@ class FalsifiableInterventionGraph:
             probe = self.probes.get(probe_id)
             if probe is None:
                 return None
-            import dataclasses as _dc
             updated = _dc.replace(probe, **overrides)
             self.probes[probe_id] = updated
             self._bump()
@@ -310,17 +315,23 @@ class FalsifiableInterventionGraph:
     # -- Query methods --
 
     def actions_for_belief(self, belief_id: str) -> list[ActionNode]:
-        return [a for a in self.actions.values() if belief_id in a.belief_ids]
+        with self._lock:
+            return [a for a in self.actions.values() if belief_id in a.belief_ids]
 
     def feedbacks_for_action(self, action_id: str) -> list[FeedbackNode]:
-        return [f for f in self.feedbacks.values() if f.action_id == action_id]
+        with self._lock:
+            return [f for f in self.feedbacks.values() if f.action_id == action_id]
 
     def feedbacks_for_belief(self, belief_id: str) -> list[FeedbackNode]:
         """Collect all feedbacks for all actions driven by this belief."""
-        result: list[FeedbackNode] = []
-        for action in self.actions_for_belief(belief_id):
-            result.extend(self.feedbacks_for_action(action.action_id))
-        return result
+        with self._lock:
+            result: list[FeedbackNode] = []
+            for action in self.actions.values():
+                if belief_id in action.belief_ids:
+                    result.extend(
+                        f for f in self.feedbacks.values() if f.action_id == action.action_id
+                    )
+            return result
 
     def downstream_beliefs(self, belief_id: str) -> list[str]:
         """BFS to find beliefs that depend on the given belief.
@@ -328,32 +339,36 @@ class FalsifiableInterventionGraph:
         Edge direction: (dependent, dependency), so target_id == current means
         source_id depends on current, i.e., source_id is downstream.
         """
-        visited: set[str] = {belief_id}
-        queue = [belief_id]
-        result: list[str] = []
-        while queue:
-            current = queue.pop(0)
-            for edge in self.edges:
-                if edge.kind == "belief_depends_on_belief" and edge.target_id == current:
-                    downstream_id = edge.source_id
-                    if downstream_id not in visited and downstream_id in self.beliefs:
-                        visited.add(downstream_id)
-                        result.append(downstream_id)
-                        queue.append(downstream_id)
-        return result
+        with self._lock:
+            visited: set[str] = {belief_id}
+            queue = [belief_id]
+            result: list[str] = []
+            while queue:
+                current = queue.pop(0)
+                for edge in self.edges:
+                    if edge.kind == "belief_depends_on_belief" and edge.target_id == current:
+                        downstream_id = edge.source_id
+                        if downstream_id not in visited and downstream_id in self.beliefs:
+                            visited.add(downstream_id)
+                            result.append(downstream_id)
+                            queue.append(downstream_id)
+            return result
 
     def suspect_beliefs(self) -> list[BeliefNode]:
         """Beliefs with falsification signals but not yet falsified."""
-        return [b for b in self.beliefs.values() if b.lifecycle == "suspect"]
+        with self._lock:
+            return [b for b in self.beliefs.values() if b.lifecycle == "suspect"]
 
     def falsified_beliefs(self) -> list[BeliefNode]:
-        return [b for b in self.beliefs.values() if b.lifecycle == "falsified"]
+        with self._lock:
+            return [b for b in self.beliefs.values() if b.lifecycle == "falsified"]
 
     def active_beliefs(self) -> list[BeliefNode]:
-        return [
-            b for b in self.beliefs.values()
-            if b.lifecycle in ("committed", "confirmed", "provisional")
-        ]
+        with self._lock:
+            return [
+                b for b in self.beliefs.values()
+                if b.lifecycle in ("committed", "confirmed", "provisional")
+            ]
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -375,10 +390,9 @@ class FalsifiableInterventionGraph:
 
 def _node_to_dict(node: Any) -> dict[str, Any]:
     """Convert a frozen dataclass to a dict, handling tuples."""
-    import dataclasses
-    if dataclasses.is_dataclass(node):
+    if _dc.is_dataclass(node):
         result = {}
-        for f in dataclasses.fields(node):
+        for f in _dc.fields(node):
             val = getattr(node, f.name)
             if isinstance(val, tuple) and val and isinstance(val[0], (str, int, float)):
                 result[f.name] = list(val)

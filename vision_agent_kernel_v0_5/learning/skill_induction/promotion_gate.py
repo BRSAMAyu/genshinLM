@@ -40,7 +40,7 @@ class PromotionGate:
 
         Checks promotion rules, updates the skill tier, and registers.
         """
-        ok, reason = can_promote_to(skill, target_tier)
+        ok, reason = can_promote_to(skill, target_tier, successes, failures)
         if not ok:
             return PromotionResult(False, skill.skill_id, skill.tier, target_tier, reason)
 
@@ -50,14 +50,6 @@ class PromotionGate:
                 False, skill.skill_id, skill.tier, target_tier,
                 "coordinate-only traces cannot promote",
             )
-
-        # Wilson threshold check for stable+
-        if target_tier in ("stable", "trusted"):
-            if not meets_wilson_threshold(skill, successes, failures):
-                return PromotionResult(
-                    False, skill.skill_id, skill.tier, target_tier,
-                    f"Wilson lower bound below threshold ({successes}/{successes + failures})",
-                )
 
         # Apply promotion: create new SkillDef with updated tier
         from dataclasses import replace as _replace
@@ -82,12 +74,9 @@ class PromotionGate:
 
         for next_idx in range(current_idx + 1, len(_TIER_ORDER)):
             target = _TIER_ORDER[next_idx]
-            ok, _ = can_promote_to(skill, target)
+            ok, _ = can_promote_to(skill, target, successes, failures)
             if not ok:
                 break
-            if target in ("stable", "trusted"):
-                if not meets_wilson_threshold(skill, successes, failures):
-                    break
             highest = target
 
         return highest

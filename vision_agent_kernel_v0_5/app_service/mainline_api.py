@@ -29,6 +29,7 @@ from planning.mainline.mainline_runner import MainlineRunner, MissionRunResult
 from planning.mainline.mission_graph_v4 import MissionGraphV4
 from runtime.claim_runtime import ClaimGraph
 from skills.registry import SkillRegistry
+from skills.schema import SkillDef
 
 
 RunnerState = str  # idle | running | paused | stopped | error
@@ -94,22 +95,22 @@ class MainlineAPI:
 
     def start(self, graph: MissionGraphV4 | None = None) -> dict[str, Any]:
         """POST /mainline/start — begin mission execution."""
+        if graph is None:
+            return {"ok": False, "reason": "no_graph"}
+
         with self._lock:
             if self._state.runner_state == "running":
                 return {"ok": False, "reason": "already_running"}
 
             self._state.runner_state = "running"
-            self._state.mission_id = graph.mission_id if graph else ""
+            self._state.mission_id = graph.mission_id
 
-        if graph is not None:
-            result = self._runner.run(graph)
-            with self._lock:
-                self._last_result = result
-                self._state.runner_state = "completed" if result.success else "error"
-            return {"ok": result.success, "completed": result.completed_nodes,
-                    "failed": result.failed_nodes, "duration_sec": result.duration_sec}
-
-        return {"ok": False, "reason": "no_graph"}
+        result = self._runner.run(graph)
+        with self._lock:
+            self._last_result = result
+            self._state.runner_state = "completed" if result.success else "error"
+        return {"ok": result.success, "completed": result.completed_nodes,
+                "failed": result.failed_nodes, "duration_sec": result.duration_sec}
 
     def pause(self) -> dict[str, Any]:
         """POST /mainline/pause — pause current mission."""
@@ -128,29 +129,31 @@ class MainlineAPI:
 
     def get_claims(self) -> dict[str, Any]:
         """GET /mainline/claims — claim graph summary."""
-        return {
-            "claim_count": self._claim_graph.claim_count,
-            "observation_count": self._claim_graph.observation_count,
-        }
+        with self._lock:
+            return {
+                "claim_count": self._claim_graph.claim_count,
+                "observation_count": self._claim_graph.observation_count,
+            }
 
     def get_bagel(self) -> dict[str, Any]:
         """GET /bagel/fig — FIG and belief status."""
-        return {
-            "graph_id": self._fig.graph_id,
-            "version": self._fig.version,
-            "belief_count": len(self._fig.beliefs),
-            "action_count": len(self._fig.actions),
-            "feedback_count": len(self._fig.feedbacks),
-            "probe_count": len(self._fig.probes),
-            "suspect_beliefs": [
-                {"id": b.belief_id, "hypothesis": b.hypothesis, "lifecycle": b.lifecycle}
-                for b in self._fig.suspect_beliefs()
-            ],
-            "falsified_beliefs": [
-                {"id": b.belief_id, "hypothesis": b.hypothesis}
-                for b in self._fig.falsified_beliefs()
-            ],
-        }
+        with self._lock:
+            return {
+                "graph_id": self._fig.graph_id,
+                "version": self._fig.version,
+                "belief_count": len(self._fig.beliefs),
+                "action_count": len(self._fig.actions),
+                "feedback_count": len(self._fig.feedbacks),
+                "probe_count": len(self._fig.probes),
+                "suspect_beliefs": [
+                    {"id": b.belief_id, "hypothesis": b.hypothesis, "lifecycle": b.lifecycle}
+                    for b in self._fig.suspect_beliefs()
+                ],
+                "falsified_beliefs": [
+                    {"id": b.belief_id, "hypothesis": b.hypothesis}
+                    for b in self._fig.falsified_beliefs()
+                ],
+            }
 
     def get_skills(self) -> dict[str, Any]:
         """GET /skills/promotion — skill registry and promotion status."""
@@ -172,7 +175,7 @@ class MainlineAPI:
         self._benchmark_report.add(metric)
         return {"ok": True, "task_id": task_id, "metric": metric.to_dict()}
 
-    def _group_by_tier(self, skills: list) -> dict[str, int]:
+    def _group_by_tier(self, skills: list[SkillDef]) -> dict[str, int]:
         tiers: dict[str, int] = {}
         for s in skills:
             tiers[s.tier] = tiers.get(s.tier, 0) + 1

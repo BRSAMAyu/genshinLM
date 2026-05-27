@@ -57,6 +57,7 @@ class MetricSnapshot:
             "token_cost": self.token_cost,
             "claim_count": self.claim_count,
             "bagel_revisions": self.bagel_revisions,
+            "timestamp": self.timestamp,
         }
 
     def to_json(self) -> str:
@@ -80,10 +81,10 @@ class BenchmarkReport:
 
     @property
     def bottleneck_task(self) -> str:
-        """Task with lowest TSR."""
+        """Task with lowest TSR. Ties broken by task_id for determinism."""
         if not self.task_metrics:
             return ""
-        return min(self.task_metrics, key=lambda m: m.tsr).task_id
+        return min(self.task_metrics, key=lambda m: (m.tsr, m.task_id)).task_id
 
     def to_dict(self) -> dict[str, Any]:
         return {

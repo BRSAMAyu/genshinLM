@@ -35,7 +35,12 @@ def tier_index(tier: PromotionTier) -> int:
     return _TIER_INDEX[tier]
 
 
-def can_promote_to(skill: SkillDef, target: PromotionTier) -> tuple[bool, str]:
+def can_promote_to(
+    skill: SkillDef,
+    target: PromotionTier,
+    successes: int = 0,
+    failures: int = 0,
+) -> tuple[bool, str]:
     """Check if a skill can promote to the target tier.
 
     Returns (can_promote, reason).
@@ -59,28 +64,39 @@ def can_promote_to(skill: SkillDef, target: PromotionTier) -> tuple[bool, str]:
     if target == "experimental":
         return True, "draft to experimental allowed"
 
-    # experimental → candidate: must have produced_claims
+    # experimental → candidate: must have produced_claims with verifiers
     if target == "candidate":
         if not skill.produced_claims:
             return False, "candidate requires at least one produced_claim"
-        return True, "has produced claims"
+        # Hard rule: skills without verifiers on terminal claims cannot be unattended
+        missing_verifiers = [
+            c.claim_id for c in skill.produced_claims
+            if c.claim_role == "terminal" and not c.verifier_recipe
+        ]
+        if missing_verifiers:
+            return False, f"terminal claims missing verifiers: {missing_verifiers}"
+        return True, "has produced claims with verifiers"
 
-    # candidate → stable: must meet promotion thresholds
+    # candidate → stable: must meet replay + Wilson thresholds
     if target == "stable":
         stats = skill.metadata.get("execution_stats", {})
         replays = stats.get("success_count", 0)
         if replays < skill.promotion.min_replays:
             return False, f"needs {skill.promotion.min_replays} replays, has {replays}"
-        return True, "meets replay threshold"
+        if not meets_wilson_threshold(skill, successes, failures):
+            return False, f"Wilson lower bound below threshold ({successes}/{successes + failures})"
+        return True, "meets replay + Wilson threshold"
 
-    # stable → trusted: must have multi-profile verification
+    # stable → trusted: must have multi-profile verification + Wilson
     if target == "trusted":
         profiles = skill.metadata.get("verified_profiles", [])
         required = set(skill.promotion.required_profiles)
         if not required.issubset(set(profiles)):
             missing = required - set(profiles)
             return False, f"missing profiles: {missing}"
-        return True, "all profiles verified"
+        if not meets_wilson_threshold(skill, successes, failures):
+            return False, f"Wilson lower bound below threshold ({successes}/{successes + failures})"
+        return True, "all profiles verified + Wilson threshold met"
 
     return False, f"unknown target tier: {target!r}"
 

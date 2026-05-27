@@ -334,7 +334,7 @@ class TestPromotion:
             promotion=PromotionConfig(min_replays=3),
             metadata={"execution_stats": {"success_count": 5}},
         )
-        ok, reason = can_promote_to(skill, "stable")
+        ok, reason = can_promote_to(skill, "stable", successes=20, failures=1)
         assert ok
 
     def test_stable_to_trusted_needs_profiles(self) -> None:
@@ -357,7 +357,7 @@ class TestPromotion:
             promotion=PromotionConfig(required_profiles=("default_1920x1080",)),
             metadata={"verified_profiles": ["default_1920x1080"]},
         )
-        ok, reason = can_promote_to(skill, "trusted")
+        ok, reason = can_promote_to(skill, "trusted", successes=20, failures=1)
         assert ok
 
     def test_cannot_promote_to_same_tier(self) -> None:

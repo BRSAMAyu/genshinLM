@@ -155,6 +155,7 @@ class MissionGraphV4:
         self._reverse_edges.setdefault(node.node_id, set())
 
     def add_edge(self, edge: MissionEdgeV4) -> None:
+        # Ensure both endpoints exist (phantom edges cause silent failures)
         self._edges.setdefault(edge.from_node, set()).add(edge.to_node)
         self._reverse_edges.setdefault(edge.to_node, set()).add(edge.from_node)
         self._edge_conditions[(edge.from_node, edge.to_node)] = edge.condition
@@ -205,15 +206,25 @@ class MissionGraphV4:
         return False
 
     def topological_order(self) -> list[str] | None:
-        """Kahn's algorithm. Returns None if cycle exists."""
+        """Kahn's algorithm. Returns None if cycle exists.
+
+        Uses insertion order (not lexicographic) for deterministic output
+        among nodes at the same depth.
+        """
         in_degree: dict[str, int] = {nid: len(self._reverse_edges.get(nid, set())) for nid in self._nodes}
+        # Seed queue in insertion order
         queue: deque[str] = deque(nid for nid in self._node_order if in_degree[nid] == 0)
         order: list[str] = []
+
+        # Build insertion-index map for stable sorting of successors
+        idx_map: dict[str, int] = {nid: i for i, nid in enumerate(self._node_order)}
 
         while queue:
             node = queue.popleft()
             order.append(node)
-            for succ in sorted(self._edges.get(node, set())):
+            # Sort successors by insertion order, not lexicographic
+            succs = sorted(self._edges.get(node, set()), key=lambda s: idx_map.get(s, 0))
+            for succ in succs:
                 in_degree[succ] -= 1
                 if in_degree[succ] == 0:
                     queue.append(succ)

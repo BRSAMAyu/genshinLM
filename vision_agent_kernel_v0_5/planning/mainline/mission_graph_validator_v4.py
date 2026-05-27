@@ -144,12 +144,12 @@ class MissionGraphValidatorV4:
             if data["nodes"] != roundtrip["nodes"]:
                 issues.append(ValidationIssue(
                     "", "serialization",
-                    "Round-trip serialization failed: nodes mismatch", "warning",
+                    "Round-trip serialization failed: nodes mismatch", "error",
                 ))
             if data["edges"] != roundtrip["edges"]:
                 issues.append(ValidationIssue(
                     "", "serialization",
-                    "Round-trip serialization failed: edges mismatch", "warning",
+                    "Round-trip serialization failed: edges mismatch", "error",
                 ))
         except Exception as exc:
             issues.append(ValidationIssue(

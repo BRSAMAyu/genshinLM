@@ -99,6 +99,9 @@ class MainlineRunner:
 
             node = graph.get_node(node_id)
             if node is None:
+                log.warning("[MainlineRunner] Node %r not found in graph, skipping", node_id)
+                result.skipped_nodes.append(node_id)
+                result.node_results.append(NodeResult(node_id, "skipped", error="node_not_found"))
                 continue
 
             # Check if predecessors completed
@@ -137,10 +140,10 @@ class MainlineRunner:
 
     def _execute_node(self, node: MissionNodeV4, completed: set[str]) -> NodeResult:
         """Execute a single node with retries."""
+        last_error = ""
         for attempt in range(self._max_node_retries + 1):
             start = time.perf_counter()
 
-            # Simulate execution (real implementation would call skill_execute_fn)
             if self._skill_execute is not None:
                 try:
                     claim_data = self._skill_execute(node)
@@ -148,9 +151,10 @@ class MainlineRunner:
                     self._update_somatic(node)
                     return NodeResult(node.node_id, "completed", duration, claim_data or {})
                 except Exception as exc:
+                    last_error = str(exc)
                     duration = time.perf_counter() - start
                     if attempt == self._max_node_retries:
-                        return NodeResult(node.node_id, "failed", duration, error=str(exc))
+                        return NodeResult(node.node_id, "failed", duration, error=last_error)
                     continue
             else:
                 # Dry-run mode: always succeed
@@ -158,7 +162,7 @@ class MainlineRunner:
                 self._update_somatic(node)
                 return NodeResult(node.node_id, "completed", duration)
 
-        return NodeResult(node.node_id, "failed", error="max_retries_exceeded")
+        return NodeResult(node.node_id, "failed", error=last_error or "max_retries_exceeded")
 
     def _update_somatic(self, node: MissionNodeV4) -> None:
         """Update somatic state after node execution."""
