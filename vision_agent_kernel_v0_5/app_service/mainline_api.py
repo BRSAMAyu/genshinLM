@@ -157,12 +157,13 @@ class MainlineAPI:
 
     def get_skills(self) -> dict[str, Any]:
         """GET /skills/promotion — skill registry and promotion status."""
-        skills = self._skill_registry.all_skills()
-        return {
-            "total": len(skills),
-            "by_tier": self._group_by_tier(skills),
-            "skills": [s.to_dict() for s in skills],
-        }
+        with self._lock:
+            skills = self._skill_registry.all_skills()
+            return {
+                "total": len(skills),
+                "by_tier": self._group_by_tier(skills),
+                "skills": [s.to_dict() for s in skills],
+            }
 
     def run_benchmark(self, task_id: str) -> dict[str, Any]:
         """POST /benchmarks/mainline/run — execute benchmark task."""
@@ -170,9 +171,9 @@ class MainlineAPI:
         if task is None:
             return {"ok": False, "reason": f"unknown task: {task_id}"}
 
-        # Placeholder: real implementation would run the task
         metric = MetricSnapshot(task_id=task_id, tsr=0.0)
-        self._benchmark_report.add(metric)
+        with self._lock:
+            self._benchmark_report.add(metric)
         return {"ok": True, "task_id": task_id, "metric": metric.to_dict()}
 
     def _group_by_tier(self, skills: list[SkillDef]) -> dict[str, int]:

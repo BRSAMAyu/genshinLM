@@ -371,16 +371,17 @@ class FalsifiableInterventionGraph:
             ]
 
     def to_dict(self) -> dict[str, Any]:
-        return {
-            "graph_id": self.graph_id,
-            "mission_id": self.mission_id,
-            "version": self.version,
-            "beliefs": {k: _node_to_dict(v) for k, v in self.beliefs.items()},
-            "actions": {k: _node_to_dict(v) for k, v in self.actions.items()},
-            "feedbacks": {k: _node_to_dict(v) for k, v in self.feedbacks.items()},
-            "probes": {k: _node_to_dict(v) for k, v in self.probes.items()},
-            "edges": [_node_to_dict(e) for e in self.edges],
-        }
+        with self._lock:
+            return {
+                "graph_id": self.graph_id,
+                "mission_id": self.mission_id,
+                "version": self.version,
+                "beliefs": {k: _node_to_dict(v) for k, v in self.beliefs.items()},
+                "actions": {k: _node_to_dict(v) for k, v in self.actions.items()},
+                "feedbacks": {k: _node_to_dict(v) for k, v in self.feedbacks.items()},
+                "probes": {k: _node_to_dict(v) for k, v in self.probes.items()},
+                "edges": [_node_to_dict(e) for e in self.edges],
+            }
 
     # -- Internal --
 

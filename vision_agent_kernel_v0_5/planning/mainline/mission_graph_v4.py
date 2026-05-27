@@ -155,7 +155,10 @@ class MissionGraphV4:
         self._reverse_edges.setdefault(node.node_id, set())
 
     def add_edge(self, edge: MissionEdgeV4) -> None:
-        # Ensure both endpoints exist (phantom edges cause silent failures)
+        if edge.from_node not in self._nodes or edge.to_node not in self._nodes:
+            raise ValueError(
+                f"Edge references unknown node(s): {edge.from_node!r} -> {edge.to_node!r}"
+            )
         self._edges.setdefault(edge.from_node, set()).add(edge.to_node)
         self._reverse_edges.setdefault(edge.to_node, set()).add(edge.from_node)
         self._edge_conditions[(edge.from_node, edge.to_node)] = edge.condition

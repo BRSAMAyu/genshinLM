@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import threading
 import time
+import uuid
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -23,9 +24,9 @@ from control.sentinel.somatic_state import SomaticState
 log = logging.getLogger(__name__)
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class SentinelEvent:
-    """Record of a sentinel intervention."""
+    """Immutable record of a sentinel intervention."""
     event_id: str
     recipe_id: str
     snapshot: SomaticState
@@ -42,7 +43,8 @@ class SentinelRuntime:
     """Persistent watchdog for anomaly detection and recovery.
 
     Thread-safe. Monitors somatic state and triggers recovery recipes
-    when anomalies are detected.
+    when anomalies are detected. Recovery execution runs outside the
+    lock to avoid blocking other callers.
     """
 
     def __init__(
@@ -53,17 +55,20 @@ class SentinelRuntime:
         self._recipes = recipes or default_recipes()
         self._max_global_budget = max_global_budget
         self._global_budget_used = 0
+        self._recipe_budget_used: dict[str, int] = {}
         self._history: list[SentinelEvent] = []
         self._lock = threading.Lock()
         self._last_snapshot: SomaticState | None = None
 
     @property
     def budget_remaining(self) -> int:
-        return self._max_global_budget - self._global_budget_used
+        with self._lock:
+            return self._max_global_budget - self._global_budget_used
 
     @property
     def interventions(self) -> list[SentinelEvent]:
-        return list(self._history)
+        with self._lock:
+            return list(self._history)
 
     def update_snapshot(self, snapshot: SomaticState) -> None:
         """Update the current somatic state snapshot."""
@@ -81,8 +86,9 @@ class SentinelRuntime:
         """Detect anomaly and execute recovery if needed.
 
         Returns a SentinelEvent if intervention occurred, None if healthy.
-        Thread-safe: anomaly detection and budget check are atomic.
+        Budget check is atomic under lock; recovery execution runs outside.
         """
+        # Phase 1: detect + budget check under lock
         with self._lock:
             recipe = self.detect_anomaly(snapshot)
             if recipe is None:
@@ -91,7 +97,7 @@ class SentinelRuntime:
             if self._global_budget_used >= self._max_global_budget:
                 log.warning("[Sentinel] Global budget exhausted (%d)", self._max_global_budget)
                 event = SentinelEvent(
-                    event_id=f"sentinel_{int(time.perf_counter())}",
+                    event_id=uuid.uuid4().hex[:12],
                     recipe_id="BUDGET_EXHAUSTED",
                     snapshot=snapshot,
                     result=RecoveryResult("BUDGET_EXHAUSTED", "budget_exhausted"),
@@ -100,32 +106,46 @@ class SentinelRuntime:
                 self._history.append(event)
                 return event
 
-            event = SentinelEvent(
-                event_id=f"sentinel_{int(time.perf_counter())}",
-                recipe_id=recipe.recipe_id,
-                snapshot=snapshot,
-            )
+            # Check per-recipe budget
+            used = self._recipe_budget_used.get(recipe.recipe_id, 0)
+            if used >= recipe.max_budget:
+                log.info("[Sentinel] Recipe %s budget exhausted (%d)", recipe.recipe_id, recipe.max_budget)
+                return None
 
-            result = recipe.execute_recovery()
-            event.result = result
-
-            if result.status == "success":
-                recipe.verify_restabilized()
-
+            # Reserve budget
             self._global_budget_used += 1
-            event.budget_used = self._global_budget_used
+            self._recipe_budget_used[recipe.recipe_id] = used + 1
+            recipe_id = recipe.recipe_id
+            budget_used = self._global_budget_used
+
+        # Phase 2: execute recovery OUTSIDE lock (may do I/O)
+        result = recipe.execute_recovery()
+        if result.status == "success":
+            recipe.verify_restabilized()
+
+        # Phase 3: record under lock
+        event = SentinelEvent(
+            event_id=uuid.uuid4().hex[:12],
+            recipe_id=recipe_id,
+            snapshot=snapshot,
+            result=result,
+            budget_used=budget_used,
+        )
+        with self._lock:
             self._history.append(event)
 
-            return event
+        return event
 
     def reset_budget(self) -> None:
         """Reset global budget (e.g., after successful mission completion)."""
         with self._lock:
             self._global_budget_used = 0
+            self._recipe_budget_used.clear()
 
     def reset(self) -> None:
         """Full reset for new session."""
         with self._lock:
             self._global_budget_used = 0
+            self._recipe_budget_used.clear()
             self._history.clear()
             self._last_snapshot = None

@@ -132,13 +132,14 @@ class EvidenceMatrix:
         r_i = sum(relevant_weights)
 
         # Compute score: positive = belief likely correct, negative = belief likely wrong
-        if core_contradiction and s_i > 0:
-            score = -(s_i + self.alpha * r_i)
-        elif s_i > 0:
+        # Theory formula: score_i = C_i - S_i + alpha * R_i / (epsilon + S_i)
+        # Core contradiction triples the refute weight, making S_i dominate.
+        if s_i > 0:
             # Asymmetric: support minus refute with relevance bonus
             score = c_i - s_i + self.alpha * r_i / (self.epsilon + s_i)
         else:
-            score = c_i + self.alpha * r_i
+            # No refutation: just support max (relevance not meaningful without refute)
+            score = c_i
 
         # Detect conflict: high support AND high refute
         conflict = (

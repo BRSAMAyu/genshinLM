@@ -18,7 +18,7 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class MetricSnapshot:
     """Single benchmark run metrics."""
     task_id: str = ""

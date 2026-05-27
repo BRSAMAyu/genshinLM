@@ -401,13 +401,8 @@ class TestAuditFixes:
         assert d["replan_policy"] == ""
 
     def test_edge_reference_no_duplicates(self) -> None:
-        """L2: edge reference to missing node reported only once."""
+        """L2: add_edge rejects phantom endpoints."""
         g = MissionGraphV4()
         g.add_node(_node("a"))
-        # Manually add edge to non-existent node
-        g.add_edge(MissionEdgeV4("a", "nonexistent"))
-        validator = MissionGraphValidatorV4()
-        issues = validator.validate(g)
-        edge_issues = [i for i in issues if i.rule == "edge_reference"]
-        # Should report once, not twice
-        assert len(edge_issues) == 1
+        with pytest.raises(ValueError, match="unknown node"):
+            g.add_edge(MissionEdgeV4("a", "nonexistent"))
