@@ -385,8 +385,14 @@ class ClaimGraph:
             evidence_ids = self._evidence.get(cid, [])
             for obs_id in evidence_ids:
                 self._observations.pop(obs_id, None)
+            # Remove adjudications for this claim (keyed by adjudication_id)
+            adj_to_remove = [
+                aid for aid, adj in self._adjudications.items()
+                if getattr(adj, 'claim_id', None) == cid
+            ]
+            for aid in adj_to_remove:
+                del self._adjudications[aid]
             del self._claims[cid]
-            self._adjudications.pop(cid, None)
             self._children.pop(cid, None)
             self._evidence.pop(cid, None)
             removed += 1
@@ -994,6 +1000,7 @@ class ClaimProducingExecutor:
         self.stabilization_tracker = stabilization_tracker or StabilizationTracker()
         self._replan_counts: dict[str, int] = defaultdict(int)
         self._journal: list[RunJournalEntry] = []
+        self._journal_max = 500
 
     def pre_flight(
         self,
@@ -1071,6 +1078,8 @@ class ClaimProducingExecutor:
             context=ctx,
         )
         self._journal.append(journal_entry)
+        if len(self._journal) > self._journal_max:
+            self._journal = self._journal[-self._journal_max:]
         return ClaimExecutionResult(
             claim=claim,
             gate_decision=gate_decision,

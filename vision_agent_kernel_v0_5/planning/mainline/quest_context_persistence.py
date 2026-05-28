@@ -67,6 +67,9 @@ class QuestContextPersistence:
         except OSError as exc:
             log.warning("[QuestPersistence] Failed to save context: %s", exc)
 
+        # Auto-prune old snapshots
+        self.prune_old()
+
         return versioned
 
     def load_latest(self) -> ActiveQuestContext | None:
