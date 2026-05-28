@@ -1,5 +1,5 @@
 {
-  "active_profile_id": "genshin",
+  "active_profile_id": "default_1920x1080",
   "profiles": [
     {
       "profile_id": "default_1920x1080",
@@ -9,13 +9,13 @@
     },
     {
       "profile_id": "genshin_1920x1080",
-      "window_title": "原神",
+      "window_title": "Aurora Genshin-like Testbed",
       "path": "configs/profiles/genshin_1920x1080.json",
       "updated_at": "2026-05-20T00:00:00"
     },
     {
       "profile_id": "genshin",
-      "window_title": "原神",
+      "window_title": "Aurora Genshin-like Testbed",
       "path": "configs/profiles/genshin.json",
       "updated_at": "2026-05-22T00:00:00"
     }

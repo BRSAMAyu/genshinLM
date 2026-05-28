@@ -35,6 +35,15 @@ def tier_index(tier: PromotionTier) -> int:
     return _TIER_INDEX[tier]
 
 
+def promotion_path(current: PromotionTier, target: PromotionTier | None = None) -> list[PromotionTier]:
+    """Return subsequent tiers from current, optionally stopping at target."""
+    current_idx = _TIER_INDEX[current]
+    stop_idx = _TIER_INDEX[target] if target is not None else len(_TIER_ORDER) - 1
+    if stop_idx <= current_idx:
+        return []
+    return _TIER_ORDER[current_idx + 1: stop_idx + 1]
+
+
 def can_promote_to(
     skill: SkillDef,
     target: PromotionTier,
@@ -58,7 +67,12 @@ def can_promote_to(
     if target == "draft":
         if not skill.steps:
             return False, "draft requires at least one semantic step"
+        if _is_coordinate_only(skill):
+            return False, "coordinate-only skills cannot promote"
         return True, "has semantic steps"
+
+    if _is_coordinate_only(skill):
+        return False, "coordinate-only skills cannot promote"
 
     # draft → experimental: no hard requirements
     if target == "experimental":
@@ -117,3 +131,16 @@ def meets_wilson_threshold(skill: SkillDef, successes: int, failures: int) -> bo
     """Check if skill reliability meets its promotion Wilson threshold."""
     wlb = wilson_lower_bound(successes, failures)
     return wlb >= skill.promotion.min_wilson_lower_bound
+
+
+def _is_coordinate_only(skill: SkillDef) -> bool:
+    if bool(skill.metadata.get("coordinate_only")):
+        return True
+    if not skill.applicability.required_anchors:
+        pointer_steps = [
+            step for step in skill.steps
+            if step.action in ("click_anchor", "click_text", "select_list_item", "confirm_dialog")
+        ]
+        if pointer_steps and not any(step.target for step in pointer_steps):
+            return True
+    return False

@@ -11,6 +11,7 @@ from __future__ import annotations
 import threading
 from typing import Sequence
 
+from skills.promotion import tier_index
 from skills.schema import PromotionTier, SkillDef
 
 
@@ -56,14 +57,11 @@ class SkillRegistry:
 
     def find_by_tier(self, min_tier: PromotionTier) -> list[SkillDef]:
         """Find skills at or above a promotion tier."""
-        tier_order: list[PromotionTier] = [
-            "raw_trace", "draft", "experimental", "candidate", "stable", "trusted",
-        ]
-        min_idx = tier_order.index(min_tier)
+        min_idx = tier_index(min_tier)
         with self._lock:
             return [
                 s for s in self._skills.values()
-                if tier_order.index(s.tier) >= min_idx
+                if tier_index(s.tier) >= min_idx
             ]
 
     def find_applicable(
@@ -77,15 +75,12 @@ class SkillRegistry:
         Filters by screen state, required claims satisfaction, and minimum tier.
         """
         available = available_claims or set()
-        tier_order: list[PromotionTier] = [
-            "raw_trace", "draft", "experimental", "candidate", "stable", "trusted",
-        ]
-        min_idx = tier_order.index(min_tier)
+        min_idx = tier_index(min_tier)
 
         with self._lock:
             results: list[SkillDef] = []
             for s in self._skills.values():
-                if tier_order.index(s.tier) < min_idx:
+                if tier_index(s.tier) < min_idx:
                     continue
                 if s.applicability.screen_states and screen_state not in s.applicability.screen_states:
                     continue

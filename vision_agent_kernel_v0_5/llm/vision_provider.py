@@ -51,6 +51,49 @@ class VisionProviderStatus:
     message: str = ""
 
 
+@dataclass(frozen=True, slots=True)
+class VisionBackendStatus:
+    backend: str
+    ok: bool
+    model_id: str
+    endpoint: str = ""
+    supports_images: bool = True
+    latency_ms: float = 0.0
+    message: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class VisionFact:
+    fact_id: str
+    fact_type: str
+    value: object
+    confidence: float
+    evidence_ref: str = ""
+    bbox_norm: tuple[float, float, float, float] | None = None
+    source: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class VisionFactBundle:
+    provider: str
+    model: str
+    screen_state: str = "unknown"
+    facts: tuple[VisionFact, ...] = ()
+    uncertainty: float = 1.0
+    latency_ms: float = 0.0
+    raw_text: str = ""
+
+
+class VisionBackend(Protocol):
+    name: str
+
+    def status(self) -> VisionBackendStatus:
+        ...
+
+    def extract_facts(self, image: ImageInput, prompt: str = "") -> VisionFactBundle:
+        ...
+
+
 class VisionLLMProvider(Protocol):
     name: str
 

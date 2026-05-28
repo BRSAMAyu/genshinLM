@@ -64,9 +64,10 @@ class BagelArbiter:
         """Run arbitration for all beliefs with evidence."""
         results: list[ArbitrationResult] = []
         scores = matrix.score_all()
+        beliefs = fig.snapshot()["beliefs"]
 
         for belief_id, score in scores.items():
-            belief = fig.beliefs.get(belief_id)
+            belief = beliefs.get(belief_id)
             if belief is None:
                 continue
             if belief.lifecycle in ("retired", "stale", "posthoc_invalid"):

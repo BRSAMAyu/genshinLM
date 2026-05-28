@@ -79,7 +79,8 @@ class MainlineAPI:
         with self._lock:
             self._state.sentinel_budget_remaining = self._sentinel.budget_remaining
             self._state.skill_count = self._skill_registry.size
-            self._state.belief_count = len(self._fig.beliefs)
+            fig_snapshot = self._fig.snapshot()
+            self._state.belief_count = len(fig_snapshot["beliefs"])
             self._state.suspect_belief_count = len(self._fig.suspect_beliefs())
             return {
                 "runner_state": self._state.runner_state,
@@ -138,13 +139,14 @@ class MainlineAPI:
     def get_bagel(self) -> dict[str, Any]:
         """GET /bagel/fig — FIG and belief status."""
         with self._lock:
+            fig_snapshot = self._fig.snapshot()
             return {
                 "graph_id": self._fig.graph_id,
                 "version": self._fig.version,
-                "belief_count": len(self._fig.beliefs),
-                "action_count": len(self._fig.actions),
-                "feedback_count": len(self._fig.feedbacks),
-                "probe_count": len(self._fig.probes),
+                "belief_count": len(fig_snapshot["beliefs"]),
+                "action_count": len(fig_snapshot["actions"]),
+                "feedback_count": len(fig_snapshot["feedbacks"]),
+                "probe_count": len(fig_snapshot["probes"]),
                 "suspect_beliefs": [
                     {"id": b.belief_id, "hypothesis": b.hypothesis, "lifecycle": b.lifecycle}
                     for b in self._fig.suspect_beliefs()

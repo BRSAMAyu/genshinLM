@@ -58,6 +58,36 @@ class QuestBlocker:
 
 
 @dataclass(frozen=True, slots=True)
+class InventoryFact:
+    item_id: str
+    quantity: int = 0
+    evidence_ref: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class TeamFact:
+    member_id: str
+    level: int = 0
+    role: str = ""
+    evidence_ref: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class ResourceFact:
+    resource_id: str
+    value: float = 0.0
+    evidence_ref: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class ClaimSummaryFact:
+    claim_id: str
+    claim_type: str
+    status: str
+    target: str = ""
+
+
+@dataclass(frozen=True, slots=True)
 class ActiveQuestContext:
     """Versioned snapshot of the current quest state.
 
@@ -71,6 +101,11 @@ class ActiveQuestContext:
     last_dialogue_turns: tuple[DialogueTurn, ...] = ()
     map_marker: MapMarker | None = None
     screen_state: str = "unknown"
+    inventory_facts: tuple[InventoryFact, ...] = ()
+    team_facts: tuple[TeamFact, ...] = ()
+    resource_facts: tuple[ResourceFact, ...] = ()
+    completed_claims: tuple[ClaimSummaryFact, ...] = ()
+    blocked_claims: tuple[ClaimSummaryFact, ...] = ()
     known_blockers: tuple[QuestBlocker, ...] = ()
     confidence: float = 0.5
     version: int = 1

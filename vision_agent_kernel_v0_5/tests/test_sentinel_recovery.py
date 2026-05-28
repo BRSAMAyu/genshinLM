@@ -1,6 +1,8 @@
 """Tests for Sentinel Recovery — somatic state, recipes, runtime."""
 from __future__ import annotations
 
+import threading
+
 import pytest
 
 from control.sentinel.somatic_state import (
@@ -201,3 +203,32 @@ class TestSentinelRuntime:
         history = sentinel.interventions
         assert len(history) == 1
         assert history[0].recipe_id == "COMBAT_DEFEAT_RECOVERY"
+
+    def test_concurrent_interventions_reserve_budget_atomically(self) -> None:
+        class HighBudgetCombatDefeatRecovery(CombatDefeatRecovery):
+            max_budget = 10
+
+        sentinel = SentinelRuntime(
+            recipes=[HighBudgetCombatDefeatRecovery()],
+            max_global_budget=10,
+        )
+        dead = SomaticState(team_state=TeamState(hp_ratios=(0.0,)))
+        results: list[SentinelEvent | None] = []
+        lock = threading.Lock()
+
+        def worker() -> None:
+            event = sentinel.intervene(dead)
+            with lock:
+                results.append(event)
+
+        threads = [threading.Thread(target=worker) for _ in range(10)]
+        for thread in threads:
+            thread.start()
+        for thread in threads:
+            thread.join()
+
+        successful = [r for r in results if r is not None and r.result is not None and r.result.status == "success"]
+        assert len(successful) == 10
+        assert len(sentinel.interventions) == 10
+        assert sentinel.budget_remaining == 0
+        assert len({event.event_id for event in successful}) == 10

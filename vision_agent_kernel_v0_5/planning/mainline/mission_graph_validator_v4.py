@@ -42,6 +42,7 @@ class MissionGraphValidatorV4:
         self._check_cycle(graph, issues)
         self._check_edge_references(graph, issues)
         self._check_belief_templates(graph, issues)
+        self._check_required_belief_templates(graph, issues)
         self._check_deterministic_serialization(graph, issues)
 
         return issues
@@ -134,6 +135,17 @@ class MissionGraphValidatorV4:
                         nid, "belief_template_role",
                         f"Belief template in node {nid!r} missing causal_role", "warning",
                     ))
+
+    def _check_required_belief_templates(self, graph: MissionGraphV4, issues: list[ValidationIssue]) -> None:
+        for nid in graph.node_ids:
+            node = graph.get_node(nid)
+            if node is None:
+                continue
+            if node.metadata.get("requires_bagel_belief") and not node.belief_templates:
+                issues.append(ValidationIssue(
+                    nid, "required_belief_template",
+                    f"Node {nid!r} requires at least one BAGEL belief template", "error",
+                ))
 
     def _check_deterministic_serialization(self, graph: MissionGraphV4, issues: list[ValidationIssue]) -> None:
         try:

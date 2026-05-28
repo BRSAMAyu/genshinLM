@@ -12,10 +12,13 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Callable, Literal
 
+from bagel.fig_schema import BeliefIdentity, BeliefNode
+from bagel.runtime import BagelRuntime
 from control.sentinel.sentinel_runtime import SentinelRuntime
 from control.sentinel.somatic_state import SomaticState
+from planning.mainline.active_quest_context import ActiveQuestContext
 from planning.mainline.mission_graph_v4 import MissionGraphV4, MissionNodeV4
 from planning.mainline.mission_graph_validator_v4 import MissionGraphValidatorV4
 
@@ -23,6 +26,19 @@ log = logging.getLogger(__name__)
 
 
 NodeExecStatus = str  # pending | executing | completed | failed | skipped | blocked
+MainlineRuntimePhase = Literal[
+    "observe",
+    "update_context",
+    "select_graph",
+    "commit_beliefs",
+    "execute",
+    "verify",
+    "attribute_recover",
+    "checkpoint",
+    "condense",
+    "completed",
+    "failed",
+]
 
 
 @dataclass(frozen=True, slots=True)
@@ -45,6 +61,31 @@ class MissionRunResult:
     node_results: list[NodeResult] = field(default_factory=list)
     sentinel_interventions: int = 0
     duration_sec: float = 0.0
+
+
+@dataclass(frozen=True, slots=True)
+class MainlineCheckpoint:
+    checkpoint_id: str
+    phase: MainlineRuntimePhase
+    context_version: int
+    graph_id: str
+    completed_nodes: tuple[str, ...] = ()
+    failed_nodes: tuple[str, ...] = ()
+    bagel_graph_version: int = 0
+    created_at: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.created_at == 0.0:
+            object.__setattr__(self, "created_at", time.perf_counter())
+
+
+@dataclass(frozen=True, slots=True)
+class MainlineLoopResult:
+    success: bool
+    phase: MainlineRuntimePhase
+    checkpoint: MainlineCheckpoint
+    run_result: MissionRunResult
+    context: ActiveQuestContext
 
 
 class MainlineRunner:
@@ -164,9 +205,118 @@ class MainlineRunner:
 
         return NodeResult(node.node_id, "failed", error=last_error or "max_retries_exceeded")
 
+    def commit_node_beliefs(self, node: MissionNodeV4, bagel: BagelRuntime) -> list[str]:
+        """Commit BAGEL nominal beliefs required by a node."""
+        committed: list[str] = []
+        for idx, template in enumerate(node.belief_templates):
+            belief_id = f"{node.node_id}_belief_{idx}"
+            belief = BeliefNode(
+                belief_id=belief_id,
+                target_object=template.target_object,
+                causal_role=template.causal_role or "custom",
+                hypothesis=template.hypothesis or f"{node.node_type} node assumption about {template.target_object}",
+                falsification_condition=template.falsification_condition or "output claim fails verification",
+                lifecycle="committed",
+                identity=BeliefIdentity(belief_id=belief_id, provisional_anchor=node.node_id),
+                risk_level=node.risk_level,
+                metadata={"mission_node": node.node_id},
+            )
+            bagel.commit_belief(belief, trace_id=node.node_id)
+            committed.append(belief_id)
+        return committed
+
     def _update_somatic(self, node: MissionNodeV4) -> None:
         """Update somatic state after node execution."""
         self._somatic = self._somatic.evolve(
             active_mission_node=node.node_id,
         )
         self._sentinel.update_snapshot(self._somatic)
+
+
+class MainlineAutonomyLoop:
+    """Phase runtime for Genshin-like mainline autonomy in safe environments."""
+
+    def __init__(
+        self,
+        *,
+        runner: MainlineRunner | None = None,
+        bagel: BagelRuntime | None = None,
+        observe_fn: Callable[[], Any] | None = None,
+        context_update_fn: Callable[[Any], ActiveQuestContext] | None = None,
+        graph_select_fn: Callable[[ActiveQuestContext], MissionGraphV4] | None = None,
+    ) -> None:
+        self.runner = runner or MainlineRunner()
+        self.bagel = bagel or BagelRuntime()
+        self.observe_fn = observe_fn
+        self.context_update_fn = context_update_fn
+        self.graph_select_fn = graph_select_fn
+        self.phase: MainlineRuntimePhase = "observe"
+
+    def run_once(self, initial_context: ActiveQuestContext | None = None, graph: MissionGraphV4 | None = None) -> MainlineLoopResult:
+        observation = None
+        context = initial_context or ActiveQuestContext(
+            quest_id="unknown",
+            quest_title="",
+            objective_text="",
+            objective_type="unknown",
+        )
+
+        self.phase = "observe"
+        if self.observe_fn is not None:
+            observation = self.observe_fn()
+
+        self.phase = "update_context"
+        if self.context_update_fn is not None:
+            context = self.context_update_fn(observation)
+
+        self.phase = "select_graph"
+        selected_graph = graph or (self.graph_select_fn(context) if self.graph_select_fn else MissionGraphV4(mission_id=context.quest_id))
+
+        validator = MissionGraphValidatorV4()
+        if not validator.is_valid(selected_graph):
+            self.phase = "failed"
+            run_result = MissionRunResult(success=False)
+            return MainlineLoopResult(False, self.phase, self._checkpoint(context, selected_graph, run_result), run_result, context)
+
+        self.phase = "commit_beliefs"
+        for node_id in selected_graph.node_ids:
+            node = selected_graph.get_node(node_id)
+            if node is not None:
+                self.runner.commit_node_beliefs(node, self.bagel)
+
+        self.phase = "execute"
+        run_result = self.runner.run(selected_graph)
+
+        self.phase = "verify" if run_result.success else "attribute_recover"
+        if not run_result.success:
+            self.bagel.run_attribution_cycle(trace_id=selected_graph.graph_id)
+
+        self.phase = "checkpoint"
+        checkpoint = self._checkpoint(context, selected_graph, run_result)
+
+        self.phase = "condense"
+        stable_ids = tuple(
+            b.belief_id for b in self.bagel.fig.snapshot()["beliefs"].values()
+            if b.lifecycle in ("confirmed", "survived")
+        )
+        if stable_ids:
+            self.bagel.condense_stable_subgraph(stable_ids, {"summary": "mainline stable frontier"})
+
+        self.phase = "completed" if run_result.success else "failed"
+        return MainlineLoopResult(run_result.success, self.phase, checkpoint, run_result, context)
+
+    def _checkpoint(
+        self,
+        context: ActiveQuestContext,
+        graph: MissionGraphV4,
+        run_result: MissionRunResult,
+    ) -> MainlineCheckpoint:
+        return MainlineCheckpoint(
+            checkpoint_id=f"ckpt_{int(time.perf_counter() * 1000)}",
+            phase=self.phase,
+            context_version=context.version,
+            graph_id=graph.graph_id,
+            completed_nodes=tuple(run_result.completed_nodes),
+            failed_nodes=tuple(run_result.failed_nodes),
+            bagel_graph_version=self.bagel.fig.version,
+        )

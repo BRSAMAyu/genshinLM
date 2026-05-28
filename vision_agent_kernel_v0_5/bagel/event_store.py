@@ -39,7 +39,12 @@ EventType = Literal[
     "BeliefRevised",
     "BeliefRetired",
     "BeliefStaled",
+    "CausalBridgeRegistered",
     "SubgraphCondensed",
+    "AttributionSnapshotFrozen",
+    "AttributionDecisionCommitted",
+    "ExecutionPhaseEntered",
+    "JitRegenerationRequested",
 ]
 
 
@@ -202,11 +207,25 @@ class BagelEventStore:
                 node = _dict_to_probe(payload)
                 if node:
                     fig.add_probe(node)
+            elif event.event_type == "CausalBridgeRegistered":
+                node = _dict_to_bridge(payload)
+                if node:
+                    fig.add_bridge(node)
+            elif event.event_type == "SubgraphCondensed":
+                node = _dict_to_condensed(payload)
+                if node:
+                    fig.add_condensed_node(node)
+            elif event.event_type == "AttributionSnapshotFrozen":
+                fig.set_phase("attribution_frozen")
+            elif event.event_type == "AttributionDecisionCommitted":
+                fig.set_phase("attribution_committed")
+            elif event.event_type == "ExecutionPhaseEntered":
+                fig.set_phase("execution")
             elif event.event_type in ("BeliefRevised", "BeliefStaled", "BeliefRetired",
                                       "ArbiterUpdated"):
                 # Lifecycle transition — apply update to existing belief
                 bid = payload.get("belief_id", "")
-                new_lc = payload.get("lifecycle")
+                new_lc = payload.get("new_lifecycle") or payload.get("lifecycle")
                 if bid and new_lc:
                     fig.update_belief(bid, lifecycle=new_lc)
             elif event.event_type == "ActionMaterialized":
@@ -219,6 +238,16 @@ class BagelEventStore:
                         overrides["fingerprint"] = payload["fingerprint"]
                     if payload.get("claim_id"):
                         overrides["claim_id"] = payload["claim_id"]
+                    if overrides:
+                        fig.update_action(aid, **overrides)
+            elif event.event_type == "ActionExecuted":
+                aid = payload.get("action_id", "")
+                if aid:
+                    overrides = {
+                        key: payload[key]
+                        for key in ("status", "fingerprint", "claim_id", "metadata")
+                        if key in payload
+                    }
                     if overrides:
                         fig.update_action(aid, **overrides)
             elif event.event_type == "ProbeExecuted":
@@ -242,7 +271,8 @@ class BagelEventStore:
 
     @property
     def write_count(self) -> int:
-        return self._write_count
+        with self._lock:
+            return self._write_count
 
     @property
     def path(self) -> Path:
@@ -250,8 +280,25 @@ class BagelEventStore:
 
 
 def _dict_to_belief(data: dict[str, Any]) -> Any:
-    from bagel.fig_schema import BeliefNode
+    from bagel.fig_schema import BeliefIdentity, BeliefNode, StructuredValidityCondition
     try:
+        identity_data = data.get("identity")
+        identity = None
+        if isinstance(identity_data, dict):
+            identity = BeliefIdentity(
+                belief_id=identity_data.get("belief_id", data["belief_id"]),
+                provisional_anchor=identity_data.get("provisional_anchor", ""),
+                fingerprint=identity_data.get("fingerprint", ""),
+            )
+        validity = []
+        for item in data.get("valid_while_structured", ()) or ():
+            if isinstance(item, dict):
+                validity.append(StructuredValidityCondition(
+                    kind=item.get("kind", ""),
+                    target=item.get("target", ""),
+                    expected=item.get("expected", ""),
+                    on_violation=item.get("on_violation", "mark_stale"),
+                ))
         return BeliefNode(
             belief_id=data["belief_id"],
             target_object=data.get("target_object", ""),
@@ -259,7 +306,15 @@ def _dict_to_belief(data: dict[str, Any]) -> Any:
             hypothesis=data.get("hypothesis", ""),
             falsification_condition=data.get("falsification_condition", ""),
             lifecycle=data.get("lifecycle", "provisional"),
+            identity=identity,
             confidence=data.get("confidence", 0.5),
+            intervenable=data.get("intervenable", True),
+            risk_level=data.get("risk_level", "low"),
+            valid_while_structured=tuple(validity),
+            ifs_score=data.get("ifs_score", 0.0),
+            tvd_score=data.get("tvd_score", 0.0),
+            attribution_quality=data.get("attribution_quality", 0.0),
+            condensed_from=data.get("condensed_from", ""),
             metadata=data.get("metadata", {}),
             created_at=data.get("created_at", 0.0),
             updated_at=data.get("updated_at", 0.0),
@@ -278,6 +333,7 @@ def _dict_to_action(data: dict[str, Any]) -> Any:
             params=data.get("params", {}),
             status=data.get("status", "proposed"),
             fingerprint=data.get("fingerprint", ""),
+            claim_id=data.get("claim_id", ""),
             risk_level=data.get("risk_level", "low"),
             metadata=data.get("metadata", {}),
             created_at=data.get("created_at", 0.0),
@@ -325,9 +381,47 @@ def _dict_to_probe(data: dict[str, Any]) -> Any:
             can_distinguish=can_distinguish,
             timeout_risk=data.get("timeout_risk", ""),
             noise_risk=data.get("noise_risk", ""),
+            probe_cluster_id=data.get("probe_cluster_id", ""),
+            non_decidable_count=data.get("non_decidable_count", 0),
+            sanity_status=data.get("sanity_status", ""),
             result=data.get("result", {}),
             created_at=data.get("created_at", 0.0),
             executed_at=data.get("executed_at", 0.0),
+        )
+    except (KeyError, TypeError):
+        return None
+
+
+def _dict_to_bridge(data: dict[str, Any]) -> Any:
+    from bagel.fig_schema import CausalBridgeNode
+    try:
+        return CausalBridgeNode(
+            bridge_id=data["bridge_id"],
+            from_feedback=data["from_feedback"],
+            to_belief=data["to_belief"],
+            bridge_type=data.get("bridge_type", "state_continuity"),
+            evidence=tuple(data.get("evidence", ())),
+            weight=data.get("weight", 0.5),
+            created_at=data.get("created_at", 0.0),
+        )
+    except (KeyError, TypeError):
+        return None
+
+
+def _dict_to_condensed(data: dict[str, Any]) -> Any:
+    from bagel.fig_schema import CondensedNode
+    try:
+        return CondensedNode(
+            condensed_id=data["condensed_id"],
+            kind=data.get("kind", "super_belief"),
+            source_node_ids=tuple(data.get("source_node_ids", ())),
+            interface_contract=data.get("interface_contract", {}),
+            summary_belief=data.get("summary_belief", ""),
+            survival_evidence=tuple(data.get("survival_evidence", ())),
+            risk_summary=data.get("risk_summary", {}),
+            artifact_fingerprints=tuple(data.get("artifact_fingerprints", ())),
+            expand_event_ref=data.get("expand_event_ref", ""),
+            created_at=data.get("created_at", 0.0),
         )
     except (KeyError, TypeError):
         return None

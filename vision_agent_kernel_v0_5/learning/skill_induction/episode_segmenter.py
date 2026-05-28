@@ -40,17 +40,18 @@ class EpisodeSegmenter:
 
         episodes: list[Episode] = []
         current_actions: list[RecordedAction] = [session.actions[0]]
-        current_state = session.actions[0].screen_state
+        current_state = session.actions[0].screen_state or session.screen_state or "unknown"
         ep_idx = 0
 
         for action in session.actions[1:]:
-            if action.screen_state != current_state and action.screen_state:
+            action_state = action.screen_state or current_state
+            if action_state != current_state and action_state:
                 episodes.append(self._make_episode(
                     ep_idx, session.goal, current_state, current_actions, session.viewport,
                 ))
                 ep_idx += 1
                 current_actions = [action]
-                current_state = action.screen_state
+                current_state = action_state
             else:
                 current_actions.append(action)
 

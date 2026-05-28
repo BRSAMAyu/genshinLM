@@ -69,8 +69,8 @@ class AnchorBinder:
             ),
             steps=tuple(steps),
             produced_claims=(produced_claim,) if produced_claim else (),
-            fallbacks=tuple(SkillFallback(recovery_recipe="UI_LOST_RECOVERY")
-                            for _ in [1]) if not coordinate_only else (),
+            fallbacks=(SkillFallback(recovery_recipe="UI_LOST_RECOVERY"),) if not coordinate_only else (),
+            metadata={"coordinate_only": coordinate_only},
         )
 
         return BindingResult(
@@ -110,5 +110,24 @@ class AnchorBinder:
             return SkillProducedClaim(
                 claim_type="combat_action_completed",
                 target="combat_state",
+                verifier_recipe="combat_state.default",
+            )
+        if "map" in state:
+            return SkillProducedClaim(
+                claim_type="map_interaction_completed",
+                target="map_state",
+                verifier_recipe="screen_state_stable.default",
+            )
+        if "inventory" in state or "menu" in state or "character" in state:
+            return SkillProducedClaim(
+                claim_type="ui_procedure_completed",
+                target="screen_state",
+                verifier_recipe="screen_state_stable.default",
+            )
+        if episode.actions and state and state != "unknown":
+            return SkillProducedClaim(
+                claim_type="ui_action_completed",
+                target=state,
+                verifier_recipe="screen_state_stable.default",
             )
         return None

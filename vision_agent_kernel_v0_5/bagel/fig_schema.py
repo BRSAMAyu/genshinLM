@@ -32,6 +32,7 @@ BeliefLifecycleState = Literal[
     "retired",           # no longer active
     "stale",             # downstream of a falsified belief, needs JIT regeneration
     "posthoc_invalid",   # inserted after action, not usable for attribution
+    "challenged",        # under attribution review, not yet falsified
 ]
 
 BeliefCausalRole = Literal[
@@ -62,6 +63,8 @@ FeedbackPolarity = Literal[
     "neutral",        # outcome inconclusive
     "error",          # execution error, not a belief issue
     "insufficient",   # not enough signal to judge
+    "timeout",        # probe or feedback timed out
+    "flaky",          # repeated but inconsistent signal
 ]
 
 ProbeStatus = Literal[
@@ -74,6 +77,7 @@ ProbeStatus = Literal[
     "inconclusive",
     "timed_out",
     "rejected",       # sanity check failed
+    "non_decidable",  # executed but cannot adjudicate target invariant
 ]
 
 EdgeKind = Literal[
@@ -84,6 +88,33 @@ EdgeKind = Literal[
     "belief_depends_on_belief",
     "belief_conflicts_belief",
     "action_alternative_to_action",
+    "feedback_bridges_belief",
+    "condensed_from",
+]
+
+BridgeType = Literal[
+    "artifact_continuity",
+    "contract_continuity",
+    "state_continuity",
+    "regression_link",
+    "performance_link",
+]
+
+CondensedNodeKind = Literal["super_belief"]
+
+ProbeClusterState = Literal[
+    "decidable",
+    "non_decidable_once",
+    "non_decidable_repeated",
+    "undecidable_cluster",
+    "requires_controlled_rollback",
+    "requires_human_review",
+]
+
+AttributionPhaseState = Literal[
+    "execution",
+    "attribution_frozen",
+    "attribution_committed",
 ]
 
 
@@ -105,6 +136,15 @@ class BeliefIdentity:
         return bool(self.fingerprint)
 
 
+@dataclass(frozen=True, slots=True)
+class StructuredValidityCondition:
+    """Runtime-detectable condition that keeps a belief valid."""
+    kind: str
+    target: str
+    expected: str = ""
+    on_violation: str = "mark_stale"
+
+
 # -- Core Nodes -----------------------------------------------------------
 
 @dataclass(frozen=True, slots=True)
@@ -119,6 +159,11 @@ class BeliefNode:
     confidence: float = 0.5
     intervenable: bool = True
     risk_level: str = "low"
+    valid_while_structured: tuple[StructuredValidityCondition, ...] = ()
+    ifs_score: float = 0.0
+    tvd_score: float = 0.0
+    attribution_quality: float = 0.0
+    condensed_from: str = ""
     metadata: dict[str, Any] = field(default_factory=dict)
     created_at: float = 0.0
     updated_at: float = 0.0
@@ -178,6 +223,9 @@ class ProbeNode:
     can_distinguish: tuple[str, str] = ("", "")
     timeout_risk: str = ""
     noise_risk: str = ""
+    probe_cluster_id: str = ""
+    non_decidable_count: int = 0
+    sanity_status: str = ""
     result: dict[str, Any] = field(default_factory=dict)
     created_at: float = 0.0
     executed_at: float = 0.0
@@ -199,6 +247,41 @@ class TypedEdge:
     metadata: dict[str, Any] = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class CausalBridgeNode:
+    """Connect delayed feedback to an earlier belief by explicit evidence."""
+    bridge_id: str
+    from_feedback: str
+    to_belief: str
+    bridge_type: BridgeType
+    evidence: tuple[str, ...] = ()
+    weight: float = 0.5
+    created_at: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.created_at == 0.0:
+            object.__setattr__(self, "created_at", time.perf_counter())
+
+
+@dataclass(frozen=True, slots=True)
+class CondensedNode:
+    """Stable subgraph summary kept in the active FIG frontier."""
+    condensed_id: str
+    kind: CondensedNodeKind = "super_belief"
+    source_node_ids: tuple[str, ...] = ()
+    interface_contract: dict[str, Any] = field(default_factory=dict)
+    summary_belief: str = ""
+    survival_evidence: tuple[str, ...] = ()
+    risk_summary: dict[str, Any] = field(default_factory=dict)
+    artifact_fingerprints: tuple[str, ...] = ()
+    expand_event_ref: str = ""
+    created_at: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.created_at == 0.0:
+            object.__setattr__(self, "created_at", time.perf_counter())
+
+
 # -- FIG container --------------------------------------------------------
 
 @dataclass(slots=True)
@@ -210,8 +293,11 @@ class FalsifiableInterventionGraph:
     actions: dict[str, ActionNode] = field(default_factory=dict)
     feedbacks: dict[str, FeedbackNode] = field(default_factory=dict)
     probes: dict[str, ProbeNode] = field(default_factory=dict)
+    bridges: dict[str, CausalBridgeNode] = field(default_factory=dict)
+    condensed_nodes: dict[str, CondensedNode] = field(default_factory=dict)
     edges: list[TypedEdge] = field(default_factory=list)
     version: int = 0
+    phase: AttributionPhaseState = "execution"
     _ordering_lock: dict[str, int] = field(default_factory=dict)
     _lock: threading.Lock = field(default_factory=threading.Lock)
 
@@ -267,6 +353,37 @@ class FalsifiableInterventionGraph:
     def add_probe(self, probe: ProbeNode) -> None:
         with self._lock:
             self.probes[probe.probe_id] = probe
+            self._bump()
+
+    def add_bridge(self, bridge: CausalBridgeNode) -> None:
+        with self._lock:
+            self.bridges[bridge.bridge_id] = bridge
+            self.edges.append(TypedEdge(
+                edge_id=f"edge_{bridge.bridge_id}",
+                source_id=bridge.from_feedback,
+                target_id=bridge.to_belief,
+                kind="feedback_bridges_belief",
+                weight=bridge.weight,
+                metadata={"bridge_type": bridge.bridge_type, "evidence": list(bridge.evidence)},
+            ))
+            self._bump()
+
+    def add_condensed_node(self, node: CondensedNode) -> None:
+        with self._lock:
+            self.condensed_nodes[node.condensed_id] = node
+            for source_id in node.source_node_ids:
+                self.edges.append(TypedEdge(
+                    edge_id=f"edge_{node.condensed_id}_{source_id}",
+                    source_id=node.condensed_id,
+                    target_id=source_id,
+                    kind="condensed_from",
+                    metadata={"expand_event_ref": node.expand_event_ref},
+                ))
+            self._bump()
+
+    def set_phase(self, phase: AttributionPhaseState) -> None:
+        with self._lock:
+            self.phase = phase
             self._bump()
 
     def add_edge(self, edge: TypedEdge) -> None:
@@ -378,7 +495,10 @@ class FalsifiableInterventionGraph:
                 "actions": {k: _node_to_dict(v) for k, v in self.actions.items()},
                 "feedbacks": {k: _node_to_dict(v) for k, v in self.feedbacks.items()},
                 "probes": {k: _node_to_dict(v) for k, v in self.probes.items()},
+                "bridges": {k: _node_to_dict(v) for k, v in self.bridges.items()},
+                "condensed_nodes": {k: _node_to_dict(v) for k, v in self.condensed_nodes.items()},
                 "edges": [_node_to_dict(e) for e in self.edges],
+                "phase": self.phase,
             }
 
     def snapshot(self) -> dict[str, Any]:
@@ -393,7 +513,10 @@ class FalsifiableInterventionGraph:
                 "actions": dict(self.actions),
                 "feedbacks": dict(self.feedbacks),
                 "probes": dict(self.probes),
+                "bridges": dict(self.bridges),
+                "condensed_nodes": dict(self.condensed_nodes),
                 "edges": list(self.edges),
+                "phase": self.phase,
             }
 
     # -- Internal --
@@ -403,16 +526,21 @@ class FalsifiableInterventionGraph:
 
 
 def _node_to_dict(node: Any) -> dict[str, Any]:
-    """Convert a frozen dataclass to a dict, handling tuples."""
+    """Convert a dataclass tree to JSON-safe primitive containers."""
+    def _convert(value: Any) -> Any:
+        if _dc.is_dataclass(value):
+            return {
+                f.name: _convert(getattr(value, f.name))
+                for f in _dc.fields(value)
+            }
+        if isinstance(value, tuple):
+            return [_convert(v) for v in value]
+        if isinstance(value, list):
+            return [_convert(v) for v in value]
+        if isinstance(value, dict):
+            return {str(k): _convert(v) for k, v in value.items()}
+        return value
+
     if _dc.is_dataclass(node):
-        result = {}
-        for f in _dc.fields(node):
-            val = getattr(node, f.name)
-            if isinstance(val, tuple) and val and isinstance(val[0], (str, int, float)):
-                result[f.name] = list(val)
-            elif hasattr(val, "to_dict"):
-                result[f.name] = val.to_dict()
-            else:
-                result[f.name] = val
-        return result
+        return _convert(node)
     return {"value": str(node)}

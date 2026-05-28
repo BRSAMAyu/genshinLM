@@ -6,6 +6,7 @@ ClaimGraph), score and rank skills by applicability.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import math
 
 from skills.schema import SkillDef
 
@@ -20,6 +21,34 @@ class ApplicabilityScore:
     anchors_available: bool
     missing_claims: tuple[str, ...] = ()
     missing_anchors: tuple[str, ...] = ()
+    reliability_lower_bound: float = 1.0
+    route: str = "execute"
+
+
+@dataclass(frozen=True, slots=True)
+class ReliabilitySample:
+    successes: int
+    attempts: int
+
+
+class SkillReliabilityGate:
+    """Wilson lower-bound gate over profile-aware skill statistics."""
+
+    def __init__(self, min_lower_bound: float = 0.70) -> None:
+        self.min_lower_bound = min_lower_bound
+
+    def decide(self, sample: ReliabilitySample, risk_level: str = "medium") -> tuple[str, float]:
+        lower = wilson_lower_bound(sample.successes, sample.attempts)
+        threshold = self.min_lower_bound
+        if risk_level in {"high", "critical"}:
+            threshold = max(threshold, 0.85)
+        if sample.attempts == 0:
+            return "exploration", 0.0
+        if lower >= threshold:
+            return "execute", lower
+        if lower >= threshold * 0.75:
+            return "exploration", lower
+        return "human-review-needed", lower
 
 
 class SkillApplicabilityMatcher:
@@ -84,3 +113,13 @@ class SkillApplicabilityMatcher:
             for s in skills
         ]
         return sorted(scores, key=lambda s: s.score, reverse=True)
+
+
+def wilson_lower_bound(successes: int, attempts: int, z: float = 1.96) -> float:
+    if attempts <= 0:
+        return 0.0
+    phat = successes / attempts
+    denom = 1 + z * z / attempts
+    centre = phat + z * z / (2 * attempts)
+    margin = z * math.sqrt((phat * (1 - phat) + z * z / (4 * attempts)) / attempts)
+    return max(0.0, (centre - margin) / denom)

@@ -13,6 +13,7 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+import dataclasses
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -20,6 +21,7 @@ from bagel.fig_schema import (
     BeliefNode,
     FalsifiableInterventionGraph,
     ProbeNode,
+    ProbeClusterState,
 )
 
 log = logging.getLogger(__name__)
@@ -32,9 +34,22 @@ class ProbeSanityCheck:
     reason: str
 
 
+@dataclass(frozen=True, slots=True)
+class ProbeDegradationDecision:
+    cluster_id: str
+    state: ProbeClusterState
+    taboo_probe_family: str
+    recommended_action: str
+    non_decidable_count: int
+
+
 @dataclass(slots=True)
 class ProbePolicy:
     """Generates and validates falsification probes."""
+
+    non_decidable_limit: int = 2
+    _cluster_counts: dict[str, int] = field(default_factory=dict)
+    _taboo_probe_families: set[str] = field(default_factory=set)
 
     def generate_probes(
         self,
@@ -47,8 +62,9 @@ class ProbePolicy:
         ]
 
         probes: list[ProbeNode] = []
+        beliefs = fig.snapshot()["beliefs"]
         for bid in targets:
-            belief = fig.beliefs.get(bid)
+            belief = beliefs.get(bid)
             if belief is None:
                 continue
             if not belief.falsification_condition:
@@ -69,9 +85,11 @@ class ProbePolicy:
             status="generated",
             falsification_invariant=belief.falsification_condition,
             irreversible=False,
-            can_distinguish=(belief.belief_id, ""),
+            can_distinguish=(belief.belief_id, f"not_{belief.belief_id}"),
             timeout_risk="medium",
             noise_risk="low",
+            probe_cluster_id=f"cluster_{belief.belief_id}",
+            sanity_status="valid",
         )
 
         # Run sanity check
@@ -84,6 +102,8 @@ class ProbePolicy:
                 failure_criteria=probe.failure_criteria,
                 status="rejected",
                 falsification_invariant=probe.falsification_invariant,
+                probe_cluster_id=probe.probe_cluster_id,
+                sanity_status="rejected",
                 result={"sanity_failure": sanity.reason},
             )
 
@@ -122,6 +142,8 @@ class ProbePolicy:
         # Check can_distinguish has two distinct belief IDs
         if (not probe.can_distinguish
                 or len(probe.can_distinguish) < 2
+                or not probe.can_distinguish[0]
+                or not probe.can_distinguish[1]
                 or probe.can_distinguish[0] == probe.can_distinguish[1]):
             return ProbeSanityCheck(
                 probe.probe_id, False,
@@ -137,9 +159,9 @@ class ProbePolicy:
         """Execute a probe using the provided check function.
 
         The check_fn takes a ProbeNode and returns (passed: bool, result: dict).
-        This is a placeholder for real probe execution (OCR re-read, map check, etc.)
+        The caller supplies the concrete probe executor (OCR re-read, map
+        check, replay perturbation, or synthetic state mutation).
         """
-        import dataclasses
         try:
             passed, result = check_fn(probe)
             status = "passed" if passed else "failed"
@@ -156,3 +178,32 @@ class ProbePolicy:
                 result={"error": str(exc)},
                 executed_at=time.perf_counter(),
             )
+
+    def degrade_non_decidable(
+        self,
+        probe: ProbeNode,
+        signal: str,
+    ) -> ProbeDegradationDecision:
+        """Apply BAGEL v1.2 non-decidable probe degradation.
+
+        Repeated non-decidable outcomes taboo the probe family/cluster, not the
+        belief itself.
+        """
+        cluster_id = probe.probe_cluster_id or f"cluster_{probe.belief_id}"
+        count = self._cluster_counts.get(cluster_id, 0) + 1
+        self._cluster_counts[cluster_id] = count
+        family = probe.falsification_invariant or probe.failure_criteria or "unknown_probe_family"
+        if count == 1:
+            state: ProbeClusterState = "non_decidable_once"
+            action = "retry_with_controlled_probe"
+        elif count < self.non_decidable_limit:
+            state = "non_decidable_repeated"
+            action = "retry_with_lower_noise_probe"
+        else:
+            state = "undecidable_cluster"
+            self._taboo_probe_families.add(family)
+            action = "choose_lowest_impact_reversible_action_or_human_review"
+        return ProbeDegradationDecision(cluster_id, state, family, action, count)
+
+    def is_probe_family_taboo(self, family: str) -> bool:
+        return family in self._taboo_probe_families

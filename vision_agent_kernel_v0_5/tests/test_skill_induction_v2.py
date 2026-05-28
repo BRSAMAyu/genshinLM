@@ -213,8 +213,8 @@ class TestPromotionGate:
         result = gate.try_promote(skill, "draft")
         assert not result.success
 
-    def test_raw_trace_with_steps_blocked_by_gate(self) -> None:
-        """PromotionGate blocks raw_trace tier even if can_promote_to passes."""
+    def test_raw_trace_with_semantic_steps_can_be_promoted(self) -> None:
+        """Promotion is blocked by coordinate-only evidence, not by tier label alone."""
         registry = SkillRegistry()
         gate = PromotionGate(registry)
         skill = SkillDef(
@@ -222,8 +222,7 @@ class TestPromotionGate:
             steps=(SkillDef.from_dict({"skill_id": "x", "steps": [{"action": "click_anchor", "target": "btn"}]}).steps[0],),
         )
         result = gate.try_promote(skill, "draft")
-        assert not result.success
-        assert "coordinate" in result.reason.lower()
+        assert result.success
 
     def test_evaluate_next_tier(self) -> None:
         registry = SkillRegistry()
@@ -234,6 +233,16 @@ class TestPromotionGate:
         )
         target = gate.evaluate(skill)
         assert target == "experimental"
+
+    def test_evaluate_coordinate_only_raw_trace_returns_none(self) -> None:
+        registry = SkillRegistry()
+        gate = PromotionGate(registry)
+        skill = SkillDef(
+            skill_id="raw_with_steps", tier="raw_trace",
+            steps=(SkillDef.from_dict({"skill_id": "x", "steps": [{"action": "click_anchor", "target": "btn"}]}).steps[0],),
+            metadata={"coordinate_only": True},
+        )
+        assert gate.evaluate(skill) is None
 
     def test_evaluate_candidate_reachable(self) -> None:
         registry = SkillRegistry()
@@ -287,3 +296,33 @@ class TestInductionPipeline:
         result = pipeline.process_session(session)
         # Should produce 2 episodes
         assert result.skills_produced >= 1
+
+    def test_process_session_can_iteratively_promote_to_candidate(self) -> None:
+        registry = SkillRegistry()
+        pipeline = InductionPipeline(registry)
+        session = _successful_session(anchor=True)
+        result = pipeline.process_session(session, target_tier="candidate")
+        assert result.skills_produced == 1
+        skill = registry.all_skills()[0]
+        assert skill.tier == "candidate"
+
+    def test_empty_action_screen_state_inherits_session_state(self) -> None:
+        recorder = TraceRecorder()
+        session = recorder.start_session("dialogue_advance", screen_state="dialogue")
+        recorder.record_action(session, "click_anchor", "continue", screen_state="", anchor_id="dialogue_continue")
+        recorder.end_session(session, success=True)
+        episodes = EpisodeSegmenter().segment(session)
+        assert episodes[0].screen_state == "dialogue"
+
+    def test_draft_with_coordinate_only_metadata_cannot_promote(self) -> None:
+        registry = SkillRegistry()
+        gate = PromotionGate(registry)
+        skill = SkillDef(
+            skill_id="bad_draft",
+            tier="draft",
+            steps=(SkillDef.from_dict({"skill_id": "x", "steps": [{"action": "click_anchor", "target": ""}]}).steps[0],),
+            metadata={"coordinate_only": True},
+        )
+        result = gate.try_promote(skill, "experimental")
+        assert not result.success
+        assert "coordinate" in result.reason

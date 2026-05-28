@@ -16,7 +16,7 @@ from typing import Any, Literal
 from runtime.claim_runtime import RiskLevel
 
 
-SkillKind = Literal["procedure", "macro", "composite", "exploration"]
+SkillKind = Literal["procedure", "macro", "motor", "composite", "exploration"]
 PromotionTier = Literal["raw_trace", "draft", "experimental", "candidate", "stable", "trusted"]
 StepAction = Literal[
     "click_anchor", "click_text", "press_key", "select_list_item",
@@ -76,6 +76,31 @@ class PromotionConfig:
 
 
 @dataclass(frozen=True, slots=True)
+class SkillReliabilityContext:
+    screen_state: str = ""
+    resolution: str = ""
+    capsule_id: str = ""
+    team_state: str = ""
+    resource_state: str = ""
+    testbed_profile: str = ""
+    skill_tier: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class SkillJitRegenerationPolicy:
+    enabled: bool = True
+    requires_probe: bool = True
+    controlled_rollback_on_failure: bool = True
+
+
+@dataclass(frozen=True, slots=True)
+class SkillBagelProbePolicy:
+    probe_family: str = ""
+    max_non_decidable: int = 2
+    tie_breaker_required: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class SkillDef:
     """Unified skill definition.
 
@@ -94,8 +119,15 @@ class SkillDef:
     belief_templates: tuple[SkillBeliefTemplate, ...] = ()
     fallbacks: tuple[SkillFallback, ...] = ()
     promotion: PromotionConfig = field(default_factory=PromotionConfig)
+    reliability_context: SkillReliabilityContext = field(default_factory=SkillReliabilityContext)
+    jit_regeneration_policy: SkillJitRegenerationPolicy = field(default_factory=SkillJitRegenerationPolicy)
+    bagel_probe_policy: SkillBagelProbePolicy = field(default_factory=SkillBagelProbePolicy)
 
     metadata: dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def skill_kind(self) -> SkillKind:
+        return self.kind
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -134,6 +166,25 @@ class SkillDef:
                 "min_wilson_lower_bound": self.promotion.min_wilson_lower_bound,
                 "required_profiles": list(self.promotion.required_profiles),
             },
+            "reliability_context": {
+                "screen_state": self.reliability_context.screen_state,
+                "resolution": self.reliability_context.resolution,
+                "capsule_id": self.reliability_context.capsule_id,
+                "team_state": self.reliability_context.team_state,
+                "resource_state": self.reliability_context.resource_state,
+                "testbed_profile": self.reliability_context.testbed_profile,
+                "skill_tier": self.reliability_context.skill_tier,
+            },
+            "jit_regeneration_policy": {
+                "enabled": self.jit_regeneration_policy.enabled,
+                "requires_probe": self.jit_regeneration_policy.requires_probe,
+                "controlled_rollback_on_failure": self.jit_regeneration_policy.controlled_rollback_on_failure,
+            },
+            "bagel_probe_policy": {
+                "probe_family": self.bagel_probe_policy.probe_family,
+                "max_non_decidable": self.bagel_probe_policy.max_non_decidable,
+                "tie_breaker_required": self.bagel_probe_policy.tie_breaker_required,
+            },
             "metadata": dict(self.metadata),
         }
 
@@ -141,6 +192,9 @@ class SkillDef:
     def from_dict(cls, data: dict[str, Any]) -> SkillDef:
         app = data.get("applicability", {})
         promo = data.get("promotion", {})
+        rel = data.get("reliability_context", {})
+        jit = data.get("jit_regeneration_policy", {})
+        probe = data.get("bagel_probe_policy", {})
         return cls(
             skill_id=data["skill_id"],
             version=data.get("version", 1),
@@ -188,6 +242,25 @@ class SkillDef:
                 min_replays=promo.get("min_replays", 3),
                 min_wilson_lower_bound=promo.get("min_wilson_lower_bound", 0.70),
                 required_profiles=tuple(promo.get("required_profiles", ["default_1920x1080"])),
+            ),
+            reliability_context=SkillReliabilityContext(
+                screen_state=rel.get("screen_state", ""),
+                resolution=rel.get("resolution", ""),
+                capsule_id=rel.get("capsule_id", ""),
+                team_state=rel.get("team_state", ""),
+                resource_state=rel.get("resource_state", ""),
+                testbed_profile=rel.get("testbed_profile", ""),
+                skill_tier=rel.get("skill_tier", ""),
+            ),
+            jit_regeneration_policy=SkillJitRegenerationPolicy(
+                enabled=jit.get("enabled", True),
+                requires_probe=jit.get("requires_probe", True),
+                controlled_rollback_on_failure=jit.get("controlled_rollback_on_failure", True),
+            ),
+            bagel_probe_policy=SkillBagelProbePolicy(
+                probe_family=probe.get("probe_family", ""),
+                max_non_decidable=probe.get("max_non_decidable", 2),
+                tie_breaker_required=probe.get("tie_breaker_required", False),
             ),
             metadata=data.get("metadata", {}),
         )

@@ -7,3 +7,19 @@ detector:
   device: cpu
   half: false
   classes: null
+
+vision_model:
+  profile: gemma4_vision
+  backend: openai_compatible
+  model_id: gemma4_vision
+  base_url: http://127.0.0.1:1234/v1/chat/completions
+  device: cpu
+  dtype: auto
+  max_latency_ms: 1800
+  json_strict: true
+  fallback_backend: deterministic
+  bench_thresholds:
+    json_valid_rate: 0.95
+    screen_state_accuracy: 0.75
+    ui_grounding_success_rate: 0.75
+    latency_p95_ms: 3000

@@ -16,6 +16,9 @@ class LocalVlmBenchResult:
     screen_state_accuracy: float
     ui_grounding_success_rate: float
     failure_explanation_success_rate: float
+    quest_objective_extraction_success_rate: float = 0.0
+    dialogue_detection_success_rate: float = 0.0
+    map_marker_detection_success_rate: float = 0.0
     ok: bool = True
     message: str = ""
 
@@ -33,6 +36,9 @@ class LocalVlmBench:
         screen_ok = 0
         ui_ok = 0
         failure_ok = 0
+        quest_ok = 0
+        dialogue_ok = 0
+        marker_ok = 0
 
         started = time.perf_counter()
         screen = self.provider.classify_screen(image, ["menu", "combat", "unknown"])
@@ -50,6 +56,24 @@ class LocalVlmBench:
         failure_ok += 1 if "technical_summary" in failure or "user_friendly_summary" in failure else 0
         json_ok += 1 if failure else 0
 
+        # Optional mainline prompts: accepted as smoke when the provider returns
+        # parseable text instead of throwing. Real accuracy is measured by
+        # offline labeled replay suites.
+        for query, bucket in (
+            ("quest objective text", "quest"),
+            ("dialogue region", "dialogue"),
+            ("map marker", "marker"),
+        ):
+            grounded = self.provider.ground_ui(image, query)
+            latencies.append(grounded.latency_ms)
+            if isinstance(grounded.candidates, list):
+                if bucket == "quest":
+                    quest_ok += 1
+                elif bucket == "dialogue":
+                    dialogue_ok += 1
+                else:
+                    marker_ok += 1
+
         status = self.provider.status()
         ordered = sorted(latencies)
         p50 = ordered[len(ordered) // 2]
@@ -63,6 +87,9 @@ class LocalVlmBench:
             screen_state_accuracy=screen_ok / 1.0,
             ui_grounding_success_rate=ui_ok / 1.0,
             failure_explanation_success_rate=failure_ok / 1.0,
+            quest_objective_extraction_success_rate=quest_ok / 1.0,
+            dialogue_detection_success_rate=dialogue_ok / 1.0,
+            map_marker_detection_success_rate=marker_ok / 1.0,
             ok=status.ok,
             message=status.message,
         )
@@ -81,6 +108,9 @@ class LocalVlmBench:
                 screen_state_accuracy=0.0,
                 ui_grounding_success_rate=0.0,
                 failure_explanation_success_rate=0.0,
+                quest_objective_extraction_success_rate=0.0,
+                dialogue_detection_success_rate=0.0,
+                map_marker_detection_success_rate=0.0,
                 message=f"local_vlm_unavailable_requires_human_confirm:{status.message}",
             )
         try:
@@ -96,6 +126,9 @@ class LocalVlmBench:
                 screen_state_accuracy=0.0,
                 ui_grounding_success_rate=0.0,
                 failure_explanation_success_rate=0.0,
+                quest_objective_extraction_success_rate=0.0,
+                dialogue_detection_success_rate=0.0,
+                map_marker_detection_success_rate=0.0,
                 message=f"local_vlm_smoke_failed_requires_human_confirm:{exc}",
             )
 

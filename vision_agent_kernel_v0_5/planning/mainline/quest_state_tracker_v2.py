@@ -19,10 +19,14 @@ from typing import Any
 
 from planning.mainline.active_quest_context import (
     ActiveQuestContext,
+    ClaimSummaryFact,
     DialogueTurn,
+    InventoryFact,
     MapMarker,
     ObjectiveType,
     QuestBlocker,
+    ResourceFact,
+    TeamFact,
     classify_objective,
     quest_id_from_text,
 )
@@ -41,7 +45,7 @@ _QUEST_PATTERNS = [
 
 _BLOCKED_RE = re.compile(
     r"(?:(?:^|[\s,.;!?])blocked|(?:^|[\s,.;!?])stuck|(?:^|[\s,.;!?])failed"
-    r"|无法|卡住|障碍物|(?:^|[\s,.;!?])锁定|未解锁)",
+    r"|无法|卡住|障碍物|未解锁)",
     re.IGNORECASE,
 )
 
@@ -122,6 +126,18 @@ class QuestStateTrackerV2:
                 objective_text = vlm_match.group(1).strip()
                 has_quest_text = True
 
+        # Fallback: use claim graph summary if a verified upstream component
+        # already extracted quest context.
+        if not objective_text and claim_graph_summary:
+            summary_objective = (
+                claim_graph_summary.get("objective_text")
+                or claim_graph_summary.get("active_objective")
+                or claim_graph_summary.get("active_quest_objective")
+            )
+            if isinstance(summary_objective, str) and summary_objective.strip():
+                objective_text = summary_objective.strip()
+                has_quest_text = True
+
         # 2. Extract quest title (from quest_log role elements)
         for element in claim.ui_elements:
             if element.role == "quest_entry" and element.text:
@@ -186,12 +202,13 @@ class QuestStateTrackerV2:
             last_dialogue_turns=tuple(parsed_dialogue[-10:]),  # Keep last 10 turns
             map_marker=map_marker or self._context.map_marker,
             screen_state=claim.screen_state,
+            inventory_facts=tuple(_inventory_facts(claim_graph_summary)) or self._context.inventory_facts,
+            team_facts=tuple(_team_facts(claim_graph_summary)) or self._context.team_facts,
+            resource_facts=tuple(_resource_facts(claim_graph_summary)) or self._context.resource_facts,
+            completed_claims=tuple(_claim_summary_facts(claim_graph_summary, "completed_claims")),
+            blocked_claims=tuple(_claim_summary_facts(claim_graph_summary, "blocked_claims")),
             known_blockers=tuple(blocked),
-            evidence_refs=tuple(
-                ref for ref in (
-                    [e.element_id for e in claim.ui_elements if e.role == "quest_entry"]
-                )
-            ),
+            evidence_refs=tuple(_evidence_refs(claim, claim_graph_summary)),
             confidence=confidence,
             metadata={
                 "frame_id": claim.frame_id,
@@ -265,3 +282,88 @@ class QuestStateTrackerV2:
             confidence_changed=conf_delta,
             reason="; ".join(reasons),
         )
+
+
+def _evidence_refs(
+    claim: ScreenStateClaim,
+    claim_graph_summary: dict[str, Any] | None,
+) -> list[str]:
+    refs = [e.element_id for e in claim.ui_elements if e.role == "quest_entry"]
+    if claim_graph_summary:
+        raw_refs = claim_graph_summary.get("evidence_refs", ())
+        if isinstance(raw_refs, (list, tuple)):
+            refs.extend(str(ref) for ref in raw_refs if ref)
+    return list(dict.fromkeys(refs))
+
+
+def _claim_summary_facts(
+    claim_graph_summary: dict[str, Any] | None,
+    key: str,
+) -> list[ClaimSummaryFact]:
+    if not claim_graph_summary:
+        return []
+    raw = claim_graph_summary.get(key, ())
+    facts: list[ClaimSummaryFact] = []
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            if isinstance(item, dict):
+                claim_id = str(item.get("claim_id") or item.get("id") or "")
+                claim_type = str(item.get("claim_type") or item.get("type") or "")
+                status = str(item.get("status") or ("verified" if key == "completed_claims" else "blocked"))
+                if claim_id or claim_type:
+                    facts.append(ClaimSummaryFact(
+                        claim_id=claim_id,
+                        claim_type=claim_type,
+                        status=status,
+                        target=str(item.get("target", "")),
+                    ))
+    return facts
+
+
+def _inventory_facts(claim_graph_summary: dict[str, Any] | None) -> list[InventoryFact]:
+    if not claim_graph_summary:
+        return []
+    raw = claim_graph_summary.get("inventory_facts", ())
+    facts: list[InventoryFact] = []
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            if isinstance(item, dict) and item.get("item_id"):
+                facts.append(InventoryFact(
+                    item_id=str(item.get("item_id")),
+                    quantity=int(item.get("quantity", 0)),
+                    evidence_ref=str(item.get("evidence_ref", "")),
+                ))
+    return facts
+
+
+def _team_facts(claim_graph_summary: dict[str, Any] | None) -> list[TeamFact]:
+    if not claim_graph_summary:
+        return []
+    raw = claim_graph_summary.get("team_facts", ())
+    facts: list[TeamFact] = []
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            if isinstance(item, dict) and item.get("member_id"):
+                facts.append(TeamFact(
+                    member_id=str(item.get("member_id")),
+                    level=int(item.get("level", 0)),
+                    role=str(item.get("role", "")),
+                    evidence_ref=str(item.get("evidence_ref", "")),
+                ))
+    return facts
+
+
+def _resource_facts(claim_graph_summary: dict[str, Any] | None) -> list[ResourceFact]:
+    if not claim_graph_summary:
+        return []
+    raw = claim_graph_summary.get("resource_facts", ())
+    facts: list[ResourceFact] = []
+    if isinstance(raw, (list, tuple)):
+        for item in raw:
+            if isinstance(item, dict) and item.get("resource_id"):
+                facts.append(ResourceFact(
+                    resource_id=str(item.get("resource_id")),
+                    value=float(item.get("value", 0.0)),
+                    evidence_ref=str(item.get("evidence_ref", "")),
+                ))
+    return facts

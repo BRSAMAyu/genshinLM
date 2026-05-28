@@ -41,13 +41,21 @@ class TestMainlineAPI:
         state = api.get_state()
         assert state["runner_state"] in ("completed", "error")
 
-    def test_start_twice_fails(self) -> None:
+    def test_start_after_completion_succeeds(self) -> None:
         api = MainlineAPI()
         api.start(_linear_graph())  # completes immediately
         # After completion, state is "completed" not "running"
         result = api.start(_linear_graph())
         # Second start should work since we're not "running"
         assert result["ok"]
+
+    def test_start_while_running_is_rejected(self) -> None:
+        api = MainlineAPI()
+        with api._lock:
+            api._state.runner_state = "running"
+        result = api.start(_linear_graph())
+        assert not result["ok"]
+        assert result["reason"] == "already_running"
 
     def test_pause_when_not_running(self) -> None:
         api = MainlineAPI()

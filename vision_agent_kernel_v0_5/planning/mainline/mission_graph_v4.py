@@ -72,6 +72,20 @@ class FallbackDecl:
     replan_policy: str = ""
 
 
+@dataclass(frozen=True, slots=True)
+class ProbePolicyDecl:
+    probe_family: str = ""
+    max_non_decidable: int = 2
+    tie_breaker_required: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class JitRegenerationPolicy:
+    enabled: bool = True
+    requires_probe: bool = True
+    controlled_rollback_on_failure: bool = True
+
+
 # -- Mission node v4 -------------------------------------------------------
 
 @dataclass(frozen=True, slots=True)
@@ -90,6 +104,9 @@ class MissionNodeV4:
     fallbacks: tuple[FallbackDecl, ...] = ()
     budgets: NodeBudget = field(default_factory=NodeBudget)
     belief_templates: tuple[BeliefTemplate, ...] = ()
+    probe_policy: ProbePolicyDecl = field(default_factory=ProbePolicyDecl)
+    expected_verifier_bundle: str = ""
+    jit_regeneration_policy: JitRegenerationPolicy = field(default_factory=JitRegenerationPolicy)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_terminal(self) -> bool:
@@ -115,6 +132,17 @@ class MissionNodeV4:
                  "hypothesis": bt.hypothesis, "falsification_condition": bt.falsification_condition}
                 for bt in self.belief_templates
             ],
+            "probe_policy": {
+                "probe_family": self.probe_policy.probe_family,
+                "max_non_decidable": self.probe_policy.max_non_decidable,
+                "tie_breaker_required": self.probe_policy.tie_breaker_required,
+            },
+            "expected_verifier_bundle": self.expected_verifier_bundle,
+            "jit_regeneration_policy": {
+                "enabled": self.jit_regeneration_policy.enabled,
+                "requires_probe": self.jit_regeneration_policy.requires_probe,
+                "controlled_rollback_on_failure": self.jit_regeneration_policy.controlled_rollback_on_failure,
+            },
             "metadata": dict(self.metadata),
         }
 
@@ -298,6 +326,17 @@ class MissionGraphV4:
                     BeliefTemplate(bt["target_object"], bt["causal_role"],
                                    bt.get("hypothesis", ""), bt.get("falsification_condition", ""))
                     for bt in nd.get("belief_templates", [])
+                ),
+                probe_policy=ProbePolicyDecl(
+                    probe_family=nd.get("probe_policy", {}).get("probe_family", ""),
+                    max_non_decidable=nd.get("probe_policy", {}).get("max_non_decidable", 2),
+                    tie_breaker_required=nd.get("probe_policy", {}).get("tie_breaker_required", False),
+                ),
+                expected_verifier_bundle=nd.get("expected_verifier_bundle", ""),
+                jit_regeneration_policy=JitRegenerationPolicy(
+                    enabled=nd.get("jit_regeneration_policy", {}).get("enabled", True),
+                    requires_probe=nd.get("jit_regeneration_policy", {}).get("requires_probe", True),
+                    controlled_rollback_on_failure=nd.get("jit_regeneration_policy", {}).get("controlled_rollback_on_failure", True),
                 ),
                 metadata=nd.get("metadata", {}),
             )

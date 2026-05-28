@@ -1,13 +1,13 @@
 {
   "profile_id": "genshin_1920x1080",
-  "window_title": "原神",
-  "alt_window_title": "Genshin Impact",
-  "process_name": "YuanShen.exe",
-  "alt_process_name": "GenshinImpact.exe",
+  "window_title": "Aurora Genshin-like Testbed",
+  "alt_window_title": "Authorized QA Safe Window",
+  "process_name": null,
+  "alt_process_name": null,
   "source_resolution": [1920, 1080],
   "normalized_resolution": [1280, 720],
   "display_mode": "borderless_windowed",
-  "environment": "genshin",
+  "environment": "genshin_like_testbed",
   "rois": {
     "minimap": {
       "mode": "anchor",

@@ -7,6 +7,7 @@ from bagel.evidence_matrix import EvidenceSignal
 from bagel.event_store import BagelEventStore
 from bagel.fig_schema import (
     ActionNode,
+    BeliefIdentity,
     BeliefNode,
     FeedbackNode,
 )
@@ -115,6 +116,60 @@ class TestEventStore:
         assert "beliefs" in reconstructed
         assert "b1" in reconstructed["beliefs"]
         store2.close()
+
+    def test_reconstruction_preserves_materialized_action_feedback_and_probe(self, tmp_path) -> None:
+        store = BagelEventStore(path=str(tmp_path / "full.jsonl"))
+        rt = BagelRuntime(event_store=store)
+        belief = _make_belief("b1")
+        belief = BeliefNode(
+            belief_id=belief.belief_id,
+            target_object=belief.target_object,
+            causal_role=belief.causal_role,
+            hypothesis=belief.hypothesis,
+            falsification_condition=belief.falsification_condition,
+            identity=BeliefIdentity("b1", provisional_anchor="intent:dialogue", fingerprint="fp_belief"),
+            risk_level="medium",
+        )
+        rt.commit_belief(belief, trace_id="t1")
+        rt.propose_action(ActionNode("a1", ("b1",), "click_anchor"), trace_id="t1")
+        rt.materialize_action("a1", fingerprint="fp_action", claim_id="claim_1")
+        rt.receive_feedback(FeedbackNode(
+            "f1", "a1", "negative", signal_quality=0.95,
+            evidence_refs=("frame_1",), claim_refs=("claim_1",),
+        ))
+
+        def probe_executor(_probe):
+            return (False, {"reason": "confirmed"})
+
+        rt.run_attribution_cycle(trace_id="t1", probe_executor=probe_executor)
+        store.close()
+
+        reconstructed = BagelEventStore(path=str(tmp_path / "full.jsonl")).reconstruct_fig(rt.fig.graph_id)
+        assert reconstructed["beliefs"]["b1"]["identity"]["fingerprint"] == "fp_belief"
+        assert reconstructed["actions"]["a1"]["fingerprint"] == "fp_action"
+        assert reconstructed["actions"]["a1"]["claim_id"] == "claim_1"
+        assert reconstructed["feedbacks"]["f1"]["evidence_refs"] == ["frame_1"]
+        assert reconstructed["probes"]
+        assert next(iter(reconstructed["probes"].values()))["falsification_invariant"]
+
+    def test_reconstruction_preserves_stale_marked_action_abort(self, tmp_path) -> None:
+        store = BagelEventStore(path=str(tmp_path / "stale.jsonl"))
+        rt = BagelRuntime(event_store=store)
+        rt.commit_belief(_make_belief("hub"), trace_id="t1")
+        for index in range(20):
+            rt.propose_action(ActionNode(f"a{index}", ("hub",), "click_anchor"), trace_id="t1")
+        rt.receive_feedback(FeedbackNode("f1", "a0", "negative", signal_quality=0.95))
+
+        def probe_executor(_probe):
+            return (False, {"reason": "hub falsified"})
+
+        result = rt.run_attribution_cycle(trace_id="t1", probe_executor=probe_executor)
+        assert any(node_id.startswith("a") for node_id in result.stale_belief_ids)
+        store.close()
+
+        reconstructed = BagelEventStore(path=str(tmp_path / "stale.jsonl")).reconstruct_fig(rt.fig.graph_id)
+        assert reconstructed["actions"]["a0"]["status"] == "aborted"
+        assert reconstructed["beliefs"]["hub"]["lifecycle"] == "falsified"
 
 
 class TestStateBusIntegration:

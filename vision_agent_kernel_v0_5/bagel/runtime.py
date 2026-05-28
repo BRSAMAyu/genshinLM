@@ -35,10 +35,14 @@ from bagel.fig_schema import (
     ActionNode,
     BeliefLifecycleState,
     BeliefNode,
+    CausalBridgeNode,
+    CondensedNode,
     FalsifiableInterventionGraph,
     FeedbackNode,
     ProbeNode,
+    _node_to_dict,
 )
+from bagel.feedback_shift import FeedbackShiftResult, discrete_tvd, single_probe_ifs
 from bagel.probe_policy import ProbePolicy
 from bagel.safe_revision import RevisionDecision, SafeRevisionEngine
 
@@ -56,6 +60,14 @@ class AttributionCycleResult:
     strategy: str  # "local_attribution" | "heterogeneous_audit"
 
 
+@dataclass(frozen=True, slots=True)
+class JitRegenerationRequest:
+    action_id: str
+    allowed: bool
+    reason: str
+    parent_graph_version: int
+
+
 @dataclass(slots=True)
 class BagelRuntime:
     """Top-level BAGEL runtime orchestrating the full attribution loop."""
@@ -70,6 +82,7 @@ class BagelRuntime:
 
     _trace_id: str = ""
     _attribution_count: int = 0
+    _frozen_snapshot: dict[str, Any] | None = None
 
     def __post_init__(self) -> None:
         # Register BAGEL state slot on StateBus
@@ -106,9 +119,9 @@ class BagelRuntime:
             graph_id=self.fig.graph_id,
             graph_version=self.fig.version,
             trace_id=trace_id,
-            payload={"belief_id": belief.belief_id, "lifecycle": belief.lifecycle},
+            payload=_node_to_dict(belief),
         )
-        self.event_store.append(event)
+        self._append_event(event)
         self._publish_belief_state()
         return belief
 
@@ -127,9 +140,9 @@ class BagelRuntime:
             graph_id=self.fig.graph_id,
             graph_version=self.fig.version,
             trace_id=trace_id,
-            payload={"action_id": action.action_id, "belief_ids": list(action.belief_ids)},
+            payload=_node_to_dict(action),
         )
-        self.event_store.append(event)
+        self._append_event(event)
         return action
 
     def materialize_action(
@@ -151,9 +164,9 @@ class BagelRuntime:
                 graph_id=self.fig.graph_id,
                 graph_version=self.fig.version,
                 trace_id=self._trace_id,
-                payload={"action_id": action_id, "fingerprint": fingerprint},
+                payload=_node_to_dict(action),
             )
-            self.event_store.append(event)
+            self._append_event(event)
         return action
 
     # -- Phase 3: Feedback --
@@ -167,17 +180,12 @@ class BagelRuntime:
             graph_id=self.fig.graph_id,
             graph_version=self.fig.version,
             trace_id=self._trace_id,
-            payload={
-                "feedback_id": feedback.feedback_id,
-                "action_id": feedback.action_id,
-                "polarity": feedback.polarity,
-                "signal_quality": feedback.signal_quality,
-            },
+            payload=_node_to_dict(feedback),
         )
-        self.event_store.append(event)
+        self._append_event(event)
 
         # Add evidence signal to matrix
-        action = self.fig.actions.get(feedback.action_id)
+        action = self.fig.snapshot()["actions"].get(feedback.action_id)
         if action:
             for belief_id in action.belief_ids:
                 polarity = self._feedback_to_polarity(feedback.polarity)
@@ -189,6 +197,170 @@ class BagelRuntime:
                     source="feedback",
                 )
                 self.matrix.add_signal(signal)
+
+    # -- BAGEL v1.2 phase isolation -------------------------------------
+
+    def freeze_attribution_snapshot(self, trace_id: str = "") -> dict[str, Any]:
+        """Freeze the current FIG for attribution; execution must pause."""
+        self.fig.set_phase("attribution_frozen")
+        self._frozen_snapshot = self.fig.snapshot()
+        self._append_event(BagelEvent(
+            event_type="AttributionSnapshotFrozen",
+            graph_id=self.fig.graph_id,
+            graph_version=self.fig.version,
+            trace_id=trace_id or self._trace_id,
+            payload={
+                "phase": "attribution_frozen",
+                "belief_count": len(self._frozen_snapshot["beliefs"]),
+                "action_count": len(self._frozen_snapshot["actions"]),
+            },
+        ))
+        return self._frozen_snapshot
+
+    def commit_attribution_decision(self, trace_id: str = "") -> None:
+        """Commit attribution decisions and create a new graph version."""
+        self.fig.set_phase("attribution_committed")
+        self._append_event(BagelEvent(
+            event_type="AttributionDecisionCommitted",
+            graph_id=self.fig.graph_id,
+            graph_version=self.fig.version,
+            trace_id=trace_id or self._trace_id,
+            payload={"phase": "attribution_committed"},
+        ))
+
+    def enter_execution_phase(self, trace_id: str = "") -> None:
+        """Resume execution after attribution has committed."""
+        self.fig.set_phase("execution")
+        self._frozen_snapshot = None
+        self._append_event(BagelEvent(
+            event_type="ExecutionPhaseEntered",
+            graph_id=self.fig.graph_id,
+            graph_version=self.fig.version,
+            trace_id=trace_id or self._trace_id,
+            payload={"phase": "execution"},
+        ))
+
+    def jit_regenerate_stale_action(
+        self,
+        action_id: str,
+        trace_id: str = "",
+        regenerate_fn: Callable[[ActionNode], ActionNode] | None = None,
+    ) -> JitRegenerationRequest:
+        """Regenerate a stale action only in execution phase."""
+        snap = self.fig.snapshot()
+        if snap.get("phase") == "attribution_frozen":
+            return JitRegenerationRequest(action_id, False, "attribution_snapshot_frozen", self.fig.version)
+        action = snap["actions"].get(action_id)
+        if action is None:
+            return JitRegenerationRequest(action_id, False, "action_not_found", self.fig.version)
+        if action.status != "aborted":
+            return JitRegenerationRequest(action_id, False, "action_not_stale", self.fig.version)
+
+        if regenerate_fn is not None:
+            regenerated = regenerate_fn(action)
+            self.fig.update_action(
+                action_id,
+                status=regenerated.status,
+                fingerprint=regenerated.fingerprint,
+                claim_id=regenerated.claim_id,
+                metadata=regenerated.metadata,
+            )
+        self._append_event(BagelEvent(
+            event_type="JitRegenerationRequested",
+            graph_id=self.fig.graph_id,
+            graph_version=self.fig.version,
+            trace_id=trace_id or self._trace_id,
+            payload={"action_id": action_id, "phase": snap.get("phase"), "regenerated": regenerate_fn is not None},
+        ))
+        return JitRegenerationRequest(action_id, True, "jit_regeneration_allowed", self.fig.version)
+
+    # -- BAGEL v1.2 delayed feedback and feedback shift ------------------
+
+    def register_causal_bridge(self, bridge: CausalBridgeNode, trace_id: str = "") -> CausalBridgeNode:
+        self.fig.add_bridge(bridge)
+        self._append_event(BagelEvent(
+            event_type="CausalBridgeRegistered",
+            graph_id=self.fig.graph_id,
+            graph_version=self.fig.version,
+            trace_id=trace_id or self._trace_id,
+            payload=_node_to_dict(bridge),
+        ))
+        return bridge
+
+    def score_delayed_feedback(self, bridge: CausalBridgeNode) -> float:
+        """LongRangeScore proxy: bridge strength times belief freshness and reversibility."""
+        snap = self.fig.snapshot()
+        belief = snap["beliefs"].get(bridge.to_belief)
+        if belief is None:
+            return 0.0
+        freshness = 0.0 if belief.lifecycle in ("stale", "retired", "posthoc_invalid") else 1.0
+        reversibility = 1.0 - min(1.0, float(belief.metadata.get("irreversibility", 0.0)))
+        return max(0.0, min(1.0, bridge.weight * freshness * reversibility))
+
+    def compute_feedback_shift(
+        self,
+        belief_id: str,
+        before: list[str],
+        after: list[str],
+        signal_quality: float = 1.0,
+        threshold: float = 0.2,
+    ) -> FeedbackShiftResult:
+        if len(before) <= 1 and len(after) <= 1:
+            result = single_probe_ifs(
+                belief_id=belief_id,
+                before_failure=before[0] if before else "",
+                after_failure=after[0] if after else "",
+                signal_quality=signal_quality,
+                threshold=threshold,
+            )
+        else:
+            result = discrete_tvd(belief_id=belief_id, before=before, after=after, threshold=threshold)
+        self.fig.update_belief(
+            belief_id,
+            ifs_score=result.ifs_score,
+            tvd_score=result.tvd_score,
+            attribution_quality=max(result.ifs_score, result.tvd_score),
+            lifecycle="confirmed" if result.attributed else "noise_disturbance",
+        )
+        return result
+
+    # -- BAGEL v1.2 condensation ----------------------------------------
+
+    def condense_stable_subgraph(
+        self,
+        node_ids: tuple[str, ...],
+        interface_contract: dict[str, Any],
+        trace_id: str = "",
+    ) -> CondensedNode | None:
+        snap = self.fig.snapshot()
+        unstable = {"provisional", "committed", "suspect", "falsified", "stale", "challenged", "posthoc_invalid"}
+        for node_id in node_ids:
+            belief = snap["beliefs"].get(node_id)
+            if belief is not None and belief.lifecycle in unstable:
+                return None
+        condensed = CondensedNode(
+            condensed_id=f"cond_{int(time.perf_counter() * 1000)}",
+            source_node_ids=node_ids,
+            interface_contract=interface_contract,
+            summary_belief=str(interface_contract.get("summary", "stable_subgraph")),
+            survival_evidence=tuple(interface_contract.get("outputs", ()) or ()),
+            risk_summary=dict(interface_contract.get("risk_summary", {}) or {}),
+            artifact_fingerprints=tuple(interface_contract.get("modified_artifacts", ()) or ()),
+            expand_event_ref=self.fig.graph_id,
+        )
+        self.fig.add_condensed_node(condensed)
+        self._append_event(BagelEvent(
+            event_type="SubgraphCondensed",
+            graph_id=self.fig.graph_id,
+            graph_version=self.fig.version,
+            trace_id=trace_id or self._trace_id,
+            payload=_node_to_dict(condensed),
+        ))
+        return condensed
+
+    def expand_condensed_node(self, condensed_id: str) -> tuple[str, ...]:
+        node = self.fig.snapshot()["condensed_nodes"].get(condensed_id)
+        return tuple(node.source_node_ids) if node else ()
 
     # -- Phase 4: Attribution Cycle (on failure) --
 
@@ -210,6 +382,8 @@ class BagelRuntime:
         self._attribution_count += 1
         cycle_id = f"attr_{self._attribution_count}_{int(time.perf_counter())}"
 
+        self.freeze_attribution_snapshot(trace_id)
+
         # Step 1: Arbitrate
         results = self.arbiter.arbitrate(self.fig, self.matrix)
 
@@ -217,12 +391,12 @@ class BagelRuntime:
         probes = self.arbiter.generate_probe_requests(results)
         for probe in probes:
             self.fig.add_probe(probe)
-            self.event_store.append(BagelEvent(
+            self._append_event(BagelEvent(
                 event_type="ProbeGenerated",
                 graph_id=self.fig.graph_id,
                 graph_version=self.fig.version,
                 trace_id=trace_id,
-                payload={"probe_id": probe.probe_id, "belief_id": probe.belief_id},
+                payload=_node_to_dict(probe),
             ))
 
         # Step 3: Execute probes if executor available
@@ -235,6 +409,18 @@ class BagelRuntime:
                         status=executed.status,
                         result=executed.result,
                     )
+                    updated_probe = self.fig.snapshot()["probes"].get(probe.probe_id)
+                    self._append_event(BagelEvent(
+                        event_type="ProbeExecuted",
+                        graph_id=self.fig.graph_id,
+                        graph_version=self.fig.version,
+                        trace_id=trace_id,
+                        payload=_node_to_dict(updated_probe) if updated_probe else {
+                            "probe_id": probe.probe_id,
+                            "status": executed.status,
+                            "result": executed.result,
+                        },
+                    ))
                     # Add probe result as evidence signal
                     polarity = "refute" if executed.status == "failed" else "support"
                     self.matrix.add_signal(EvidenceSignal(
@@ -266,7 +452,7 @@ class BagelRuntime:
                 elif decision.strategy == "stale_marking":
                     stale_belief_ids.extend(changed)
 
-                self.event_store.append(BagelEvent(
+                self._append_event(BagelEvent(
                     event_type="BeliefRevised" if result.new_lifecycle != "stale" else "BeliefStaled",
                     graph_id=self.fig.graph_id,
                     graph_version=self.fig.version,
@@ -275,14 +461,41 @@ class BagelRuntime:
                         "belief_id": result.belief_id,
                         "old_lifecycle": result.old_lifecycle,
                         "new_lifecycle": result.new_lifecycle,
+                        "lifecycle": result.new_lifecycle,
                         "score": result.score,
                         "reason": result.reason,
                         "strategy": decision.strategy,
                     },
                 ))
+                if decision.strategy == "stale_marking":
+                    action_snapshot = self.fig.snapshot()["actions"]
+                    for action_id in decision.affected_action_ids:
+                        action = action_snapshot.get(action_id)
+                        if action is not None:
+                            self._append_event(BagelEvent(
+                                event_type="ActionExecuted",
+                                graph_id=self.fig.graph_id,
+                                graph_version=self.fig.version,
+                                trace_id=trace_id,
+                                payload=_node_to_dict(action),
+                            ))
             else:
                 # Direct lifecycle update
                 self.fig.update_belief(result.belief_id, lifecycle=result.new_lifecycle)
+                self._append_event(BagelEvent(
+                    event_type="ArbiterUpdated",
+                    graph_id=self.fig.graph_id,
+                    graph_version=self.fig.version,
+                    trace_id=trace_id,
+                    payload={
+                        "belief_id": result.belief_id,
+                        "old_lifecycle": result.old_lifecycle,
+                        "new_lifecycle": result.new_lifecycle,
+                        "lifecycle": result.new_lifecycle,
+                        "score": result.score,
+                        "reason": result.reason,
+                    },
+                ))
 
         # Build score summary
         scores = self.matrix.score_all()
@@ -308,6 +521,8 @@ class BagelRuntime:
                 "probes": len(probes),
             })
 
+        self.commit_attribution_decision(trace_id)
+        self.enter_execution_phase(trace_id)
         return result_obj
 
     # -- Utility --
@@ -320,6 +535,8 @@ class BagelRuntime:
             "neutral": "neutral",
             "error": "insufficient",
             "insufficient": "insufficient",
+            "timeout": "insufficient",
+            "flaky": "insufficient",
         }
         return mapping.get(feedback_polarity, "neutral")
 
@@ -327,22 +544,28 @@ class BagelRuntime:
         """Publish current belief state to StateBus."""
         slot = self.state_bus.get_slot("bagel_evidence_state")
         if slot:
+            snap = self.fig.snapshot()
             slot.put({
                 "graph_id": self.fig.graph_id,
                 "version": self.fig.version,
-                "belief_count": len(self.fig.beliefs),
+                "belief_count": len(snap["beliefs"]),
                 "active": len(self.fig.active_beliefs()),
                 "suspect": len(self.fig.suspect_beliefs()),
                 "falsified": len(self.fig.falsified_beliefs()),
             })
 
+    def _append_event(self, event: BagelEvent) -> None:
+        if not self.event_store.append(event):
+            log.error("[BAGEL] Event store write failed for %s", event.event_type)
+
     def get_suspect_summary(self) -> dict[str, Any]:
         """Get a summary of current suspect/falsified beliefs."""
+        snap = self.fig.snapshot()
         return {
             "active": [b.belief_id for b in self.fig.active_beliefs()],
             "suspect": [b.belief_id for b in self.fig.suspect_beliefs()],
             "falsified": [b.belief_id for b in self.fig.falsified_beliefs()],
-            "total_beliefs": len(self.fig.beliefs),
-            "total_actions": len(self.fig.actions),
-            "total_feedbacks": len(self.fig.feedbacks),
+            "total_beliefs": len(snap["beliefs"]),
+            "total_actions": len(snap["actions"]),
+            "total_feedbacks": len(snap["feedbacks"]),
         }

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import re
 from typing import Any
 
 
@@ -95,6 +96,16 @@ class VisionOutputGuard:
             errors.append("screen_state_low_confidence")
         return state, conf, errors
 
+    def validate_fact_schema(self, fact: dict[str, object]) -> GuardedCandidate:
+        """Validate a structured vision fact before it can reach planning."""
+        candidate = {
+            "label": str(fact.get("value", "")),
+            "bbox_norm": fact.get("bbox_norm", [0.0, 0.0, 1.0, 1.0]),
+            "confidence": fact.get("confidence", 0.0),
+            "reason": str(fact.get("fact_type", "")),
+        }
+        return self.validate_candidate(candidate)
+
     @staticmethod
     def _float(value: Any) -> float:
         try:
@@ -117,4 +128,12 @@ class VisionOutputGuard:
     @staticmethod
     def _contains_action_directive(text: str) -> bool:
         lowered = text.lower()
-        return any(term in lowered for term in _BLOCKED_TERMS)
+        if any(term in lowered for term in _BLOCKED_TERMS):
+            return True
+        # Reject raw physical coordinate instructions such as "(123,456)" or
+        # "x=123 y=456"; normalized bbox values must travel in bbox_norm only.
+        if re.search(r"\(\s*\d{2,5}\s*,\s*\d{2,5}\s*\)", lowered):
+            return True
+        if re.search(r"\bx\s*=\s*\d{2,5}\b.*\by\s*=\s*\d{2,5}\b", lowered):
+            return True
+        return False

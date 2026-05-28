@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from skills.promotion import can_promote_to, meets_wilson_threshold, PromotionTier
+from skills.promotion import PromotionTier, can_promote_to, promotion_path
 from skills.registry import SkillRegistry
 from skills.schema import SkillDef
 
@@ -44,13 +44,6 @@ class PromotionGate:
         if not ok:
             return PromotionResult(False, skill.skill_id, skill.tier, target_tier, reason)
 
-        # Additional induction-specific checks
-        if skill.tier == "raw_trace":
-            return PromotionResult(
-                False, skill.skill_id, skill.tier, target_tier,
-                "coordinate-only traces cannot promote",
-            )
-
         # Apply promotion: create new SkillDef with updated tier
         from dataclasses import replace as _replace
         promoted = _replace(skill, tier=target_tier)
@@ -72,12 +65,9 @@ class PromotionGate:
         if skill.tier == "raw_trace":
             return None
 
-        from skills.promotion import _TIER_ORDER, _TIER_INDEX
-        current_idx = _TIER_INDEX[skill.tier]
         highest: PromotionTier | None = None
 
-        for next_idx in range(current_idx + 1, len(_TIER_ORDER)):
-            target = _TIER_ORDER[next_idx]
+        for target in promotion_path(skill.tier):
             ok, _ = can_promote_to(skill, target, successes, failures)
             if not ok:
                 break

@@ -191,3 +191,23 @@ class TestQuestStateTrackerV2:
         claim2 = _claim(ocr_texts=())
         ctx2, _ = tracker.update(claim2)
         assert ctx2.objective_text == ctx1.objective_text
+
+    def test_claim_graph_summary_fallback(self) -> None:
+        tracker = QuestStateTrackerV2()
+        claim = _claim(ocr_texts=(), scene_desc="")
+        ctx, _ = tracker.update(
+            claim,
+            claim_graph_summary={
+                "objective_text": "前往冒险家协会",
+                "evidence_refs": ["claim_quest_text"],
+            },
+        )
+        assert ctx.objective_text == "前往冒险家协会"
+        assert ctx.objective_type == "go_to_marker"
+        assert "claim_quest_text" in ctx.evidence_refs
+
+    def test_blocker_detection_does_not_flag_lock_on_enemy(self) -> None:
+        tracker = QuestStateTrackerV2()
+        claim = _claim(ocr_texts=("任务：击败敌人", "锁定敌人并攻击"))
+        ctx, _ = tracker.update(claim)
+        assert not ctx.is_blocked

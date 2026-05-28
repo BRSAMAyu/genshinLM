@@ -47,6 +47,9 @@ class InductionPipeline:
         """
         if not session.success:
             return InductionResult(0, 0, ())
+        valid_tiers = {"raw_trace", "draft", "experimental", "candidate", "stable", "trusted"}
+        if target_tier not in valid_tiers:
+            return InductionResult(0, 0, (("__pipeline__", False, f"unknown target tier: {target_tier}"),))
 
         episodes = self.segmenter.segment(session)
         skills_produced = 0
@@ -68,12 +71,9 @@ class InductionPipeline:
 
             # Try iterative promotion toward target tier
             if target_tier not in ("raw_trace", "draft"):
-                from skills.promotion import PromotionTier, _TIER_ORDER, _TIER_INDEX
+                from skills.promotion import PromotionTier, promotion_path
                 current = result.skill
-                current_idx = _TIER_INDEX[current.tier]
-                target_idx = _TIER_INDEX.get(target_tier, current_idx + 1)  # type: ignore
-                for next_idx in range(current_idx + 1, target_idx + 1):
-                    next_tier = _TIER_ORDER[next_idx]
+                for next_tier in promotion_path(current.tier, target_tier):  # type: ignore[arg-type]
                     promo = self.gate.try_promote(current, next_tier)
                     promotion_results.append(
                         (current.skill_id, promo.success, promo.reason),
