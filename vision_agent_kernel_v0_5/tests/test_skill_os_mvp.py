@@ -35,7 +35,7 @@ def _claim(claim_type: str = "dialogue_advanced") -> SkillProducedClaim:
 def _dialogue_skill(tier: str = "draft") -> SkillDef:
     return SkillDef(
         skill_id="proc_dialogue_advance",
-        version=1,
+        version=2,
         kind="procedure",
         risk_level="low",
         tier=tier,

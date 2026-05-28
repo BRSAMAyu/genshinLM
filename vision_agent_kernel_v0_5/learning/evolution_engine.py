@@ -98,13 +98,23 @@ class EvolutionEngine:
         except Exception as exc:
             log.error("[EvolutionEngine] on_skill_result enqueue failed: %s", exc)
 
+    _consecutive_drain_errors = 0
+    _max_consecutive_drain_errors = 10
+
     def _drain_failures(self) -> None:
         while True:
             try:
                 skill_name, failure_code, obs_data = self._failure_queue.get()
                 self.handle_failure(skill_name, failure_code, obs_data)
+                EvolutionEngine._consecutive_drain_errors = 0
             except Exception as exc:
-                log.error("[EvolutionEngine] Failure worker error: %s", exc)
+                EvolutionEngine._consecutive_drain_errors += 1
+                log.error("[EvolutionEngine] Failure worker error (%d): %s",
+                          EvolutionEngine._consecutive_drain_errors, exc)
+                if EvolutionEngine._consecutive_drain_errors >= EvolutionEngine._max_consecutive_drain_errors:
+                    log.critical("[EvolutionEngine] Too many consecutive errors, pausing worker for 30s")
+                    time.sleep(30)
+                    EvolutionEngine._consecutive_drain_errors = 0
 
     def handle_failure(
         self, skill_name: str, failure_code: str, observation_data: dict[str, Any],

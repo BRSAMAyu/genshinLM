@@ -236,9 +236,12 @@ class EvidenceMatrix:
         ranked = sorted(scores.values(), key=lambda s: s.score)
         return ranked[:limit]
 
-    def clear(self) -> None:
+    def clear(self) -> int:
+        """Clear all signals. Returns count of signals removed."""
         with self._lock:
+            count = sum(len(v) for v in self._signals.values())
             self._signals.clear()
+            return count
 
     def clear_for_beliefs(self, belief_ids: list[str]) -> int:
         """Remove signals for specified beliefs only. Returns count removed."""

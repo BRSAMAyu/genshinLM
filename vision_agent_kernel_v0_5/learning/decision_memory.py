@@ -65,15 +65,16 @@ class DecisionMemory:
         self._init_db()
 
     def close(self) -> None:
-        if self._conn is not None:
-            self._conn.close()
-            self._conn = None
+        with self._conn_lock:
+            if self._conn is not None:
+                self._conn.close()
+                self._conn = None
 
     def _conn_ctx(self) -> sqlite3.Connection:
         with self._conn_lock:
             if self._conn is None:
                 self._conn = sqlite3.connect(self._db_path)
-        return self._conn
+            return self._conn
 
     def _init_db(self) -> None:
         conn = sqlite3.connect(self._db_path)

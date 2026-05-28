@@ -114,7 +114,7 @@ def _migrate_v1_to_v2(data: dict[str, Any]) -> dict[str, Any]:
         app = {"screen_states": (), "required_anchors": (), "required_claims": ()}
         data["applicability"] = app
     app.setdefault("required_claims", [])
-    data.setdefault("version", 2)
+    data["version"] = 2
     data.setdefault("belief_templates", [])
     data.setdefault("fallbacks", [])
     promo = data.get("promotion", {})

@@ -612,7 +612,7 @@ class BagelRuntime:
         evicted = self.fig.evict_terminated(max_age_sec=0.0)
 
         # Clear ALL evidence signals for quest boundary
-        self.matrix.clear()
+        signals_cleared = self.matrix.clear()
 
         # Remove beliefs not in carry_forward list
         if carry_forward_beliefs is not None:

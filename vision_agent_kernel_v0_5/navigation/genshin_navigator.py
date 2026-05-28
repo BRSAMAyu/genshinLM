@@ -248,6 +248,10 @@ class GenshinNavigator:
                                  "label": "walk_to_unlocked_area"},
                             ],
                         })
+                        log.warning(
+                            "[GenshinNavigator] navigate_walk published but no executor "
+                            "currently handles this action type — caller must implement WASD walk"
+                        )
                         return True
                 except Exception as exc:
                     log.warning("[GenshinNavigator] Bus publish failed: %s", exc)

@@ -134,25 +134,20 @@ class BagelArbiter:
         else:
             return None
 
-        # Oscillation dampening: track (old, new) transition patterns
+        # Oscillation dampening: count total transitions (not just identical ones).
+        # If a belief has changed lifecycle N times, it's oscillating regardless
+        # of the specific states involved.
         if old != new:
-            transition_key = (old, new)
-            prev_transition = self._last_lifecycle.get(belief.belief_id)
-            count = self._oscillation_counts.get(belief.belief_id, 0)
-            if prev_transition == transition_key:
-                count += 1
-            else:
-                count = 1
+            count = self._oscillation_counts.get(belief.belief_id, 0) + 1
             self._oscillation_counts[belief.belief_id] = count
-            self._last_lifecycle[belief.belief_id] = transition_key
-            if count >= self._max_oscillations:
+            if count >= self._max_oscillations * 2:  # *2 because each bounce = 2 transitions
                 return ArbitrationResult(
                     belief_id=belief.belief_id,
                     old_lifecycle=old,
                     new_lifecycle=old,
                     score=score.score,
                     reason="oscillation_dampened",
-                    metadata={"oscillation_count": count, "transition": transition_key},
+                    metadata={"transition_count": count},
                 )
 
         # Probe requested on conflict or suspect
