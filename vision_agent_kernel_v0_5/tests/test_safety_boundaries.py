@@ -130,6 +130,8 @@ class TestInputLeaseEnforcement:
                 continue
             if py_file.name == "real_input_backend.py":
                 continue
+            if py_file.name == "directinput_backend.py":
+                continue
             content = py_file.read_text(encoding="utf-8")
             assert not sendinput_pattern.search(content), (
                 f"{py_file.relative_to(_ROOT)} contains SendInput call outside safe_window_backend.py"

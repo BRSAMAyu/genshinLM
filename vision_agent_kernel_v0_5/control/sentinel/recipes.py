@@ -79,9 +79,12 @@ class UILostRecovery(RecoveryRecipe):
 
 
 class StuckRecovery(RecoveryRecipe):
-    """Recover when agent is stuck (no progress for extended time).
+    """Recover when agent is physically stuck (collision, wall, terrain).
 
-    Action: press W briefly to unstick, then jump, then wait.
+    Applies a multi-maneuver 3D unstick sequence:
+    1. Jump-Forward: try to hop over low obstacles
+    2. Strafe-Right: sidestep to find an alternate path
+    3. Climb-Cancel: break out of accidental wall-climb state
     """
     recipe_id = "STUCK_RECOVERY"
     max_budget = 3
@@ -91,16 +94,28 @@ class StuckRecovery(RecoveryRecipe):
 
     def execute_recovery(self, executor: Any = None) -> RecoveryResult:
         actions = [
-            {"action": "press_key", "params": {"key": "space"}, "label": "jump"},
-            {"action": "wait_ms", "params": {"ms": 200}, "label": "wait_jump"},
-            {"action": "hold_key", "params": {"key": "w", "duration_ms": 500}, "label": "move_forward"},
-            {"action": "wait_ms", "params": {"ms": 300}, "label": "wait_move"},
+            # Phase 1: Jump-Forward — try to hop over low obstacles
+            {"action": "press_key", "params": {"key": "space"}, "label": "jump_forward"},
+            {"action": "hold_key", "params": {"key": "w", "duration_ms": 400}, "label": "forward_after_jump"},
+            {"action": "wait_ms", "params": {"ms": 300}, "label": "wait_land"},
+            # Phase 2: Strafe-Right — sidestep to find alternate path
+            {"action": "hold_key", "params": {"key": "d", "duration_ms": 500}, "label": "strafe_right"},
+            {"action": "hold_key", "params": {"key": "w", "duration_ms": 400}, "label": "forward_after_strafe"},
+            {"action": "wait_ms", "params": {"ms": 200}, "label": "wait_strafe"},
+            # Phase 3: Climb-Cancel — break accidental wall-climb (Space+X)
+            {"action": "press_key", "params": {"key": "space"}, "label": "climb_cancel_jump"},
+            {"action": "wait_ms", "params": {"ms": 100}, "label": "wait_cancel"},
+            {"action": "press_key", "params": {"key": "x"}, "label": "climb_cancel_drop"},
+            {"action": "wait_ms", "params": {"ms": 300}, "label": "wait_drop"},
+            # Phase 4: Final forward attempt
+            {"action": "hold_key", "params": {"key": "w", "duration_ms": 600}, "label": "final_forward"},
+            {"action": "wait_screen", "params": {"screen": "world_viewport", "timeout_ms": 2000}, "label": "wait_stable"},
         ]
         _publish(executor, self.recipe_id, actions)
         return RecoveryResult(
             self.recipe_id, "success", actions_taken=len(actions),
             new_screen_state="world_viewport",
-            claim_data={"recovery_type": "stuck", "actions": actions},
+            claim_data={"recovery_type": "stuck", "maneuvers": ["jump_forward", "strafe_right", "climb_cancel"]},
             feedback_data={"recovered": True},
         )
 
