@@ -15,6 +15,7 @@ from __future__ import annotations
 import threading
 import time
 import uuid
+from collections import deque
 import dataclasses as _dc
 from dataclasses import dataclass, field
 from typing import Any, Literal
@@ -404,8 +405,81 @@ class FalsifiableInterventionGraph:
                 return None
             updated = _dc.replace(belief, updated_at=time.perf_counter(), **overrides)
             self.beliefs[belief_id] = updated
+            # Clean ordering lock on terminal transition
+            new_lc = overrides.get("lifecycle")
+            if new_lc in self._TERMINAL_LIFECYCLES:
+                self._ordering_lock.pop(belief_id, None)
+                self._invalidate_condensed_unlocked(belief_id)
             self._bump()
             return updated
+
+    def evict_terminated(self, max_age_sec: float = 300.0) -> int:
+        """Remove beliefs with terminal lifecycles older than max_age_sec.
+
+        Also removes orphaned actions, feedbacks, probes, edges, and ordering entries.
+        Returns count of evicted beliefs.
+        """
+        now = time.perf_counter()
+        with self._lock:
+            # Find beliefs to evict
+            to_evict: set[str] = set()
+            for bid, belief in list(self.beliefs.items()):
+                if belief.lifecycle in self._TERMINAL_LIFECYCLES:
+                    age = now - belief.updated_at
+                    if age >= max_age_sec:
+                        to_evict.add(bid)
+
+            if not to_evict:
+                return 0
+
+            # Find actions where ALL driving beliefs are evicted
+            action_to_evict: set[str] = set()
+            for aid, action in list(self.actions.items()):
+                if all(bid in to_evict for bid in action.belief_ids):
+                    action_to_evict.add(aid)
+
+            # Find feedbacks for evicted actions
+            feedback_to_evict: set[str] = set()
+            for fid, fb in list(self.feedbacks.items()):
+                if fb.action_id in action_to_evict:
+                    feedback_to_evict.add(fid)
+
+            # Find probes for evicted beliefs
+            probe_to_evict: set[str] = set()
+            for pid, probe in list(self.probes.items()):
+                if probe.belief_id in to_evict:
+                    probe_to_evict.add(pid)
+
+            # Remove edges referencing evicted nodes
+            evicted_all = to_evict | action_to_evict | feedback_to_evict | probe_to_evict
+            self.edges = [
+                e for e in self.edges
+                if e.source_id not in evicted_all and e.target_id not in evicted_all
+            ]
+
+            # Remove from dicts
+            for bid in to_evict:
+                self.beliefs.pop(bid, None)
+                self._ordering_lock.pop(bid, None)
+            for aid in action_to_evict:
+                self.actions.pop(aid, None)
+            for fid in feedback_to_evict:
+                self.feedbacks.pop(fid, None)
+            for pid in probe_to_evict:
+                self.probes.pop(pid, None)
+
+            self._bump()
+            return len(to_evict)
+
+    def _invalidate_condensed_unlocked(self, belief_id: str) -> list[str]:
+        """Remove condensed nodes that reference a belief transitioning to terminal."""
+        removed: list[str] = []
+        for cid, node in list(self.condensed_nodes.items()):
+            if belief_id in node.source_node_ids:
+                del self.condensed_nodes[cid]
+                self.edges = [e for e in self.edges if e.source_id != cid]
+                removed.append(cid)
+        return removed
 
     def update_action(self, action_id: str, **overrides: Any) -> ActionNode | None:
         with self._lock:
@@ -449,17 +523,13 @@ class FalsifiableInterventionGraph:
             return result
 
     def downstream_beliefs(self, belief_id: str) -> list[str]:
-        """BFS to find beliefs that depend on the given belief.
-
-        Edge direction: (dependent, dependency), so target_id == current means
-        source_id depends on current, i.e., source_id is downstream.
-        """
+        """BFS to find beliefs that depend on the given belief."""
         with self._lock:
             visited: set[str] = {belief_id}
-            queue = [belief_id]
+            queue = deque([belief_id])
             result: list[str] = []
             while queue:
-                current = queue.pop(0)
+                current = queue.popleft()
                 for edge in self.edges:
                     if edge.kind == "belief_depends_on_belief" and edge.target_id == current:
                         downstream_id = edge.source_id

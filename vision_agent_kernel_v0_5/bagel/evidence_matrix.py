@@ -26,6 +26,7 @@ from __future__ import annotations
 
 import math
 import threading
+import time
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -46,6 +47,11 @@ class EvidenceSignal:
     auditor_id: str = ""
     source: str = ""
     description: str = ""
+    timestamp: float = 0.0
+
+    def __post_init__(self) -> None:
+        if self.timestamp == 0.0:
+            object.__setattr__(self, "timestamp", time.perf_counter())
 
     @property
     def matrix_value(self) -> EvidenceValue:
@@ -55,7 +61,6 @@ class EvidenceSignal:
             return -1.0
         if self.polarity == "neutral":
             return 0.0
-        # insufficient / environment_error
         return float("nan")
 
 
@@ -128,6 +133,7 @@ class EvidenceMatrix:
     epsilon: float = 0.01
     core_probe_veto_threshold: float = 0.8
     conflict_threshold: float = 0.3
+    signal_horizon_sec: float = 600.0
 
     _signals: dict[str, list[EvidenceSignal]] = field(default_factory=dict)
     _lock: threading.Lock = field(default_factory=threading.Lock)
@@ -152,12 +158,15 @@ class EvidenceMatrix:
                 signal_count=0, core_contradiction=False, conflict_detected=False,
             )
 
+        now = time.perf_counter()
         support_weights: list[float] = []
         refute_weights: list[float] = []
         relevant_weights: list[float] = []
         core_contradiction = False
 
         for sig in signals:
+            if self.signal_horizon_sec > 0 and (now - sig.timestamp) > self.signal_horizon_sec:
+                continue
             val = sig.matrix_value
             if math.isnan(val):
                 continue
@@ -228,6 +237,26 @@ class EvidenceMatrix:
     def clear(self) -> None:
         with self._lock:
             self._signals.clear()
+
+    def clear_for_beliefs(self, belief_ids: list[str]) -> int:
+        """Remove signals for specified beliefs only. Returns count removed."""
+        with self._lock:
+            removed = 0
+            for bid in belief_ids:
+                removed += len(self._signals.pop(bid, []))
+            return removed
+
+    def evict_signals_before(self, cutoff: float) -> int:
+        """Remove signals with timestamp older than cutoff. Returns count removed."""
+        with self._lock:
+            removed = 0
+            for bid in list(self._signals.keys()):
+                before = len(self._signals[bid])
+                self._signals[bid] = [s for s in self._signals[bid] if s.timestamp >= cutoff]
+                removed += before - len(self._signals[bid])
+                if not self._signals[bid]:
+                    del self._signals[bid]
+            return removed
 
     def signal_count(self, belief_id: str | None = None) -> int:
         with self._lock:

@@ -45,6 +45,8 @@ EventType = Literal[
     "AttributionDecisionCommitted",
     "ExecutionPhaseEntered",
     "JitRegenerationRequested",
+    "QuestArchived",
+    "QuestTransition",
 ]
 
 
@@ -104,6 +106,12 @@ class BagelEventStore:
         self._write_count = 0
         self._write_failure_callback: list[Any] = []
         self._file: TextIO | None = None
+
+    def __enter__(self) -> BagelEventStore:
+        return self
+
+    def __exit__(self, *args: Any) -> None:
+        self.close()
 
     def set_write_failure_callback(self, callback: Any) -> None:
         self._write_failure_callback.append(callback)

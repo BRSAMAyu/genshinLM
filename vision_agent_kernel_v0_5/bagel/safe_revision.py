@@ -229,11 +229,12 @@ class SafeRevisionEngine:
         snap: dict[str, Any], belief_id: str,
     ) -> list[str]:
         """BFS for downstream beliefs using a snapshot instead of live FIG."""
+        from collections import deque
         visited: set[str] = {belief_id}
-        queue = [belief_id]
+        queue = deque([belief_id])
         result: list[str] = []
         while queue:
-            current = queue.pop(0)
+            current = queue.popleft()
             for edge in snap["edges"]:
                 if edge.kind == "belief_depends_on_belief" and edge.target_id == current:
                     downstream_id = edge.source_id

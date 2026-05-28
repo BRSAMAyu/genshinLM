@@ -48,22 +48,38 @@ class ProbePolicy:
     """Generates and validates falsification probes."""
 
     non_decidable_limit: int = 2
+    taboo_ttl_sec: float = 600.0
     _cluster_counts: dict[str, int] = field(default_factory=dict)
-    _taboo_probe_families: set[str] = field(default_factory=set)
+    _taboo_probe_families: dict[str, float] = field(default_factory=dict)
 
     def generate_probes(
         self,
         fig: FalsifiableInterventionGraph,
         belief_ids: list[str] | None = None,
     ) -> list[ProbeNode]:
-        """Generate probes for suspect or conflicting beliefs."""
+        """Generate probes for suspect or conflicting beliefs.
+
+        Skips beliefs that already have a pending probe (generated/sanity_checked/approved/executing).
+        """
         targets = belief_ids or [
             b.belief_id for b in fig.suspect_beliefs()
         ]
 
+        # Check for existing pending probes per belief
+        snap = fig.snapshot()
+        pending_beliefs: set[str] = set()
+        for probe in snap["probes"].values():
+            if probe.status in ("generated", "sanity_checked", "approved", "executing"):
+                pending_beliefs.add(probe.belief_id)
+
+        # Expire stale taboos
+        self.expire_taboos()
+
         probes: list[ProbeNode] = []
-        beliefs = fig.snapshot()["beliefs"]
+        beliefs = snap["beliefs"]
         for bid in targets:
+            if bid in pending_beliefs:
+                continue
             belief = beliefs.get(bid)
             if belief is None:
                 continue
@@ -184,11 +200,7 @@ class ProbePolicy:
         probe: ProbeNode,
         signal: str,
     ) -> ProbeDegradationDecision:
-        """Apply BAGEL v1.2 non-decidable probe degradation.
-
-        Repeated non-decidable outcomes taboo the probe family/cluster, not the
-        belief itself.
-        """
+        """Apply BAGEL v1.2 non-decidable probe degradation."""
         cluster_id = probe.probe_cluster_id or f"cluster_{probe.belief_id}"
         count = self._cluster_counts.get(cluster_id, 0) + 1
         self._cluster_counts[cluster_id] = count
@@ -201,9 +213,29 @@ class ProbePolicy:
             action = "retry_with_lower_noise_probe"
         else:
             state = "undecidable_cluster"
-            self._taboo_probe_families.add(family)
+            self._taboo_probe_families[family] = time.perf_counter()
             action = "choose_lowest_impact_reversible_action_or_human_review"
         return ProbeDegradationDecision(cluster_id, state, family, action, count)
 
     def is_probe_family_taboo(self, family: str) -> bool:
-        return family in self._taboo_probe_families
+        ts = self._taboo_probe_families.get(family)
+        if ts is None:
+            return False
+        if self.taboo_ttl_sec > 0 and (time.perf_counter() - ts) > self.taboo_ttl_sec:
+            del self._taboo_probe_families[family]
+            return False
+        return True
+
+    def reset_taboo(self) -> None:
+        """Clear all taboo families (e.g., on quest transition)."""
+        self._taboo_probe_families.clear()
+        self._cluster_counts.clear()
+
+    def expire_taboos(self) -> None:
+        """Remove expired taboo entries."""
+        if self.taboo_ttl_sec <= 0:
+            return
+        now = time.perf_counter()
+        expired = [f for f, ts in self._taboo_probe_families.items() if (now - ts) > self.taboo_ttl_sec]
+        for f in expired:
+            del self._taboo_probe_families[f]

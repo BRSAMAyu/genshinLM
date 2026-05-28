@@ -51,10 +51,16 @@ class BagelArbiter:
         confirm_threshold: float = 0.3,
         suspect_threshold: float = -0.1,
         falsify_threshold: float = -1.0,
+        max_oscillations: int = 3,
+        provisional_max_age_sec: float = 120.0,
     ) -> None:
         self._confirm_threshold = confirm_threshold
         self._suspect_threshold = suspect_threshold
         self._falsify_threshold = falsify_threshold
+        self._max_oscillations = max_oscillations
+        self._provisional_max_age_sec = provisional_max_age_sec
+        self._oscillation_counts: dict[str, int] = {}
+        self._last_lifecycle: dict[str, str] = {}
 
     def arbitrate(
         self,
@@ -92,6 +98,20 @@ class BagelArbiter:
         self, belief: BeliefNode, score: EvidenceScore,
     ) -> ArbitrationResult | None:
         old = belief.lifecycle
+        now = time.perf_counter()
+
+        # Age-aware retirement: provisional beliefs that haven't resolved
+        if old == "provisional" and self._provisional_max_age_sec > 0:
+            age = now - belief.updated_at
+            if age > self._provisional_max_age_sec and score.signal_count < 2:
+                return ArbitrationResult(
+                    belief_id=belief.belief_id,
+                    old_lifecycle=old,
+                    new_lifecycle="retired",
+                    score=score.score,
+                    reason="provisional_expired",
+                    metadata={"age_sec": age, "signal_count": score.signal_count},
+                )
 
         # Determine new lifecycle
         if score.core_contradiction:
@@ -110,10 +130,28 @@ class BagelArbiter:
             new = "confirmed"
             reason = "sufficient_support"
         elif old == "provisional" and score.score >= 0:
-            # No strong signal either way — leave provisional
             return None
         else:
             return None
+
+        # Oscillation dampening
+        prev = self._last_lifecycle.get(belief.belief_id)
+        if prev == new and old != new:
+            count = self._oscillation_counts.get(belief.belief_id, 0) + 1
+            self._oscillation_counts[belief.belief_id] = count
+            if count >= self._max_oscillations:
+                self._last_lifecycle[belief.belief_id] = old
+                return ArbitrationResult(
+                    belief_id=belief.belief_id,
+                    old_lifecycle=old,
+                    new_lifecycle=old,
+                    score=score.score,
+                    reason="oscillation_dampened",
+                    metadata={"oscillation_count": count},
+                )
+        elif old != new:
+            self._oscillation_counts[belief.belief_id] = 0
+        self._last_lifecycle[belief.belief_id] = new
 
         # Probe requested on conflict or suspect
         probe_requested = score.conflict_detected or (new == "suspect")

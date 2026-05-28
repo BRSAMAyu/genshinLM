@@ -22,7 +22,9 @@ This runtime provides the programmatic API for each step.
 """
 from __future__ import annotations
 
+import atexit
 import logging
+import math
 import time
 from dataclasses import dataclass, field
 from typing import Any, Callable
@@ -88,6 +90,7 @@ class BagelRuntime:
         # Register BAGEL state slot on StateBus
         self.state_bus.register_slot("bagel_evidence_state")
         self.state_bus.register_slot("bagel_attribution_result")
+        atexit.register(self.shutdown)
 
     # -- Phase 1: Belief Commit (forward registration) --
 
@@ -288,12 +291,16 @@ class BagelRuntime:
         return bridge
 
     def score_delayed_feedback(self, bridge: CausalBridgeNode) -> float:
-        """LongRangeScore proxy: bridge strength times belief freshness and reversibility."""
+        """LongRangeScore proxy: bridge strength with temporal decay freshness."""
         snap = self.fig.snapshot()
         belief = snap["beliefs"].get(bridge.to_belief)
         if belief is None:
             return 0.0
-        freshness = 0.0 if belief.lifecycle in ("stale", "retired", "posthoc_invalid") else 1.0
+        # Exponential freshness decay instead of binary 0/1
+        age = time.perf_counter() - belief.updated_at
+        freshness = math.exp(-0.01 * age)
+        if belief.lifecycle in ("stale", "retired", "posthoc_invalid", "falsified"):
+            freshness = 0.0
         reversibility = 1.0 - min(1.0, float(belief.metadata.get("irreversibility", 0.0)))
         return max(0.0, min(1.0, bridge.weight * freshness * reversibility))
 
@@ -315,13 +322,18 @@ class BagelRuntime:
             )
         else:
             result = discrete_tvd(belief_id=belief_id, before=before, after=after, threshold=threshold)
-        self.fig.update_belief(
-            belief_id,
-            ifs_score=result.ifs_score,
-            tvd_score=result.tvd_score,
-            attribution_quality=max(result.ifs_score, result.tvd_score),
-            lifecycle="confirmed" if result.attributed else "noise_disturbance",
-        )
+
+        # Guard: don't update terminal or falsified beliefs
+        snap = self.fig.snapshot()
+        belief = snap["beliefs"].get(belief_id)
+        if belief is not None and belief.lifecycle not in ("falsified", "retired", "posthoc_invalid"):
+            self.fig.update_belief(
+                belief_id,
+                ifs_score=result.ifs_score,
+                tvd_score=result.tvd_score,
+                attribution_quality=max(result.ifs_score, result.tvd_score),
+                lifecycle="confirmed" if result.attributed else "noise_disturbance",
+            )
         return result
 
     # -- BAGEL v1.2 condensation ----------------------------------------
@@ -369,18 +381,13 @@ class BagelRuntime:
         trace_id: str = "",
         probe_executor: Callable | None = None,
     ) -> AttributionCycleResult:
-        """Run a complete attribution cycle after failure.
-
-        Steps:
-        1. Run arbiter on all beliefs with evidence.
-        2. Check for conflicts → generate tie-breaker probes.
-        3. Execute probes if executor provided.
-        4. Re-run arbiter with probe results.
-        5. Apply safe revision for falsified beliefs.
-        6. Publish results.
-        """
+        """Run a complete attribution cycle after failure."""
         self._attribution_count += 1
         cycle_id = f"attr_{self._attribution_count}_{int(time.perf_counter())}"
+
+        # Phase reset guard: if stuck in attribution_frozen, reset first
+        if self.fig.phase == "attribution_frozen":
+            self.reset_phase(trace_id)
 
         self.freeze_attribution_snapshot(trace_id)
 
@@ -569,3 +576,91 @@ class BagelRuntime:
             "total_actions": len(snap["actions"]),
             "total_feedbacks": len(snap["feedbacks"]),
         }
+
+    def quest_transition(
+        self,
+        new_mission_id: str,
+        carry_forward_beliefs: list[str] | None = None,
+        trace_id: str = "",
+    ) -> dict[str, Any]:
+        """Transition to a new quest/mission boundary.
+
+        1. Run final attribution cycle.
+        2. Archive FIG state.
+        3. Evict terminal beliefs.
+        4. Clear stale evidence signals.
+        5. Reset probe taboos.
+        6. Carry forward specified beliefs.
+        """
+        now = time.perf_counter()
+        old_mission_id = self.fig.mission_id
+        snap = self.fig.snapshot()
+
+        # Archive current state
+        self._append_event(BagelEvent(
+            event_type="QuestArchived",
+            graph_id=self.fig.graph_id,
+            graph_version=self.fig.version,
+            trace_id=trace_id or self._trace_id,
+            payload={
+                "mission_id": old_mission_id,
+                "belief_count": len(snap["beliefs"]),
+                "fig_snapshot": {k: {kk: _node_to_dict(vv) if hasattr(vv, '__dataclass_fields__') else vv for kk, vv in v.items()} if isinstance(v, dict) else v for k, v in snap.items()},
+            },
+        ))
+
+        # Evict terminal beliefs
+        evicted = self.fig.evict_terminated(max_age_sec=0.0)
+
+        # Clear stale evidence signals (keep all from before since we're transitioning)
+        signals_cleared = self.matrix.evict_signals_before(0.0)
+
+        # Remove beliefs not in carry_forward list
+        if carry_forward_beliefs is not None:
+            carry_set = set(carry_forward_beliefs)
+            for bid in list(self.fig.snapshot()["beliefs"].keys()):
+                if bid not in carry_set:
+                    self.fig.update_belief(bid, lifecycle="retired")
+            self.fig.evict_terminated(max_age_sec=0.0)
+
+        # Reset probe policy taboos for new quest
+        self.probe_policy.reset_taboo()
+
+        # Set new mission
+        self.fig.mission_id = new_mission_id
+        self._bump()
+
+        self._append_event(BagelEvent(
+            event_type="QuestTransition",
+            graph_id=self.fig.graph_id,
+            graph_version=self.fig.version,
+            trace_id=trace_id or self._trace_id,
+            payload={
+                "old_mission_id": old_mission_id,
+                "new_mission_id": new_mission_id,
+                "evicted_beliefs": evicted,
+                "signals_cleared": signals_cleared,
+            },
+        ))
+
+        return {
+            "old_mission_id": old_mission_id,
+            "new_mission_id": new_mission_id,
+            "evicted": evicted,
+            "signals_cleared": signals_cleared,
+        }
+
+    def _bump(self) -> None:
+        self.fig.version += 1
+
+    def reset_phase(self, trace_id: str = "") -> None:
+        """Reset FIG phase to execution (for recovery paths)."""
+        self.fig.set_phase("execution")
+        self._frozen_snapshot = None
+
+    def shutdown(self) -> None:
+        """Graceful shutdown: close event store."""
+        try:
+            self.event_store.close()
+        except Exception:
+            pass
