@@ -337,7 +337,9 @@ def test_aurorabench_v0_flywheel_end_to_end() -> None:
             assert len(drafts) > 0
 
             # 7. Run 10 iterations to verify flywheel repeatability
+            #    Must bypass repair cooldown by resetting cooldown timestamps.
             for _ in range(10):
+                engine._repair_cooldowns.clear()
                 draft = engine.handle_failure(
                     skill_name="genshin_combat",
                     failure_code="TARGET_LOST",

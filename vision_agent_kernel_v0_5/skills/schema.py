@@ -100,6 +100,40 @@ class SkillBagelProbePolicy:
     tie_breaker_required: bool = False
 
 
+def _migrate_v1_to_v2(data: dict[str, Any]) -> dict[str, Any]:
+    """Migrate a v1 skill dict to v2 schema.
+
+    V1 → V2 adds: jit_regeneration_policy, bagel_probe_policy fields
+    and normalises missing nested dicts to their defaults.
+    """
+    data = dict(data)
+    data.setdefault("jit_regeneration_policy", {})
+    data.setdefault("bagel_probe_policy", {})
+    app = data.get("applicability", {})
+    if not isinstance(app, dict):
+        app = {"screen_states": (), "required_anchors": (), "required_claims": ()}
+        data["applicability"] = app
+    app.setdefault("required_claims", [])
+    data.setdefault("version", 2)
+    data.setdefault("belief_templates", [])
+    data.setdefault("fallbacks", [])
+    promo = data.get("promotion", {})
+    if isinstance(promo, dict):
+        promo.setdefault("min_replays", 3)
+        promo.setdefault("min_wilson_lower_bound", 0.70)
+        promo.setdefault("required_profiles", ["default_1920x1080"])
+    rel = data.get("reliability_context", {})
+    if isinstance(rel, dict):
+        rel.setdefault("screen_state", "")
+        rel.setdefault("resolution", "")
+        rel.setdefault("capsule_id", "")
+        rel.setdefault("team_state", "")
+        rel.setdefault("resource_state", "")
+        rel.setdefault("testbed_profile", "")
+        rel.setdefault("skill_tier", "")
+    return data
+
+
 @dataclass(frozen=True, slots=True)
 class SkillDef:
     """Unified skill definition.
@@ -107,7 +141,7 @@ class SkillDef:
     Serializable to/from dict for JSON/YAML storage and exchange.
     """
     skill_id: str
-    version: int = 1
+    version: int = 2
     capsule_id: str = "core"
     kind: SkillKind = "procedure"
     risk_level: RiskLevel = "medium"
@@ -190,6 +224,10 @@ class SkillDef:
 
     @classmethod
     def from_dict(cls, data: dict[str, Any]) -> SkillDef:
+        # Schema migration
+        version = data.get("version", 1)
+        if version < 2:
+            data = _migrate_v1_to_v2(data)
         app = data.get("applicability", {})
         promo = data.get("promotion", {})
         rel = data.get("reliability_context", {})

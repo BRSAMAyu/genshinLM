@@ -96,7 +96,11 @@ class DecisionMemory:
             CREATE INDEX IF NOT EXISTS idx_success ON strategies(success);
         """)
         conn.commit()
-        conn.close()
+        # Keep the connection open for in-memory DBs; close for file-backed
+        if self._db_path == ":memory:":
+            self._conn = conn
+        else:
+            conn.close()
 
     def record(
         self,
@@ -196,10 +200,43 @@ class DecisionMemory:
         )
 
     def prune(self, max_age_days: int = 30) -> int:
+        """Remove old low-confidence records while protecting top-3 per (goal, capsule_id).
+
+        For each (goal, capsule_id) group the three highest-confidence records are
+        always kept, regardless of age.  Only records outside this protected set that
+        are also older than *max_age_days* are deleted.
+        """
         # Intentional use of wall-clock time for calendar-day age calculation.
         cutoff = time.time() - (max_age_days * 86400)
         conn = self._conn_ctx()
-        cursor = conn.execute("DELETE FROM strategies WHERE created_at < ?", (cutoff,))
+
+        # Fetch IDs of the top-3 records per group to protect them.
+        # ROW_NUMBER() OVER (PARTITION BY...) is supported in SQLite 3.25+.
+        protected_ids_rows = conn.execute(
+            """
+            SELECT strategy_id
+            FROM (
+                SELECT strategy_id,
+                       ROW_NUMBER() OVER (
+                           PARTITION BY goal, capsule_id
+                           ORDER BY confidence DESC, created_at DESC
+                       ) AS rn
+                FROM strategies
+            ) ranked
+            WHERE rn <= 3
+            """
+        ).fetchall()
+        protected_ids = {row[0] for row in protected_ids_rows}
+
+        if protected_ids:
+            placeholders = ",".join(["?"] * len(protected_ids))
+            cursor = conn.execute(
+                f"DELETE FROM strategies WHERE created_at < ? AND strategy_id NOT IN ({placeholders})",
+                (cutoff, *protected_ids),
+            )
+        else:
+            cursor = conn.execute("DELETE FROM strategies WHERE created_at < ?", (cutoff,))
+
         conn.commit()
         return cursor.rowcount
 

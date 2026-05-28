@@ -38,13 +38,21 @@ class AnchorBinder:
         steps: list[SkillStep] = []
         anchors: list[str] = []
         has_coordinate_only = False
+        prev_timestamp = 0.0
 
         for action in episode.actions:
             action_type = self._normalize_action_type(action.action_type)
+            # Compute inter-step delay from recorded timestamps
+            delay_ms = 0
+            if prev_timestamp > 0 and hasattr(action, "timestamp") and action.timestamp > 0:
+                delay_ms = max(0, int((action.timestamp - prev_timestamp) * 1000))
+            if hasattr(action, "timestamp") and action.timestamp > 0:
+                prev_timestamp = action.timestamp
             step = SkillStep(
                 action=action_type,  # type: ignore
                 target=action.anchor_id or action.target,
                 timeout_ms=5000,
+                params={"delay_ms": delay_ms} if delay_ms > 0 else {},
             )
             steps.append(step)
 

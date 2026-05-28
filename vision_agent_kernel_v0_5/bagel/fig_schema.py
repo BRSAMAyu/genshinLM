@@ -463,6 +463,11 @@ class FalsifiableInterventionGraph:
                 self._ordering_lock.pop(bid, None)
             for aid in action_to_evict:
                 self.actions.pop(aid, None)
+            # Clean dangling belief_ids from surviving actions
+            for aid, action in list(self.actions.items()):
+                cleaned = tuple(bid for bid in action.belief_ids if bid not in to_evict)
+                if cleaned != action.belief_ids:
+                    self.actions[aid] = _dc.replace(action, belief_ids=cleaned)
             for fid in feedback_to_evict:
                 self.feedbacks.pop(fid, None)
             for pid in probe_to_evict:

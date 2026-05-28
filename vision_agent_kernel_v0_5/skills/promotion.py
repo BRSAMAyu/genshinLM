@@ -97,8 +97,16 @@ def can_promote_to(
         replays = stats.get("success_count", 0)
         if replays < skill.promotion.min_replays:
             return False, f"needs {skill.promotion.min_replays} replays, has {replays}"
+        # Consecutive failure circuit breaker
+        consecutive = stats.get("consecutive_failures", 0)
+        if consecutive >= 5:
+            return False, f"consecutive failure breaker: {consecutive} consecutive failures"
         if not meets_wilson_threshold(skill, successes, failures):
             return False, f"Wilson lower bound below threshold ({successes}/{successes + failures})"
+        # BAGEL probe policy enforcement
+        non_decidable = stats.get("non_decidable_count", 0)
+        if non_decidable > skill.bagel_probe_policy.max_non_decidable:
+            return False, f"too many non-decidable probe results: {non_decidable}"
         return True, "meets replay + Wilson threshold"
 
     # stable → trusted: must have multi-profile verification + Wilson
@@ -108,6 +116,10 @@ def can_promote_to(
         if not required.issubset(set(profiles)):
             missing = required - set(profiles)
             return False, f"missing profiles: {missing}"
+        stats = skill.metadata.get("execution_stats", {})
+        consecutive = stats.get("consecutive_failures", 0)
+        if consecutive >= 5:
+            return False, f"consecutive failure breaker: {consecutive} consecutive failures"
         if not meets_wilson_threshold(skill, successes, failures):
             return False, f"Wilson lower bound below threshold ({successes}/{successes + failures})"
         return True, "all profiles verified + Wilson threshold met"
@@ -125,6 +137,61 @@ def wilson_lower_bound(successes: int, failures: int, z: float = 1.96) -> float:
     center = p_hat + z * z / (2 * n)
     spread = z * math.sqrt((p_hat * (1 - p_hat) + z * z / (4 * n)) / n)
     return max(0.0, (center - spread) / denom)
+
+
+def can_demote_to(
+    skill: SkillDef,
+    target: PromotionTier,
+    consecutive_failures: int = 0,
+) -> tuple[bool, str]:
+    """Check if a skill should be demoted to a lower tier.
+
+    Demotion triggers:
+    - consecutive_failures >= 5: mandatory demotion
+    - Explicit caller request with reason
+    """
+    current_idx = _TIER_INDEX[skill.tier]
+    target_idx = _TIER_INDEX[target]
+
+    if target_idx >= current_idx:
+        return False, f"target tier {target!r} is not lower than current {skill.tier!r}"
+
+    if current_idx - target_idx > 1:
+        return False, f"cannot skip tiers on demotion: {skill.tier!r} -> {target!r}"
+
+    if consecutive_failures >= 5:
+        return True, f"mandatory demotion: {consecutive_failures} consecutive failures"
+
+    return True, f"demotion from {skill.tier!r} to {target!r} allowed"
+
+
+def demote_skill(skill: SkillDef, target: PromotionTier) -> SkillDef:
+    """Create a new SkillDef with lowered tier and reset promotion counters."""
+    import dataclasses
+    new_metadata = dict(skill.metadata)
+    stats = dict(new_metadata.get("execution_stats", {}))
+    stats["consecutive_failures"] = 0
+    stats["demoted_at"] = __import__("time").perf_counter()
+    new_metadata["execution_stats"] = stats
+    new_metadata["demoted_from"] = skill.tier
+    return dataclasses.replace(skill, tier=target, metadata=new_metadata)
+
+
+def windowed_wilson(
+    recent_successes: int,
+    recent_failures: int,
+    total_successes: int,
+    total_failures: int,
+    window_weight: float = 0.7,
+    z: float = 1.96,
+) -> float:
+    """Wilson lower bound blended with recency weighting.
+
+    Recent observations get `window_weight`, historical get `(1 - window_weight)`.
+    """
+    effective_s = window_weight * recent_successes + (1 - window_weight) * max(0, total_successes - recent_successes)
+    effective_f = window_weight * recent_failures + (1 - window_weight) * max(0, total_failures - recent_failures)
+    return wilson_lower_bound(int(effective_s), int(effective_f), z)
 
 
 def meets_wilson_threshold(skill: SkillDef, successes: int, failures: int) -> bool:

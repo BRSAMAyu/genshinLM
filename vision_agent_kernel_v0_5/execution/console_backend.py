@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import collections
 import threading
 from dataclasses import dataclass
 
@@ -19,9 +20,9 @@ class ConsoleInputBackend:
     def __init__(self, timebase: Timebase | None = None) -> None:
         self._timebase = timebase or Timebase()
         self._lock = threading.RLock()
-        self._events: list[ConsoleInputEvent] = []
-        self._down_keys: set[str] = set()
         self._max_events = 10000
+        self._events: collections.deque[ConsoleInputEvent] = collections.deque(maxlen=self._max_events)
+        self._down_keys: set[str] = set()
 
     def key_down(self, key: str, reason: str = "") -> None:
         with self._lock:
@@ -64,7 +65,5 @@ class ConsoleInputBackend:
             action=action,
             payload=payload,
         )
-        self._events.append(event)
-        if len(self._events) > self._max_events:
-            self._events = self._events[-self._max_events:]
+        self._events.append(event)  # deque(maxlen) handles eviction automatically
         print(f"[ConsoleInputBackend] {event.timestamp:.6f} {action} {payload}", flush=True)

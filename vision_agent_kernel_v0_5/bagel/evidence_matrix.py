@@ -163,10 +163,12 @@ class EvidenceMatrix:
         refute_weights: list[float] = []
         relevant_weights: list[float] = []
         core_contradiction = False
+        active_count = 0
 
         for sig in signals:
             if self.signal_horizon_sec > 0 and (now - sig.timestamp) > self.signal_horizon_sec:
                 continue
+            active_count += 1
             val = sig.matrix_value
             if math.isnan(val):
                 continue
@@ -216,7 +218,7 @@ class EvidenceMatrix:
             support_max=c_i,
             refute_sum=s_i,
             relevant_sum=r_i,
-            signal_count=len(signals),
+            signal_count=active_count,
             core_contradiction=core_contradiction,
             conflict_detected=conflict,
             bounded_density_bonus=bounded_bonus,

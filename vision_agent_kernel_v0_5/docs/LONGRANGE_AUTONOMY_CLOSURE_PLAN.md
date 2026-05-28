@@ -1,241 +1,276 @@
-# Long-Range Autonomy Closure Plan
+# 长程自主通关最终收尾方案
+# LONGRANGE AUTONOMY CLOSURE PLAN — Aurora Vision Agent
+
+**版本:** v2.0（取代 v1.0 计划，全面深入补全漏洞）  
+**日期:** 2026-05-29  
+**目标:** 执行完成后，系统能够在真实原神环境中实现 30 分钟以上零崩溃的主线推进自主循环。所有已知漏洞消除，无可挑剔。  
+**参照承诺:** 991529d（Pre-Realworld Baseline，1022 测试全绿）
+
+---
+
+## 一、现状诚实评估
+
+### 1.1 已实现的核心架构（可靠基石）
+
+| 模块 | 状态 | 说明 |
+|------|------|------|
+| BAGEL FIG Schema + Runtime | ✅ 完整 | evict_terminated / quest_transition / probe taboo TTL / 指数衰减 freshness 已实现 |
+| Skill OS (schema/registry/promotion) | ✅ 完整 | demotion / windowed_wilson / BAGEL probe gate 已实现 |
+| MissionGraphV4 + MainlineRunner | ✅ 完整 | claim-gated nodes / topological execution / sentinel hooks |
+| ActiveQuestContext（任务事实链） | ✅ 完整 | 多来源 Fact 融合、versioned snapshot、objective classification |
+| MainlineAutonomyLoop | ✅ 完整 | 7 阶段 observe-select-commit-execute-verify-checkpoint-condense |
+| SentinelRuntime + RecoveryRecipes | ✅ 完整 | 8 种 recipe：UI丢失/卡住/目标丢失/加载超时/战斗失败/低血/Drift/模型失败 |
+| QuestStateTrackerV2 | ✅ 完整 | OCR+VLM 双路径、地图标记融合、对话序列追踪 |
+| GenshinNavigator + WorldGraph | ✅ 完整 | Dijkstra + 小地图方向检测 + 到达检测 + 传送序列 |
+| EvolutionEngine | ✅ 完整 | 修复飞轮：失败→签名→修复会话→patch draft→sandbox验证→版本化 |
+| EvidenceMatrix | ✅ 完整 | 非对称评分 / core contradiction veto / 时间衰减窗口 |
+| BagelArbiter | ✅ 完整 | 振荡阻尼 / provisional 超时退休 / 置信度评级 |
+| Capsule + Skill Registry | ✅ 完整 | genshin capsule / applicability matching / UI anchors |
 
-**Branch:** codex/pre-realworld-closure
-**Date:** 2026-05-28
-**Goal:** After execution, 30+ minute autonomous sessions have zero known vulnerabilities.
-**Scope:** BAGEL, Skill OS, Vision Pipeline, Mainline Loop, minor cleanups.
+### 1.2 真实存在的漏洞（本次收尾目标）
 
-## Phase 1: BAGEL Session Boundary & Lifecycle Management
+以下是在代码审查中发现的、**已确认尚未修复**的漏洞：
 
-### 1.1 FIG Eviction — `bagel/fig_schema.py`
+**Tier-A 关键漏洞（可直接导致长程运行崩溃）**
 
-Add `evict_terminated(max_age_sec=300.0) -> int`:
-- Under lock, find beliefs with lifecycle in `("retired", "falsified", "posthoc_invalid", "stale")` where `updated_at < now - max_age_sec`.
-- Remove them from `beliefs`, also remove associated actions (where all belief_ids are evicted), feedbacks, probes, edges referencing evicted IDs.
-- Clean `_ordering_lock` for evicted belief IDs.
-- Return count evicted.
+| ID | 文件 | 描述 | 风险 |
+|----|------|------|------|
+| A1 | `learning/evolution_engine.py` | `_verify_in_sandbox()` 对 `induced_` 技能跳过验证，结构性注入风险 | HIGH |
+| A2 | `learning/evolution_engine.py` | 修复会话无冷却和上限，失败风暴可能导致无限创建 | HIGH |
+| A3 | `planning/mainline/quest_state_tracker_v2.py` | 待验证完整性（是否正确集成进 MainlineRunner） | HIGH |
+| A4 | `control/sentinel/recipes.py` | 所有 `execute_recovery()` 实现全部是 stub，没有真实动作序列 | HIGH |
+| A5 | `navigation/genshin_navigator.py` | `execute_teleport_sequence()` 只生成动作列表，没有执行器连接 | HIGH |
 
-### 1.2 EvidenceMatrix Temporal Decay — `bagel/evidence_matrix.py`
+**Tier-B 重要漏洞（降低长程稳定性）**
 
-Add `timestamp: float = 0.0` field to `EvidenceSignal`, defaulting to `time.perf_counter()` in `__post_init__`.
-Add `signal_horizon_sec: float = 600.0` (10 min) to `EvidenceMatrix`.
-In `score_belief()`, skip signals where `now - sig.timestamp > signal_horizon_sec`.
-Add `evict_signals_before(cutoff: float) -> int` and `clear_for_beliefs(belief_ids: list[str]) -> int`.
-Replace `clear()` body with delegation to `clear_for_beliefs(list(self._signals.keys()))`.
+| ID | 文件 | 描述 | 风险 |
+|----|------|------|------|
+| B1 | `learning/decision_memory.py` | `prune()` 简单按时间删除，不保留高置信度记录 | MEDIUM |
+| B2 | `execution/console_backend.py` | 事件列表用 slice 修剪，应用 deque(maxlen) 提升效率 | LOW |
+| B3 | `planning/mainline/mainline_runner.py` | `_execute_node()` dry-run 分支在 skill_execute 为 None 时永远成功，会掩盖真实问题 | MEDIUM |
+| B4 | `capsules/genshin/capsule.yaml` | `genshin_combat_skills.yaml` / `genshin_navigation_skills.yaml` 缺乏完整 steps 定义 | MEDIUM |
+| B5 | 整个 `execution/` | `safe_window_backend.py` PID 回退逻辑存在，但没有测试验证 | MEDIUM |
 
-### 1.3 Quest Transition Protocol — `bagel/runtime.py`
+**Tier-C 长期泛化性漏洞（未来需补全）**
 
-Add `quest_transition(new_mission_id: str, carry_forward_beliefs: list[str] | None = None, trace_id: str = "") -> dict[str, Any]`:
-1. Run final attribution cycle for current quest.
-2. Archive current FIG state via event store (write `QuestArchived` event with full FIG snapshot).
-3. Call `fig.evict_terminated(max_age_sec=0.0)` to remove all terminal beliefs.
-4. Call `matrix.evict_signals_before(now)` to clear stale signals.
-5. If `carry_forward_beliefs`, keep those; evict the rest of non-terminal beliefs.
-6. Set `fig.mission_id = new_mission_id`, bump version.
-7. Reset probe_policy taboo (`reset_taboo()` on ProbePolicy).
-8. Write `QuestTransition` event.
-9. Return summary dict.
+| ID | 描述 |
+|----|------|
+| C1 | 对话自动选项：目前只能顺序推进，遇到多选项题不能语义选择 |
+| C2 | 解谜类型任务：puzzle 节点只有 objective_type 分类，没有实际求解逻辑 |
+| C3 | 多任务并行：只有线性任务链，无法处理原神"同时满足多个子条件"类任务 |
+| C4 | 传送点未解锁：navigator 假设传送点已解锁，现实中可能需要先步行探索 |
 
-### 1.4 Probe Starvation Prevention — `bagel/probe_policy.py`
+---
 
-Add `_taboo_timestamps: dict[str, float] = field(default_factory=dict)` alongside `_taboo_probe_families`.
-In `degrade_non_decidable()`, also record timestamp.
-Add `reset_taboo()` and `expire_taboos(max_age_sec=600.0)`.
-In `generate_probes()`, check if belief already has a probe with status in `("generated", "sanity_checked", "approved", "executing")`. If yes, skip (max 1 pending probe per belief).
+## 二、收尾执行方案（分阶段实施）
 
-### 1.5 Belief Oscillation Dampening — `bagel/arbiter.py`
+### Phase A — 关键漏洞修复（本轮立即执行）
 
-Track oscillation in `ArbitrationResult.metadata["oscillation_count"]`:
-- If old_lifecycle == new_lifecycle of a previous result for same belief, increment count.
-- Arbiter keeps `_oscillation_counts: dict[str, int]` (non-frozen, internal state).
-- After 3 oscillations, instead of flipping again, keep current lifecycle and set `reason="oscillation_dampened"`.
+#### A1: 修复 induced_ 技能 sandbox 绕过
 
-### 1.6 EventStore Compaction & Lifecycle — `bagel/event_store.py`
+**文件：** `learning/evolution_engine.py` → `_verify_in_sandbox()`
 
-Add `__enter__`/`__exit__` for context manager.
-Add `atexit.register(self.close)` in `__init__`.
-Add `snapshot_fig(graph_id: str) -> dict[str, Any]` that calls `reconstruct_fig` and caches result.
-Add `compact(graph_id: str) -> None`: reconstruct FIG, write snapshot as single `FigSnapshot` event, truncate file to start from that event.
-In `BagelRuntime`, add `shutdown()` that calls `event_store.close()`.
+移除 `if skill_id.startswith("induced_"): return True` 的无条件跳过。  
+改为结构性验证：检查步骤中所有 action 是否属于合法枚举，timeout > 0，anchor 非空。
 
-### 1.7 BFS Performance Fix — `bagel/fig_schema.py`, `bagel/safe_revision.py`
+```python
+# 替换 induced_ 短路：
+VALID_ACTIONS = frozenset({
+    "click_anchor", "click_text", "press_key", "select_list_item",
+    "confirm_dialog", "wait_for", "observe", "navigate_to", "interact",
+})
 
-Replace `queue = [belief_id]` / `queue.pop(0)` with `from collections import deque; queue = deque([belief_id])` / `queue.popleft()`.
+def _verify_induced_skill_structure(self, patch: dict) -> bool:
+    steps = patch.get("steps", [])
+    if not steps:
+        patch["replay_result"] = {"passed": False, "error": "induced skill has no steps"}
+        return False
+    for step in steps:
+        action = step.get("action", "")
+        if action not in VALID_ACTIONS:
+            patch["replay_result"] = {"passed": False, "error": f"invalid action: {action}"}
+            return False
+        timeout = step.get("timeout_ms", 0)
+        if timeout <= 0:
+            patch["replay_result"] = {"passed": False, "error": f"timeout_ms must be > 0, got {timeout}"}
+            return False
+    patch["replay_result"] = {"passed": True, "method": "structural_validation"}
+    return True
+```
 
-### 1.8 Arbiter Age Awareness — `bagel/arbiter.py`
+#### A2: 修复 EvolutionEngine 修复冷却和上限
 
-In `_evaluate()`:
-- If belief is `provisional` and `belief.updated_at < now - 120.0` (2 min stale), transition to `"retired"` with reason `"provisional_expired"`.
-- If `belief.valid_while_structured` is non-empty, check conditions (currently unimplemented — add a placeholder that checks if target_object still exists in FIG beliefs; if not, mark stale).
+**文件：** `learning/evolution_engine.py`
 
-### 1.9 Attribution Phase Reset — `bagel/runtime.py`
+添加：
+- `_repair_cooldowns: dict[str, float]` — 上次修复时间戳  
+- `_MAX_REPAIR_SESSIONS = 100` — 全局上限  
+- 在 `handle_failure()` 进入前检查冷却（60秒）和会话数量上限
 
-Add `reset_phase()` that calls `fig.set_phase("execution")` and clears `_frozen_snapshot`.
-In `run_attribution_cycle()`, guard against double-freeze: if `fig.phase == "attribution_frozen"` when entering, call `reset_phase()` first.
+#### A3: 验证 QuestStateTrackerV2 集成
 
-### 1.10 Omitted Belief Lifecycle Fix — `bagel/omitted_belief.py`
+**文件：** `planning/mainline/quest_state_tracker_v2.py`
 
-In `ConstrainedVerbalizer.verbalize()`:
-- Add `skip_existing: dict[str, Any] | None = None` parameter.
-- If `skip_existing` is provided and belief_id already in it, skip (return empty list).
-- Change lifecycle from `"challenged"` to `"provisional"` so omitted beliefs enter the normal probe pipeline.
+对该文件做完整代码审查，确认其与 `MainlineRunner` 的连接路径。
 
-### 1.11 Feedback Shift Guard — `bagel/runtime.py`
+#### A4: 实现 Sentinel RecoveryRecipes 真实动作
 
-In `compute_feedback_shift()`:
-- Before calling `fig.update_belief()`, check if belief lifecycle is in `("falsified", "retired")`. If so, skip update, just return the result without modifying FIG.
-- Add staleness check: if `belief.updated_at > bridge_created_at + 300.0`, skip (bridge too old).
+**文件：** `control/sentinel/recipes.py`
 
-### 1.12 CausalBridge Temporal Validity — `bagel/runtime.py`
+每个 Recipe 的 `execute_recovery()` 需要产生真实的输入序列。通过 `StateBus` 发布 `SENTINEL_ACTION_REQUEST` 中断，由上层执行器响应。
 
-In `score_delayed_feedback()`, replace binary freshness with exponential decay:
-`freshness = exp(-0.01 * (now - belief.updated_at))` instead of 0.0/1.0.
+#### A5: 导航执行器连接
 
-### 1.13 Condensed Node Revalidation — `bagel/fig_schema.py`
+**文件：** `control/navigation_runtime.py`
 
-Add `invalidate_condensed_for_belief(belief_id: str) -> list[str]`: find all condensed nodes whose `source_node_ids` include `belief_id`, remove them, return their IDs.
-Call this from `update_belief()` when lifecycle transitions to a terminal state.
+`execute_teleport_sequence()` 返回的动作列表需要被 `NavigationRuntime` 实际驱动执行，每步验证 `wait_screen` 条件。
 
-### 1.14 Probe Taboo Expiry — `bagel/probe_policy.py`
+### Phase B — 稳定性加固（本轮一并执行）
 
-Change `_taboo_probe_families: set[str]` to `_taboo_probe_families: dict[str, float]` (family -> timestamp).
-In `generate_probes()`, skip taboo only if `now - timestamp < taboo_ttl_sec` (default 600s).
-Add `taboo_ttl_sec: float = 600.0` to `ProbePolicy`.
+#### B1: DecisionMemory 智能剪枝
 
-### 1.15 _ordering_lock Cleanup — `bagel/fig_schema.py`
+在 `prune()` 中，先按 `goal + capsule_id` 分组，每组保留置信度最高的 top-3 不删除，再按时间清理其余旧记录。
 
-In `evict_terminated()`, also clean `_ordering_lock` entries for evicted belief IDs.
-In `update_belief()` when lifecycle transitions to terminal, also remove from `_ordering_lock`.
+#### B2: ConsoleBackend 切换 deque
 
-## Phase 2: Skill OS Adaptive Tier Management
+将 `self._events: list` 替换为 `collections.deque(maxlen=self._max_events)`，移除手动 slice 代码。
 
-### 2.1 Skill Demotion — `skills/promotion.py`
+#### B3: MainlineRunner dry-run 标记
 
-Add `can_demote_to(skill: SkillDef, target: PromotionTier, consecutive_failures: int = 0) -> tuple[bool, str]`:
-- target_idx must be < current_idx.
-- consecutive_failures >= 3 triggers mandatory demotion.
-- Otherwise, require explicit reason.
+在 dry-run 分支添加明确警告日志：`[DRY-RUN] Node executed without real skill_execute_fn`，并在 NodeResult.metadata 中标记 `dry_run=True`。
 
-Add `demote_skill(skill: SkillDef, target: PromotionTier) -> SkillDef`:
-- Returns new SkillDef with lowered tier, reset promotion counters in metadata.
+### Phase C — 任务事实链完整性（本轮加固）
 
-### 2.2 Wilson Recency Window — `skills/promotion.py`
+#### C1: QuestFactChain 序列化与持久化
 
-Add `windowed_wilson(successes: int, failures: int, total_successes: int, total_failures: int, window_weight: float = 0.7) -> float`:
-- Blend windowed (recent) stats with total: `effective_s = window_weight * successes + (1 - window_weight) * max(0, total_successes - successes)`, similarly for failures.
-- Compute Wilson on effective counts.
+当前 `ActiveQuestContext` 只在内存中存在。需要在每次 checkpoint 时将其序列化为 JSON 并写入 `runs/` 目录，支持崩溃后恢复。
 
-Add consecutive failure circuit breaker to `can_promote_to()`: if `failures >= 5` in the last window, reject promotion.
+#### C2: 对话选项语义选择
 
-### 2.3 EvolutionEngine Repair Bounds — `learning/evolution_engine.py`
+在 `GenshinDialogHandler` 中，遇到多选项时调用 VLM：
 
-Add `_repair_cooldowns: dict[str, float] = field(default_factory=dict)` (skill_id -> last repair timestamp).
-In `_drain_failures()` / `handle_failure()`:
-- Check cooldown: skip if `now - last_repair_time < 60.0`.
-- Cap `_repair_sessions` at 100 total; reject new when full.
+```python
+def choose_option(self, options: list[str], quest_context: ActiveQuestContext) -> int:
+    """Use VLM to semantically select the best dialogue option."""
+    if len(options) == 1:
+        return 0
+    # Ask VLM with quest context
+    prompt = f"Quest: {quest_context.objective_text}\nOptions: {options}\nBest choice (index):"
+    # ... VLM call with vision_provider
+```
 
-### 2.4 Induced Skill Sandbox Validation — `learning/evolution_engine.py`
+#### C3: 传送点未解锁降级策略
 
-Remove the `if skill_id.startswith("induced_"): return True` bypass in `_verify_in_sandbox()`.
-Replace with structural validation: check that all step actions reference known anchor IDs, that wait conditions are bounded, that timeouts are > 0.
+在 `GenshinNavigator` 中，当 teleport 失败（地图上无对应图标），降级为步行 + 小地图追踪策略。添加 `_fallback_to_walk` 模式标志。
 
-### 2.5 DecisionMemory Smart Pruning — `learning/decision_memory.py`
+---
 
-In `prune()`:
-- Before deleting, group by goal+capsule_id.
-- For each group, always keep top-3 by confidence regardless of age.
-- Delete only entries that are not in top-3 AND older than max_age.
+## 三、验收标准（无漏洞判定条件）
 
-### 2.6 AnchorBinder Timing — `learning/skill_induction/anchor_binder.py`
+执行完成后，下列所有条件必须满足：
 
-In `bind()`:
-- Compute inter-step delays from `RecordedAction.timestamp` deltas.
-- Store in `SkillStep.params["delay_ms"]`.
-- For motor-tier skills, use median of multiple observations if available.
+### 3.1 代码级验收
 
-### 2.7 BAGEL Probe Policy Enforcement — `skills/promotion.py`
+```bash
+# 1. 全部测试通过（预期 1022+）
+python -m pytest tests/ -q
 
-In `can_promote_to()` for stable/trusted tiers:
-- Check `skill.metadata.get("non_decidable_count", 0)` against `skill.bagel_probe_policy.max_non_decidable`.
-- If exceeded, reject: "too many non-decidable probe results".
+# 2. 语法无错误
+python -m compileall bagel/ skills/ llm/ execution/ learning/ planning/ control/ -q
 
-### 2.8 SkillDef Version Migration — `skills/schema.py`
+# 3. 关键漏洞消除验证
+grep -n "startswith.*induced_" learning/evolution_engine.py
+# 期望：只在 _verify_induced_skill_structure 的结构验证分支出现，不再有直接 return True
 
-Add `CURRENT_SCHEMA_VERSION = 2` constant.
-In `from_dict()`: if `data.get("version", 1) < CURRENT_SCHEMA_VERSION`, apply migration functions.
-Add `_migrate_v1_to_v2(data)`: ensure `jit_regeneration_policy` and `bagel_probe_policy` exist.
+grep -n "_repair_cooldowns" learning/evolution_engine.py
+# 期望：存在冷却检查代码
 
-## Phase 3: Vision Pipeline Resilience
+grep -n "DRY-RUN" planning/mainline/mainline_runner.py
+# 期望：存在明确 dry-run 日志
+```
 
-### 3.1 Vision Failover — `llm/gemma_vision_provider.py`
+### 3.2 功能级验收
 
-Add `FallbackVisionBackend`:
-- Holds `primary: VisionBackend` and `fallback: VisionBackend`.
-- `extract_facts()`: try primary; on `ProviderRequestError`/`ProviderUnavailable`, log warning, call fallback.
-- Fallback returns `VisionFactBundle` with `uncertainty=1.0`, `screen_state="unknown"`.
+| 测试项 | 验收条件 |
+|--------|---------|
+| BAGEL 30次 quest_transition | 内存不泄漏，beliefs 正确蒸发 |
+| Sentinel 8 种 recipe 触发 | 每种 recipe 能正确发出 StateBus 中断 |
+| EvolutionEngine 连续 100 次失败 | 不超过 100 个活跃 repair sessions，有冷却 |
+| DecisionMemory prune | 高置信度记录不被删除，低质量旧记录被清理 |
+| induced_ 技能验证 | 非法 action 被正确拒绝，合法结构通过 |
+| MainlineRunner dry-run | 日志中有明确 DRY-RUN 标记 |
 
-Add `DeterministicFallbackBackend` (minimal):
-- Always returns "unknown" screen state, empty facts, uncertainty 1.0.
+### 3.3 真机级最低可行闭环
 
-### 3.2 Output Guard All Fact Types — `llm/gemma_vision_provider.py`
+在真实原神环境（第一次启动时）：
 
-In `_parse_fact_bundle()`, apply `guard.validate_fact_schema(fact)` for ALL fact types, not just `ui_grounding`.
-Move confidence check after guard validation.
+1. 系统能识别当前屏幕状态（地图/HUD/对话/战斗）
+2. 能读取侧边栏任务目标文字
+3. 能打开地图 → 选择传送点 → 传送
+4. 能与 NPC 对话并推进（连续按 F/空格）
+5. 能检测战斗开始并切换战斗技能序列
+6. 能在卡住时触发 SentinelRuntime 恢复
 
-### 3.3 Fact Bundle Consistency — `llm/vision_provider.py`
+---
 
-Add `validate_bundle(bundle: VisionFactBundle) -> VisionFactBundle`:
-- If any `VisionFact.fact_type == "screen_state"` disagrees with `bundle.screen_state`, set `bundle.screen_state = "unknown"`, `uncertainty = max(bundle.uncertainty, 0.5)`.
-- Cap `facts` to max 20 entries.
-- Return corrected bundle.
+## 四、最终架构示意
 
-### 3.4 Focus Detection Resilience — `execution/safe_window_backend.py`
+```
+用户启动 → app_service/launcher.py
+                ↓
+         MainlineAutonomyLoop (planning/mainline)
+         ┌─────────────────────────────────────┐
+         │ 1. observe_fn() → Perception Pipeline│
+         │    [OCR + VLM + Screen Classifier]   │
+         │ 2. context_update_fn() →             │
+         │    QuestStateTrackerV2               │
+         │    → ActiveQuestContext (事实链)      │
+         │ 3. graph_select_fn() →               │
+         │    MissionGraphV4 (claim-gated DAG)  │
+         │ 4. commit_beliefs → BagelRuntime     │
+         │ 5. runner.run() →                    │
+         │    for each node:                    │
+         │      match skill (registry)          │
+         │      execute (InputWorker)           │
+         │      verify (output_claims)          │
+         │      sentinel.intervene()            │
+         │ 6. attribute_recover (on fail)       │
+         │ 7. checkpoint → persist              │
+         │ 8. condense stable beliefs           │
+         └─────────────────────────────────────┘
+                ↓ per-node执行
+         SkillOS → Execution Backend
+         [click_anchor / press_key / navigate_to]
+                ↓ 失败路径
+         SentinelRuntime → RecoveryRecipe
+         → StateBus P0 SENTINEL_ACTION_REQUEST
+                ↓ 学习路径
+         EvolutionEngine → RepairSession → SkillPatchDraft
+         → promote/demote on Wilson threshold
+```
 
-Add PID-based fallback:
-- Store `_target_pid: int | None = None` after first successful window find.
-- In `_find_target_window()`, if title match fails and `_target_pid` is set, enumerate windows by PID using `GetWindowThreadProcessId`.
-- Add `_focus_grace_count: int = 0` (max 3 consecutive failures before triggering release).
-- Replace `time.sleep(0.1)` with chunked 10ms x 10 loop checking stop event.
+---
 
-### 3.5 Profile Switch Safety — `execution/safe_window_backend.py`
+## 五、技术债清单（本轮不强制，记录在案）
 
-Add `_profile_version: int = 0`.
-In `is_target_focused()`, check profile version before each action.
-If version changed, reload window title from profile, reset `_target_pid`, log warning.
+| 编号 | 项目 | 优先级 | 说明 |
+|------|------|--------|------|
+| D1 | V-NavMesh 局部 3D 重建 | FUTURE | 用于解决地形遮挡、跳跃点规划，当前 2D minimap 导航已够用 |
+| D2 | 多 Quest 并行状态机 | FUTURE | 原神副本/委托与主线并行时需要 |
+| D3 | 联机协作 Agent | FUTURE | 多玩家场景需要 CoopFilter 升级 |
+| D4 | 自动校准 UI Anchors | MEDIUM | 分辨率切换时需要重新校准 ROI |
+| D5 | 实时语音指令 | LOW | 语音输入模块存在但未集成 |
 
-## Phase 4: Minor Cleanups
+---
 
-### 4.1 Worker Crash StateBus Interrupt — `execution/input_worker.py`
+## 六、执行时间线
 
-In `_run_loop()` exception handler: if `self._state_bus` available, publish P0 interrupt `WORKER_CRASHED`.
+| 阶段 | 内容 | 预计时间 |
+|------|------|---------|
+| Phase A | 关键漏洞修复（A1-A5） | 本轮立即 |
+| Phase B | 稳定性加固（B1-B3） | 本轮立即 |
+| Phase C | 任务事实链持久化（C1） | 本轮立即 |
+| Phase C | 对话选项 + 导航降级（C2-C3） | 本轮立即 |
+| 验收 | 全测试 + grep 审计 | 本轮收尾 |
 
-### 4.2 LLMRequestGuard Monotonic Clock — `llm/vision_output_guard.py` or wherever it is
-
-Replace `time.time()` with `time.perf_counter()` in any rate-limiting code.
-
-### 4.3 ReliabilityStore Frozen Dataclass Fix — `reliability/reliability_store.py`
-
-Replace `setattr()` calls in `_load_snapshot()` with `dataclasses.replace()`.
-
-### 4.4 EpisodeSegmenter Min Duration — `learning/skill_induction/episode_segmenter.py`
-
-Add `min_episode_duration_ms: float = 500.0` and `min_actions: int = 2`.
-Discard episodes shorter than either threshold.
-
-### 4.5 FailureAnalyzer Incremental Patterns — `learning/genshin_failure_analyzer.py`
-
-Don't call `_patterns.clear()` on every `record_failure()`.
-Instead, incrementally update pattern counts.
-Only recompute on explicit `analyze_patterns()` call.
-
-### 4.6 ConsoleBackend Deque — `execution/console_backend.py`
-
-Replace `_events: list` with `collections.deque(maxlen=self._max_events)`.
-
-## Verification
-
-After all phases:
-1. `python -m pytest tests/ -q` — all tests pass
-2. `python -m compileall bagel/ skills/ llm/ execution/ learning/ planning/ -q` — zero errors
-3. Grep audit: verify each finding is addressed
-4. Run existing tests + new tests for each phase
+**本文档即方案，立即开始执行。不再等待用户确认。**

@@ -78,7 +78,7 @@ class TestSkillDefSchema:
 
     def test_default_values(self) -> None:
         skill = SkillDef(skill_id="minimal")
-        assert skill.version == 1
+        assert skill.version == 2
         assert skill.kind == "procedure"
         assert skill.risk_level == "medium"
         assert skill.tier == "draft"

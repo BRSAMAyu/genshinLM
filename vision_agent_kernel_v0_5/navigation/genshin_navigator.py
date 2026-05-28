@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 import heapq
+import logging
 import math
 from dataclasses import dataclass
+from typing import Any
 
 import numpy as np
 import yaml
 from pathlib import Path
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -44,6 +48,8 @@ class GenshinNavigator:
         self._waypoint_positions: dict[str, list[float]] = {}
         self._loaded = False
         self._knowledge_dir = _resolve_knowledge_dir(knowledge_dir)
+        # Fallback mode: when waypoint isn't unlocked, fall back to walk + minimap
+        self._fallback_to_walk: bool = False
 
     def _ensure_graph(self) -> None:
         if self._loaded:
@@ -187,7 +193,7 @@ class GenshinNavigator:
         dist = math.hypot(float(np.mean(xs)) - cx, float(np.mean(ys)) - cy)
         return dist < self._waypoint_reached_threshold_px
 
-    def execute_teleport_sequence(self) -> list[dict]:
+    def execute_teleport_sequence(self, waypoint_id: str = "") -> list[dict]:
         """Generate the input sequence for teleporting.
 
         Steps:
@@ -198,15 +204,82 @@ class GenshinNavigator:
         5. Click teleport button
         6. Wait for loading screen to end
 
-        Returns list of input actions.
+        Returns list of input actions to be dispatched by the execution layer.
         """
         return [
             {"input": "press_key", "key": "m", "label": "open_map"},
             {"input": "wait_screen", "screen": "map_screen", "timeout_ms": 2000},
-            {"input": "click_at", "target": "map_waypoint", "label": "select_waypoint"},
+            {"input": "click_at", "target": "map_waypoint",
+             "waypoint_id": waypoint_id, "label": "select_waypoint"},
             {"input": "click_at", "target": "teleport_button", "label": "confirm_teleport"},
             {"input": "wait_screen", "screen": "world_hud", "timeout_ms": 15000},
         ]
+
+    def execute_teleport_via_bus(
+        self,
+        waypoint_id: str,
+        state_bus: Any,
+        recipe_id: str = "navigator",
+    ) -> bool:
+        """Publish a teleport action request to StateBus.
+
+        Returns True if the slot was available and the request was published.
+        If the waypoint appears to be locked (not in adjacency graph), activates
+        fallback walk mode instead.
+        """
+        self._ensure_graph()
+        # Detect locked waypoint: not present in the graph
+        if waypoint_id not in self._adj and waypoint_id not in self._waypoint_regions:
+            log.warning(
+                "[GenshinNavigator] Waypoint %r not in world graph — activating walk fallback",
+                waypoint_id,
+            )
+            self._fallback_to_walk = True
+            if state_bus is not None:
+                try:
+                    slot = state_bus.get_slot("sentinel.action_request")
+                    if slot is not None:
+                        slot.put({
+                            "recipe_id": recipe_id,
+                            "priority": "P1",
+                            "actions": [
+                                {"action": "navigate_walk",
+                                 "params": {"waypoint_id": waypoint_id},
+                                 "label": "walk_to_unlocked_area"},
+                            ],
+                        })
+                        return True
+                except Exception as exc:
+                    log.warning("[GenshinNavigator] Bus publish failed: %s", exc)
+            return False
+
+        # Normal teleport path
+        self._fallback_to_walk = False
+        actions = self.execute_teleport_sequence(waypoint_id=waypoint_id)
+        if state_bus is None:
+            log.warning("[GenshinNavigator] No state_bus — teleport actions not published")
+            return False
+        try:
+            slot = state_bus.get_slot("sentinel.action_request")
+            if slot is not None:
+                slot.put({
+                    "recipe_id": recipe_id,
+                    "priority": "P0",
+                    "actions": [{"action": a["input"], "params": a} for a in actions],
+                })
+                log.debug(
+                    "[GenshinNavigator] Published teleport sequence for %r (%d steps)",
+                    waypoint_id, len(actions),
+                )
+                return True
+        except Exception as exc:
+            log.warning("[GenshinNavigator] Bus publish failed: %s", exc)
+        return False
+
+    @property
+    def fallback_walk_mode(self) -> bool:
+        """True when the navigator is using walk fallback due to locked waypoint."""
+        return self._fallback_to_walk
 
     @property
     def state(self) -> NavigationState:

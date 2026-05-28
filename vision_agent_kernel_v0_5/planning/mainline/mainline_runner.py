@@ -198,10 +198,15 @@ class MainlineRunner:
                         return NodeResult(node.node_id, "failed", duration, error=last_error)
                     continue
             else:
-                # Dry-run mode: always succeed
+                # Dry-run mode: always succeed — log explicitly so this cannot mask real gaps
                 duration = time.perf_counter() - start
+                log.warning(
+                    "[DRY-RUN] Node %r executed without real skill_execute_fn — "
+                    "result is synthetic and does NOT represent real execution.",
+                    node.node_id,
+                )
                 self._update_somatic(node)
-                return NodeResult(node.node_id, "completed", duration)
+                return NodeResult(node.node_id, "completed", duration, {"dry_run": True})
 
         return NodeResult(node.node_id, "failed", error=last_error or "max_retries_exceeded")
 

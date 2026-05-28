@@ -592,7 +592,6 @@ class BagelRuntime:
         5. Reset probe taboos.
         6. Carry forward specified beliefs.
         """
-        now = time.perf_counter()
         old_mission_id = self.fig.mission_id
         snap = self.fig.snapshot()
 
@@ -612,8 +611,8 @@ class BagelRuntime:
         # Evict terminal beliefs
         evicted = self.fig.evict_terminated(max_age_sec=0.0)
 
-        # Clear stale evidence signals (keep all from before since we're transitioning)
-        signals_cleared = self.matrix.evict_signals_before(0.0)
+        # Clear ALL evidence signals for quest boundary
+        self.matrix.clear()
 
         # Remove beliefs not in carry_forward list
         if carry_forward_beliefs is not None:

@@ -102,7 +102,7 @@ class BagelArbiter:
 
         # Age-aware retirement: provisional beliefs that haven't resolved
         if old == "provisional" and self._provisional_max_age_sec > 0:
-            age = now - belief.updated_at
+            age = now - belief.created_at
             if age > self._provisional_max_age_sec and score.signal_count < 2:
                 return ArbitrationResult(
                     belief_id=belief.belief_id,
@@ -134,24 +134,26 @@ class BagelArbiter:
         else:
             return None
 
-        # Oscillation dampening
-        prev = self._last_lifecycle.get(belief.belief_id)
-        if prev == new and old != new:
-            count = self._oscillation_counts.get(belief.belief_id, 0) + 1
+        # Oscillation dampening: track (old, new) transition patterns
+        if old != new:
+            transition_key = (old, new)
+            prev_transition = self._last_lifecycle.get(belief.belief_id)
+            count = self._oscillation_counts.get(belief.belief_id, 0)
+            if prev_transition == transition_key:
+                count += 1
+            else:
+                count = 1
             self._oscillation_counts[belief.belief_id] = count
+            self._last_lifecycle[belief.belief_id] = transition_key
             if count >= self._max_oscillations:
-                self._last_lifecycle[belief.belief_id] = old
                 return ArbitrationResult(
                     belief_id=belief.belief_id,
                     old_lifecycle=old,
                     new_lifecycle=old,
                     score=score.score,
                     reason="oscillation_dampened",
-                    metadata={"oscillation_count": count},
+                    metadata={"oscillation_count": count, "transition": transition_key},
                 )
-        elif old != new:
-            self._oscillation_counts[belief.belief_id] = 0
-        self._last_lifecycle[belief.belief_id] = new
 
         # Probe requested on conflict or suspect
         probe_requested = score.conflict_detected or (new == "suspect")
