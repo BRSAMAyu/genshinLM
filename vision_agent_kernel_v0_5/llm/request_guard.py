@@ -19,7 +19,7 @@ class LLMRequestGuard:
         self._budget = budget or LLMUsageBudget()
 
     def check(self, estimated_tokens: int = 1000) -> None:
-        now = time.time()
+        now = time.perf_counter()
         self._budget.call_timestamps = [item for item in self._budget.call_timestamps if now - item < 60.0]
         if len(self._budget.call_timestamps) >= self._budget.max_calls_per_minute:
             raise RuntimeError("LLM rate limit guard blocked request: max calls per minute reached")
