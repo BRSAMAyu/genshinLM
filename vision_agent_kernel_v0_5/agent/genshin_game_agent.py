@@ -106,9 +106,10 @@ class GenshinPerceptionProvider:
             prompt = (
                 'Analyze this Genshin Impact screenshot. Return strict JSON only:\n'
                 '{\n'
-                '  "screen_state": "loading_screen|dialog|world_hud|full_menu|paimon_menu|no_hud|combat",\n'
+                '  "screen_state": "overworld|combat|turn_based_combat|dialog|menu|'
+                'map|loading|inventory|shop|quest_log|reward_screen|cutscene|unknown",\n'
                 '  "player_status": {"hp":"high/medium/low","stamina":"high/medium/low","location":"description"},\n'
-                '  "visible_objects": [{"type":"monster|npc|item|chest|waypoint","description":"...","position":"center/left/right"}],\n'
+                '  "visible_objects": [{"type":"enemy|npc|item|chest|waypoint","description":"...","position":"center/left/right"}],\n'
                 '  "ui_elements": {"element_id":"visible_text_or_label"},\n'
                 '  "scene_description": "what is happening on screen",\n'
                 '  "suggested_action": "what the player should do next"\n'
@@ -287,8 +288,42 @@ class GenshinActionExecutor:
         return True
 
     def _handle_observe(self, target: str, context: dict[str, Any]) -> bool:
-        # Just wait and observe
         time.sleep(2.0)
+        return True
+
+    def _handle_look(self, target: str, context: dict[str, Any]) -> bool:
+        target = target.lower() if target else "center"
+        delta_map: dict[str, tuple[float, float]] = {
+            "left": (-15.0, 0.0), "right": (15.0, 0.0),
+            "up": (0.0, -10.0), "down": (0.0, 10.0),
+            "center": (0.0, 0.0),
+        }
+        dx, dy = delta_map.get(target, (0.0, 0.0))
+        if dx != 0.0 or dy != 0.0:
+            self._backend.mouse_move(dx, dy, reason=f"look_{target}")
+        return True
+
+    def _handle_click_button(self, target: str, context: dict[str, Any]) -> bool:
+        # Generic button click — use Enter as default confirmation key
+        self._press_key("enter", f"click_button_{target}", 0.3)
+        return True
+
+    def _handle_select_quest(self, target: str, context: dict[str, Any]) -> bool:
+        # Quest log: navigate with arrows/number, then Enter to select
+        if target and target.isdigit():
+            self._press_key(target, f"select_quest_{target}", 0.3)
+        else:
+            self._press_key("enter", "select_quest", 0.3)
+        return True
+
+    def _handle_track_quest(self, target: str, context: dict[str, Any]) -> bool:
+        # Track quest: press T or Enter on selected quest
+        self._press_key("enter", "track_quest", 0.3)
+        return True
+
+    def _handle_toggle_auto(self, target: str, context: dict[str, Any]) -> bool:
+        # Toggle auto-battle — press the auto-combat hotkey
+        self._press_key("z", "toggle_auto", 0.3)
         return True
 
     def _handle_go_back(self, target: str, context: dict[str, Any]) -> bool:
@@ -329,6 +364,76 @@ class GenshinActionExecutor:
         time.sleep(1.0)
         return True
 
+    def _handle_dodge(self, target: str, context: dict[str, Any]) -> bool:
+        direction = target.lower() if target else "forward"
+        key_map = {"forward": "w", "back": "s", "left": "a", "right": "d"}
+        move_key = key_map.get(direction, "w")
+        self._backend.key_down(move_key, reason=f"dodge_move_{move_key}")
+        self._press_key("shift", "dodge", 0.2)
+        self._backend.key_up(move_key, reason=f"dodge_move_{move_key}_done")
+        return True
+
+    def _handle_heal(self, target: str, context: dict[str, Any]) -> bool:
+        # Switch to healer (slot 4 convention) then use skill
+        self._press_key("4", "switch_healer", 0.3)
+        time.sleep(0.5)
+        self._press_key("e", "heal_skill", 0.3)
+        return True
+
+    def _handle_switch_char(self, target: str, context: dict[str, Any]) -> bool:
+        char_map = {"1": "1", "2": "2", "3": "3", "4": "4"}
+        slot = char_map.get(target, "1")
+        self._press_key(slot, f"switch_char_{slot}", 0.3)
+        return True
+
+    def _handle_use_burst(self, target: str, context: dict[str, Any]) -> bool:
+        self._press_key("q", "elemental_burst", 0.3)
+        return True
+
+    def _handle_use_ultimate(self, target: str, context: dict[str, Any]) -> bool:
+        self._press_key("q", "ultimate", 0.3)
+        return True
+
+    def _handle_select_dialog_option(self, target: str, context: dict[str, Any]) -> bool:
+        if target and target.isdigit():
+            self._press_key(target, f"select_dialog_{target}", 0.3)
+        else:
+            self._press_key("1", "select_first_dialog_option", 0.3)
+        return True
+
+    def _handle_move_forward(self, target: str, context: dict[str, Any]) -> bool:
+        return self._handle_move("forward", context)
+
+    def _handle_open_map(self, target: str, context: dict[str, Any]) -> bool:
+        self._press_key("m", "open_map", 0.3)
+        return True
+
+    def _handle_close_map(self, target: str, context: dict[str, Any]) -> bool:
+        self._press_key("m", "close_map", 0.3)
+        return True
+
+    def _handle_select_waypoint(self, target: str, context: dict[str, Any]) -> bool:
+        # Click at center of screen where waypoint typically is, then confirm
+        log.info("[GenshinExecutor] select_waypoint: target=%s (click-based)", target)
+        self._backend.click_at(960, 540, reason="select_waypoint")
+        time.sleep(0.5)
+        return True
+
+    def _handle_skip(self, target: str, context: dict[str, Any]) -> bool:
+        # Genshin cutscene skip: ESC opens skip dialog, then Enter confirms
+        self._press_key("esc", "skip_cutscene_dialog", 0.3)
+        time.sleep(0.5)
+        self._press_key("enter", "skip_cutscene_confirm", 0.3)
+        return True
+
+    def _handle_claim_all(self, target: str, context: dict[str, Any]) -> bool:
+        self._press_key("enter", "claim_all", 0.3)
+        return True
+
+    def _handle_sort(self, target: str, context: dict[str, Any]) -> bool:
+        self._press_key("enter", "sort", 0.3)
+        return True
+
     def _press_key(self, key: str, reason: str, hold_sec: float = 0.1) -> None:
         self._backend.key_down(key, reason=reason)
         time.sleep(hold_sec)
@@ -336,32 +441,46 @@ class GenshinActionExecutor:
 
     _ACTION_MAP: dict[str, Any] = {
         "move": _handle_move,
+        "move_forward": _handle_move_forward,
         "navigate_to": _handle_navigate_to,
         "open_menu": _handle_open_menu,
         "close_menu": _handle_close_menu,
         "advance_dialog": _handle_advance_dialog,
         "select_option": _handle_select_option,
-        "click_button": _handle_advance_dialog,
+        "select_dialog_option": _handle_select_dialog_option,
+        "click_button": _handle_click_button,
         "use_skill": _handle_use_skill,
+        "use_burst": _handle_use_burst,
+        "use_ultimate": _handle_use_ultimate,
         "basic_attack": _handle_basic_attack,
+        "attack": _handle_basic_attack,
         "observe": _handle_observe,
         "wait": _handle_observe,
-        "look": _handle_observe,
+        "look": _handle_look,
         "go_back": _handle_go_back,
         "confirm": _handle_confirm,
         "interact": _handle_interact,
         "jump": _handle_jump,
         "dash": _handle_dash,
+        "dodge": _handle_dodge,
         "sprint": _handle_sprint,
         "swim": _handle_swim,
-        "select_quest": _handle_advance_dialog,
+        "select_quest": _handle_select_quest,
         "claim_reward": _handle_confirm,
+        "claim_all": _handle_claim_all,
         "select_item": _handle_select_option,
         "buy_item": _handle_confirm,
         "use_item": _handle_confirm,
         "teleport": _handle_confirm,
-        "track_quest": _handle_advance_dialog,
-        "toggle_auto": _handle_unknown,
+        "track_quest": _handle_track_quest,
+        "toggle_auto": _handle_toggle_auto,
+        "open_map": _handle_open_map,
+        "close_map": _handle_close_map,
+        "select_waypoint": _handle_select_waypoint,
+        "skip": _handle_skip,
+        "switch_char": _handle_switch_char,
+        "heal": _handle_heal,
+        "sort": _handle_sort,
     }
 
 
@@ -373,6 +492,7 @@ def create_genshin_agent(
     action_interval_sec: float = 1.5,
     state_sample_interval_sec: float = 3.0,
     plan_interval_sec: float = 15.0,
+    state_bus: StateBus | None = None,
 ) -> tuple[AutonomousTaskBrain, GenshinPerceptionProvider, SafeWindowInputBackend]:
     """Factory that creates all components for the Genshin game agent."""
     import os
@@ -412,6 +532,7 @@ def create_genshin_agent(
         perception=perception,
         executor=executor,
         config=config,
+        state_bus=state_bus,
     )
 
     return brain, perception, backend

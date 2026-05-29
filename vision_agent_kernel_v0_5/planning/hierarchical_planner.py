@@ -51,9 +51,11 @@ Rules:
 - Every path must end with a verify node
 - Risk level "high" requires human confirmation before execution
 - semantic_action must be one of: navigate_to, click_button, select_quest,
-  claim_reward, open_menu, close_menu, advance_dialog, select_option,
-  teleport, track_quest, toggle_auto, use_skill, basic_attack, observe,
-  go_back, select_item, buy_item, use_item, confirm
+  claim_reward, claim_all, open_menu, close_menu, advance_dialog, select_option,
+  select_dialog_option, teleport, track_quest, toggle_auto, use_skill, use_burst,
+  use_ultimate, basic_attack, attack, observe, go_back, select_item, buy_item,
+  use_item, confirm, interact, move_forward, open_map, close_map, select_waypoint,
+  dodge, switch_char, heal, skip, look, jump, dash, sprint, swim
 """
 
 
@@ -209,10 +211,13 @@ class HierarchicalPlanner:
 
 _ALLOWED_SEMANTIC_ACTIONS = {
     "navigate_to", "click_button", "select_quest", "claim_reward", "claim_all",
-    "open_menu", "close_menu", "advance_dialog", "select_option", "teleport",
-    "track_quest", "toggle_auto", "use_skill", "basic_attack", "observe",
-    "go_back", "select_item", "buy_item", "use_item", "confirm", "interact",
-    "move_forward", "open_map", "select_waypoint",
+    "open_menu", "close_menu", "advance_dialog", "select_option",
+    "select_dialog_option", "teleport", "track_quest", "toggle_auto",
+    "use_skill", "use_burst", "use_ultimate", "basic_attack", "attack",
+    "observe", "go_back", "select_item", "buy_item", "use_item", "confirm",
+    "interact", "move_forward", "open_map", "close_map", "select_waypoint",
+    "dodge", "switch_char", "heal", "skip", "look", "jump", "dash",
+    "sprint", "swim",
 }
 
 

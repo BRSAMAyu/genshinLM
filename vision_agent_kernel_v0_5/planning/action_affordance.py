@@ -182,7 +182,7 @@ class AffordanceDeriver:
         if "interaction_prompt" in pc:
             return bool(claim.interaction_prompt)
         if "enemy visible" in pc:
-            return any(o.get("type") == "enemy" for o in claim.visible_objects)
+            return any(o.get("type") in ("enemy", "monster") for o in claim.visible_objects)
         if "skill not on cooldown" in pc or "burst energy full" in pc:
             return True
         if "sp >=" in pc:

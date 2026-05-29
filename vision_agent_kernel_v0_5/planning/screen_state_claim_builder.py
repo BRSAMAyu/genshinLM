@@ -81,25 +81,49 @@ class ScreenStateClaimBuilder:
             raw_ocr_texts=raw_ocr,
         )
 
-    @staticmethod
-    def _resolve_screen_state(vlm: VLMOutput | None, classifier: ClassifierOutput | None) -> ScreenStateKind:
-        candidates: list[str] = []
-        if classifier:
-            candidates.append(classifier.screen_state)
-        if vlm:
-            candidates.append(vlm.screen_state)
+    # Maps classifier/VLM output names to canonical ScreenStateKind values.
+    _STATE_ALIASES: dict[str, str] = {
+        "loading_screen": "loading",
+        "world_hud": "overworld",
+        "full_menu": "menu",
+        "paimon_menu": "menu",
+        "no_hud": "unknown",
+        "main_menu": "menu",
+        "gameplay": "overworld",
+        "exploration": "overworld",
+    }
+
+    @classmethod
+    def _normalize_state(cls, raw: str) -> str:
+        canonical = cls._STATE_ALIASES.get(raw)
+        if canonical:
+            return canonical
+        # Try hyphen-normalized forms as fallback
+        for sep_in, sep_out in ((" ", "-"), ("_", "-"), ("-", "_")):
+            normalized = raw.lower().replace(sep_in, sep_out)
+            hit = cls._STATE_ALIASES.get(normalized)
+            if hit:
+                return hit
+        return raw
+
+    @classmethod
+    def _resolve_screen_state(cls, vlm: VLMOutput | None, classifier: ClassifierOutput | None) -> ScreenStateKind:
         valid_states: set[str] = {
             "overworld", "combat", "turn_based_combat", "dialog", "menu",
             "map", "loading", "inventory", "shop", "quest_log",
-            "reward_screen", "boss_fight", "cutscene", "unknown",
+            "reward_screen", "boss_fight", "cutscene",
         }
+        # VLM first: it has better semantic understanding (e.g. combat vs overworld).
+        # "unknown" is NOT in valid_states so VLM returning "unknown" falls through
+        # to the classifier, which is the correct fallback behavior.
+        candidates: list[str] = []
+        if vlm:
+            candidates.append(cls._normalize_state(vlm.screen_state))
+        if classifier:
+            candidates.append(cls._normalize_state(classifier.screen_state))
         for c in candidates:
             if c in valid_states:
                 return c  # type: ignore[return-value]
-        if candidates:
-            normalized = candidates[0].lower().replace(" ", "_")
-            if normalized in valid_states:
-                return normalized  # type: ignore[return-value]
         return "unknown"
 
     @staticmethod
