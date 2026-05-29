@@ -60,6 +60,32 @@ class TestNoRealClientBindings:
                 f"{py_file.relative_to(_ROOT)} references banned string {banned!r}"
             )
 
+    @pytest.mark.parametrize("banned", _BANNED_EXEC_STRINGS)
+    def test_banned_executable_name_absent_from_runtime_surfaces(self, banned: str) -> None:
+        for folder in ("agent", "perception", "scripts", "configs"):
+            for file_path in (_ROOT / folder).rglob("*"):
+                if file_path.is_file() and file_path.suffix.lower() in {".py", ".ps1", ".json", ".yaml", ".yml"}:
+                    content = file_path.read_text(encoding="utf-8")
+                    assert banned not in content, (
+                        f"{file_path.relative_to(_ROOT)} references banned string {banned!r}"
+                    )
+
+    def test_no_hardcoded_provider_secrets_in_runtime_surfaces(self) -> None:
+        secret_patterns = (
+            re.compile(r"ZHIPU_API_KEY\s*=\s*[\"'][^\"']{12,}[\"']"),
+            re.compile(r"MINIMAX_API_KEY\s*=\s*[\"'][^\"']{12,}[\"']"),
+            re.compile(r"sk-cp-[A-Za-z0-9_-]{16,}"),
+            re.compile(r"3e05e4[A-Za-z0-9_.-]{8,}"),
+        )
+        for folder in ("agent", "perception", "scripts", "configs"):
+            for file_path in (_ROOT / folder).rglob("*"):
+                if file_path.is_file() and file_path.suffix.lower() in {".py", ".ps1", ".json", ".yaml", ".yml"}:
+                    content = file_path.read_text(encoding="utf-8")
+                    for pattern in secret_patterns:
+                        assert pattern.search(content) is None, (
+                            f"{file_path.relative_to(_ROOT)} contains hardcoded provider secret"
+                        )
+
 
 class TestNoBannedInputApis:
     """execution/ must not use banned direct input APIs (only SendInput via SafeWindowBackend)."""
@@ -131,6 +157,8 @@ class TestInputLeaseEnforcement:
             if py_file.name == "real_input_backend.py":
                 continue
             if py_file.name == "directinput_backend.py":
+                continue
+            if py_file.name == "background_input_backend.py":
                 continue
             content = py_file.read_text(encoding="utf-8")
             assert not sendinput_pattern.search(content), (

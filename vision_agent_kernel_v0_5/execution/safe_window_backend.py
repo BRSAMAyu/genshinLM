@@ -256,9 +256,7 @@ class SafeWindowInputBackend:
 
     def focus_target_window(self) -> None:
         hwnd = self._find_target_window()
-        self._user32.SetForegroundWindow(hwnd)
-        x, y = self.client_rect().center
-        self._user32.SetCursorPos(x, y)
+        self._force_foreground(hwnd)
 
     def is_target_focused(self) -> bool:
         try:
