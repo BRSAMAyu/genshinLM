@@ -57,24 +57,34 @@ class TestIntentBridgeCamera:
         bridge.stop()
         # Should not crash — zero movement is a no-op
 
-    def test_pixels_per_degree_conversion(self, bus: StateBus, tb: Timebase) -> None:
+    def test_raw_degree_deltas_passed(self, bus: StateBus, tb: Timebase) -> None:
         bridge = IntentBridge(bus, MagicMock(spec=InputWorker), timebase=tb, pixels_per_degree=10.0)
-        # yaw_delta=2.0 * ppd=10.0 = 20.0 pixels
-        # pitch_delta=1.5 * ppd=10.0 = 15.0 pixels
+        # IntentBridge passes raw degree deltas — the backend does the pixel conversion
         camera_slot = bus.get_slot("camera_intent")
         camera_slot.put(CameraIntent(yaw_delta=2.0, pitch_delta=1.5, duration_ms=50, confidence=0.9, reason="test"))
 
-        # Drain one intent
         bridge._drain_camera_intent()
 
-        # Verify lease was submitted
         mock_worker: MagicMock = bridge._input_worker  # type: ignore[assignment]
         assert mock_worker.submit_lease.call_count == 1
         lease: InputLease = mock_worker.submit_lease.call_args[0][0]
         assert lease.mouse_delta is not None
         dx, dy = lease.mouse_delta
-        assert abs(dx - 20.0) < 0.1
-        assert abs(dy - 15.0) < 0.1
+        # Raw degrees, not pixels (backend does the conversion)
+        assert abs(dx - 2.0) < 0.001
+        assert abs(dy - 1.5) < 0.001
+
+    def test_same_intent_not_reprocessed(self, bus: StateBus, tb: Timebase) -> None:
+        bridge = IntentBridge(bus, MagicMock(spec=InputWorker), timebase=tb)
+        camera_slot = bus.get_slot("camera_intent")
+        camera_slot.put(CameraIntent(yaw_delta=5.0, pitch_delta=0.0, duration_ms=50, confidence=0.9, reason="test"))
+
+        bridge._drain_camera_intent()
+        # Same snapshot, same version — should not submit again
+        bridge._drain_camera_intent()
+
+        mock_worker: MagicMock = bridge._input_worker  # type: ignore[assignment]
+        assert mock_worker.submit_lease.call_count == 1
 
 
 class TestIntentBridgeMovement:

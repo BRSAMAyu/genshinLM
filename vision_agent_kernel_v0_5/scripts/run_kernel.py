@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import os
 import signal
 import sys
 import time
@@ -31,7 +32,6 @@ if str(ROOT) not in sys.path:
 
 from control.camera_servo import CameraServo, CameraServoConfig, genshin_camera_servo_config
 from control.controller_loop import ControllerLoop
-from core.local_secret_store import get_secret
 from core.state_bus import StateBus
 from core.timebase import Timebase
 from core.types import CameraModel
@@ -188,10 +188,9 @@ def main() -> int:
     controller = ControllerLoop(
         state_bus=state_bus,
         camera_servo=camera_servo,
+        camera_model=camera_model,
         tick_seconds=1.0 / 30.0,
     )
-    # Wire camera model so ControllerLoop can compute servo error
-    controller._camera_model = camera_model  # noqa: SLF001
 
     action_executor = VisualActionBlockExecutor(
         state_bus=state_bus,

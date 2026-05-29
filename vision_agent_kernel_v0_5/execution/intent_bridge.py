@@ -58,6 +58,10 @@ class IntentBridge:
         self._active_movement_keys: set[str] = set()
         self._movement_lock = threading.Lock()
 
+        # Version tracking to avoid reprocessing the same intent
+        self._last_camera_version = -1
+        self._last_movement_version = -1
+
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
             return
@@ -84,22 +88,23 @@ class IntentBridge:
 
     def _drain_camera_intent(self) -> None:
         snapshot = self._camera_slot.snapshot()
-        if snapshot.value is None:
+        if snapshot.value is None or snapshot.version == self._last_camera_version:
             return
+        self._last_camera_version = snapshot.version
         intent = snapshot.value
         if not isinstance(intent, CameraIntent):
             return
         if abs(intent.yaw_delta) < 0.001 and abs(intent.pitch_delta) < 0.001:
             return
         now = self._timebase.now()
-        pixel_dx = intent.yaw_delta * self._pixels_per_degree
-        pixel_dy = intent.pitch_delta * self._pixels_per_degree
+        # Pass raw degree deltas — the backend (SafeWindowInputBackend) does
+        # the degree→pixel conversion itself via pixels_per_degree.
         lease = InputLease(
             lease_id=str(uuid.uuid4()),
             owner="intent_bridge:camera",
             priority=30,
             key_states={},
-            mouse_delta=(pixel_dx, pixel_dy),
+            mouse_delta=(intent.yaw_delta, intent.pitch_delta),
             created_at=now,
             expires_at=now + intent.duration_ms / 1000.0,
             reason=intent.reason,
@@ -108,8 +113,9 @@ class IntentBridge:
 
     def _drain_movement_intent(self) -> None:
         snapshot = self._movement_slot.snapshot()
-        if snapshot.value is None:
+        if snapshot.value is None or snapshot.version == self._last_movement_version:
             return
+        self._last_movement_version = snapshot.version
         intent = snapshot.value
         if not isinstance(intent, MovementIntent):
             return

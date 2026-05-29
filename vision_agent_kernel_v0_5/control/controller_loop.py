@@ -7,7 +7,7 @@ from control.camera_servo import CameraServo
 from control.progress_supervisor import ProgressSupervisor
 from control.recovery_policy import RecoveryPolicy
 from core.state_bus import StateBus
-from core.types import CameraIntent, MovementIntent, Observation
+from core.types import CameraIntent, CameraModel, MovementIntent, Observation
 
 
 class ControllerLoop:
@@ -17,6 +17,7 @@ class ControllerLoop:
         progress_supervisor: ProgressSupervisor | None = None,
         recovery_policy: RecoveryPolicy | None = None,
         camera_servo: CameraServo | None = None,
+        camera_model: CameraModel | None = None,
         danger_callback: Callable[[Observation], None] | None = None,
         tick_seconds: float = 1.0 / 30.0,
     ) -> None:
@@ -24,6 +25,7 @@ class ControllerLoop:
         self._progress = progress_supervisor or ProgressSupervisor(state_bus)
         self._recovery = recovery_policy or RecoveryPolicy()
         self._camera_servo = camera_servo
+        self._camera_model = camera_model
         self._danger_callback = danger_callback
         self._tick_seconds = tick_seconds
         self._stop_event = threading.Event()
@@ -68,9 +70,8 @@ class ControllerLoop:
         if self._danger_callback is not None:
             self._danger_callback(observation)
         if self._camera_servo is not None and observation.target_track is not None:
-            camera = getattr(self, "_camera_model", None)
-            if camera is not None:
-                error = self._camera_servo.compute_error(observation.target_track, camera)
+            if self._camera_model is not None:
+                error = self._camera_servo.compute_error(observation.target_track, self._camera_model)
                 intent = self._camera_servo.step(error, dt=self._tick_seconds)
                 camera_slot = self._state_bus.get_slot("camera_intent")
                 if camera_slot is not None:
