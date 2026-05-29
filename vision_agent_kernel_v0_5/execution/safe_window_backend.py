@@ -15,6 +15,10 @@ if TYPE_CHECKING:
 INPUT_MOUSE = 0
 INPUT_KEYBOARD = 1
 MOUSEEVENTF_MOVE = 0x0001
+MOUSEEVENTF_LEFTDOWN = 0x0002
+MOUSEEVENTF_LEFTUP = 0x0004
+MOUSEEVENTF_RIGHTDOWN = 0x0008
+MOUSEEVENTF_RIGHTUP = 0x0010
 KEYEVENTF_KEYUP = 0x0002
 
 # Common virtual key codes
@@ -145,6 +149,38 @@ class SafeWindowInputBackend:
             f"pixels=({pixel_dx},{pixel_dy}) reason={reason!r}",
             flush=True,
         )
+
+    def left_click(self, reason: str = "") -> None:
+        self._ensure_target_focused()
+        down = INPUT(
+            type=INPUT_MOUSE,
+            union=INPUT_UNION(
+                mi=MOUSEINPUT(dx=0, dy=0, mouseData=0, dwFlags=MOUSEEVENTF_LEFTDOWN, time=0, dwExtraInfo=ctypes.c_void_p(0)),
+            ),
+        )
+        up = INPUT(
+            type=INPUT_MOUSE,
+            union=INPUT_UNION(
+                mi=MOUSEINPUT(dx=0, dy=0, mouseData=0, dwFlags=MOUSEEVENTF_LEFTUP, time=0, dwExtraInfo=ctypes.c_void_p(0)),
+            ),
+        )
+        self._user32.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT))
+        import time as _time
+        _time.sleep(0.05)
+        self._user32.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
+        self._released = False
+        print(
+            "[SafeWindowInputBackend] "
+            f"{self._timebase.now():.6f} left_click reason={reason!r}",
+            flush=True,
+        )
+
+    def click_at(self, screen_x: int, screen_y: int, reason: str = "") -> None:
+        self._ensure_target_focused()
+        self._user32.SetCursorPos(screen_x, screen_y)
+        import time as _time
+        _time.sleep(0.02)
+        self.left_click(reason=reason)
 
     def key_down(self, key: str, reason: str = "") -> None:
         self._ensure_target_focused()

@@ -126,6 +126,7 @@ class GenshinPerceptionProvider:
                     ],
                 }],
                 "temperature": 0.1,
+                "stream": False,
                 "max_tokens": 800,
             }
             request = urllib.request.Request(
@@ -221,24 +222,38 @@ class GenshinActionExecutor:
         return self._backend.is_target_focused()
 
     def _handle_move(self, target: str, context: dict[str, Any]) -> bool:
-        # WASD movement for 1.5 seconds
         direction = target.lower() if target else "forward"
-        key_map = {
-            "forward": "w", "back": "s", "left": "a", "right": "d",
-            "forward_left": "w", "forward_right": "w",
-        }
-        key = key_map.get(direction, "w")
-        self._backend.key_down(key, reason=f"move_{direction}")
+        keys: list[str] = []
+        if "forward" in direction:
+            keys.append("w")
+        elif "back" in direction:
+            keys.append("s")
+        else:
+            keys.append("w")
+
+        if "left" in direction:
+            keys.append("a")
+        elif "right" in direction:
+            keys.append("d")
+
+        # Single direction fallback
+        if not keys:
+            key_map = {"forward": "w", "back": "s", "left": "a", "right": "d"}
+            keys = [key_map.get(direction, "w")]
+
+        for key in keys:
+            self._backend.key_down(key, reason=f"move_{key}")
         time.sleep(1.5)
-        self._backend.key_up(key, reason=f"move_{direction}_done")
+        for key in keys:
+            self._backend.key_up(key, reason=f"move_{key}_done")
         return True
 
     def _handle_navigate_to(self, target: str, context: dict[str, Any]) -> bool:
-        # Open map with M, select waypoint, teleport
+        # Open map with M, but navigation requires visual feedback not yet implemented
         self._press_key("m", "open_map", 0.5)
         time.sleep(1.0)
-        # TODO: Navigate to specific waypoint on map — needs visual feedback
-        return True
+        log.warning("[GenshinExecutor] navigate_to is not yet fully implemented for target=%s", target)
+        return False
 
     def _handle_open_menu(self, target: str, context: dict[str, Any]) -> bool:
         self._press_key("esc", "open_menu", 0.3)
@@ -253,13 +268,12 @@ class GenshinActionExecutor:
         self._press_key("space", "advance_dialog", 0.3)
         return True
 
-    def _handle_select_option(self, target: str, context: dict[str, Any]) -> None:
-        # This would need OCR or visual detection to find the right option
-        # For now, just press the number key if target is a digit
+    def _handle_select_option(self, target: str, context: dict[str, Any]) -> bool:
         if target and target.isdigit():
             self._press_key(target, f"select_option_{target}", 0.3)
         else:
             self._press_key("1", "select_first_option", 0.3)
+        return True
 
     def _handle_use_skill(self, target: str, context: dict[str, Any]) -> bool:
         skill_map = {"e": "e", "q": "q", "1": "1", "2": "2", "3": "3", "4": "4"}
@@ -268,12 +282,8 @@ class GenshinActionExecutor:
         return True
 
     def _handle_basic_attack(self, target: str, context: dict[str, Any]) -> bool:
-        # Left click for basic attack
-        self._backend.mouse_move(0.5, 0.0, reason="basic_attack")
-        time.sleep(0.1)
-        # Click is done via mouse_move + the game's attack button is usually left mouse
-        # We press left click via the keyboard "space" workaround
-        # In practice, basic attacks use left mouse button
+        # Left click for basic attack — Genshin uses left mouse for normal attacks
+        self._backend.left_click(reason="basic_attack")
         return True
 
     def _handle_observe(self, target: str, context: dict[str, Any]) -> bool:
@@ -289,9 +299,35 @@ class GenshinActionExecutor:
         self._press_key("enter", "confirm", 0.3)
         return True
 
+    def _handle_interact(self, target: str, context: dict[str, Any]) -> bool:
+        # F key for interaction (NPCs, chests, items)
+        self._press_key("f", "interact", 0.3)
+        return True
+
+    def _handle_jump(self, target: str, context: dict[str, Any]) -> bool:
+        self._press_key("space", "jump", 0.15)
+        return True
+
+    def _handle_dash(self, target: str, context: dict[str, Any]) -> bool:
+        self._press_key("shift", "dash", 0.2)
+        return True
+
+    def _handle_sprint(self, target: str, context: dict[str, Any]) -> bool:
+        self._backend.key_down("shift", reason="sprint_start")
+        time.sleep(2.0)
+        self._backend.key_up("shift", reason="sprint_end")
+        return True
+
+    def _handle_swim(self, target: str, context: dict[str, Any]) -> bool:
+        self._backend.key_down("shift", reason="swim_dash")
+        time.sleep(0.3)
+        self._backend.key_up("shift", reason="swim_dash_end")
+        return True
+
     def _handle_unknown(self, target: str, context: dict[str, Any]) -> bool:
-        log.warning("[GenshinExecutor] Unknown action: %s", target)
-        return False
+        log.warning("[GenshinExecutor] Unknown action, treating as observe: %s", target)
+        time.sleep(1.0)
+        return True
 
     def _press_key(self, key: str, reason: str, hold_sec: float = 0.1) -> None:
         self._backend.key_down(key, reason=reason)
@@ -305,13 +341,19 @@ class GenshinActionExecutor:
         "close_menu": _handle_close_menu,
         "advance_dialog": _handle_advance_dialog,
         "select_option": _handle_select_option,
-        "click_button": _handle_advance_dialog,  # Space/click often works
+        "click_button": _handle_advance_dialog,
         "use_skill": _handle_use_skill,
         "basic_attack": _handle_basic_attack,
         "observe": _handle_observe,
         "wait": _handle_observe,
+        "look": _handle_observe,
         "go_back": _handle_go_back,
         "confirm": _handle_confirm,
+        "interact": _handle_interact,
+        "jump": _handle_jump,
+        "dash": _handle_dash,
+        "sprint": _handle_sprint,
+        "swim": _handle_swim,
         "select_quest": _handle_advance_dialog,
         "claim_reward": _handle_confirm,
         "select_item": _handle_select_option,

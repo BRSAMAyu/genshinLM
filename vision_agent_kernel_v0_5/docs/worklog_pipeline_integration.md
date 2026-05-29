@@ -104,6 +104,89 @@ Orchestrator (variable Hz)
 
 ---
 
-## Round 2: [PENDING]
+## Round 1b: Opus Audit Fixes
 
-TODO: Wire DualChamberScheduler, VLM post-processor, task specification, visual triggers
+**Date**: 2026-05-30
+
+### Opus Agent Audit Findings (3 CRITICAL, 4 HIGH, 7 MEDIUM)
+
+Fixed issues that would completely prevent real-game operation:
+
+| Issue | Severity | Fix |
+|---|---|---|
+| Missing `import os` in run_kernel.py | CRITICAL | Added `import os` |
+| Double pixel conversion (IntentBridge AND SafeWindowInputBackend both ×ppd) | CRITICAL | Removed conversion from IntentBridge, pass raw degree deltas |
+| No version check on intent slots → same intent applied ~3x | HIGH | Added `_last_camera_version`/`_last_movement_version` tracking |
+| CameraModel attached via private attr hack | HIGH | Added proper `camera_model` parameter to ControllerLoop.__init__ |
+
+### Test Results
+- **1395 passed, 1 skipped** (0 failures)
+- 12 IntentBridge tests (added version-tracking test)
+
+---
+
+## Round 2: Genshin Game Agent + Screen Classifier
+
+**Date**: 2026-05-30
+
+### What Was Done
+
+1. **Created `agent/genshin_game_agent.py`** — NEW file
+   - `GenshinPerceptionProvider`: Implements PerceptionProvider protocol
+     - dxcam for capture, Zhipu GLM-4V for VLM analysis, GenshinScreenClassifier for classify
+     - JPEG encoding with 1280px resize for VLM API
+     - JSON extraction from VLM responses
+   - `GenshinActionExecutor`: Implements ActionExecutor protocol
+     - Translates 20+ semantic actions to concrete key/mouse inputs
+     - Action map: move, navigate_to, open_menu, close_menu, advance_dialog, use_skill, etc.
+     - Uses SafeWindowInputBackend for all physical input
+   - `create_genshin_agent()`: Factory that wires everything together
+
+2. **Created `scripts/run_genshin_agent.py`** — NEW file
+   - CLI entry point with --goal, --window-title, --max-iterations
+   - Countdown before starting, log file output
+   - Sets AURORA_ENABLE_AUTHORIZED_SAFE_WINDOW
+
+3. **Created `perception/screen_classifier_post_processor.py`** — NEW file
+   - FramePostProcessor adapter for GenshinScreenClassifier
+   - Populates observation.ui_state with screen state and indicators
+
+### Architecture: How It Connects
+
+```
+GenshinGameAgent (main thread)
+  ↓ creates
+GenshinPerceptionProvider (dxcam + GLM-4V + GenshinClassifier)
+  ↓ + GenshinActionExecutor (SafeWindowInputBackend)
+  ↓ creates
+AutonomousTaskBrain (the strategic brain)
+  ↓ run(goal)
+  loop:
+    1. perception.capture_frame() → np.ndarray
+    2. perception.classify_screen(frame) → ClassifierOutput
+    3. perception.analyze_vlm(frame, "genshin") → VLMOutput
+    4. ScreenStateClaimBuilder.build(vlm, classifier, ocr) → ScreenStateClaim
+    5. AffordanceDeriver.derive(claim) → ActionAffordance[]
+    6. HierarchicalPlanner.plan(goal, claim, actions) → MissionGraph
+    7. executor.execute_semantic(action, target, ctx) → bool
+    8. Update MissionGraph, record to DecisionMemory
+```
+
+### Test Results
+- **1395 passed, 1 skipped** (0 failures)
+
+### Remaining Work (Round 3)
+
+1. **GenshinActionExecutor needs mouse click support** — currently only keyboard, no left-click for basic attack or UI interaction
+2. **No waypoint/map navigation** — navigate_to is a stub
+3. **No OCR integration** — OCR could provide quest text, NPC names, item names
+4. **No combat system wired** — combat/ directory has full combat planner but not connected
+5. **No minimap flow tracking** — minimap_flow_tracker.py exists but not wired
+6. **Action mapping is incomplete** — many Genshin-specific actions (swim, climb, glide) missing
+7. **No visual verification after actions** — actions fire and forget, no confirmation
+
+---
+
+## Round 3: [PENDING]
+
+TODO: Mouse click support, combat wiring, OCR integration, visual verification
