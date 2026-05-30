@@ -182,6 +182,8 @@ class UIFlowSkillAdapter:
             "scroll_up": self._handle_action_intent,
             "open_quest_log": self._handle_open_menu_alias,
             "open_character_screen": self._handle_open_menu_alias,
+            "basic_attack": self._handle_action_intent,
+            "auto_combat": self._handle_action_intent,
         }
 
     @property
