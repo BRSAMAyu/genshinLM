@@ -47,6 +47,7 @@ class CombatSkillAdapter:
         self._config = config or CombatSkillAdapterConfig()
         self._planner = planner or GenshinCombatPlanner()
         self._actuator = LiveCombatActuator(backend=backend)
+        self._boss_router: Any | None = None
 
     def execute_combat(
         self,
@@ -95,8 +96,23 @@ class CombatSkillAdapter:
         team_characters: list[str],
         boss_profile: Any | None = None,
         duration_sec: float = 30.0,
+        boss_id: str = "",
     ) -> bool:
-        """Execute a boss encounter with boss-aware playbook and retry."""
+        """Execute a boss encounter with boss-aware playbook and retry.
+
+        Uses BossMechanicRouter for known bosses with specific mechanics,
+        falls back to generic playbook for unknown bosses.
+        """
+        # Route to specific boss handler if known
+        if boss_id:
+            router = self._get_boss_router()
+            if router is not None and router.get_boss_phases(boss_id):
+                log.info("[CombatSkill] routing to BossMechanicRouter for %s", boss_id)
+                result = router.execute_boss_mechanics(boss_id)
+                if result.success:
+                    return True
+                log.warning("[CombatSkill] BossMechanicRouter failed, falling back to playbook")
+
         playbook, _team_plan = self._planner.generate_boss_playbook(
             team_elements=team_elements,
             team_characters=team_characters,
@@ -227,3 +243,13 @@ class CombatSkillAdapter:
                         break
             return data
         return _stream
+
+    def _get_boss_router(self) -> Any:
+        if self._boss_router is not None:
+            return self._boss_router
+        try:
+            from combat.boss_mechanic_router import BossMechanicRouter
+            self._boss_router = BossMechanicRouter(backend=self._backend)
+        except Exception as exc:
+            log.debug("[CombatSkill] BossMechanicRouter unavailable: %s", exc)
+        return self._boss_router
