@@ -187,20 +187,46 @@ CHARACTER_ASCEND = UIFlow(
 
 CHARACTER_TALENT_UPGRADE = UIFlow(
     name="character_talent_upgrade",
-    description="Upgrade a talent for the currently selected character. "
+    description="Upgrade the Normal Attack talent for the currently selected character. "
                 "Steps: wait menu → click talents tab → select talent → click upgrade → confirm",
     precondition_state="full_menu",
     steps=(
         wait_state("full_menu", timeout_ms=3000),
         delay(300),
-        # Click Talents tab (star icon, upper right area)
         click_char_tab("talents", delay_ms=600),
-        # Click on the talent to select
-        # Normal attack = left (0.35, 0.50), Skill = center (0.50, 0.50), Burst = right (0.65, 0.50)
+        # Select Normal Attack (left talent card)
         click(nx=0.35, ny=0.50, reason="select_talent_normal_attack", delay_ms=400),
-        # Click upgrade button
         click(nx=0.85, ny=0.85, reason="click_upgrade_talent", delay_ms=300),
-        # Confirm material consumption
+        click(nx=0.65, ny=0.85, reason="confirm_talent_upgrade", delay_ms=800),
+        delay(500),
+    ),
+)
+
+CHARACTER_TALENT_UPGRADE_SKILL = UIFlow(
+    name="character_talent_upgrade_skill",
+    description="Upgrade the Elemental Skill (E) talent",
+    precondition_state="full_menu",
+    steps=(
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        click_char_tab("talents", delay_ms=600),
+        click(nx=0.50, ny=0.50, reason="select_talent_elemental_skill", delay_ms=400),
+        click(nx=0.85, ny=0.85, reason="click_upgrade_talent", delay_ms=300),
+        click(nx=0.65, ny=0.85, reason="confirm_talent_upgrade", delay_ms=800),
+        delay(500),
+    ),
+)
+
+CHARACTER_TALENT_UPGRADE_BURST = UIFlow(
+    name="character_talent_upgrade_burst",
+    description="Upgrade the Elemental Burst (Q) talent",
+    precondition_state="full_menu",
+    steps=(
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        click_char_tab("talents", delay_ms=600),
+        click(nx=0.65, ny=0.50, reason="select_talent_elemental_burst", delay_ms=400),
+        click(nx=0.85, ny=0.85, reason="click_upgrade_talent", delay_ms=300),
         click(nx=0.65, ny=0.85, reason="confirm_talent_upgrade", delay_ms=800),
         delay(500),
     ),
@@ -825,6 +851,8 @@ ALL_FLOWS: dict[str, UIFlow] = {
         CHARACTER_LEVEL_UP_FULL,
         CHARACTER_ASCEND,
         CHARACTER_TALENT_UPGRADE,
+        CHARACTER_TALENT_UPGRADE_SKILL,
+        CHARACTER_TALENT_UPGRADE_BURST,
         WEAPON_EQUIP,
         WEAPON_ENHANCE,
         ARTIFACT_EQUIP,
