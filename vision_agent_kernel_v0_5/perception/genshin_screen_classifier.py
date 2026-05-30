@@ -31,6 +31,7 @@ class GenshinScreenClassifier:
         self._combat_indicator_roi = (770, 930, 850, 970)
         self._death_roi = (660, 400, 1260, 680)
         self._notification_roi = (1400, 100, 1900, 500)
+        self._history: list[str] = []
 
     def classify(self, frame: np.ndarray) -> ScreenState:
         if cv2 is None:
@@ -39,14 +40,17 @@ class GenshinScreenClassifier:
         sx = w / self._REF_W
         sy = h / self._REF_H
 
+        gray_full = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 else frame
+        overall_mean = float(np.mean(gray_full))
+
         dark = self._is_dark_frame(frame)
         death = self._detect_death_screen(frame, sx, sy)
         loading = self._detect_loading_screen(frame, dark)
-        dialog = self._detect_dialog_box(frame, sx, sy)
+        dialog = self._detect_dialog_box(frame, sx, sy, overall_mean)
         domain = self._detect_domain_entrance(frame, sx, sy)
-        minimap = self._detect_minimap(frame, sx, sy)
-        hp_bar, hp_red_ratio = self._detect_hp_bar(frame, sx, sy)
-        skill_icons = self._detect_skill_icons(frame, sx, sy)
+        minimap = self._detect_minimap(frame, sx, sy, overall_mean)
+        hp_bar, hp_red_ratio = self._detect_hp_bar(frame, sx, sy, overall_mean)
+        skill_icons = self._detect_skill_icons(frame, sx, sy, overall_mean)
         combat = self._detect_combat_indicator(frame, sx, sy)
         notification = self._detect_notification(frame, sx, sy)
 
@@ -63,61 +67,116 @@ class GenshinScreenClassifier:
             "notification": bool(notification),
         }
 
-        # Death screen: checked before loading since both are dark but death has buttons
+        # Determine raw classified state
         if death:
-            return ScreenState(state="death_screen", confidence=0.9, indicators=indicators)
-        if loading:
-            return ScreenState(state="loading_screen", confidence=0.9, indicators=indicators)
-        if dialog:
-            return ScreenState(state="dialog", confidence=0.85, indicators=indicators)
-        if domain:
-            return ScreenState(state="domain_entrance", confidence=0.85, indicators=indicators)
-        # Combat: minimap + HP bar + red HP damage or combat indicator
-        if minimap and hp_bar and (combat or hp_red_ratio > 0.3):
-            return ScreenState(state="combat", confidence=0.85, indicators=indicators)
-        if minimap and hp_bar:
-            return ScreenState(state="world_hud", confidence=0.9, indicators=indicators)
-        if minimap:
-            return ScreenState(state="world_hud", confidence=0.7, indicators=indicators)
-        # Notification: overlaid on HUD, check before no_hud
-        if notification:
-            return ScreenState(state="notification", confidence=0.8, indicators=indicators)
-        if hp_bar or skill_icons:
-            return ScreenState(state="full_menu", confidence=0.6, indicators=indicators)
-        if dark:
-            return ScreenState(state="paimon_menu", confidence=0.5, indicators=indicators)
-        return ScreenState(state="no_hud", confidence=0.6, indicators=indicators)
+            raw_state = "death_screen"
+            conf = 0.9
+        elif loading:
+            raw_state = "loading_screen"
+            conf = 0.9
+        elif dialog:
+            raw_state = "dialog"
+            conf = 0.85
+        elif domain:
+            raw_state = "domain_entrance"
+            conf = 0.85
+        elif minimap and hp_bar and (combat or hp_red_ratio > 0.3):
+            raw_state = "combat"
+            conf = 0.85
+        elif minimap and hp_bar:
+            raw_state = "world_hud"
+            conf = 0.9
+        elif minimap:
+            raw_state = "world_hud"
+            conf = 0.7
+        elif notification:
+            raw_state = "notification"
+            conf = 0.8
+        elif hp_bar or skill_icons:
+            raw_state = "full_menu"
+            conf = 0.6
+        elif dark:
+            raw_state = "paimon_menu"
+            conf = 0.5
+        else:
+            raw_state = "no_hud"
+            conf = 0.6
 
-    def _detect_minimap(self, frame: np.ndarray, sx: float, sy: float) -> bool:
+        # Intermittent blank/flash frame filter (Gap 16):
+        # If raw_state is loading_screen or no_hud but recent history is solidly overworld/combat/dialog,
+        # smooth the state to the previous healthy state.
+        filtered_state = raw_state
+        if raw_state in ("loading_screen", "no_hud") and len(self._history) >= 2:
+            recent = self._history[-2:]
+            if all(s in ("world_hud", "combat", "dialog") for s in recent):
+                gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 else frame
+                std = float(np.std(gray))
+                mean = float(np.mean(gray))
+                # Confirm it is an extremely flat frame (DirectX blackout std < 5.0 or flash mean > 250.0)
+                if std < 5.0 or mean > 250.0:
+                    filtered_state = self._history[-1]
+                    conf = 0.95
+
+        self._history.append(filtered_state)
+        if len(self._history) > 10:
+            self._history.pop(0)
+
+        return ScreenState(state=filtered_state, confidence=conf, indicators=indicators)
+
+    def _detect_minimap(self, frame: np.ndarray, sx: float, sy: float, overall_mean: float | None = None) -> bool:
         x1, y1, x2, y2 = self._scale_roi(self._minimap_roi, sx, sy)
         roi = frame[y1:y2, x1:x2]
         if roi.size == 0:
             return False
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if roi.ndim == 3 else roi
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+
+        # Apply dynamic contrast stretching to combat glare/low contrast under extreme lighting
+        if overall_mean is not None and (overall_mean < 80.0 or overall_mean > 180.0):
+            min_val, max_val, _, _ = cv2.minMaxLoc(blurred)
+            if max_val - min_val > 10.0:
+                blurred = np.uint8((blurred - min_val) * (255.0 / (max_val - min_val)))
+
+        # Relax param2 slightly in dark or glare environments for circle detection stability
+        param2 = 30
+        if overall_mean is not None and (overall_mean < 80.0 or overall_mean > 180.0):
+            param2 = 20
+
+        circles = cv2.HOUGH_GRADIENT if cv2 is not None else 3  # type: ignore
         circles = cv2.HoughCircles(
             blurred,
             cv2.HOUGH_GRADIENT,
             dp=1.2,
             minDist=100,
             param1=50,
-            param2=30,
+            param2=param2,
             minRadius=20,
             maxRadius=int(min(x2 - x1, y2 - y1) / 2),
         )
         return circles is not None and len(circles) > 0
 
-    def _detect_hp_bar(self, frame: np.ndarray, sx: float, sy: float) -> tuple[bool, float]:
+    def _detect_hp_bar(self, frame: np.ndarray, sx: float, sy: float, overall_mean: float | None = None) -> tuple[bool, float]:
         """Detect HP bar and return (detected, red_ratio)."""
         x1, y1, x2, y2 = self._scale_roi(self._hp_bar_roi, sx, sy)
         roi = frame[y1:y2, x1:x2]
         if roi.size == 0:
             return False, 0.0
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-        green_mask = cv2.inRange(hsv, (35, 80, 80), (85, 255, 255))
-        red_mask_low = cv2.inRange(hsv, (0, 80, 80), (10, 255, 255))
-        red_mask_high = cv2.inRange(hsv, (170, 80, 80), (180, 255, 255))
-        yellow_mask = cv2.inRange(hsv, (20, 80, 80), (35, 255, 255))
+
+        # Adaptive HSV limits for HP bar under dynamic lighting
+        lower_sat = 80
+        lower_val = 80
+        if overall_mean is not None:
+            if overall_mean < 80.0:
+                lower_sat = 40
+                lower_val = 40
+            elif overall_mean > 200.0:
+                lower_sat = 50
+
+        green_mask = cv2.inRange(hsv, (35, lower_sat, lower_val), (85, 255, 255))
+        red_mask_low = cv2.inRange(hsv, (0, lower_sat, lower_val), (10, 255, 255))
+        red_mask_high = cv2.inRange(hsv, (170, lower_sat, lower_val), (180, 255, 255))
+        yellow_mask = cv2.inRange(hsv, (20, lower_sat, lower_val), (35, 255, 255))
         pixel_count = roi.shape[0] * roi.shape[1]
         green_px = np.count_nonzero(green_mask)
         red_px = np.count_nonzero(red_mask_low) + np.count_nonzero(red_mask_high)
@@ -137,13 +196,23 @@ class GenshinScreenClassifier:
         red_mask = cv2.inRange(hsv, (0, 120, 120), (10, 255, 255)) | cv2.inRange(hsv, (170, 120, 120), (180, 255, 255))
         return np.count_nonzero(red_mask) > roi.shape[0] * roi.shape[1] * 0.2
 
-    def _detect_skill_icons(self, frame: np.ndarray, sx: float, sy: float) -> bool:
+    def _detect_skill_icons(self, frame: np.ndarray, sx: float, sy: float, overall_mean: float | None = None) -> bool:
         x1, y1, x2, y2 = self._scale_roi(self._skill_icon_roi, sx, sy)
         roi = frame[y1:y2, x1:x2]
         if roi.size == 0:
             return False
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
-        saturated_mask = (hsv[:, :, 1] > 100) & (hsv[:, :, 2] > 100)
+
+        sat_thresh = 100
+        val_thresh = 100
+        if overall_mean is not None:
+            if overall_mean < 80.0:
+                sat_thresh = 60
+                val_thresh = 60
+            elif overall_mean > 200.0:
+                sat_thresh = 70
+
+        saturated_mask = (hsv[:, :, 1] > sat_thresh) & (hsv[:, :, 2] > val_thresh)
         ratio = saturated_mask.sum() / saturated_mask.size
         return ratio > 0.1
 
@@ -154,7 +223,7 @@ class GenshinScreenClassifier:
         std = float(np.std(gray))
         return std < 20.0
 
-    def _detect_dialog_box(self, frame: np.ndarray, sx: float, sy: float) -> bool:
+    def _detect_dialog_box(self, frame: np.ndarray, sx: float, sy: float, overall_mean: float | None = None) -> bool:
         x1, y1, x2, y2 = self._scale_roi(self._dialog_roi, sx, sy)
         roi = frame[y1:y2, x1:x2]
         if roi.size == 0:
@@ -163,8 +232,17 @@ class GenshinScreenClassifier:
         mean_val = float(np.mean(gray))
         edges = cv2.Canny(gray, 50, 150)
         edge_density = float(edges.sum()) / edges.size
-        # Tightened thresholds: mean 30-140 (was 30-160), edge_density > 15 (was > 5)
-        return 30.0 < mean_val < 140.0 and edge_density > 15.0
+
+        # Adaptive dialog detection thresholds based on overall screen brightness to accommodate bleed-through
+        min_mean = 30.0
+        max_mean = 140.0
+        if overall_mean is not None:
+            if overall_mean < 80.0:
+                min_mean = max(15.0, 30.0 - (80.0 - overall_mean) * 0.25)
+            elif overall_mean > 180.0:
+                max_mean = min(180.0, 140.0 + (overall_mean - 180.0) * 0.4)
+
+        return min_mean < mean_val < max_mean and edge_density > 15.0
 
     def _is_dark_frame(self, frame: np.ndarray) -> bool:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 else frame

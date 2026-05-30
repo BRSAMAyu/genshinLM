@@ -40,9 +40,19 @@ class MinimapQuestReader:
             return None
 
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        avg_v = float(np.mean(hsv[:, :, 2]))
+
         mask = np.zeros(roi.shape[:2], dtype=np.uint8)
         for lower, upper in self._quest_color_ranges:
-            mask |= cv2.inRange(hsv, np.array(lower), np.array(upper))
+            lower_h, lower_s, lower_v = lower
+            upper_h, upper_s, upper_v = upper
+            if avg_v < 100:  # Dark environments (night, caves, underwater)
+                lower_s = max(80, lower_s - 50)
+                lower_v = max(60, lower_v - 60)
+            elif avg_v > 220:  # High glare (daytime glare, snowfields)
+                lower_s = min(220, lower_s + 20)
+                lower_v = min(220, lower_v + 20)
+            mask |= cv2.inRange(hsv, np.array((lower_h, lower_s, lower_v)), np.array((upper_h, upper_s, upper_v)))
 
         if np.count_nonzero(mask) < 5:
             return None
@@ -80,9 +90,19 @@ class MinimapQuestReader:
         if roi.size == 0:
             return False
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        avg_v = float(np.mean(hsv[:, :, 2]))
+
         mask = np.zeros(roi.shape[:2], dtype=np.uint8)
         for lower, upper in self._quest_color_ranges:
-            mask |= cv2.inRange(hsv, np.array(lower), np.array(upper))
+            lower_h, lower_s, lower_v = lower
+            upper_h, upper_s, upper_v = upper
+            if avg_v < 100:  # Dark environments
+                lower_s = max(80, lower_s - 50)
+                lower_v = max(60, lower_v - 60)
+            elif avg_v > 220:  # Glare
+                lower_s = min(220, lower_s + 20)
+                lower_v = min(220, lower_v + 20)
+            mask |= cv2.inRange(hsv, np.array((lower_h, lower_s, lower_v)), np.array((upper_h, upper_s, upper_v)))
         if np.count_nonzero(mask) < 3:
             return True  # no marker = arrived or no quest
         ys, xs = np.where(mask > 0)

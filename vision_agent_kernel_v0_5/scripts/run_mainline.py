@@ -108,8 +108,28 @@ def main() -> None:
                 step = quest_sm.advance(evidence="dry_run")
                 continue
 
-            log.warning("Real execution not yet wired — auto-advancing")
-            step = quest_sm.advance(evidence="auto_advance")
+            log.info("Starting live execution via MainlineLiveBridge")
+            from planning.mainline.mainline_live_bridge import MainlineLiveBridge
+            from planning.mainline.mission_graph_v4 import MissionGraphV4, MissionNodeV4
+
+            graph = MissionGraphV4(mission_id=step.step_id)
+            node = MissionNodeV4(
+                node_id=step.step_id,
+                node_type="navigate_walk" if "walk" in step.objective.lower() else "interact",
+                skill_candidates=("quest_follow",) if "walk" in step.objective.lower() else ("interact",),
+            )
+            graph.add_node(node)
+
+            bridge = MainlineLiveBridge(window_title=args.window_title)
+            try:
+                res = bridge.execute_live_mission(graph)
+                if res.success:
+                    step = quest_sm.advance(evidence="live_success")
+                else:
+                    log.error("Live execution failed for step %s", step.step_id)
+                    break
+            finally:
+                bridge.stop()
     finally:
         _save_progress(args.save_path, quest_sm)
         if quest_sm.is_mainline_complete():

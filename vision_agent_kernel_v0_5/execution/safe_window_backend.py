@@ -175,21 +175,69 @@ class SafeWindowInputBackend:
             ),
         )
         self._user32.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT))
+        import random
         import time as _time
-        _time.sleep(0.05)
+        hold_time = 0.045 + random.uniform(-0.015, 0.025)
+        _time.sleep(hold_time)
         self._user32.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
         self._released = False
         print(
             "[SafeWindowInputBackend] "
-            f"{self._timebase.now():.6f} left_click reason={reason!r}",
+            f"{self._timebase.now():.6f} left_click hold_time={hold_time:.4f}s reason={reason!r}",
             flush=True,
         )
 
+    def move_cursor(self, screen_x: int, screen_y: int, reason: str = "") -> None:
+        self._ensure_target_focused()
+        import math
+        import random
+        import time as _time
+        
+        point = wintypes.POINT()
+        if not self._user32.GetCursorPos(ctypes.byref(point)):
+            self._user32.SetCursorPos(screen_x, screen_y)
+            return
+
+        start_x, start_y = point.x, point.y
+        dist = math.sqrt((screen_x - start_x)**2 + (screen_y - start_y)**2)
+        if dist < 5:
+            self._user32.SetCursorPos(screen_x, screen_y)
+            return
+
+        # Smooth Cubic Bezier trajectory with random control points (biological Minimum Jerk simulation)
+        steps = int(max(8, min(25, dist / 15.0)))
+        deviation = dist * 0.1
+        c1x = start_x + (screen_x - start_x) * 0.25 + random.uniform(-deviation, deviation)
+        c1y = start_y + (screen_y - start_y) * 0.25 - dist * 0.05 + random.uniform(-deviation, deviation)
+        c2x = start_x + (screen_x - start_x) * 0.75 + random.uniform(-deviation, deviation)
+        c2y = start_y + (screen_y - start_y) * 0.75 + dist * 0.05 + random.uniform(-deviation, deviation)
+
+        duration_ms = max(100, min(300, int(dist * 0.8 + random.randint(-20, 20))))
+        step_sleep = (duration_ms / 1000.0) / steps
+
+        for i in range(1, steps + 1):
+            t = i / steps
+            # Cubic Bezier
+            x = (1.0 - t)**3 * start_x + 3.0 * (1.0 - t)**2 * t * c1x + 3.0 * (1.0 - t) * t**2 * c2x + t**3 * screen_x
+            y = (1.0 - t)**3 * start_y + 3.0 * (1.0 - t)**2 * t * c1y + 3.0 * (1.0 - t) * t**2 * c2y + t**3 * screen_y
+
+            # Biological micro-tremors (1-2px jitter)
+            if 0 < i < steps:
+                x += random.uniform(-1.2, 1.2)
+                y += random.uniform(-1.2, 1.2)
+
+            self._user32.SetCursorPos(round(x), round(y))
+            
+            # Timing noise
+            jittered_sleep = max(0.001, step_sleep * (1.0 + random.uniform(-0.15, 0.15)))
+            _time.sleep(jittered_sleep)
+
+        self._user32.SetCursorPos(screen_x, screen_y)
+        _time.sleep(0.01)
+
     def click_at(self, screen_x: int, screen_y: int, reason: str = "") -> None:
         self._ensure_target_focused()
-        self._user32.SetCursorPos(screen_x, screen_y)
-        import time as _time
-        _time.sleep(0.02)
+        self.move_cursor(screen_x, screen_y, reason=reason)
         self.left_click(reason=reason)
 
     def right_click(self, reason: str = "") -> None:
@@ -207,8 +255,10 @@ class SafeWindowInputBackend:
             ),
         )
         self._user32.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT))
+        import random
         import time as _time
-        _time.sleep(0.05)
+        hold_time = 0.045 + random.uniform(-0.015, 0.025)
+        _time.sleep(hold_time)
         self._user32.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
         self._released = False
 

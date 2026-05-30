@@ -20,6 +20,12 @@ SAFE_EXPLORATION_ACTIONS = {
     "back",
     "open_menu",
     "skip_cutscene",
+    "interact",
+    "move_forward",
+    "advance_dialog",
+    "select_option",
+    "click_button",
+    "confirm",
 }
 
 
@@ -42,6 +48,62 @@ class ExplorationAgent:
         self._perception = perception
         self._risk_level = risk_level
 
+    def _normalize_vlm_action(self, action: str) -> str:
+        if not action:
+            return "observe"
+        act = action.strip().lower()
+        # Synonym mappings to canonical SAFE_EXPLORATION_ACTIONS
+        mappings = {
+            "interact": "interact",
+            "interact_f": "interact",
+            "interact f": "interact",
+            "press_f": "interact",
+            "press f": "interact",
+            "f": "interact",
+            "walk": "move_forward",
+            "move_forward": "move_forward",
+            "walk_forward": "move_forward",
+            "walk forward": "move_forward",
+            "go_forward": "move_forward",
+            "go forward": "move_forward",
+            "combat": "click_anchor",
+            "fight": "click_anchor",
+            "attack": "click_anchor",
+            "basic_attack": "click_anchor",
+            "basic attack": "click_anchor",
+            "skip": "skip_cutscene",
+            "skip_cutscene": "skip_cutscene",
+            "skip cutscene": "skip_cutscene",
+            "dialog_skip": "skip_cutscene",
+            "dialog skip": "skip_cutscene",
+            "dialog": "advance_dialog",
+            "dialog_advance": "advance_dialog",
+            "dialog advance": "advance_dialog",
+            "advance_dialog": "advance_dialog",
+            "advance dialog": "advance_dialog",
+            "space": "advance_dialog",
+            "select": "select_option",
+            "click_option": "select_option",
+            "click option": "select_option",
+            "select_option": "select_option",
+            "select option": "select_option",
+            "select_dialog_option": "select_option",
+            "select dialog option": "select_option",
+            "map": "open_menu",
+            "open_map": "open_menu",
+            "open map": "open_menu",
+            "escape": "back",
+            "back": "back",
+            "go_back": "back",
+            "go back": "back",
+            "wait": "wait",
+            "observe": "observe",
+            "confirm": "confirm",
+            "click_button": "click_button",
+            "click button": "click_button",
+        }
+        return mappings.get(act, act)
+
     def explore_next_step(self, frame: np.ndarray, goal: str, state: ScreenStateClaim) -> ExplorationAction:
         """Invokes VLM/OCR reasoning to propose a safe exploratory action."""
         actionable = state.actionable_elements()
@@ -53,7 +115,25 @@ class ExplorationAgent:
         try:
             vlm_res = self._perception.analyze_vlm(frame, state.game_id)
             if vlm_res is not None and hasattr(vlm_res, "suggested_action") and vlm_res.suggested_action:
-                suggested_action = str(vlm_res.suggested_action)
+                # Resolve VLM Latency Mismatch: verify the visual state is still identical
+                current_state_str = str(state.screen_state)
+                vlm_state_str = str(getattr(vlm_res, "screen_state", ""))
+                if vlm_state_str and vlm_state_str != "unknown" and vlm_state_str != current_state_str:
+                    log.warning(
+                        "[ExplorationAgent] VLM latency mismatch: VLM state was %r but current state is %r. "
+                        "Discarding stale visual suggestion.",
+                        vlm_state_str,
+                        current_state_str,
+                    )
+                    return ExplorationAction(
+                        action_type="observe",
+                        target="screen",
+                        rationale=f"VLM suggestion stale due to transition: {vlm_state_str} -> {current_state_str}",
+                        expected_claim={"screen_state": current_state_str},
+                        requires_human_approval=False,
+                    )
+
+                suggested_action = self._normalize_vlm_action(str(vlm_res.suggested_action))
                 if suggested_action not in SAFE_EXPLORATION_ACTIONS:
                     log.warning("[ExplorationAgent] Unsafe VLM action rejected: %s", suggested_action)
                     return ExplorationAction(
@@ -69,7 +149,7 @@ class ExplorationAgent:
 
                 return ExplorationAction(
                     action_type=suggested_action,
-                    target=target_prompt,
+                    target=target_prompt or "target",
                     rationale=getattr(vlm_res, "scene_description", "VLM suggestion"),
                     expected_claim={"screen_state": getattr(vlm_res, "screen_state", state.screen_state)},
                     requires_human_approval=requires_approval,

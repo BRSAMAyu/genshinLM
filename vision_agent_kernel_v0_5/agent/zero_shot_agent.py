@@ -57,7 +57,11 @@ GAME_WINDOW_TITLES: dict[str, dict[str, str | list[str]]] = {
 # ---------------------------------------------------------------------------
 
 _VLM_ANALYSIS_PROMPT = """\
-Analyze this game screenshot in detail. Return strict JSON only:
+You are a high-precision game analysis unit. Analyze this screenshot of the game {game_name} in detail. Return strict JSON ONLY.
+
+Spatial Anchoring Rule: Ground all objects and UI elements in normalized coordinates [x, y] from 0.0 to 1.0, where (0.0,0.0) is the top-left, (0.5,0.5) is the center, and (1.0,1.0) is the bottom-right.
+
+JSON Schema:
 {{
   "screen_state": "overworld|combat|dialog|menu|map|loading|unknown",
   "player_status": {{
@@ -66,21 +70,21 @@ Analyze this game screenshot in detail. Return strict JSON only:
     "position_in_frame": "center|left|right|top|bottom"
   }},
   "visible_objects": [
-    {{"type": "npc|enemy|item|resource|marker|waypoint|chest|boss|collectible",
-     "position": "left|center_left|center|center_right|right",
-     "distance": "near|medium|far",
-     "description": "short description"}}
+    {{
+      "type": "npc|enemy|item|resource|marker|waypoint|chest|boss|collectible",
+      "description": "short description of the entity",
+      "screen_x": 0.5,
+      "screen_y": 0.5
+    }}
   ],
   "ui_elements": {{
-    "interaction_prompt": "interaction text or null",
-    "quest_text": "quest tracker text or null",
-    "notification": "any toast or notification text or null"
+    "interaction_prompt": "active F-key prompt text (e.g. 'F - Talk', 'F - Investigate') or null",
+    "quest_text": "active quest objective tracker text visible on the left or null",
+    "notification": "any toast message or alert text visible on screen or null"
   }},
-  "scene_description": "1-2 sentence description of the current scene",
+  "scene_description": "1-2 sentence description of the current screen context",
   "suggested_action": "move_forward|turn_left|turn_right|interact|attack|open_menu|wait|done"
 }}
-
-Game: {game_name}
 """
 
 _LLM_PLANNING_PROMPT = """\

@@ -133,16 +133,20 @@ class MainlineRunner:
         completed: set[str] = set()
         failed: set[str] = set()
 
-        for node_id in order:
+        execution_queue = list(order)
+        idx = 0
+        while idx < len(execution_queue):
             if time.perf_counter() - start > self._max_duration_sec:
                 log.warning("[MainlineRunner] Duration budget exhausted")
                 break
 
+            node_id = execution_queue[idx]
             node = graph.get_node(node_id)
             if node is None:
                 log.warning("[MainlineRunner] Node %r not found in graph, skipping", node_id)
                 result.skipped_nodes.append(node_id)
                 result.node_results.append(NodeResult(node_id, "skipped", error="node_not_found"))
+                idx += 1
                 continue
 
             # Check if predecessors completed
@@ -150,6 +154,7 @@ class MainlineRunner:
             if any(p in failed for p in preds):
                 result.skipped_nodes.append(node_id)
                 result.node_results.append(NodeResult(node_id, "skipped", error="predecessor_failed"))
+                idx += 1
                 continue
 
             # Execute node with retries
@@ -160,6 +165,21 @@ class MainlineRunner:
                 completed.add(node_id)
                 result.completed_nodes.append(node_id)
             else:
+                from planning.mainline.bagel_jit_router import BagelJitRouter
+                router = BagelJitRouter(graph)
+                mutated = router.handle_belief_falsification(
+                    falsified_belief_id=f"{node_id}_belief_0",
+                    failed_node_id=node_id,
+                )
+                if mutated:
+                    log.info("[MainlineRunner] Graph healed by JIT router. Recalculating topological order.")
+                    new_order = graph.topological_order()
+                    if new_order:
+                        # Rebuild execution queue with uncompleted nodes
+                        execution_queue = [nid for nid in new_order if nid not in completed]
+                        idx = 0
+                        continue
+
                 failed.add(node_id)
                 result.failed_nodes.append(node_id)
 
@@ -170,6 +190,7 @@ class MainlineRunner:
                 if event.result.status == "budget_exhausted":
                     log.warning("[MainlineRunner] Sentinel budget exhausted, aborting")
                     break
+            idx += 1
 
         result.duration_sec = time.perf_counter() - start
 

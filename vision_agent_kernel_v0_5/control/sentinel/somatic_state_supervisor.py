@@ -133,6 +133,7 @@ class SomaticStateSupervisor:
         self._stamina_history: list[float] = []
         self._health_history: list[float] = []
         self._frame_count = 0
+        self._food_count = 5  # default food inventory buffer
 
     @property
     def last_state(self) -> SomaticState | None:
@@ -251,10 +252,30 @@ class SomaticStateSupervisor:
         state = self.check_frame(frame, frame_id)
         intercepted = False
 
-        # Stamina critical: force halt immediately
+        # Stamina critical: force halt immediately and deploy wind glider if mid-climb/swimming
         if state.stamina_zone in (StaminaZone.CRITICAL, StaminaZone.EMPTY):
             log.warning("[Somatic] Stamina critical — halting movement")
             self._halt_all_movement(backend)
+            
+            # Resolve Gap 21: High-altitude Stamina Deprivation Wind-Glider deployment
+            if state.stamina_ratio < 0.15:
+                log.warning("[Somatic] Mid-climb exhaustion threat! Triggering wind glider landing fallback.")
+                try:
+                    # Let go of wall by pressing X, then double tap Space to glide
+                    backend.key_down("x", reason="let_go_of_wall")
+                    self._chunked_sleep(0.05)
+                    backend.key_up("x")
+                    self._chunked_sleep(0.15)
+                    backend.key_down("space", reason="deploy_glider_tap1")
+                    self._chunked_sleep(0.05)
+                    backend.key_up("space")
+                    self._chunked_sleep(0.1)
+                    backend.key_down("space", reason="deploy_glider_tap2")
+                    self._chunked_sleep(0.05)
+                    backend.key_up("space")
+                except Exception as e:
+                    log.error("[Somatic] failed to deploy wind glider: %s", e)
+
             self._recovery_mode = True
             intercepted = True
 
@@ -290,7 +311,25 @@ class SomaticStateSupervisor:
                 log.debug("[Somatic] key release failed for %s: %s", key, exc)
 
     def _execute_emergency_healing(self, backend) -> None:
-        """Trigger emergency food eating via UIFlow."""
+        """Trigger emergency food eating via UIFlow or Teleport to Statue if depleted."""
+        # Resolve Gap 18: Backpack Food Exhaustion check
+        if hasattr(self, "_food_count") and self._food_count <= 0:
+            log.warning("[Somatic] Emergency food supply depleted! Bypassing backpack and triggering emergency teleport recovery.")
+            try:
+                backend.key_down("m", reason="emergency_statue_teleport")
+                self._chunked_sleep(0.3)
+                backend.key_up("m")
+                self._chunked_sleep(1.0)
+                rect = backend.client_rect()
+                backend.click_at(rect.center[0], rect.center[1], reason="teleport_statue_selection")
+                self._chunked_sleep(0.5)
+                backend.key_down("enter", reason="confirm_statue_teleport")
+                self._chunked_sleep(0.1)
+                backend.key_up("enter")
+            except Exception as e:
+                log.error("[Somatic] Emergency statue teleport failed: %s", e)
+            return
+
         log.info("[Somatic] executing emergency food flow")
         try:
             from interaction.ui_flows import get_flow
@@ -303,6 +342,8 @@ class SomaticStateSupervisor:
             executor = UIFlowExecutor(state_bus=worker._state_bus, input_worker=worker)
             result = executor.execute(flow)
             log.info("[Somatic] food flow result: %s", result.status)
+            if result.status == "FAILED" or result.failure_code == "RESOURCE_DEPLETED":
+                self._food_count = 0
         except Exception as exc:
             log.error("[Somatic] emergency healing failed: %s", exc)
 

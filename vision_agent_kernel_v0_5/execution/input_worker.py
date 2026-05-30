@@ -46,6 +46,11 @@ class InputWorker:
         self._log_lock = threading.RLock()
         self._state_bus = state_bus
         self._target_window_title = target_window_title
+        self._lease_lock = threading.RLock()
+
+    @property
+    def lease_lock(self) -> threading.RLock:
+        return self._lease_lock
 
     @property
     def backend(self) -> ConsoleInputBackend:

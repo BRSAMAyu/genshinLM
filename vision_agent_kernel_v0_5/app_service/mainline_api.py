@@ -94,7 +94,7 @@ class MainlineAPI:
                 "skill_count": self._state.skill_count,
             }
 
-    def start(self, graph: MissionGraphV4 | None = None) -> dict[str, Any]:
+    def start(self, graph: MissionGraphV4 | None = None, live_mode: bool = False) -> dict[str, Any]:
         """POST /mainline/start — begin mission execution."""
         if graph is None:
             return {"ok": False, "reason": "no_graph"}
@@ -106,7 +106,16 @@ class MainlineAPI:
             self._state.runner_state = "running"
             self._state.mission_id = graph.mission_id
 
-        result = self._runner.run(graph)
+        if live_mode:
+            from planning.mainline.mainline_live_bridge import MainlineLiveBridge
+            bridge = MainlineLiveBridge()
+            try:
+                result = bridge.execute_live_mission(graph)
+            finally:
+                bridge.stop()
+        else:
+            result = self._runner.run(graph)
+
         with self._lock:
             self._last_result = result
             self._state.runner_state = "completed" if result.success else "error"

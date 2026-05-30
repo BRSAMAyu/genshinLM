@@ -17,7 +17,7 @@ class OcrResult:
 @dataclass(frozen=True, slots=True)
 class OcrConfig:
     language: str = "ch"
-    use_gpu: bool = False
+    use_gpu: bool = True
     det_limit_side_len: int = 960
     rec_batch_num: int = 6
     enable_mkldnn: bool = True

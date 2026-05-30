@@ -4,14 +4,23 @@ import logging
 import math
 import threading
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Callable
 
 from navigation.minimap_quest_reader import MinimapQuestReader
+from control.camera_servo import CameraServo, genshin_camera_servo_config
+from core.types import CameraControlError
 
 if TYPE_CHECKING:
     from execution.safe_window_backend import SafeWindowInputBackend
+    import numpy
 
 log = logging.getLogger(__name__)
+
+
+def _chunked_sleep(seconds: float, chunk: float = 0.05) -> None:
+    deadline = time.perf_counter() + seconds
+    while time.perf_counter() < deadline:
+        time.sleep(min(chunk, max(0.0, deadline - time.perf_counter())))
 
 
 class QuestMarkerFollower:
@@ -19,9 +28,15 @@ class QuestMarkerFollower:
 
     _ANGLE_THRESHOLD = math.pi / 8  # 22.5 degrees tolerance for forward
 
-    def __init__(self, backend: SafeWindowInputBackend, reader: MinimapQuestReader) -> None:
+    def __init__(
+        self,
+        backend: SafeWindowInputBackend,
+        reader: MinimapQuestReader,
+        servo: CameraServo | None = None,
+    ) -> None:
         self._backend = backend
         self._reader = reader
+        self._servo = servo or CameraServo(genshin_camera_servo_config())
 
     def navigate_to_marker(
         self,
@@ -38,7 +53,7 @@ class QuestMarkerFollower:
 
             frame = frame_source()
             if frame is None:
-                time.sleep(0.1)
+                _chunked_sleep(0.1)
                 continue
 
             if self._reader.is_at_destination(frame):
@@ -48,11 +63,52 @@ class QuestMarkerFollower:
             angle = self._reader.read_quest_direction(frame)
             if angle is None:
                 log.debug("[QuestFollower] no quest marker at step %d", step)
-                time.sleep(0.5)
+                _chunked_sleep(0.5)
                 continue
 
+            # Convert angle to camera error
+            error = CameraControlError(
+                yaw_error_deg=math.degrees(angle),
+                pitch_error_deg=0.0,
+                angular_distance_deg=abs(math.degrees(angle)),
+                target_confidence=1.0,
+                stale=False,
+            )
+
+            # Determine keys based on the quest marker angle
             keys = self._angle_to_keys(angle)
-            self._hold_keys_briefly(keys, step_interval)
+
+            # Press keys
+            for key in keys:
+                try:
+                    self._backend.key_down(key, reason="quest_follow")
+                except Exception:
+                    pass
+
+            # Rotate camera smoothly during the step_interval
+            intents = self._servo.step_multi(error, dt=step_interval)
+            total_duration = 0.0
+            for intent in intents:
+                if abs(intent.yaw_delta) > 1e-5 or abs(intent.pitch_delta) > 1e-5:
+                    try:
+                        self._backend.mouse_move(intent.yaw_delta, intent.pitch_delta, reason="quest_camera_servo")
+                    except Exception:
+                        pass
+                sleep_time = intent.duration_ms / 1000.0
+                _chunked_sleep(sleep_time)
+                total_duration += sleep_time
+
+            # If the camera servo didn't consume the full step_interval, sleep the remainder
+            remaining = step_interval - total_duration
+            if remaining > 0:
+                _chunked_sleep(remaining)
+
+            # Release keys
+            for key in keys:
+                try:
+                    self._backend.key_up(key, reason="quest_follow_done")
+                except Exception:
+                    pass
 
         log.warning("[QuestFollower] max_steps (%d) exhausted", max_steps)
         return False
@@ -81,16 +137,3 @@ class QuestMarkerFollower:
 
         return keys
 
-    def _hold_keys_briefly(self, keys: list[str], duration: float) -> None:
-        """Press keys for a brief duration."""
-        for key in keys:
-            try:
-                self._backend.key_down(key, reason="quest_follow")
-            except Exception:
-                pass
-        time.sleep(duration)
-        for key in keys:
-            try:
-                self._backend.key_up(key, reason="quest_follow_done")
-            except Exception:
-                pass

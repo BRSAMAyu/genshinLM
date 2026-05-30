@@ -52,25 +52,40 @@ class MousePathPolicy:
             return MousePath(self.mode, [end], 0)
         if self.steps <= 1 or self.mode == "straight":
             return MousePath(self.mode, [start, end], self.duration_ms)
+        
+        import random
         points: list[tuple[int, int]] = []
         sx, sy = start
         ex, ey = end
-        cx = (sx + ex) / 2.0
-        cy = min(sy, ey) - abs(ex - sx) * 0.08
+        
+        # Calculate human-like Cubic Bezier control points ( Minimum Jerk biological model )
+        deviation = abs(ex - sx) * 0.08
+        c1x = sx + (ex - sx) * 0.25 + random.uniform(-deviation, deviation)
+        c1y = sy + (ey - sy) * 0.25 - abs(ex - sx) * 0.04 + random.uniform(-deviation, deviation)
+        c2x = sx + (ex - sx) * 0.75 + random.uniform(-deviation, deviation)
+        c2y = sy + (ey - sy) * 0.75 + abs(ex - sx) * 0.04 + random.uniform(-deviation, deviation)
+        
         for i in range(self.steps + 1):
             t = i / self.steps
             if self.mode in {"bezier", "jitter_bounded"}:
-                x = (1 - t) * (1 - t) * sx + 2 * (1 - t) * t * cx + t * t * ex
-                y = (1 - t) * (1 - t) * sy + 2 * (1 - t) * t * cy + t * t * ey
+                # Cubic Bezier C2 continuous curve
+                x = (1.0 - t)**3 * sx + 3.0 * (1.0 - t)**2 * t * c1x + 3.0 * (1.0 - t) * t**2 * c2x + t**3 * ex
+                y = (1.0 - t)**3 * sy + 3.0 * (1.0 - t)**2 * t * c1y + 3.0 * (1.0 - t) * t**2 * c2y + t**3 * ey
             else:
                 x = sx + (ex - sx) * t
                 y = sy + (ey - sy) * t
+            
             if self.mode == "jitter_bounded" and 0 < i < self.steps:
-                jitter = self.max_jitter_px if i % 2 == 0 else -self.max_jitter_px
-                x += jitter
-                y -= jitter
+                # Biological micro-tremor model
+                tremor_x = random.uniform(-self.max_jitter_px, self.max_jitter_px)
+                tremor_y = random.uniform(-self.max_jitter_px, self.max_jitter_px)
+                x += tremor_x
+                y += tremor_y
             points.append((round(x), round(y)))
-        return MousePath(self.mode, points, self.duration_ms)
+            
+        # Non-deterministic timing jitter per path
+        jittered_duration = max(20, self.duration_ms + random.randint(-15, 15))
+        return MousePath(self.mode, points, jittered_duration)
 
 
 def mouse_policy_for_action_family(action_family: ActionFamily, *, dry_run: bool = False) -> MousePathPolicy:

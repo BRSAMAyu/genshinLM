@@ -32,18 +32,34 @@ from planning.screen_state_claim_builder import ClassifierOutput, OcrOutput, VLM
 log = logging.getLogger(__name__)
 
 _VLM_PROMPT = (
-    'Analyze this Genshin Impact screenshot. Return strict JSON only:\n'
-    '{\n'
-    '  "screen_state": "overworld|combat|turn_based_combat|dialog|menu|'
-    'map|loading|inventory|shop|quest_log|reward_screen|boss_fight|cutscene|unknown",\n'
-    '  "player_status": {"hp":"high/medium/low","stamina":"high/medium/low","location":"description"},\n'
-    '  "visible_objects": [{"type":"enemy|npc|item|chest|waypoint","description":"...","'
-    'position":"center|left|right","screen_x":0.5,"screen_y":0.5}],\n'
-    '  "ui_elements": {"element_id":"visible_text_or_label","click_x":0.5,"click_y":0.5},\n'
-    '  "scene_description": "what is happening on screen",\n'
+    "You are a visual perception unit for a Genshin Impact agent. Analyze this screenshot and return strict JSON ONLY.\n"
+    "Spatial Coordinates Rule: Ground all objects/UI elements in normalized coordinates (x, y) from 0.0 to 1.0, where (0.0, 0.0) is the top-left corner, (0.5, 0.5) is the exact center, and (1.0, 1.0) is the bottom-right corner.\n"
+    "\n"
+    "JSON Schema:\n"
+    "{\n"
+    '  "screen_state": "overworld|combat|dialog|menu|map|loading|inventory|shop|quest_log|reward_screen|boss_fight|cutscene|unknown",\n'
+    '  "player_status": {\n'
+    '    "hp": "high|medium|low|unknown",\n'
+    '    "stamina": "high|medium|low|unknown",\n'
+    '    "location": "description of the area or city"\n'
+    "  },\n"
+    '  "visible_objects": [\n'
+    '    {\n'
+    '      "type": "enemy|npc|item|chest|waypoint",\n'
+    '      "description": "detailed name/type of the object",\n'
+    '      "screen_x": 0.5,\n'
+    '      "screen_y": 0.5\n'
+    "    }\n"
+    "  ],\n"
+    '  "ui_elements": {\n'
+    '    "interaction_prompt": "the active F-key prompt text (e.g. \'F - Open Chest\', \'F - Talk\') or null",\n'
+    '    "quest_tracker_text": "active quest objective text visible on the left side of the screen or null",\n'
+    '    "menu_title": "title of any active overlay menu or null"\n'
+    "  },\n"
+    '  "scene_description": "1-2 sentences explaining what is happening on screen",\n'
     '  "death_screen": false,\n'
-    '  "suggested_action": "what the player should do next"\n'
-    '}'
+    '  "suggested_action": "concrete next step (e.g. \'interact\', \'walk_forward\', \'combat\', \'navigate_walk\')"\n'
+    "}"
 )
 
 _PERMANENT_HTTP_CODES = {401, 403}
@@ -266,10 +282,18 @@ class GenshinPerceptionProvider:
         start = cleaned.find("{")
         end = cleaned.rfind("}") + 1
         if start >= 0 and end > start:
+            candidate = cleaned[start:end]
             try:
-                return json.loads(cleaned[start:end])
+                return json.loads(candidate)
             except json.JSONDecodeError:
-                pass
+                # Fallback to ast.literal_eval to recover single-quoted JSON or dictionary representations
+                try:
+                    import ast
+                    res = ast.literal_eval(candidate)
+                    if isinstance(res, dict):
+                        return res
+                except Exception:
+                    pass
         return None
 
 
