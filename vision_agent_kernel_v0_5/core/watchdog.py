@@ -51,7 +51,10 @@ class Watchdog:
         interrupts: list[Interrupt] = []
         for owner, heartbeat_at in self._state_bus.heartbeat_snapshot().items():
             age = now - heartbeat_at
-            if age <= self._config.heartbeat_timeout_sec or owner in self._fired_sources:
+            if age <= self._config.heartbeat_timeout_sec:
+                self._fired_sources.discard(owner)
+                continue
+            if owner in self._fired_sources:
                 continue
             interrupt = Interrupt(
                 priority=0,

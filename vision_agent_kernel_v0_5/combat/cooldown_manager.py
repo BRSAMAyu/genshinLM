@@ -22,7 +22,11 @@ class CooldownManager:
 
     def update_from_ocr(self, skill_id: str, text: str, confidence: float = 0.8) -> CooldownState:
         digits = "".join(ch for ch in text if ch.isdigit())
-        remaining_ms = int(digits) * 1000 if digits else 0
+        if not digits:
+            return CooldownState(False, -1, confidence * 0.3)
+        remaining_ms = int(digits) * 1000
+        cap = self._configs.get(skill_id, SkillCooldownConfig(skill_id, 60000)).base_cooldown_ms
+        remaining_ms = min(remaining_ms, max(60000, cap))
         return CooldownState(remaining_ms <= 0, remaining_ms, confidence)
 
     def update_from_template(self, skill_id: str, is_grey: bool, confidence: float = 0.7) -> CooldownState:

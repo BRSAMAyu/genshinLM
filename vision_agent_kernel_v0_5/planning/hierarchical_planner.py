@@ -217,7 +217,7 @@ _ALLOWED_SEMANTIC_ACTIONS = {
     "observe", "go_back", "select_item", "buy_item", "use_item", "confirm",
     "interact", "move_forward", "open_map", "close_map", "select_waypoint",
     "dodge", "switch_char", "heal", "skip", "look", "jump", "dash",
-    "sprint", "swim",
+    "sprint", "swim", "climb", "glide",
 }
 
 

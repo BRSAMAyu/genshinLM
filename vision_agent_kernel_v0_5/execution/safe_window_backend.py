@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import ctypes
+import logging
 import threading
 from ctypes import wintypes
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 from core.timebase import Timebase
+
+log = logging.getLogger(__name__)
 
 if TYPE_CHECKING:
     from app_service.calibration import CalibrationProfile
@@ -87,6 +90,12 @@ class WindowRect:
         return (self.left + self.width // 2, self.top + self.height // 2)
 
 
+MOUSEEVENTF_WHEEL = 0x0800
+MOUSEEVENTF_XDOWN = 0x0080
+MOUSEEVENTF_XUP = 0x0100
+WHEEL_DELTA = 120
+
+
 class SafeWindowInputBackend:
     def __init__(
         self,
@@ -103,6 +112,7 @@ class SafeWindowInputBackend:
         self._configure_win32()
         self._released = True
         self._down_keys: set[str] = set()
+        self._mouse_down: bool = False
         self._lock = threading.RLock()
 
     @classmethod
@@ -182,6 +192,61 @@ class SafeWindowInputBackend:
         _time.sleep(0.02)
         self.left_click(reason=reason)
 
+    def right_click(self, reason: str = "") -> None:
+        self._ensure_target_focused()
+        down = INPUT(
+            type=INPUT_MOUSE,
+            union=INPUT_UNION(
+                mi=MOUSEINPUT(dx=0, dy=0, mouseData=0, dwFlags=MOUSEEVENTF_RIGHTDOWN, time=0, dwExtraInfo=ctypes.c_void_p(0)),
+            ),
+        )
+        up = INPUT(
+            type=INPUT_MOUSE,
+            union=INPUT_UNION(
+                mi=MOUSEINPUT(dx=0, dy=0, mouseData=0, dwFlags=MOUSEEVENTF_RIGHTUP, time=0, dwExtraInfo=ctypes.c_void_p(0)),
+            ),
+        )
+        self._user32.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT))
+        import time as _time
+        _time.sleep(0.05)
+        self._user32.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
+        self._released = False
+
+    def mouse_scroll(self, delta: int = -1, reason: str = "") -> None:
+        """Scroll mouse wheel. delta=-1 scrolls up (zoom in), delta=1 scrolls down (zoom out)."""
+        self._ensure_target_focused()
+        inp = INPUT(
+            type=INPUT_MOUSE,
+            union=INPUT_UNION(
+                mi=MOUSEINPUT(dx=0, dy=0, mouseData=delta * WHEEL_DELTA, dwFlags=MOUSEEVENTF_WHEEL, time=0, dwExtraInfo=ctypes.c_void_p(0)),
+            ),
+        )
+        self._user32.SendInput(1, ctypes.byref(inp), ctypes.sizeof(INPUT))
+
+    def hold_click(self, duration_sec: float = 0.5, reason: str = "") -> None:
+        """Hold left mouse button for a duration (charged attacks), with interruptible focus checks."""
+        self._ensure_target_focused()
+        down = INPUT(
+            type=INPUT_MOUSE,
+            union=INPUT_UNION(
+                mi=MOUSEINPUT(dx=0, dy=0, mouseData=0, dwFlags=MOUSEEVENTF_LEFTDOWN, time=0, dwExtraInfo=ctypes.c_void_p(0)),
+            ),
+        )
+        self._user32.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT))
+        with self._lock:
+            self._mouse_down = True
+        import time as _time
+        elapsed = 0.0
+        chunk = 0.05
+        while elapsed < duration_sec:
+            _time.sleep(min(chunk, duration_sec - elapsed))
+            elapsed += chunk
+            if not self.is_target_focused():
+                self._send_mouse_up()
+                return
+        self._send_mouse_up()
+        self._released = False
+
     def key_down(self, key: str, reason: str = "") -> None:
         self._ensure_target_focused()
         vk = self._resolve_vk(key)
@@ -248,6 +313,8 @@ class SafeWindowInputBackend:
         with self._lock:
             snapshot = sorted(self._down_keys)
             self._down_keys.clear()
+            mouse_was_down = self._mouse_down
+            self._mouse_down = False
         self._released = True
         for key in snapshot:
             vk = self._resolve_vk(key)
@@ -264,11 +331,25 @@ class SafeWindowInputBackend:
                 ),
             )
             self._user32.SendInput(1, ctypes.byref(input_packet), ctypes.sizeof(INPUT))
+        if mouse_was_down:
+            self._send_mouse_up()
         print(
             "[SafeWindowInputBackend] "
-            f"{self._timebase.now():.6f} release_all keys={snapshot} reason={reason!r}",
+            f"{self._timebase.now():.6f} release_all keys={snapshot} mouse={mouse_was_down} reason={reason!r}",
             flush=True,
         )
+
+    def _send_mouse_up(self) -> None:
+        """Send MOUSEEVENTF_LEFTUP to release a held mouse button."""
+        up = INPUT(
+            type=INPUT_MOUSE,
+            union=INPUT_UNION(
+                mi=MOUSEINPUT(dx=0, dy=0, mouseData=0, dwFlags=MOUSEEVENTF_LEFTUP, time=0, dwExtraInfo=ctypes.c_void_p(0)),
+            ),
+        )
+        self._user32.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
+        with self._lock:
+            self._mouse_down = False
 
     def window_rect(self) -> WindowRect:
         hwnd = self._find_target_window()
@@ -320,22 +401,40 @@ class SafeWindowInputBackend:
                 )
 
     def _force_foreground(self, hwnd: int) -> None:
-        """Attempt to force a window to the foreground despite Windows restrictions."""
+        """Attempt to force a window to the foreground with a timeout on AttachThreadInput."""
         import ctypes
         foreground = self._user32.GetForegroundWindow()
         if foreground == hwnd:
             return
-        # Get thread info
         fg_tid = self._user32.GetWindowThreadProcessId(foreground, None)
         cur_tid = ctypes.windll.kernel32.GetCurrentThreadId()
-        # Attach our thread input to the foreground thread
-        self._user32.AttachThreadInput(cur_tid, fg_tid, True)
-        try:
-            self._user32.SetForegroundWindow(hwnd)
-            self._user32.BringWindowToTop(hwnd)
-            self._user32.ShowWindow(hwnd, 9)  # SW_RESTORE
-        finally:
-            self._user32.AttachThreadInput(cur_tid, fg_tid, False)
+        # AttachThreadInput can deadlock if the foreground thread is hung.
+        # Run it in a separate thread with a timeout.
+        attached = threading.Event()
+        attach_error: list[Exception | None] = [None]
+
+        def _attach_and_bring() -> None:
+            try:
+                self._user32.AttachThreadInput(cur_tid, fg_tid, True)
+                attached.set()
+                self._user32.SetForegroundWindow(hwnd)
+                self._user32.BringWindowToTop(hwnd)
+                self._user32.ShowWindow(hwnd, 9)
+                self._user32.AttachThreadInput(cur_tid, fg_tid, False)
+            except Exception as exc:
+                attach_error[0] = exc
+                if attached.is_set():
+                    try:
+                        self._user32.AttachThreadInput(cur_tid, fg_tid, False)
+                    except Exception:
+                        pass
+
+        t = threading.Thread(target=_attach_and_bring, daemon=True)
+        t.start()
+        t.join(timeout=2.0)
+        if t.is_alive():
+            # AttachThreadInput hung — skip and let focus check fail naturally
+            log.warning("[SafeWindowInputBackend] AttachThreadInput timed out, skipping force_foreground")
 
     def _find_target_window(self) -> int:
         hwnd = self._user32.FindWindowW(None, self.target_window_title)

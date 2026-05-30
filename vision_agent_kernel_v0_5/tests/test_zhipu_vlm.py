@@ -98,9 +98,9 @@ class TestFrameEncoding:
         frame[100:200, 100:200] = [255, 0, 0]
         image_input = _frame_to_image_input(frame, frame_id=42)
         assert image_input.frame_id == 42
-        assert image_input.mime_type == "image/png"
+        assert image_input.mime_type in {"image/png", "image/jpeg"}
         assert len(image_input.data) > 0
-        assert image_input.data[:4] == b"\x89PNG"
+        assert image_input.data[:4] == b"\x89PNG" or image_input.data[:2] == b"\xff\xd8"
 
 
 class TestGameKeymaps:
@@ -133,16 +133,28 @@ class TestZeroShotAgentInit:
             goal="test",
             api_key="test_key",
         )
-        assert agent._input.target_window_title == "Genshin Impact"
+        assert agent._input.target_window_title == "Aurora Genshin-like Testbed"
 
     def test_agent_custom_window(self):
         agent = ZeroShotAgent(
             game="genshin",
             goal="test",
             api_key="test_key",
-            window_title="原神",
+            window_title="Aurora QA Safe Window",
         )
-        assert agent._input.target_window_title == "原神"
+        assert agent._input.target_window_title == "Aurora QA Safe Window"
+
+    def test_agent_rejects_non_authorized_nondry_window(self):
+        import pytest
+
+        with pytest.raises(ValueError):
+            ZeroShotAgent(
+                game="genshin",
+                goal="test",
+                api_key="test_key",
+                window_title="Untrusted Window",
+                dry_run=False,
+            )
 
 
 class TestVLMAnalysis:

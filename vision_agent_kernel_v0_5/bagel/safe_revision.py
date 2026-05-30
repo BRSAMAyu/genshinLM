@@ -34,6 +34,22 @@ from bagel.fig_schema import (
 
 log = logging.getLogger(__name__)
 
+RuntimeProfile = str
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeRiskPolicy:
+    """BAGEL v2.1 runtime profile for verification-adjusted residual risk."""
+    profile: RuntimeProfile = "safe_mode"
+    residual_risk_kappa: float = 0.35
+    min_verification_quality: float = 0.5
+
+    @staticmethod
+    def for_profile(profile: RuntimeProfile) -> "RuntimeRiskPolicy":
+        if profile == "performance_mode":
+            return RuntimeRiskPolicy(profile=profile, residual_risk_kappa=0.55, min_verification_quality=0.35)
+        return RuntimeRiskPolicy(profile="safe_mode", residual_risk_kappa=0.35, min_verification_quality=0.5)
+
 
 @dataclass(frozen=True, slots=True)
 class CascadeReport:
@@ -48,7 +64,10 @@ class CascadeReport:
     affected_ratio: float
     coupling: float
     verification_coverage: float
+    verification_quality: float
     cascade_risk: float
+    residual_risk: float
+    runtime_profile: RuntimeProfile
     is_safe: bool
     reason: str
 
@@ -72,6 +91,8 @@ class SafeRevisionEngine:
     kappa: float = 0.5       # Max acceptable cascade risk
     max_impact: float = 10   # Max acceptable affected nodes
     coupling_weight: float = 1.0
+    runtime_profile: RuntimeProfile = "safe_mode"
+    verification_quality_default: float = 0.6
 
     def assess_cascade(
         self,
@@ -93,7 +114,8 @@ class SafeRevisionEngine:
                 affected_action_ids=(), affected_belief_ids=(),
                 total_actions=len(snap["actions"]), total_beliefs=len(snap["beliefs"]),
                 affected_ratio=0.0, coupling=0.0,
-                verification_coverage=1.0, cascade_risk=0.0,
+                verification_coverage=1.0, verification_quality=1.0,
+                cascade_risk=0.0, residual_risk=0.0, runtime_profile=self.runtime_profile,
                 is_safe=True, reason="belief_not_found",
             )
 
@@ -128,11 +150,21 @@ class SafeRevisionEngine:
         )
         verification_coverage = verified_count / max(len(affected_actions), 1)
 
-        # Cascade risk
-        cascade_risk = affected_ratio * coupling * self.coupling_weight * (1 - verification_coverage)
+        policy = RuntimeRiskPolicy.for_profile(self.runtime_profile)
+        verification_quality = max(0.0, min(1.0, self.verification_quality_default))
+
+        # Raw cascade risk is topology-only; residual risk accounts for the
+        # independent verification quality available after revision.
+        cascade_risk = affected_ratio * coupling * self.coupling_weight
+        verified_reduction = verification_coverage * verification_quality
+        residual_risk = cascade_risk * (1 - verified_reduction)
 
         # Small absolute impact is always safe regardless of ratio
-        is_safe = (cascade_risk < self.kappa and len(affected_actions) <= self.max_impact) or len(affected_actions) <= 2
+        is_safe = (
+            residual_risk < min(self.kappa, policy.residual_risk_kappa)
+            and verification_quality >= policy.min_verification_quality
+            and len(affected_actions) <= self.max_impact
+        ) or len(affected_actions) <= 2
 
         return CascadeReport(
             belief_id=belief_id,
@@ -145,9 +177,12 @@ class SafeRevisionEngine:
             affected_ratio=affected_ratio,
             coupling=coupling,
             verification_coverage=verification_coverage,
+            verification_quality=verification_quality,
             cascade_risk=cascade_risk,
+            residual_risk=residual_risk,
+            runtime_profile=policy.profile,
             is_safe=is_safe,
-            reason="safe" if is_safe else f"cascade_risk={cascade_risk:.3f}",
+            reason="safe" if is_safe else f"residual_risk={residual_risk:.3f}",
         )
 
     def decide(
@@ -167,7 +202,7 @@ class SafeRevisionEngine:
                 cascade_report=report,
                 affected_action_ids=report.affected_action_ids,
                 affected_belief_ids=report.affected_belief_ids,
-                estimated_cost=report.cascade_risk * 10,
+                estimated_cost=report.residual_risk * 10,
             )
 
         if new_lifecycle == "retired":

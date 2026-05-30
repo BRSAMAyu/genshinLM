@@ -119,14 +119,14 @@ class EvolutionEngine:
     def handle_failure(
         self, skill_name: str, failure_code: str, observation_data: dict[str, Any],
     ) -> dict[str, Any] | None:
-        # Repair cooldown: skip if same skill failed too recently
-        import time as _time
-        now = _time.perf_counter()
-        last_repair = self._repair_cooldowns.get(skill_name, 0.0)
-        if now - last_repair < self._repair_cooldown_sec:
-            return None
-
         with self._lock:
+            # Repair cooldown: skip if same skill failed too recently
+            import time as _time
+            now = _time.perf_counter()
+            last_repair = self._repair_cooldowns.get(skill_name, 0.0)
+            if now - last_repair < self._repair_cooldown_sec:
+                return None
+
             # Cap total repair sessions
             if len(self._repair_sessions) >= self._max_repair_sessions:
                 return None
@@ -362,6 +362,9 @@ class EvolutionEngine:
         # Structural validation for all skills: check steps have valid action types,
         # anchors are non-empty for anchor actions, and timeouts are positive.
         proposed_steps = patch.get("proposed_steps", [])
+        if skill_id.startswith("induced_") and not proposed_steps:
+            patch["replay_result"] = {"passed": False, "reason": "induced_skill_has_no_steps"}
+            return False
         for step in proposed_steps:
             action_type = step.get("action_type", "") if isinstance(step, dict) else getattr(step, "action_type", "")
             if not action_type:

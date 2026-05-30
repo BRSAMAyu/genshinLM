@@ -223,10 +223,8 @@ class TestEvolutionEngineInducedValidation(unittest.TestCase):
             engine = self._make_engine(Path(tmp))
             patch_dict = {"skill_id": "induced_open_chest", "proposed_steps": []}
             result = engine._verify_in_sandbox(patch_dict)
-            # No steps = fail (structural check)
-            # NOTE: induced_ skills pass if they have no proposed_steps (legacy path only)
-            # The actual validation applies to proposed_steps list content
-            self.assertIsNotNone(patch_dict.get("replay_result"))
+            self.assertFalse(result, "Empty induced skill must fail structural validation")
+            self.assertEqual(patch_dict.get("replay_result", {}).get("reason"), "induced_skill_has_no_steps")
 
     def test_induced_with_valid_steps_passes(self):
         import tempfile

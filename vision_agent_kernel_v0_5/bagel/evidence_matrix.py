@@ -33,6 +33,14 @@ from typing import Any, Literal
 EvidenceValue = float  # +1.0, 0.0, -1.0, or float("nan")
 
 EvidencePolarity = Literal["support", "refute", "neutral", "insufficient", "environment_error"]
+EvidenceSubtype = Literal[
+    "claim_falsifying",
+    "action_effect_falsifying",
+    "implementation_ambiguous",
+    "confirmatory",
+    "discriminative",
+    "exploratory",
+]
 NonDecidableSignal = Literal["timeout", "nan", "insufficient_signal", "flaky_result", "environment_error"]
 
 
@@ -48,6 +56,10 @@ class EvidenceSignal:
     source: str = ""
     description: str = ""
     timestamp: float = 0.0
+    relevance: float = 1.0
+    direction: float = 0.0
+    subtype: EvidenceSubtype = "discriminative"
+    hard_falsification: bool = False
 
     def __post_init__(self) -> None:
         if self.timestamp == 0.0:
@@ -62,6 +74,18 @@ class EvidenceSignal:
         if self.polarity == "neutral":
             return 0.0
         return float("nan")
+
+    @property
+    def effective_weight(self) -> float:
+        return max(0.0, min(1.0, self.relevance)) * self.weight
+
+    @property
+    def can_hard_falsify(self) -> bool:
+        if self.polarity != "refute":
+            return False
+        if self.subtype in {"exploratory", "implementation_ambiguous", "confirmatory"}:
+            return False
+        return self.hard_falsification or self.is_core_probe
 
 
 @dataclass(frozen=True, slots=True)
@@ -89,6 +113,42 @@ class BoundedAsymmetricScore:
     related_density: float
     bounded_bonus: float
     score: float
+
+
+@dataclass(frozen=True, slots=True)
+class ThresholdGatedFusion:
+    """BAGEL v2.1 fusion gate for attribution evidence."""
+    low: float = 0.15
+    high: float = 0.75
+
+    def state(self, score: float) -> Literal["insufficient", "suspect", "decisive"]:
+        magnitude = abs(score)
+        if magnitude < self.low:
+            return "insufficient"
+        if magnitude >= self.high:
+            return "decisive"
+        return "suspect"
+
+
+@dataclass(frozen=True, slots=True)
+class AttributionRankEntry:
+    """Ranking by evidence only; repair cost and risk are intentionally excluded."""
+    belief_id: str
+    score: float
+    gate_state: str
+    core_contradiction: bool
+    conflict_detected: bool
+
+
+@dataclass(frozen=True, slots=True)
+class RepairPriorityEntry:
+    """Repair ranking combines attribution with cascade/cost/reversibility."""
+    belief_id: str
+    attribution_score: float
+    residual_risk: float
+    estimated_cost: float
+    reversibility: float
+    priority: float
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,21 +233,21 @@ class EvidenceMatrix:
             if math.isnan(val):
                 continue
             if val > 0:
-                w = sig.weight
+                w = sig.effective_weight
                 if sig.is_core_probe:
                     w *= 2.0  # Core probes have higher weight
                 support_weights.append(w)
                 relevant_weights.append(w)
             elif val < 0:
-                w = sig.weight
-                if sig.is_core_probe and w >= self.core_probe_veto_threshold:
+                w = sig.effective_weight
+                if sig.can_hard_falsify and w >= self.core_probe_veto_threshold:
                     core_contradiction = True
                     w *= 3.0  # Core contradiction is extremely strong
                 refute_weights.append(w)
                 relevant_weights.append(w)
             else:
                 # neutral (0) — contributes to relevance count but not support/refute
-                relevant_weights.append(sig.weight * 0.5)
+                relevant_weights.append(sig.effective_weight * 0.5)
 
         # C_i = max support weight
         c_i = max(support_weights) if support_weights else 0.0
@@ -235,6 +295,48 @@ class EvidenceMatrix:
         scores = self.score_all()
         ranked = sorted(scores.values(), key=lambda s: s.score)
         return ranked[:limit]
+
+    def attribution_rank(
+        self,
+        limit: int = 10,
+        fusion: ThresholdGatedFusion | None = None,
+    ) -> list[AttributionRankEntry]:
+        """Rank suspected faulty beliefs using evidence only."""
+        gate = fusion or ThresholdGatedFusion()
+        entries = [
+            AttributionRankEntry(
+                belief_id=s.belief_id,
+                score=s.score,
+                gate_state=gate.state(s.score),
+                core_contradiction=s.core_contradiction,
+                conflict_detected=s.conflict_detected,
+            )
+            for s in self.score_all().values()
+        ]
+        return sorted(entries, key=lambda e: e.score)[:limit]
+
+    @staticmethod
+    def repair_priority(
+        score: EvidenceScore,
+        *,
+        residual_risk: float,
+        estimated_cost: float,
+        reversibility: float,
+    ) -> RepairPriorityEntry:
+        """Compute repair priority after attribution rank is known."""
+        suspicion = max(0.0, -score.score)
+        safe_gain = max(0.0, 1.0 - residual_risk)
+        reversible_gain = max(0.0, min(1.0, reversibility))
+        cost_penalty = max(0.0, estimated_cost)
+        priority = (suspicion * (0.5 + 0.5 * reversible_gain) * safe_gain) / (1.0 + cost_penalty)
+        return RepairPriorityEntry(
+            belief_id=score.belief_id,
+            attribution_score=score.score,
+            residual_risk=residual_risk,
+            estimated_cost=estimated_cost,
+            reversibility=reversible_gain,
+            priority=priority,
+        )
 
     def clear(self) -> int:
         """Clear all signals. Returns count of signals removed."""

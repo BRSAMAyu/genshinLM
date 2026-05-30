@@ -211,32 +211,26 @@ class DecisionMemory:
         cutoff = time.time() - (max_age_days * 86400)
         conn = self._conn_ctx()
 
-        # Fetch IDs of the top-3 records per group to protect them.
-        # ROW_NUMBER() OVER (PARTITION BY...) is supported in SQLite 3.25+.
-        protected_ids_rows = conn.execute(
+        # Perform the delete in a single query using a subquery to avoid SQLite variable limits
+        cursor = conn.execute(
             """
-            SELECT strategy_id
-            FROM (
-                SELECT strategy_id,
-                       ROW_NUMBER() OVER (
-                           PARTITION BY goal, capsule_id
-                           ORDER BY confidence DESC, created_at DESC
-                       ) AS rn
-                FROM strategies
-            ) ranked
-            WHERE rn <= 3
-            """
-        ).fetchall()
-        protected_ids = {row[0] for row in protected_ids_rows}
-
-        if protected_ids:
-            placeholders = ",".join(["?"] * len(protected_ids))
-            cursor = conn.execute(
-                f"DELETE FROM strategies WHERE created_at < ? AND strategy_id NOT IN ({placeholders})",
-                (cutoff, *protected_ids),
-            )
-        else:
-            cursor = conn.execute("DELETE FROM strategies WHERE created_at < ?", (cutoff,))
+            DELETE FROM strategies 
+            WHERE created_at < ? 
+              AND strategy_id NOT IN (
+                  SELECT strategy_id
+                  FROM (
+                      SELECT strategy_id,
+                             ROW_NUMBER() OVER (
+                                 PARTITION BY goal, capsule_id
+                                 ORDER BY confidence DESC, created_at DESC
+                             ) AS rn
+                      FROM strategies
+                  ) ranked
+                  WHERE rn <= 3
+              )
+            """,
+            (cutoff,),
+        )
 
         conn.commit()
         return cursor.rowcount

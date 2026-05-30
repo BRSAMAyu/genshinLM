@@ -135,7 +135,13 @@ class PlaybookExecutor:
         self._rotation_pos = snapshot.rotation_position
         self._elapsed_ms = snapshot.elapsed_ms
         self._interrupts = snapshot.interrupts_handled
-        self._state = PlaybookState(snapshot.state)
+        try:
+            state = PlaybookState(snapshot.state)
+        except ValueError:
+            state = PlaybookState.IDLE
+        if state == PlaybookState.INTERRUPTED:
+            state = PlaybookState.EXECUTING
+        self._state = state
 
     @property
     def state(self) -> PlaybookState:
@@ -159,16 +165,22 @@ class PlaybookExecutor:
         if ">" in condition:
             parts = condition.split(">")
             if len(parts) == 2:
-                key = parts[0].strip()
-                threshold = float(parts[1].strip())
-                return float(context.get(key, 0.0)) > threshold
+                try:
+                    key = parts[0].strip()
+                    threshold = float(parts[1].strip())
+                    return float(context.get(key, 0.0)) > threshold
+                except (ValueError, TypeError):
+                    return False
 
         if "<" in condition:
             parts = condition.split("<")
             if len(parts) == 2:
-                key = parts[0].strip()
-                threshold = float(parts[1].strip())
-                return float(context.get(key, 0.0)) < threshold
+                try:
+                    key = parts[0].strip()
+                    threshold = float(parts[1].strip())
+                    return float(context.get(key, 0.0)) < threshold
+                except (ValueError, TypeError):
+                    return False
 
         return False
 

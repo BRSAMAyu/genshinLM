@@ -1,17 +1,11 @@
-"""Zero-shot game control agent — capture → VLM → LLM → execute.
+"""Zero-shot QA/testbed control agent: capture -> VLM -> LLM -> safe backend.
 
 Usage:
-    # Set your API key first:
-    set ZHIPU_API_KEY=your_key_here
+    # Store your local API key once:
+    python scripts/manage_local_secrets.py set ZHIPU_API_KEY
 
-    # Run with Genshin:
-    python scripts/run_zero_shot.py --game genshin --goal "walk to the teleport waypoint ahead"
-
-    # Run with HSR:
-    python scripts/run_zero_shot.py --game hsr --goal "complete daily rewards collection"
-
-    # Custom window title:
-    python scripts/run_zero_shot.py --game genshin --goal "explore" --window "原神"
+    # Run against an Aurora safe-window/testbed title:
+    python scripts/run_zero_shot.py --game genshin --goal "walk to the waypoint" --window "Aurora Genshin-like Testbed"
 
     # Use Coding Plan endpoint:
     python scripts/run_zero_shot.py --game genshin --goal "walk forward" --base-url https://open.bigmodel.cn/api/coding/paas/v4/chat/completions
@@ -27,7 +21,7 @@ from agent.zero_shot_agent import ZeroShotAgent
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Zero-shot game control agent")
+    parser = argparse.ArgumentParser(description="Zero-shot QA/testbed control agent")
     parser.add_argument("--game", choices=["genshin", "hsr"], default="genshin", help="Target game")
     parser.add_argument("--goal", type=str, required=True, help="What you want the agent to achieve")
     parser.add_argument("--api-key", type=str, default=None, help="Zhipu API key (or set ZHIPU_API_KEY)")
@@ -38,11 +32,19 @@ def main() -> None:
     parser.add_argument("--max-iterations", type=int, default=30, help="Max agent loop iterations")
     parser.add_argument("--vlm-interval", type=float, default=3.0, help="Seconds between VLM calls")
     parser.add_argument("--dry-run", action="store_true", help="Print actions without executing")
+    parser.add_argument(
+        "--execute",
+        action="store_true",
+        help="Send input only to an explicitly authorized Aurora QA safe-window",
+    )
     args = parser.parse_args()
 
-    api_key = args.api_key or os.getenv("ZHIPU_API_KEY", "")
+    from core.local_secret_store import get_secret
+
+    api_key = args.api_key or os.getenv("ZHIPU_API_KEY", "") or get_secret("ZHIPU_API_KEY")
     if not api_key:
-        print("Error: ZHIPU_API_KEY not set. Use --api-key or set ZHIPU_API_KEY environment variable.")
+        print("Error: ZHIPU_API_KEY not set. Use --api-key, set env var, or run:")
+        print("  python scripts/manage_local_secrets.py set ZHIPU_API_KEY")
         sys.exit(1)
 
     base_url = args.base_url or os.getenv(
@@ -51,7 +53,7 @@ def main() -> None:
     )
 
     print("=" * 60, flush=True)
-    print("Zero-Shot Game Control Agent", flush=True)
+    print("Zero-Shot QA/Testbed Control Agent", flush=True)
     print(f"  Game: {args.game}", flush=True)
     print(f"  Goal: {args.goal}", flush=True)
     print(f"  VLM:  {args.vlm_model}", flush=True)
@@ -69,6 +71,7 @@ def main() -> None:
         window_title=args.window,
         max_iterations=args.max_iterations,
         vlm_interval_sec=args.vlm_interval,
+        dry_run=(not args.execute) or args.dry_run,
     )
 
     result = agent.run()

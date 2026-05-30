@@ -2,8 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-import cv2
 import numpy as np
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None  # type: ignore[assignment]
 
 
 @dataclass(frozen=True, slots=True)
@@ -24,8 +28,11 @@ class GenshinScreenClassifier:
         self._hp_bar_roi = (610, 970, 1310, 1010)
         self._skill_icon_roi = (1490, 940, 1890, 1070)
         self._dialog_roi = (0, 756, 1920, 1080)
+        self._combat_indicator_roi = (770, 930, 850, 970)
 
     def classify(self, frame: np.ndarray) -> ScreenState:
+        if cv2 is None:
+            return ScreenState(state="unknown", confidence=0.1, indicators={})
         h, w = frame.shape[:2]
         sx = w / self._REF_W
         sy = h / self._REF_H
@@ -34,8 +41,9 @@ class GenshinScreenClassifier:
         loading = self._detect_loading_screen(frame, dark)
         dialog = self._detect_dialog_box(frame, sx, sy)
         minimap = self._detect_minimap(frame, sx, sy)
-        hp_bar = self._detect_hp_bar(frame, sx, sy)
+        hp_bar, hp_red_ratio = self._detect_hp_bar(frame, sx, sy)
         skill_icons = self._detect_skill_icons(frame, sx, sy)
+        combat = self._detect_combat_indicator(frame, sx, sy)
 
         indicators: dict[str, bool] = {
             "dark_frame": bool(dark),
@@ -44,12 +52,16 @@ class GenshinScreenClassifier:
             "minimap": bool(minimap),
             "hp_bar": bool(hp_bar),
             "skill_icons": bool(skill_icons),
+            "combat": bool(combat),
         }
 
         if loading:
             return ScreenState(state="loading_screen", confidence=0.9, indicators=indicators)
         if dialog:
             return ScreenState(state="dialog", confidence=0.85, indicators=indicators)
+        # Combat: minimap + HP bar + red HP damage or combat indicator
+        if minimap and hp_bar and (combat or hp_red_ratio > 0.3):
+            return ScreenState(state="combat", confidence=0.85, indicators=indicators)
         if minimap and hp_bar:
             return ScreenState(state="world_hud", confidence=0.9, indicators=indicators)
         if minimap:
@@ -79,19 +91,35 @@ class GenshinScreenClassifier:
         )
         return circles is not None and len(circles) > 0
 
-    def _detect_hp_bar(self, frame: np.ndarray, sx: float, sy: float) -> bool:
+    def _detect_hp_bar(self, frame: np.ndarray, sx: float, sy: float) -> tuple[bool, float]:
+        """Detect HP bar and return (detected, red_ratio)."""
         x1, y1, x2, y2 = self._scale_roi(self._hp_bar_roi, sx, sy)
         roi = frame[y1:y2, x1:x2]
         if roi.size == 0:
-            return False
+            return False, 0.0
         hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
         green_mask = cv2.inRange(hsv, (35, 80, 80), (85, 255, 255))
         red_mask_low = cv2.inRange(hsv, (0, 80, 80), (10, 255, 255))
         red_mask_high = cv2.inRange(hsv, (170, 80, 80), (180, 255, 255))
         yellow_mask = cv2.inRange(hsv, (20, 80, 80), (35, 255, 255))
-        total = green_mask.sum() + red_mask_low.sum() + red_mask_high.sum() + yellow_mask.sum()
-        threshold = roi.shape[0] * roi.shape[1] * 0.15
-        return total > threshold
+        pixel_count = roi.shape[0] * roi.shape[1]
+        green_px = np.count_nonzero(green_mask)
+        red_px = np.count_nonzero(red_mask_low) + np.count_nonzero(red_mask_high)
+        yellow_px = np.count_nonzero(yellow_mask)
+        total_hp_px = green_px + red_px + yellow_px
+        has_hp = total_hp_px > pixel_count * 0.05
+        red_ratio = red_px / max(total_hp_px, 1)
+        return has_hp, red_ratio
+
+    def _detect_combat_indicator(self, frame: np.ndarray, sx: float, sy: float) -> bool:
+        """Detect combat indicator (red flash / damage numbers near HP bar)."""
+        x1, y1, x2, y2 = self._scale_roi(self._combat_indicator_roi, sx, sy)
+        roi = frame[y1:y2, x1:x2]
+        if roi.size == 0:
+            return False
+        hsv = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
+        red_mask = cv2.inRange(hsv, (0, 120, 120), (10, 255, 255)) | cv2.inRange(hsv, (170, 120, 120), (180, 255, 255))
+        return np.count_nonzero(red_mask) > roi.shape[0] * roi.shape[1] * 0.2
 
     def _detect_skill_icons(self, frame: np.ndarray, sx: float, sy: float) -> bool:
         x1, y1, x2, y2 = self._scale_roi(self._skill_icon_roi, sx, sy)
@@ -119,7 +147,8 @@ class GenshinScreenClassifier:
         mean_val = float(np.mean(gray))
         edges = cv2.Canny(gray, 50, 150)
         edge_density = float(edges.sum()) / edges.size
-        return 30.0 < mean_val < 160.0 and edge_density > 5.0
+        # Tightened thresholds: mean 30-140 (was 30-160), edge_density > 15 (was > 5)
+        return 30.0 < mean_val < 140.0 and edge_density > 15.0
 
     def _is_dark_frame(self, frame: np.ndarray) -> bool:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 else frame
@@ -127,7 +156,7 @@ class GenshinScreenClassifier:
 
     @staticmethod
     def _scale_roi(
-        roi: tuple[int, int, int, int], sx: float, sy: float
+        roi: tuple[int, int, int, int], sx: float, sy: float,
     ) -> tuple[int, int, int, int]:
         x1, y1, x2, y2 = roi
         return (int(x1 * sx), int(y1 * sy), int(x2 * sx), int(y2 * sy))

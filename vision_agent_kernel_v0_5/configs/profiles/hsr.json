@@ -1,8 +1,8 @@
 {
   "profile_id": "hsr",
-  "window_title": "崩坏：星穹铁道",
-  "alt_window_title": "Honkai: Star Rail",
-  "process_name": "StarRail.exe",
+  "window_title": "Aurora QA Safe Window",
+  "alt_window_title": "Aurora Pseudo3D",
+  "process_name": "aurora_testbed_window",
   "source_resolution": [0, 0],
   "normalized_resolution": [1280, 720],
   "environment": "hsr",

@@ -5,6 +5,7 @@ import logging
 import threading
 import time
 import uuid
+from collections import deque
 from dataclasses import dataclass, field
 from typing import Any, Protocol
 
@@ -45,11 +46,7 @@ except Exception:  # pragma: no cover
 
 
 class _NullStateBus:
-    """Minimal null-object satisfying the StateBus interface used by EvolutionEngine.
-
-    Used when no real StateBus is provided so that EvolutionEngine can be
-    constructed without importing unittest.mock in production code.
-    """
+    """Minimal null-object satisfying the StateBus interface."""
 
     class _NullShutdown:
         def is_set(self) -> bool:
@@ -57,13 +54,13 @@ class _NullStateBus:
 
     shutdown_flag = _NullShutdown()
 
-    def subscribe(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
-        pass
+    def subscribe(self, *args: Any, **kwargs: Any) -> str:  # noqa: ANN401
+        return "null_subscription"
 
-    def get_slot(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
-        return None
+    def get_slot(self, *args: Any, **kwargs: Any) -> _NullSlot:  # noqa: ANN401
+        return _NullSlot()
 
-    def register_slot(self, *args: Any, **kwargs: Any) -> "_NullSlot":  # noqa: ANN401
+    def register_slot(self, *args: Any, **kwargs: Any) -> "_NullSlot":
         return _NullSlot()
 
     def publish(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
@@ -77,6 +74,9 @@ class _NullSlot:
         pass
 
     def get(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
+        return None
+
+    def snapshot(self, *args: Any, **kwargs: Any) -> None:  # noqa: ANN401
         return None
 
 log = logging.getLogger(__name__)
@@ -159,7 +159,7 @@ class AutonomousTaskBrain:
         self._current_graph: MissionGraph | None = None
         self._current_claim: ScreenStateClaim | None = None
         self._frame_id = 0
-        self._history: list[dict[str, Any]] = []
+        self._history: deque[dict[str, Any]] = deque(maxlen=500)
         self._shutdown = threading.Event()
         self._state_bus = state_bus
         self._claim_worker = claim_worker or ClaimGraphWorker(
@@ -183,8 +183,7 @@ class AutonomousTaskBrain:
             self._evolution_engine,
         )
         # H3: accumulate exploration events across iterations for richer trace induction
-        self._exploration_trace: list[RecordedEvent] = []
-        self._MAX_EXPLORATION_TRACE = 50
+        self._exploration_trace: deque[RecordedEvent] = deque(maxlen=50)
         # Register task state slot once at init instead of every publish call
         if self._state_bus is not None:
             self._state_bus.register_slot("agent.task_state_snapshot")
@@ -297,13 +296,18 @@ class AutonomousTaskBrain:
                     if node is None:
                         if self._current_graph and self._current_graph.failed_nodes():
                             self._replan_count += 1
-                            if self._replan_count >= 3:
-                                log.warning(
-                                    "[TaskBrain] %d consecutive replans without progress, "
-                                    "skipping to conserve iterations",
+                            if self._replan_count >= 5:
+                                log.error(
+                                    "[TaskBrain] %d consecutive replans without progress — aborting",
                                     self._replan_count,
                                 )
-                                self._interruptible_wait(self._config.plan_interval_sec)
+                                return self._build_result(False, goal, i, total_actions, started,
+                                                           error="replan_limit_exceeded")
+                            if self._replan_count >= 3:
+                                log.warning(
+                                    "[TaskBrain] %d consecutive replans without progress",
+                                    self._replan_count,
+                                )
                             log.warning("[TaskBrain] Mission has failed nodes, re-planning")
                             self._current_graph = None
                             continue
@@ -441,8 +445,6 @@ class AutonomousTaskBrain:
                             observation_frame_id=self._current_claim.frame_id,
                         )
                         self._exploration_trace.append(event)
-                        if len(self._exploration_trace) > self._MAX_EXPLORATION_TRACE:
-                            self._exploration_trace = self._exploration_trace[-self._MAX_EXPLORATION_TRACE:]
                         # Attempt induction on the accumulated trace (not a single event)
                         induced = self._skill_induction_gate.induce_skill_from_trace(
                             list(self._exploration_trace), node.semantic_action, self._current_claim.screen_state
@@ -452,7 +454,9 @@ class AutonomousTaskBrain:
                             self._exploration_trace.clear()  # trace promoted → reset buffer
                             log.info("[TaskBrain] Dynamic skill induction successful for: %s", node.semantic_action)
                         if self._config.post_action_resample:
-                            self._resample_current_state_after_action()
+                            resampled = self._resample_current_state_after_action()
+                            if not resampled:
+                                log.debug("[TaskBrain] post-action resample failed, using pre-action claim for verification")
                         if self._config.require_claim_verification:
                             return self._verify_node_claim(node, [])
                     return success
@@ -469,8 +473,10 @@ class AutonomousTaskBrain:
         )
         if not controller_ok:
             return False
-        if self._config.post_action_resample:
-            self._resample_current_state_after_action()
+        if self._config.post_action_resample and self._config.require_claim_verification:
+            resampled = self._resample_current_state_after_action()
+            if not resampled:
+                log.debug("[TaskBrain] post-action resample failed, using pre-action claim")
         if not self._config.require_claim_verification:
             return True
         return self._verify_node_claim(node, matched)

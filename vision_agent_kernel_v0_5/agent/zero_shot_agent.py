@@ -34,9 +34,22 @@ GAME_KEYMAPS: dict[str, dict[str, str]] = {
     },
 }
 
+AUTHORIZED_WINDOW_MARKERS: tuple[str, ...] = (
+    "Aurora QA Safe Window",
+    "Aurora Genshin-like Testbed",
+    "Aurora Pseudo3D",
+    "vision_agent_kernel_v0_5 pseudo3d_scene",
+)
+
 GAME_WINDOW_TITLES: dict[str, dict[str, str | list[str]]] = {
-    "genshin": {"title": "Genshin Impact", "alts": ["原神", "Genshin Impact"]},
-    "hsr": {"title": "崩坏：星穹铁道", "alts": ["Honkai: Star Rail"]},
+    "genshin": {
+        "title": "Aurora Genshin-like Testbed",
+        "alts": ["Aurora QA Safe Window", "Aurora Pseudo3D"],
+    },
+    "hsr": {
+        "title": "Aurora QA Safe Window",
+        "alts": ["Aurora Pseudo3D"],
+    },
 }
 
 # ---------------------------------------------------------------------------
@@ -45,33 +58,33 @@ GAME_WINDOW_TITLES: dict[str, dict[str, str | list[str]]] = {
 
 _VLM_ANALYSIS_PROMPT = """\
 Analyze this game screenshot in detail. Return strict JSON only:
-{
+{{
   "screen_state": "overworld|combat|dialog|menu|map|loading|unknown",
-  "player_status": {
+  "player_status": {{
     "health": "full|damaged|critical|unknown",
     "stamina": "full|depleting|empty|unknown",
     "position_in_frame": "center|left|right|top|bottom"
-  },
+  }},
   "visible_objects": [
-    {"type": "npc|enemy|item|resource|marker|waypoint|chest|boss|collectible",
+    {{"type": "npc|enemy|item|resource|marker|waypoint|chest|boss|collectible",
      "position": "left|center_left|center|center_right|right",
      "distance": "near|medium|far",
-     "description": "short description"}
+     "description": "short description"}}
   ],
-  "ui_elements": {
+  "ui_elements": {{
     "interaction_prompt": "interaction text or null",
     "quest_text": "quest tracker text or null",
     "notification": "any toast or notification text or null"
-  },
+  }},
   "scene_description": "1-2 sentence description of the current scene",
   "suggested_action": "move_forward|turn_left|turn_right|interact|attack|open_menu|wait|done"
-}
+}}
 
 Game: {game_name}
 """
 
 _LLM_PLANNING_PROMPT = """\
-You are a game AI control assistant. You decide what keys to press based on visual analysis.
+You are a game control AI. You decide which keys to press to achieve the player's goal.
 
 Current goal: {goal}
 Current iteration: {iteration}/{max_iterations}
@@ -85,11 +98,11 @@ Available keys: {keymap}
 Previous actions and results:
 {history}
 
-Plan 1-5 key presses to progress toward the goal. Return strict JSON only:
+Plan 3-5 key presses to progress toward the goal. Return strict JSON only:
 {{
   "reasoning": "why these actions",
   "actions": [
-    {{"key": "key_name", "duration_ms": 300, "reason": "why"}}
+    {{"key": "key_name", "duration_ms": 500, "reason": "why"}}
   ],
   "expected_result": "what should change after these actions",
   "confidence": 0.8,
@@ -98,10 +111,16 @@ Plan 1-5 key presses to progress toward the goal. Return strict JSON only:
 }}
 
 Rules:
-- Only use keys from the available keymap
-- Duration in milliseconds (100-2000)
-- Be conservative: prefer short actions you can verify
-- Set should_stop=true if the goal appears achieved
+- You MUST always return at least 2 actions (never return empty actions)
+- Only use keys from the available keymap (use the key name like "w", "shift", "space", "f", "d", "a")
+- For movement: use "w" (forward), "s" (back), "a" (left), "d" (right)
+- For sprint: use "shift" key, duration 1000-2000ms
+- For jump: use "space" key, duration 200ms
+- For interact: use "f" key, duration 300ms
+- Duration in milliseconds: movement 800-2000ms, interactions 200-500ms
+- Be BOLD: prefer large movements and long durations to cover ground quickly
+- Combine shift+w for sprinting (send shift first, then w)
+- Set should_stop=true ONLY if the goal is fully achieved
 """
 
 # ---------------------------------------------------------------------------
@@ -200,11 +219,30 @@ class _ZhipuAPIClient:
 # Frame helpers
 # ---------------------------------------------------------------------------
 
-def _encode_frame_png(frame: Any) -> bytes:
-    """Encode a numpy frame to PNG bytes. Tries cv2 first, then Pillow."""
+def _encode_frame_png(frame: Any, max_long_side: int = 1280) -> bytes:
+    """Encode a numpy frame to PNG bytes, resizing if too large for VLM API."""
+    import numpy as np
+
+    # Resize large frames to avoid API payload limits
+    h, w = frame.shape[:2]
+    if max(h, w) > max_long_side:
+        scale = max_long_side / max(h, w)
+        new_w, new_h = int(w * scale), int(h * scale)
+        try:
+            import cv2
+            frame = cv2.resize(frame, (new_w, new_h), interpolation=cv2.INTER_AREA)
+        except ImportError:
+            from PIL import Image as PILImage
+            pil_img = PILImage.fromarray(frame[..., ::-1] if frame.shape[-1] == 3 else frame)
+            pil_img = pil_img.resize((new_w, new_h), PILImage.LANCZOS)
+            frame = np.array(pil_img)
+            if frame.shape[-1] == 3:
+                frame = frame[..., ::-1]  # RGB back to BGR for cv2 encoding
+
+    # Encode with JPEG for smaller payload (VLM handles both PNG and JPEG)
     try:
         import cv2
-        success, encoded = cv2.imencode(".png", frame)
+        success, encoded = cv2.imencode(".jpg", frame, [cv2.IMWRITE_JPEG_QUALITY, 85])
         if success:
             return encoded.tobytes()
     except ImportError:
@@ -212,13 +250,9 @@ def _encode_frame_png(frame: Any) -> bytes:
     try:
         from PIL import Image
         import io
-        if frame.shape[2] == 3:
-            rgb = frame[:, :, ::-1] if frame.dtype.name != "uint8" else frame
-            img = Image.fromarray(rgb)
-        else:
-            img = Image.fromarray(frame)
+        img = Image.fromarray(frame[..., ::-1] if frame.shape[-1] == 3 else frame)
         buf = io.BytesIO()
-        img.save(buf, format="PNG")
+        img.save(buf, format="JPEG", quality=85)
         return buf.getvalue()
     except ImportError:
         pass
@@ -226,21 +260,38 @@ def _encode_frame_png(frame: Any) -> bytes:
 
 
 def _frame_to_image_input(frame: Any, frame_id: int = 0) -> ImageInput:
-    png_bytes = _encode_frame_png(frame)
-    return ImageInput(data=png_bytes, mime_type="image/png", frame_id=frame_id)
+    img_bytes = _encode_frame_png(frame)
+    # Detect format from magic bytes
+    mime = "image/jpeg" if img_bytes[:2] == b'\xff\xd8' else "image/png"
+    return ImageInput(data=img_bytes, mime_type=mime, frame_id=frame_id)
 
 
 def _extract_json(text: str) -> dict[str, Any]:
+    # Strip markdown code fences
     cleaned = text.strip()
     if cleaned.startswith("```"):
-        cleaned = cleaned.strip("`")
-        if cleaned.lower().startswith("json"):
-            cleaned = cleaned[4:].strip()
+        # Remove opening fence (```json or ```)
+        first_newline = cleaned.find("\n")
+        if first_newline >= 0:
+            cleaned = cleaned[first_newline + 1:]
+        # Remove closing fence
+        if cleaned.rstrip().endswith("```"):
+            cleaned = cleaned.rstrip()[:-3].rstrip()
     start = cleaned.find("{")
     end = cleaned.rfind("}")
     if start < 0 or end < start:
         raise ValueError(f"no JSON object in text: {text[:200]}")
-    return json.loads(cleaned[start : end + 1])
+    json_str = cleaned[start : end + 1]
+    try:
+        return json.loads(json_str)
+    except json.JSONDecodeError:
+        # Try to fix truncated JSON by closing open brackets
+        for fix in [']}', '"}]}', '"}]}}']:
+            try:
+                return json.loads(json_str + fix)
+            except json.JSONDecodeError:
+                continue
+        raise ValueError(f"JSON parse failed: {text[:200]}")
 
 
 # ---------------------------------------------------------------------------
@@ -248,7 +299,7 @@ def _extract_json(text: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 class ZeroShotAgent:
-    """Zero-shot game control agent: capture → VLM understand → LLM plan → execute."""
+    """Zero-shot QA/testbed control agent: capture -> VLM -> plan -> safe backend."""
 
     def __init__(
         self,
@@ -264,12 +315,15 @@ class ZeroShotAgent:
         max_iterations: int = 30,
         action_interval_sec: float = 1.0,
         vlm_interval_sec: float = 3.0,
+        dry_run: bool = True,
+        backend_mode: str = "safe_window",
     ) -> None:
         self.game = game
         self.goal = goal
         self.max_iterations = max_iterations
         self.action_interval = action_interval_sec
         self.vlm_interval = vlm_interval_sec
+        self.dry_run = dry_run
         self._timebase = Timebase()
         self._api = _ZhipuAPIClient(api_key, base_url)
         self._vlm_model = vlm_model
@@ -283,14 +337,54 @@ class ZeroShotAgent:
             alts = list(GAME_WINDOW_TITLES[game].get("alts", []))
         if not wt:
             raise ValueError(f"Cannot determine window title for game={game!r}")
+        self._assert_authorized_window_title(wt, alts, dry_run=dry_run)
 
-        self._input = SafeWindowInputBackend(
+        self._input = self._create_backend(backend_mode, wt, alts)
+        self._history: list[dict[str, Any]] = []
+        self._capturer: Any = None
+
+    @staticmethod
+    def _assert_authorized_window_title(
+        window_title: str,
+        alt_window_titles: list[str],
+        *,
+        dry_run: bool,
+    ) -> None:
+        titles = [window_title, *alt_window_titles]
+        authorized = any(
+            marker.lower() in title.lower()
+            for title in titles
+            for marker in AUTHORIZED_WINDOW_MARKERS
+        )
+        if authorized or dry_run:
+            return
+        if os.getenv("AURORA_ENABLE_AUTHORIZED_SAFE_WINDOW") == "1":
+            return
+        raise ValueError(
+            "ZeroShotAgent non-dry-run execution is disabled by default. "
+            "Use dry_run=True or an explicitly authorized Aurora QA/testbed window."
+        )
+
+    def _create_backend(self, mode: str, wt: str, alts: list[str]) -> Any:
+        if mode == "background":
+            from execution.background_input_backend import BackgroundInputBackend
+            return BackgroundInputBackend(
+                target_window_title=wt,
+                alt_window_titles=alts,
+                timebase=self._timebase,
+            )
+        if mode == "flash_focus":
+            from execution.background_input_backend import FlashFocusBackend
+            return FlashFocusBackend(
+                target_window_title=wt,
+                alt_window_titles=alts,
+                timebase=self._timebase,
+            )
+        return SafeWindowInputBackend(
             target_window_title=wt,
             alt_window_titles=alts,
             timebase=self._timebase,
         )
-        self._history: list[dict[str, Any]] = []
-        self._capturer: Any = None
 
     def run(self) -> ZeroShotResult:
         self._ensure_window()
@@ -358,7 +452,9 @@ class ZeroShotAgent:
             print("\n[ZeroShot] Interrupted by user.", flush=True)
         except Exception as exc:
             error = str(exc)
+            import traceback
             print(f"\n[ZeroShot] Error: {exc}", flush=True)
+            traceback.print_exc()
         finally:
             self._stop_capture()
             self._input.release_all(reason="zero_shot_agent_done")
@@ -369,8 +465,11 @@ class ZeroShotAgent:
         print(f"[ZeroShot] Looking for window: {self._input.target_window_title}", flush=True)
         try:
             self._input.focus_target_window()
-            rect = self._input.client_rect()
-            print(f"[ZeroShot] Window found: {rect.width}x{rect.height}", flush=True)
+            if hasattr(self._input, "client_rect"):
+                rect = self._input.client_rect()
+                print(f"[ZeroShot] Window found: {rect.width}x{rect.height}", flush=True)
+            else:
+                print(f"[ZeroShot] Window found (background mode)", flush=True)
         except Exception as exc:
             print(f"[ZeroShot] Window not found: {exc}", flush=True)
             print(f"[ZeroShot] Please open the game and try again.", flush=True)
@@ -420,6 +519,7 @@ class ZeroShotAgent:
 
     def _vlm_analyze(self, frame: Any, iteration: int) -> VLMAnalysis:
         image_input = _frame_to_image_input(frame, frame_id=iteration)
+        print(f"  [VLM] Frame encoded: {len(image_input.data)} bytes, mime={image_input.mime_type}", flush=True)
         data_url = f"data:{image_input.mime_type};base64,{base64.b64encode(image_input.data).decode('ascii')}"
 
         prompt = _VLM_ANALYSIS_PROMPT.format(game_name=self.game)
@@ -433,6 +533,7 @@ class ZeroShotAgent:
             ], max_tokens=800)
             text = _ZhipuAPIClient.extract_content(resp)
             latency = (self._timebase.now() - started) * 1000.0
+            print(f"  [VLM] Response ({latency:.0f}ms): {text[:200]}", flush=True)
             try:
                 parsed = _extract_json(text)
             except ValueError:
@@ -483,12 +584,14 @@ class ZeroShotAgent:
             resp = self._api.chat(self._llm_model, [
                 {"role": "system", "content": "You are a game control AI. Return strict JSON only."},
                 {"role": "user", "content": prompt},
-            ], max_tokens=800)
+            ], max_tokens=1200)
             text = _ZhipuAPIClient.extract_content(resp)
             latency = (self._timebase.now() - started) * 1000.0
+            print(f"  [LLM] Response ({latency:.0f}ms): {text[:300]}", flush=True)
             try:
                 parsed = _extract_json(text)
-            except ValueError:
+            except ValueError as e:
+                print(f"  [LLM] JSON parse failed: {e}", flush=True)
                 parsed = {
                     "reasoning": text[:200],
                     "actions": [],
@@ -535,18 +638,15 @@ class ZeroShotAgent:
 
     def _execute_action(self, action: AgentAction) -> None:
         print(f"  [Action] {action.key} for {action.duration_ms}ms — {action.reason}", flush=True)
+        if self.dry_run:
+            print(f"  [Action] (dry-run: skipped)", flush=True)
+            return
         try:
             if action.key in ("mouse_move", "look"):
                 return
             self._input.key_down(action.key, reason=action.reason)
-            remaining = action.duration_ms / 1000.0
-            while remaining > 0:
-                chunk = min(0.05, remaining)
-                time.sleep(chunk)
-                remaining -= chunk
-                if not self._input.is_target_focused():
-                    self._input.key_up(action.key, reason="focus_lost")
-                    return
+            duration = action.duration_ms / 1000.0
+            time.sleep(duration)
             self._input.key_up(action.key, reason=action.reason)
         except Exception as exc:
             print(f"  [Action] Failed: {exc}", flush=True)

@@ -80,7 +80,8 @@ class ClaimGraphWorker:
     def stop(self, timeout: float = 2.0) -> None:
         if not self._thread:
             return
-        self.submit(ClaimGraphCommand("stop"), timeout=timeout)
+        self._stopped.set()
+        self._queue.put(_Envelope(ClaimGraphCommand("stop")))
         self._thread.join(timeout=timeout)
 
     def submit(self, command: ClaimGraphCommand, timeout: float = 5.0) -> ClaimGraphCommandResult:
