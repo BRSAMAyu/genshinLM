@@ -185,6 +185,13 @@ class TestWeeklyBossExecutor:
         assert ex.discounted_remaining == 3
         assert ex.completed_count == 0
 
+    def test_plan_bosses_no_discounts_remaining(self) -> None:
+        ex = WeeklyBossExecutor()
+        for _ in range(3):
+            ex.execute_boss("boss")
+        plan = ex.plan_bosses(["new_boss"], resin_current=100)
+        assert len(plan) == 0
+
 
 # ---------------------------------------------------------------------------
 # ExpeditionExecutor (DL-04)
@@ -327,6 +334,15 @@ class TestEventExecutor:
         result = ex.complete_event("nonexistent")
         assert result.status == LoopStatus.FAILED
 
+    def test_register_inactive_event_filtered(self) -> None:
+        ex = EventExecutor()
+        ex.register_events([
+            EventInfo(event_id="e1", event_name="Active", is_active=True),
+            EventInfo(event_id="e2", event_name="Inactive", is_active=False),
+        ])
+        assert len(ex.events) == 1
+        assert ex.events[0].event_id == "e1"
+
 
 # ---------------------------------------------------------------------------
 # DailyLoopExecutor (DL-07)
@@ -416,12 +432,32 @@ class TestDailyLoopExecutor:
         ex.reset_daily()
         assert len(ex.commissions.commissions) == 0
 
+    def test_reset_daily_resets_resin_executor(self) -> None:
+        ex = DailyLoopExecutor()
+        # Execute some runs to increment counter
+        ex._resin.execute_run("world_boss", 40)
+        assert ex._resin.runs_completed == 1
+        ex.reset_daily()
+        assert ex._resin.runs_completed == 0
+
     def test_reset_weekly(self) -> None:
         ex = DailyLoopExecutor()
         ex.weekly_boss.execute_boss("childe")
         assert ex.weekly_boss.discounted_remaining == 2
         ex.reset_weekly()
         assert ex.weekly_boss.discounted_remaining == 3
+
+    def test_reset_weekly_clears_bp_weekly_tasks(self) -> None:
+        ex = DailyLoopExecutor()
+        ex.battle_pass.register_tasks([
+            BattlePassTask(task_id="w1", description="Weekly BP", task_type="weekly"),
+            BattlePassTask(task_id="d1", description="Daily BP", task_type="daily"),
+        ])
+        ex.reset_weekly()
+        # Only daily task should remain
+        remaining = ex.battle_pass.tasks
+        assert len(remaining) == 1
+        assert remaining[0].task_id == "d1"
 
     def test_state_is_complete(self) -> None:
         state = DailyLoopState()

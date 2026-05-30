@@ -69,7 +69,7 @@ class GenshinReactionTable:
             "geo": "none",
             "anemo": "none",
         }
-        return counters.get(shield_element, "pyro")
+        return counters.get(shield_element, "unknown")
 
     def get_team_reactions(self, team_elements: list[str]) -> list[ElementReaction]:
         """Get all possible reactions for a team's element composition."""

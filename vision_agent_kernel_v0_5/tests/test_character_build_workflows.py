@@ -102,6 +102,12 @@ class TestWeaponRefinery:
         result = ref.refine("sword", 5, 1)
         assert result is None
 
+    def test_refine_invalid_refinement(self) -> None:
+        ref = WeaponRefinery()
+        assert not ref.can_refine("sword", 0, 1)   # below min
+        assert not ref.can_refine("sword", -1, 1)  # negative
+        assert not ref.can_refine("sword", 6, 1)   # above max
+
 
 # ---------------------------------------------------------------------------
 # ArtifactSalvager (R-23)
@@ -122,6 +128,17 @@ class TestArtifactSalvager:
         salvager = ArtifactSalvager()
         plan = salvager.plan_salvage("target", 5, 1)
         assert plan.mora_cost == plan.estimated_xp * 1  # MORA_PER_XP = 1
+
+    def test_plan_salvage_unknown_rarity(self) -> None:
+        salvager = ArtifactSalvager()
+        plan = salvager.plan_salvage("target", 1, 3)
+        assert plan.estimated_xp == 3 * 630  # falls back to 3-star rate
+
+    def test_plan_salvage_zero_count(self) -> None:
+        salvager = ArtifactSalvager()
+        plan = salvager.plan_salvage("target", 5, 0)
+        assert plan.estimated_xp == 0
+        assert plan.fodder_artifacts == []
 
 
 # ---------------------------------------------------------------------------
@@ -147,6 +164,15 @@ class TestArtifactTransmuter:
         result = transmuter.plan_transmute(
             ["a1", "a2", "a3"], "crimson_witch", "sands",
             input_rarities=[5, 4, 5],
+        )
+        assert result is None
+
+    def test_plan_transmute_rejects_short_rarity_list(self) -> None:
+        transmuter = ArtifactTransmuter()
+        # rarities list shorter than INPUT_COUNT → reject
+        result = transmuter.plan_transmute(
+            ["a1", "a2", "a3"], "crimson_witch", "sands",
+            input_rarities=[5],
         )
         assert result is None
 
@@ -198,6 +224,12 @@ class TestTeamAdapter:
         enemy = EnemyProfile("boss")
         recs = adapter.recommend_changes(["pyro", "hydro", "electro", "cryo"], enemy)
         assert len(recs) == 0
+
+    def test_flying_phase_recommends_bow(self) -> None:
+        adapter = TeamAdapter()
+        enemy = EnemyProfile("flying_enemy", has_flying_phase=True)
+        recs = adapter.recommend_changes(["pyro", "hydro", "electro", "cryo"], enemy)
+        assert any("bow" in r.lower() for r in recs)
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +324,23 @@ class TestPartyManager:
         assert mgr.active_preset.preset_id == "p1"
         mgr.load_preset("p2")
         assert mgr.active_preset.preset_id == "p2"
+
+    def test_max_presets_limit(self) -> None:
+        mgr = PartyManager()
+        for i in range(10):
+            result = mgr.save_preset(f"p{i}", f"Team {i}", ["a", "b", "c", "d"])
+            assert result is not None
+        # 11th should fail
+        result = mgr.save_preset("p10", "Extra", ["a", "b", "c", "d"])
+        assert result is None
+
+    def test_delete_active_preset_clears(self) -> None:
+        mgr = PartyManager()
+        mgr.save_preset("p1", "Team 1", ["a", "b", "c", "d"])
+        mgr.load_preset("p1")
+        assert mgr.active_preset is not None
+        mgr.delete_preset("p1")
+        assert mgr.active_preset is None
 
 
 # ---------------------------------------------------------------------------

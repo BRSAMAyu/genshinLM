@@ -58,35 +58,6 @@ class PopupDetector:
     type-specific detection and action requirements.
     """
 
-    # Popup type detection by screen region and visual characteristics
-    _POPUP_SIGNATURES: dict[PopupType, dict[str, str | tuple]] = {
-        PopupType.ACHIEVEMENT: {
-            "region": "center",
-            "indicator": "gold_border",
-            "sound_cue": "achievement_chime",
-        },
-        PopupType.LEVEL_UP: {
-            "region": "center",
-            "indicator": "level_number_change",
-        },
-        PopupType.ADVENTURE_RANK_UP: {
-            "region": "center",
-            "indicator": "ar_number_change",
-        },
-        PopupType.MAIL: {
-            "region": "right_edge",
-            "indicator": "envelope_icon",
-        },
-        PopupType.QUEST_COMPLETE: {
-            "region": "right_edge",
-            "indicator": "checkmark_icon",
-        },
-        PopupType.REWARD: {
-            "region": "center_bottom",
-            "indicator": "item_display",
-        },
-    }
-
     def classify_popup(self, notification_data: dict) -> PopupDetection:
         """Classify a detected notification into a specific popup type.
 
@@ -163,7 +134,7 @@ class AoEGroundDetector:
     _RED_AOE_HSV = ((0, 150, 100), (10, 255, 255))
     _ORANGE_AOE_HSV = ((10, 150, 100), (25, 255, 255))
     _ELEMENTAL_HSV: dict[str, tuple[tuple[int, int, int], tuple[int, int, int]]] = {
-        "pyro": ((0, 150, 150), (15, 255, 255)),
+        "pyro": ((10, 150, 150), (20, 255, 255)),    # Avoids red circle overlap
         "cryo": ((85, 50, 150), (110, 200, 255)),
         "electro": ((130, 100, 100), (160, 255, 255)),
         "hydro": ((95, 100, 100), (130, 255, 255)),
@@ -243,6 +214,7 @@ class QuestMarkerClassifier:
     # Quest marker color ranges (HSV)
     _MARKER_COLORS: dict[QuestMarkerType, tuple[tuple[int, int, int], tuple[int, int, int]]] = {
         QuestMarkerType.ARCHON_QUEST: ((20, 200, 200), (35, 255, 255)),     # Gold
+        # STORY_QUEST and WORLD_QUEST share blue hue range; first match wins
         QuestMarkerType.STORY_QUEST: ((100, 150, 150), (120, 255, 255)),    # Blue
         QuestMarkerType.WORLD_QUEST: ((100, 150, 150), (120, 255, 255)),    # Blue
         QuestMarkerType.EVENT_QUEST: ((130, 150, 150), (160, 255, 255)),    # Purple
@@ -309,7 +281,8 @@ class NumericValueReader:
 
         Handles comma-separated numbers, percentages, and suffixed values.
         """
-        text = text.strip().replace(",", "").replace("，", "")
+        original = text.strip()
+        text = original.replace(",", "").replace("，", "")
 
         # Remove common suffixes
         suffix = ""
@@ -334,7 +307,7 @@ class NumericValueReader:
 
         return NumericReading(
             value=value,
-            raw_text=text + suffix,
+            raw_text=original,
             value_type=value_type,
         )
 

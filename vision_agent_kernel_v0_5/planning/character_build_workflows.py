@@ -163,6 +163,8 @@ class WeaponRefinery:
     def can_refine(self, weapon_name: str, current_refinement: int,
                    duplicates_available: int) -> bool:
         """Check if refinement is possible."""
+        if current_refinement < 1 or current_refinement > 5:
+            return False
         return current_refinement < 5 and duplicates_available >= 1
 
     def refine(self, weapon_name: str, current_refinement: int,
@@ -203,6 +205,8 @@ class ArtifactSalvager:
     def plan_salvage(self, target: str, fodder_rarity: int,
                      fodder_count: int) -> SalvagePlan:
         """Plan artifact salvage/enhancement."""
+        if fodder_count <= 0:
+            return SalvagePlan(target_artifact=target)
         xp_table = {5: self.XP_PER_5STAR, 4: self.XP_PER_4STAR, 3: self.XP_PER_3STAR}
         xp_per = xp_table.get(fodder_rarity, 630)
         total_xp = xp_per * fodder_count
@@ -245,6 +249,8 @@ class ArtifactTransmuter:
             return None
 
         if input_rarities is not None:
+            if len(input_rarities) < self.INPUT_COUNT:
+                return None
             selected_rarities = input_rarities[:self.INPUT_COUNT]
             if any(r != self.REQUIRED_RARITY for r in selected_rarities):
                 return None
@@ -336,7 +342,7 @@ class TeamAdapter:
                 if weak not in current_elements:
                     recommendations.append(f"Add {weak} for weakness exploit")
 
-        if enemy.has_flying_phase and "bow" not in " ".join(current_elements):
+        if enemy.has_flying_phase:
             recommendations.append("Consider bow user for flying phase")
 
         return recommendations
@@ -403,7 +409,7 @@ class ElementGemConverter:
     DUST_COST_PER_GEM = 1  # Dust of Azoth per gem
 
     def plan_conversion(self, source_element: str, target_element: str,
-                        gem_tier: int, available: int) -> dict[str, int]:
+                        gem_tier: int, available: int) -> dict[str, int | str]:
         """Plan gem conversion."""
         return {
             "source_element": source_element,

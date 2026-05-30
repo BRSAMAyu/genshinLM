@@ -131,7 +131,7 @@ class HangoutBranchDetector:
             return None
 
         branch = HangoutBranch(
-            branch_id=f"hangout_{hashlib.md5(dialog_text.encode()).hexdigest()[:8]}",
+            branch_id=f"hangout_{hashlib.md5(dialog_text.encode()).hexdigest()[:12]}",
             description=dialog_text[:80],
             options=option_texts,
             is_critical=len(option_texts) >= 2,

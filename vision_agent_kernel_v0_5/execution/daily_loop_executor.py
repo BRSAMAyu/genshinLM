@@ -749,7 +749,7 @@ class DailyLoopExecutor:
                 phase=LoopPhase.COMMISSIONS,
                 status=LoopStatus.DONE,
                 message="Commissions already complete",
-                rewards_obtained=["katheryne_reward"],
+                rewards_obtained=[],
             )
         return LoopPhaseResult(
             phase=LoopPhase.COMMISSIONS,
@@ -837,6 +837,7 @@ class DailyLoopExecutor:
         self._state = DailyLoopState()
         self._commissions = CommissionExecutor()
         self._expeditions = ExpeditionExecutor()
+        self._resin = ResinSpendingExecutor()
         # Clear daily battle pass tasks (keep weekly)
         daily_tasks = [t for t in self._battle_pass.tasks if t.task_type == "weekly"]
         self._battle_pass.register_tasks(daily_tasks)
@@ -844,3 +845,6 @@ class DailyLoopExecutor:
     def reset_weekly(self) -> None:
         """Reset weekly state (call on Monday reset)."""
         self._weekly_boss.reset_weekly()
+        # Clear weekly battle pass tasks (keep daily)
+        daily_tasks = [t for t in self._battle_pass.tasks if t.task_type == "daily"]
+        self._battle_pass.register_tasks(daily_tasks)
