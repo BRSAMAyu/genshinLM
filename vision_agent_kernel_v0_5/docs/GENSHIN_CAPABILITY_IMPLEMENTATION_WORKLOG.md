@@ -1021,4 +1021,21 @@
 - 31 UIFlow/Adapter tests passed
 - 59 flows registered in ALL_FLOWS
 
+### 2026-05-31 (cont.) — Combat + Exploration SkillAdapter
+
+#### CombatSkillAdapter
+- **Files**: `combat/combat_skill_adapter.py`, `combat/live_combat_actuator.py`
+- Bridges GenshinCombatPlanner -> LiveCombatActuator -> StateBus
+- Methods: execute_combat, execute_boss_combat, execute_basic_attack, get_combat_context
+- Integrated priority_triggers into observation stream
+- Action types: attack, skill_e, burst_q, switch, dodge, charge_attack, dash, heal, shield, retreat
+- Added _perform_dodge handler to LiveCombatActuator
+- 9 tests passed
+
+#### ExplorationSkillAdapter
+- **Files**: `exploration/exploration_skill_adapter.py`
+- Methods: activate_waypoint, open_chest, collect_oculus, interact_with_object
+- Core approach-interact-verify loop with F-key interaction
+- 5 tests passed
+
 ---
