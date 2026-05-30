@@ -118,10 +118,18 @@ class SkillRegistryConfig:
     combat_default_duration_sec: float = 10.0
     daily_max_commissions: int = 4
     progression_max_level: int = 90
+    enable_recovery: bool = True
+    enable_collaboration: bool = True
+    enable_checkpoint: bool = True
 
 
 class SkillRegistry:
     """Route composite semantic actions to the correct specialized adapter.
+
+    Integrates with 3 runtime architecture dimensions:
+    - CollaborationController: gates actions by autonomy level
+    - RecoveryOrchestrator: auto-recovers from failed skill executions
+    - SessionCheckpoint: snapshots after major operations
 
     Usage::
 
@@ -146,6 +154,10 @@ class SkillRegistry:
         self._bus = state_bus
         self._config = config or SkillRegistryConfig()
         self._adapters: dict[str, Any] = {}
+        # Architecture dimensions — lazy-initialized
+        self._collaboration: Any | None = None
+        self._recovery: Any | None = None
+        self._checkpoint_mgr: Any | None = None
 
     # ------------------------------------------------------------------
     # Public API
@@ -164,10 +176,21 @@ class SkillRegistry:
         """Execute a composite action via the appropriate adapter.
 
         Returns False for unknown actions (caller should fallback).
+
+        Pipeline: collaboration gate → adapter dispatch → recovery on failure → checkpoint.
         """
         route = _COMPOSITE_ROUTES.get(action)
         if route is None:
             return False
+
+        # --- Architecture dimension: Collaboration gate ---
+        if self._config.enable_collaboration:
+            collab = self._get_collaboration()
+            if collab is not None:
+                allowed, reason = collab.check_permission(action)
+                if not allowed:
+                    log.warning("[SkillRegistry] action '%s' blocked by collaboration: %s", action, reason)
+                    return False
 
         adapter_key, method_name = route
         context = context or {}
@@ -187,18 +210,35 @@ class SkillRegistry:
             result = method(**args)
         except Exception as exc:
             log.warning("[SkillRegistry] %s.%s failed: %s", adapter_key, method_name, exc)
-            return False
+            result = False
 
         # Adapters return bool, list[ProgressionResult], or dataclass with .success
         if isinstance(result, bool):
-            return result
-        if isinstance(result, list):
-            return all(getattr(r, "success", False) for r in result)
-        # Dataclass results: check .success field
-        success = getattr(result, "success", None)
-        if success is not None:
-            return bool(success)
-        return True
+            success = result
+        elif isinstance(result, list):
+            success = all(getattr(r, "success", False) for r in result)
+        else:
+            success_val = getattr(result, "success", None)
+            success = bool(success_val) if success_val is not None else True
+
+        # --- Architecture dimension: Recovery on failure ---
+        if not success and self._config.enable_recovery:
+            success = self._attempt_recovery(action, adapter_key, context)
+
+        # --- Architecture dimension: Collaboration tracking ---
+        if self._config.enable_collaboration:
+            collab = self._get_collaboration()
+            if collab is not None:
+                if success:
+                    collab.report_success(action)
+                else:
+                    collab.report_failure(action)
+
+        # --- Architecture dimension: Checkpoint after major ops ---
+        if success and self._config.enable_checkpoint:
+            self._maybe_checkpoint(action, context)
+
+        return success
 
     @property
     def composite_actions(self) -> tuple[str, ...]:
@@ -306,6 +346,104 @@ class SkillRegistry:
         from exploration.exploration_scenario_router import ExplorationScenarioRouter
 
         return ExplorationScenarioRouter(skill_executor=self._executor)
+
+    # ------------------------------------------------------------------
+    # Architecture dimension: lazy initialization
+    # ------------------------------------------------------------------
+
+    def _get_collaboration(self) -> Any:
+        if self._collaboration is not None:
+            return self._collaboration
+        # Collaboration is opt-in: only created when explicitly configured
+        # via set_collaboration() — avoids blocking all actions at MANUAL default
+        return None
+
+    def set_collaboration(self, controller: Any) -> None:
+        """Attach a CollaborationController for action gating."""
+        self._collaboration = controller
+
+    def _get_recovery(self) -> Any:
+        if self._recovery is not None:
+            return self._recovery
+        try:
+            from planning.recovery_orchestrator import RecoveryOrchestrator
+            self._recovery = RecoveryOrchestrator(executor=self._executor)
+        except Exception as exc:
+            log.debug("[SkillRegistry] RecoveryOrchestrator unavailable: %s", exc)
+        return self._recovery
+
+    def _get_checkpoint_manager(self) -> Any:
+        if self._checkpoint_mgr is not None:
+            return self._checkpoint_mgr
+        try:
+            from runtime.session_checkpoint import CheckpointStore
+            self._checkpoint_mgr = CheckpointStore()
+        except Exception as exc:
+            log.debug("[SkillRegistry] CheckpointStore unavailable: %s", exc)
+        return self._checkpoint_mgr
+
+    # ------------------------------------------------------------------
+    # Architecture dimension: integration methods
+    # ------------------------------------------------------------------
+
+    _MAJOR_OPS: frozenset[str] = frozenset({
+        "mainline_full_progression", "run_daily_deep",
+        "character_progression_full", "combat_boss",
+    })
+
+    def _attempt_recovery(self, action: str, adapter_key: str, context: dict[str, Any]) -> bool:
+        """Try recovery orchestrator when a skill fails."""
+        recovery = self._get_recovery()
+        if recovery is None:
+            return False
+        from planning.recovery_orchestrator import RecoveryCategory, RecoveryEvent, RecoverySeverity
+        category_map: dict[str, str] = {
+            "combat": "COMBAT", "exploration": "NAVIGATION", "quest": "QUEST",
+            "daily_routine": "UI", "progression": "UI", "mainline": "QUEST",
+        }
+        cat_str = category_map.get(adapter_key, "SYSTEM")
+        category = RecoveryCategory(cat_str.lower())
+        event = RecoveryEvent(
+            category=category,
+            severity=RecoverySeverity.MODERATE,
+            description=f"skill_{action}_failed",
+            context={"failure_type": f"{adapter_key}_failure", "original_action": action, **context},
+        )
+        result = recovery.recover(event)
+        if result.success:
+            log.info("[SkillRegistry] recovery succeeded for %s", action)
+        return result.success
+
+    def _maybe_checkpoint(self, action: str, context: dict[str, Any]) -> None:
+        """Create checkpoint after major operations."""
+        if action not in self._MAJOR_OPS:
+            return
+        mgr = self._get_checkpoint_manager()
+        if mgr is None:
+            return
+        try:
+            cp = mgr.create_checkpoint(
+                session_id=context.get("session_id", "skill_registry"),
+                triggered_by=f"skill_{action}",
+                task_state={"last_action": action},
+            )
+            mgr.save(cp)
+        except Exception as exc:
+            log.debug("[SkillRegistry] checkpoint failed: %s", exc)
+
+    # ------------------------------------------------------------------
+    # Public architecture dimension accessors
+    # ------------------------------------------------------------------
+
+    @property
+    def collaboration(self) -> Any:
+        """Access the CollaborationController for external level management."""
+        return self._get_collaboration()
+
+    @property
+    def recovery_orchestrator(self) -> Any:
+        """Access the RecoveryOrchestrator for external recovery management."""
+        return self._get_recovery()
 
     # ------------------------------------------------------------------
     # Argument building

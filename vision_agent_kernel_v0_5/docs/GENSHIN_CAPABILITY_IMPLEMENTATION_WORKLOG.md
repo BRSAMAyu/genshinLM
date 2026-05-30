@@ -1281,3 +1281,55 @@
 - **Commits**: 4 commits pushed to codex/pre-realworld-closure
 
 ---
+
+### 2026-05-31 — Session 4: Combat Closure + Architecture Integration
+
+#### 4a. Exploration & Quest Integration Fixes
+- **Modified**: `planning/mainline/mainline_progression_adapter.py`
+  - Added `quest_state_machine` parameter for prerequisite checking
+  - `_execute_act()` now calls `_check_quest_prerequisites()` before quest navigation
+
+#### 4b. Session-Level Chain Orchestrators (Long Chain Scenarios)
+- **File**: `planning/session_chains.py` (new, ~250 lines)
+  - **DailySessionChain** (~15min): 7-step daily (status→commissions→Katheryne→resin→BP→return→report)
+  - **CharacterProgressionSession** (~30min): 8-step progression (check→materials→farm→level→ascend→weapon→artifact→talent)
+  - **MainlineSession** (~60min): wraps mainline_full_progression with session tracking
+  - SessionSnapshot/SessionSummary frozen dataclasses for state comparison
+- **Tests**: 17 tests in `tests/test_session_chains.py`
+
+#### 4c. NarwhalHandler — Boss #9
+- **Modified**: `combat/boss_combat_handlers.py`
+  - Added NarwhalHandler (#9): dual-space outside/inside combat loop
+  - NarwhalPhase enum: OUTSIDE → INGESTED → BERSERK
+  - NarwhalState tracks cycle_count, parasite_defeated, core_damage_dealt
+  - Mechanic: attack whale on surface → swallowed → defeat parasites + attack core → repeat ×3
+- **Modified**: `combat/combat_skill_adapter.py`
+  - Added `execute_narwhal_combat()` delegating to `execute_boss_combat(boss_id="narwhal")`
+  - Added "narwhal" and "all_devouring_narwhal" boss aliases
+  - Fixed missing narwhal branch in `_make_boss_handler()` (caught by audit agent)
+- **Tests**: 13 tests in `tests/test_narwhal_handler.py`
+
+#### 4d. Architecture Dimension Integration
+- **Modified**: `planning/skill_registry.py`
+  - Integrated 3 architecture dimensions into SkillRegistry.execute() pipeline:
+    1. **CollaborationController**: gates actions by autonomy level (opt-in via `set_collaboration()`)
+    2. **RecoveryOrchestrator**: auto-recovers on skill failure with category-aware routing
+    3. **CheckpointStore**: snapshots after major operations (mainline, daily_deep, combat_boss, progression)
+  - New config flags: `enable_recovery`, `enable_collaboration`, `enable_checkpoint`
+  - Public accessors: `registry.collaboration`, `registry.recovery_orchestrator`
+  - Collaboration is opt-in (default: no gating) to avoid breaking existing behavior
+- **Tests**: 12 tests in `tests/test_architecture_dimensions.py`
+  - Collaboration: manual blocks, assisted blocks high-risk, supervised allows all, success/failure tracking
+  - Recovery: disabled mode, orchestrator accessor, no-trigger on success
+  - Checkpoint: disabled mode, minor ops skip checkpoint
+  - Config: all flags default True, all flags can be disabled
+
+#### Session 4 Totals
+- **New files**: 2 (session_chains.py, test_architecture_dimensions.py)
+- **New test files**: 3 (test_session_chains.py, test_narwhal_handler.py, test_architecture_dimensions.py)
+- **Modified files**: 4 (mainline_progression_adapter, combat_skill_adapter, boss_combat_handlers, skill_registry)
+- **New tests**: 42 tests (17 session chains + 13 narwhal + 12 architecture dimensions)
+- **Total test count**: ~2631 passed (from 2589), 1 known flaky
+- **Commits**: 4 commits pushed to codex/pre-realworld-closure
+
+---
