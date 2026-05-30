@@ -82,11 +82,11 @@ class TestWishFlows:
         assert flow.precondition_state == "wish_screen"
         assert len(flow.steps) == 1
 
-    def test_wish_select_banner_clamped(self) -> None:
-        flow = build_wish_select_banner_flow(5)
-        # Should clamp to index 3
-        assert flow.steps[0].nx is not None
-        assert flow.steps[0].nx < 1.0
+    def test_wish_select_banner_invalid(self) -> None:
+        with pytest.raises(ValueError):
+            build_wish_select_banner_flow(5)
+        with pytest.raises(ValueError):
+            build_wish_select_banner_flow(-1)
 
 
 # ---------------------------------------------------------------------------
@@ -146,6 +146,10 @@ class TestEventsFlows:
         flow = build_events_navigate_flow(10)
         assert flow.steps[0].ny is not None
         assert flow.steps[0].ny <= 0.80
+
+    def test_events_navigate_negative(self) -> None:
+        with pytest.raises(ValueError):
+            build_events_navigate_flow(-1)
 
     def test_events_claim(self) -> None:
         flow = build_events_claim_reward_flow()

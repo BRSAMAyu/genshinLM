@@ -13,7 +13,9 @@ Integrates with:
 """
 from __future__ import annotations
 
+import hashlib
 import logging
+import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Sequence
@@ -129,7 +131,7 @@ class HangoutBranchDetector:
             return None
 
         branch = HangoutBranch(
-            branch_id=f"hangout_{hash(dialog_text) % 10000:04d}",
+            branch_id=f"hangout_{hashlib.md5(dialog_text.encode()).hexdigest()[:8]}",
             description=dialog_text[:80],
             options=option_texts,
             is_critical=len(option_texts) >= 2,
@@ -141,7 +143,7 @@ class HangoutBranchDetector:
                 branch.target_endings[i] = "good"
             elif "不了" in option or "算了" in option:
                 branch.target_endings[i] = "bad"
-            elif "秘密" in option or "秘密" in option:
+            elif "秘密" in option or "隐藏" in option:
                 branch.target_endings[i] = "hidden"
             else:
                 branch.target_endings[i] = "normal"
@@ -158,7 +160,7 @@ class HangoutBranchDetector:
         """
         # Direct match from branch analysis
         for idx, ending_type in branch.target_endings.items():
-            if target_ending in ending_type:
+            if target_ending == ending_type:
                 return idx
 
         # Heuristic: prefer positive-sounding options for good endings
@@ -296,6 +298,7 @@ class MultiTurnDialogManager:
             player_choices=choices or [],
             selected_choice=selected,
             phase=phase,
+            timestamp=time.perf_counter(),
         )
 
         session.turns.append(turn)
@@ -326,6 +329,10 @@ class MultiTurnDialogManager:
         session.completed = True
         session.phase = DialogPhase.FAREWELL
         self._completed_sessions.append(session)
+        # Cap completed sessions to prevent unbounded growth
+        _MAX_COMPLETED = 100
+        if len(self._completed_sessions) > _MAX_COMPLETED:
+            self._completed_sessions = self._completed_sessions[-_MAX_COMPLETED:]
         log.info("[DialogSession] ended with '%s' (%d turns, quest=%s)",
                  npc_name, session.turn_count, session.quest_accepted)
         return session

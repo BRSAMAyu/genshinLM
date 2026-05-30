@@ -226,7 +226,7 @@ class GuideExtractor:
             match = re.search(pattern, text)
             if match:
                 guide.tips.append(ActionableTip(
-                    action=match.group(0),
+                    action=match.group(1) if match.lastindex else match.group(0),
                     category=category,
                     priority=priority,
                     source_url=result.url,
@@ -245,11 +245,8 @@ class GuideExtractor:
                 context = text[max(0, idx - 10):idx + 30]
                 guide.warning_notes.append(context.strip())
 
-        # Mock team recommendations for team build category
-        if result.category == GuideCategory.TEAM_BUILD:
-            guide.recommended_teams.append([
-                "main_dps", "sub_dps", "support", "healer"
-            ])
+        # TODO: implement real team extraction from guide text
+        # Currently returns empty — consumers should handle the mock case
 
         log.info("[GuideExtract] extracted %d tips, %d elements from '%s'",
                  len(guide.tips), len(guide.element_recommendations), result.title)
@@ -300,7 +297,6 @@ class VersionAwarenessState:
     current_version: str = "5.0"
     known_versions: list[str] = field(default_factory=list)
     pending_changes: list[str] = field(default_factory=list)
-    last_checked: float = 0.0
 
 
 class VersionUpdateAwareness:
@@ -423,19 +419,27 @@ class VersionUpdateAwareness:
 
         # Extract new region keywords
         _REGION_KEYWORDS = ["新区域", "新地图", "新大陆", "新国家"]
+        seen_regions: set[str] = set()
         for kw in _REGION_KEYWORDS:
-            if kw in notes_text:
-                idx = notes_text.find(kw)
-                context = notes_text[idx:idx + 30]
-                info.new_regions.append(context)
+            idx = notes_text.find(kw)
+            while idx >= 0:
+                fragment = notes_text[idx + len(kw):idx + len(kw) + 20].strip("：:，。、 ")
+                if fragment and fragment not in seen_regions:
+                    info.new_regions.append(fragment)
+                    seen_regions.add(fragment)
+                idx = notes_text.find(kw, idx + 1)
 
         # Extract mechanic changes
         _MECHANIC_KEYWORDS = ["新机制", "新元素", "新系统"]
+        seen_mechanics: set[str] = set()
         for kw in _MECHANIC_KEYWORDS:
-            if kw in notes_text:
-                idx = notes_text.find(kw)
-                context = notes_text[idx:idx + 40]
-                info.new_mechanics.append(context)
+            idx = notes_text.find(kw)
+            while idx >= 0:
+                fragment = notes_text[idx + len(kw):idx + len(kw) + 30].strip("：:，。、 ")
+                if fragment and fragment not in seen_mechanics:
+                    info.new_mechanics.append(fragment)
+                    seen_mechanics.add(fragment)
+                idx = notes_text.find(kw, idx + 1)
 
         # Detect if major update
         info.is_major = bool(info.new_regions) or bool(info.new_mechanics)

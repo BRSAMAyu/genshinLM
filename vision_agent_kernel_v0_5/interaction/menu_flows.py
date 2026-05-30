@@ -147,6 +147,8 @@ def build_wish_ten_pull_flow() -> UIFlow:
 
 def build_wish_select_banner_flow(banner_position: int = 0) -> UIFlow:
     """U-07: Select a specific wish banner by position (0-3)."""
+    if banner_position < 0 or banner_position > 3:
+        raise ValueError(f"banner_position must be 0-3, got {banner_position}")
     # Banner tabs are at the top of the wish screen
     _BANNER_X = [0.15, 0.35, 0.55, 0.75]
     nx = _BANNER_X[min(banner_position, 3)]
@@ -278,6 +280,8 @@ def build_events_open_flow() -> UIFlow:
 
 def build_events_navigate_flow(event_index: int = 0) -> UIFlow:
     """U-10: Navigate to a specific event by index."""
+    if event_index < 0:
+        raise ValueError(f"event_index must be >= 0, got {event_index}")
     # Events are displayed as a vertical list on the left
     ny = min(0.20 + event_index * 0.10, 0.80)
     return UIFlow(
