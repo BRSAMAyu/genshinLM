@@ -98,6 +98,10 @@ class UIFlowSkillAdapter:
         "npc_shop_buy_item": "npc_shop_buy_item",
         "combat_food_revive": "combat_food_revive",
         "statue_element_resonance": "statue_element_resonance",
+        # Long chain composite aliases
+        "run_daily_quick": "domain_enter_and_claim",
+        "run_daily_standard": "domain_enter_and_claim",
+        "run_daily_deep": "domain_enter_and_claim",
     }
 
     def __init__(
