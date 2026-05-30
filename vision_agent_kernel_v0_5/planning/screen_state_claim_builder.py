@@ -91,6 +91,10 @@ class ScreenStateClaimBuilder:
         "main_menu": "menu",
         "gameplay": "overworld",
         "exploration": "overworld",
+        "character_select_screen": "character_select",
+        "rank_up": "adventure_rank_up",
+        "notification_popup": "notification",
+        "domain_start": "domain_entrance",
     }
 
     @classmethod
@@ -112,6 +116,8 @@ class ScreenStateClaimBuilder:
             "overworld", "combat", "turn_based_combat", "dialog", "menu",
             "map", "loading", "inventory", "shop", "quest_log",
             "reward_screen", "boss_fight", "cutscene",
+            "death_screen", "character_select", "adventure_rank_up",
+            "notification", "domain_entrance", "cooking", "forging",
         }
         # VLM first: it has better semantic understanding (e.g. combat vs overworld).
         # "unknown" is NOT in valid_states so VLM returning "unknown" falls through

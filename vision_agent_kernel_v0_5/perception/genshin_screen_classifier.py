@@ -29,6 +29,8 @@ class GenshinScreenClassifier:
         self._skill_icon_roi = (1490, 940, 1890, 1070)
         self._dialog_roi = (0, 756, 1920, 1080)
         self._combat_indicator_roi = (770, 930, 850, 970)
+        self._death_roi = (660, 400, 1260, 680)
+        self._notification_roi = (1400, 100, 1900, 500)
 
     def classify(self, frame: np.ndarray) -> ScreenState:
         if cv2 is None:
@@ -38,27 +40,38 @@ class GenshinScreenClassifier:
         sy = h / self._REF_H
 
         dark = self._is_dark_frame(frame)
+        death = self._detect_death_screen(frame, sx, sy)
         loading = self._detect_loading_screen(frame, dark)
         dialog = self._detect_dialog_box(frame, sx, sy)
+        domain = self._detect_domain_entrance(frame, sx, sy)
         minimap = self._detect_minimap(frame, sx, sy)
         hp_bar, hp_red_ratio = self._detect_hp_bar(frame, sx, sy)
         skill_icons = self._detect_skill_icons(frame, sx, sy)
         combat = self._detect_combat_indicator(frame, sx, sy)
+        notification = self._detect_notification(frame, sx, sy)
 
         indicators: dict[str, bool] = {
             "dark_frame": bool(dark),
+            "death_screen": bool(death),
             "loading_screen": bool(loading),
             "dialog_box": bool(dialog),
+            "domain_entrance": bool(domain),
             "minimap": bool(minimap),
             "hp_bar": bool(hp_bar),
             "skill_icons": bool(skill_icons),
             "combat": bool(combat),
+            "notification": bool(notification),
         }
 
+        # Death screen: checked before loading since both are dark but death has buttons
+        if death:
+            return ScreenState(state="death_screen", confidence=0.9, indicators=indicators)
         if loading:
             return ScreenState(state="loading_screen", confidence=0.9, indicators=indicators)
         if dialog:
             return ScreenState(state="dialog", confidence=0.85, indicators=indicators)
+        if domain:
+            return ScreenState(state="domain_entrance", confidence=0.85, indicators=indicators)
         # Combat: minimap + HP bar + red HP damage or combat indicator
         if minimap and hp_bar and (combat or hp_red_ratio > 0.3):
             return ScreenState(state="combat", confidence=0.85, indicators=indicators)
@@ -66,6 +79,9 @@ class GenshinScreenClassifier:
             return ScreenState(state="world_hud", confidence=0.9, indicators=indicators)
         if minimap:
             return ScreenState(state="world_hud", confidence=0.7, indicators=indicators)
+        # Notification: overlaid on HUD, check before no_hud
+        if notification:
+            return ScreenState(state="notification", confidence=0.8, indicators=indicators)
         if hp_bar or skill_icons:
             return ScreenState(state="full_menu", confidence=0.6, indicators=indicators)
         if dark:
@@ -153,6 +169,78 @@ class GenshinScreenClassifier:
     def _is_dark_frame(self, frame: np.ndarray) -> bool:
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 else frame
         return float(np.mean(gray)) < 30.0
+
+    def _detect_death_screen(self, frame: np.ndarray, sx: float, sy: float) -> bool:
+        """Detect death screen: gray tones with bright buttons in center, no minimap."""
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 else frame
+        gray_mean = float(np.mean(gray))
+        # Death screen has moderate brightness (not fully dark, not bright)
+        if gray_mean < 80 or gray_mean > 160:
+            return False
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV) if frame.ndim == 3 else None
+        if hsv is None:
+            return False
+        # Check for low saturation (gray tone) in a large portion of the frame
+        low_sat_mask = hsv[:, :, 1] < 40
+        if float(np.mean(low_sat_mask)) < 0.5:
+            return False
+        # Check for bright spots in death ROI (buttons)
+        x1, y1, x2, y2 = self._scale_roi(self._death_roi, sx, sy)
+        death_roi = gray[y1:y2, x1:x2]
+        if death_roi.size == 0:
+            return False
+        bright_mask = death_roi > 200
+        bright_ratio = float(np.sum(bright_mask)) / bright_mask.size
+        if bright_ratio < 0.01:
+            return False
+        # Confirm no minimap present
+        minimap = self._detect_minimap(frame, sx, sy)
+        return not minimap
+
+    def _detect_notification(self, frame: np.ndarray, sx: float, sy: float) -> bool:
+        """Detect notification overlay: bright text on right side of screen."""
+        x1, y1, x2, y2 = self._scale_roi(self._notification_roi, sx, sy)
+        roi = frame[y1:y2, x1:x2]
+        if roi.size == 0:
+            return False
+        gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY) if roi.ndim == 3 else roi
+        # Look for bright pixels (>200) in narrow vertical strips
+        bright_mask = gray > 200
+        if bright_mask.size == 0:
+            return False
+        bright_ratio = float(np.sum(bright_mask)) / bright_mask.size
+        # Notifications have a modest concentration of bright text on semi-dark bg.
+        # All-white/all-bright frames should not trigger.
+        if bright_ratio > 0.7:
+            return False
+        # Check for contrast: notifications have both dark and bright pixels
+        dark_mask = gray < 60
+        if float(np.sum(dark_mask)) / dark_mask.size < 0.1:
+            return False
+        return bright_ratio > 0.05
+
+    def _detect_domain_entrance(self, frame: np.ndarray, sx: float, sy: float) -> bool:
+        """Detect domain entrance: dark background with bright 'Start' button in center."""
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 else frame
+        overall_mean = float(np.mean(gray))
+        # Domain entrance has a dark background
+        if overall_mean > 80:
+            return False
+        # Check for bright spot in the center (Start button area)
+        cx1 = int(frame.shape[1] * 0.35)
+        cy1 = int(frame.shape[0] * 0.45)
+        cx2 = int(frame.shape[1] * 0.65)
+        cy2 = int(frame.shape[0] * 0.65)
+        center_roi = gray[cy1:cy2, cx1:cx2]
+        if center_roi.size == 0:
+            return False
+        bright_mask = center_roi > 200
+        bright_ratio = float(np.sum(bright_mask)) / bright_mask.size
+        if bright_ratio < 0.005:
+            return False
+        # Confirm no minimap
+        minimap = self._detect_minimap(frame, sx, sy)
+        return not minimap
 
     @staticmethod
     def _scale_roi(

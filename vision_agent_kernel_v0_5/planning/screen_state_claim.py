@@ -18,6 +18,13 @@ ScreenStateKind = Literal[
     "reward_screen",
     "boss_fight",
     "cutscene",
+    "death_screen",
+    "character_select",
+    "adventure_rank_up",
+    "notification",
+    "domain_entrance",
+    "cooking",
+    "forging",
     "unknown",
 ]
 

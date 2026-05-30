@@ -55,7 +55,10 @@ Rules:
   select_dialog_option, teleport, track_quest, toggle_auto, use_skill, use_burst,
   use_ultimate, basic_attack, attack, observe, go_back, select_item, buy_item,
   use_item, confirm, interact, move_forward, open_map, close_map, select_waypoint,
-  dodge, switch_char, heal, skip, look, jump, dash, sprint, swim
+  dodge, switch_char, heal, skip, look, jump, dash, sprint, swim, interact_npc,
+  open_chest, use_waypoint, use_statue, open_quest_log, open_inventory,
+  open_character_screen, scroll_down, scroll_up, select_tab, use_food, revive_char,
+  skip_cutscene, wait_for_loading, dismiss_notification
 """
 
 
@@ -218,6 +221,10 @@ _ALLOWED_SEMANTIC_ACTIONS = {
     "interact", "move_forward", "open_map", "close_map", "select_waypoint",
     "dodge", "switch_char", "heal", "skip", "look", "jump", "dash",
     "sprint", "swim", "climb", "glide",
+    "interact_npc", "open_chest", "use_waypoint", "use_statue",
+    "open_quest_log", "open_inventory", "open_character_screen",
+    "scroll_down", "scroll_up", "select_tab", "use_food", "revive_char",
+    "skip_cutscene", "wait_for_loading", "dismiss_notification",
 }
 
 

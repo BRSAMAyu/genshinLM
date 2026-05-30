@@ -23,6 +23,16 @@ _AFFORDANCE_RULES: dict[ScreenStateKind, list[dict[str, Any]]] = {
         {"action_type": "attack", "target_label": "enemy", "semantic_action": "attack",
          "precondition": "enemy visible in range"},
         {"action_type": "sprint", "target_label": "sprint_key", "semantic_action": "sprint"},
+        {"action_type": "interact_npc", "target_label": "npc", "semantic_action": "interact_npc",
+         "precondition": "NPC nearby with prompt"},
+        {"action_type": "open_chest", "target_label": "chest", "semantic_action": "open_chest",
+         "precondition": "chest nearby with prompt"},
+        {"action_type": "use_waypoint", "target_label": "waypoint", "semantic_action": "use_waypoint",
+         "precondition": "waypoint nearby"},
+        {"action_type": "use_statue", "target_label": "statue", "semantic_action": "use_statue",
+         "precondition": "statue nearby"},
+        {"action_type": "open_quest_log", "target_label": "quest_key", "semantic_action": "open_quest_log"},
+        {"action_type": "open_inventory", "target_label": "inventory_key", "semantic_action": "open_inventory"},
     ],
     "combat": [
         {"action_type": "attack", "target_label": "normal_attack", "semantic_action": "basic_attack"},
@@ -32,6 +42,8 @@ _AFFORDANCE_RULES: dict[ScreenStateKind, list[dict[str, Any]]] = {
          "precondition": "burst energy full"},
         {"action_type": "dodge", "target_label": "dodge_direction", "semantic_action": "dodge"},
         {"action_type": "switch_character", "target_label": "party_slot", "semantic_action": "switch_char"},
+        {"action_type": "use_food", "target_label": "food_slot", "semantic_action": "use_food",
+         "precondition": "HP < 50%"},
     ],
     "turn_based_combat": [
         {"action_type": "basic_attack", "target_label": "attack_button", "semantic_action": "basic_attack"},
@@ -95,6 +107,36 @@ _AFFORDANCE_RULES: dict[ScreenStateKind, list[dict[str, Any]]] = {
     ],
     "unknown": [
         {"action_type": "observe", "target_label": "full_screen", "semantic_action": "observe"},
+    ],
+    "death_screen": [
+        {"action_type": "revive_char", "target_label": "revive_button", "semantic_action": "revive_char"},
+        {"action_type": "use food", "target_label": "revive_food_button", "semantic_action": "use_food"},
+        {"action_type": "observe", "target_label": "full_screen", "semantic_action": "observe"},
+    ],
+    "notification": [
+        {"action_type": "dismiss", "target_label": "close_button", "semantic_action": "dismiss_notification"},
+        {"action_type": "observe", "target_label": "full_screen", "semantic_action": "observe"},
+    ],
+    "domain_entrance": [
+        {"action_type": "confirm", "target_label": "start_button", "semantic_action": "confirm"},
+        {"action_type": "go_back", "target_label": "back_button", "semantic_action": "go_back"},
+        {"action_type": "observe", "target_label": "full_screen", "semantic_action": "observe"},
+    ],
+    "adventure_rank_up": [
+        {"action_type": "confirm", "target_label": "confirm_button", "semantic_action": "confirm"},
+        {"action_type": "observe", "target_label": "full_screen", "semantic_action": "observe"},
+    ],
+    "character_select": [
+        {"action_type": "select_character", "target_label": "character_slot", "semantic_action": "switch_char"},
+        {"action_type": "go_back", "target_label": "back_button", "semantic_action": "go_back"},
+    ],
+    "cooking": [
+        {"action_type": "cook", "target_label": "cook_button", "semantic_action": "confirm"},
+        {"action_type": "go_back", "target_label": "back_button", "semantic_action": "go_back"},
+    ],
+    "forging": [
+        {"action_type": "forge", "target_label": "forge_button", "semantic_action": "confirm"},
+        {"action_type": "go_back", "target_label": "back_button", "semantic_action": "go_back"},
     ],
 }
 
@@ -179,10 +221,12 @@ class AffordanceDeriver:
     @staticmethod
     def _check_precondition(precondition: str, claim: ScreenStateClaim) -> bool:
         pc = precondition.lower()
-        if "interaction_prompt" in pc:
+        if "interaction_prompt" in pc or "nearby with prompt" in pc:
             return bool(claim.interaction_prompt)
         if "enemy visible" in pc:
             return any(o.get("type") in ("enemy", "monster") for o in claim.visible_objects)
+        if "nearby" in pc and not bool(claim.interaction_prompt):
+            return bool(claim.interaction_prompt)
         if "skill not on cooldown" in pc or "burst energy full" in pc:
             return True
         if "sp >=" in pc:
@@ -197,6 +241,13 @@ class AffordanceDeriver:
         if "waypoint selected" in pc:
             return True
         if "healer in team" in pc:
+            return True
+        if "hp <" in pc:
+            hp = claim.player_status.health_pct
+            if hp is not None:
+                match = re.search(r"hp\s*<\s*(\d+)%?", pc)
+                if match:
+                    return hp < float(match.group(1))
             return True
         return True
 
