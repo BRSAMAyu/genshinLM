@@ -118,6 +118,11 @@ class TestArtifactSalvager:
         plan = salvager.plan_salvage("target", 3, 5)
         assert plan.estimated_xp == 5 * 630
 
+    def test_salvage_mora_per_xp(self) -> None:
+        salvager = ArtifactSalvager()
+        plan = salvager.plan_salvage("target", 5, 1)
+        assert plan.mora_cost == plan.estimated_xp * 1  # MORA_PER_XP = 1
+
 
 # ---------------------------------------------------------------------------
 # ArtifactTransmuter (R-24)
@@ -136,6 +141,23 @@ class TestArtifactTransmuter:
         transmuter = ArtifactTransmuter()
         result = transmuter.plan_transmute(["a1"], "set", "sands")
         assert result is None
+
+    def test_plan_transmute_rejects_non_5star(self) -> None:
+        transmuter = ArtifactTransmuter()
+        result = transmuter.plan_transmute(
+            ["a1", "a2", "a3"], "crimson_witch", "sands",
+            input_rarities=[5, 4, 5],
+        )
+        assert result is None
+
+    def test_plan_transmute_accepts_all_5star(self) -> None:
+        transmuter = ArtifactTransmuter()
+        result = transmuter.plan_transmute(
+            ["a1", "a2", "a3"], "crimson_witch", "sands",
+            input_rarities=[5, 5, 5],
+        )
+        assert result is not None
+        assert len(result.input_artifacts) == 3
 
 
 # ---------------------------------------------------------------------------

@@ -306,9 +306,9 @@ class TestCharacterStateDetector:
         det = CharacterStateDetector()
         slots = [
             {"hue": 5},    # pyro
-            {"hue": 100},  # hydro
+            {"hue": 110},  # hydro
             {"hue": 145},  # electro
-            {"hue": 180},  # cryo
+            {"hue": 195},  # cryo
         ]
         elements = det.detect_team_elements(slots)
         assert len(elements) == 4
@@ -319,3 +319,25 @@ class TestCharacterStateDetector:
         slots = [{"hue": 250}]
         elements = det.detect_team_elements(slots)
         assert elements[0] == "unknown"
+
+    def test_element_hue_boundaries(self) -> None:
+        det = CharacterStateDetector()
+        # Test key boundary hues don't overlap
+        cases = [
+            (7, "pyro"),
+            (25, "geo"),
+            (55, "dendro"),
+            (87, "anemo"),
+            (115, "hydro"),
+            (145, "electro"),
+            (195, "cryo"),
+        ]
+        for hue, expected in cases:
+            result = det.detect_team_elements([{"hue": hue}])
+            assert result[0] == expected, f"hue={hue} expected {expected}, got {result[0]}"
+
+    def test_gap_hues_are_unknown(self) -> None:
+        det = CharacterStateDetector()
+        # Hues between 160-185 (electro→cryo gap) should be unknown
+        result = det.detect_team_elements([{"hue": 170}])
+        assert result[0] == "unknown"

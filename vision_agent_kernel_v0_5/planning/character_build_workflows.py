@@ -198,7 +198,7 @@ class ArtifactSalvager:
     XP_PER_5STAR = 2520
     XP_PER_4STAR = 1260
     XP_PER_3STAR = 630
-    MORA_PER_XP = 2  # 2 mora per enhancement point
+    MORA_PER_XP = 1  # 1 mora per enhancement point
 
     def plan_salvage(self, target: str, fodder_rarity: int,
                      fodder_count: int) -> SalvagePlan:
@@ -227,12 +227,27 @@ class ArtifactTransmuter:
     """Manages Mystic Offering (3 5-star → 1 targeted 5-star) (R-24)."""
 
     INPUT_COUNT = 3
+    REQUIRED_RARITY = 5
 
     def plan_transmute(self, input_artifacts: list[str],
-                       target_set: str, target_slot: str) -> TransmutePlan | None:
-        """Plan artifact transmutation via Mystic Offering."""
+                       target_set: str, target_slot: str,
+                       input_rarities: list[int] | None = None) -> TransmutePlan | None:
+        """Plan artifact transmutation via Mystic Offering.
+
+        Args:
+            input_artifacts: List of artifact identifiers.
+            target_set: Target artifact set name.
+            target_slot: Target slot (flower/plume/sands/goblet/circlet).
+            input_rarities: Optional list of rarities corresponding to input_artifacts.
+                           Must all be 5-star for Mystic Offering.
+        """
         if len(input_artifacts) < self.INPUT_COUNT:
             return None
+
+        if input_rarities is not None:
+            selected_rarities = input_rarities[:self.INPUT_COUNT]
+            if any(r != self.REQUIRED_RARITY for r in selected_rarities):
+                return None
 
         return TransmutePlan(
             input_artifacts=input_artifacts[:self.INPUT_COUNT],

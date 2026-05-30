@@ -222,6 +222,22 @@ class TestExpeditionExecutor:
         assert len(results) == 1
         assert results[0].status == LoopStatus.DONE
 
+    def test_slots_for_ar_thresholds(self) -> None:
+        assert ExpeditionExecutor.slots_for_ar(1) == 3
+        assert ExpeditionExecutor.slots_for_ar(27) == 3
+        assert ExpeditionExecutor.slots_for_ar(28) == 4
+        assert ExpeditionExecutor.slots_for_ar(35) == 4
+        assert ExpeditionExecutor.slots_for_ar(36) == 5
+        assert ExpeditionExecutor.slots_for_ar(60) == 5
+
+    def test_collect_nothing_when_none_complete(self) -> None:
+        ex = ExpeditionExecutor()
+        ex.plan_dispatches([
+            ExpeditionSlot(slot_id=1, is_active=True, is_complete=False),
+        ])
+        results = ex.collect_completed()
+        assert len(results) == 0
+
 
 # ---------------------------------------------------------------------------
 # BattlePassExecutor (DL-05)
@@ -375,7 +391,7 @@ class TestDailyLoopExecutor:
         state = ex.execute_loop(
             self._make_state(
                 daily_commissions_done=True,
-                resin_current=160,
+                resin_current=200,
             ),
             max_phases=3,
         )

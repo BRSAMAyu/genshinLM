@@ -560,11 +560,11 @@ class CharacterStateDetector:
         _ELEMENT_BY_HUE: dict[tuple[int, int], str] = {
             (0, 15): "pyro",
             (15, 35): "geo",
-            (35, 80): "dendro",
-            (80, 110): "anemo",
-            (95, 130): "hydro",
+            (35, 75): "dendro",
+            (75, 100): "anemo",
+            (100, 130): "hydro",
             (130, 160): "electro",
-            (160, 200): "cryo",
+            (185, 210): "cryo",
         }
 
         elements: list[str] = []

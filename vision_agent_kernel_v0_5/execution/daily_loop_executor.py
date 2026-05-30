@@ -363,9 +363,9 @@ class ExpeditionExecutor:
     """Manages daily expedition dispatches (DL-04).
 
     Dispatches 3-5 expedition slots based on AR:
-    - AR 1-24: 3 slots
-    - AR 25-34: 4 slots
-    - AR 35+: 5 slots
+    - AR 1-27: 3 slots
+    - AR 28-35: 4 slots
+    - AR 36+: 5 slots
     """
 
     DEFAULT_DURATION = 20  # hours
@@ -377,12 +377,11 @@ class ExpeditionExecutor:
     @staticmethod
     def slots_for_ar(ar: int) -> int:
         """Return the number of expedition slots available at given AR."""
-        if ar < 25:
+        if ar < 28:
             return 3
-        if ar < 35:
+        if ar < 36:
             return 4
         return 5
-        self._slots: list[ExpeditionSlot] = []
 
     @property
     def slots(self) -> list[ExpeditionSlot]:
@@ -563,7 +562,7 @@ class EventExecutor:
 @dataclass(slots=True)
 class DailyLoopConfig:
     """Configuration for a daily loop iteration."""
-    resin_threshold: int = 160       # Start loop when resin >= this
+    resin_threshold: int = 200       # Start loop when resin >= this (v5.0 cap)
     max_failures: int = 5            # Abort loop after this many failures
     include_exploration: bool = True
     include_events: bool = True
