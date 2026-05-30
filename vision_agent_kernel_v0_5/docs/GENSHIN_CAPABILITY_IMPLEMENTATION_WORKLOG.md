@@ -1044,10 +1044,24 @@
 - Integrates with GenshinDialogHandler, QuestStateMachine, StateBus
 - 8 tests passed
 
+#### DailyRoutineSkillAdapter (new)
+- **Files**: `orchestration/daily_routine_skill_adapter.py`
+- 3-layer daily routine: Layer 1 (~15min), Layer 2 (~45min), Layer 3 (~60min)
+- Phases: Mail → Commissions ×4 → Katherine → Resin → Domains → Bosses → Shop → BP → Enhancement
+- Coordinates UIFlowSkillAdapter + CombatSkillAdapter
+- 7 tests passed
+
+#### CharacterProgressionAdapter (new)
+- **Files**: `planning/character_progression_adapter.py`
+- 6-stage chain: Level Up → Ascend → Weapon → Artifact → Talent → Team Config
+- Delegates to UIFlowSkillAdapter semantic actions
+- 5 tests passed
+
 #### Session totals
-- 2243 tests passed (22 new), 1 known failure (mouse path duration)
-- 7 commits pushed
-- New modules: CombatSkillAdapter, ExplorationSkillAdapter, QuestSkillAdapter
-- UI flows: 48 → 59 registered flows
+- 2256 tests passed (+13 new), 1 known failure (mouse path duration)
+- 8 commits pushed
+- New modules: CombatSkillAdapter, ExplorationSkillAdapter, QuestSkillAdapter, DailyRoutineSkillAdapter, CharacterProgressionAdapter
+- UI flows: 59 registered flows
+- Semantic aliases in UIFlowSkillAdapter: 80+ entries
 
 ---
