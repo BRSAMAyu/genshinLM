@@ -323,6 +323,26 @@ WEAPON_REFINE = UIFlow(
     ),
 )
 
+# Composite: Open menu → refine weapon → close
+WEAPON_REFINE_FULL = UIFlow(
+    name="weapon_refine_full",
+    description="Full weapon refine flow: open menu → weapon tab → refine → close",
+    steps=(
+        open_menu("open_character_menu"),
+        delay(300),
+        click_menu_button("character", delay_ms=800),
+        wait_state("full_menu", timeout_ms=5000),
+        delay(400),
+        click_char_tab("weapon", delay_ms=600),
+        click(nx=0.35, ny=0.40, reason="select_weapon", delay_ms=400),
+        click(nx=0.85, ny=0.60, reason="click_refine", delay_ms=400),
+        click(nx=0.50, ny=0.35, reason="select_duplicate", delay_ms=300),
+        click(nx=0.65, ny=0.85, reason="confirm_refine", delay_ms=600),
+        delay(500),
+        press("escape", reason="close_menu_after_refine", delay_ms=500),
+    ),
+)
+
 # Composite: Open menu → equip weapon → close
 WEAPON_EQUIP_FULL = UIFlow(
     name="weapon_equip_full",
@@ -450,6 +470,29 @@ PARTY_QUICK_CONFIG = UIFlow(
         press("l", reason="open_party_setup", delay_ms=800),
         wait_state("full_menu", timeout_ms=3000),
         click(nx=0.85, ny=0.85, reason="quick_config_button", delay_ms=600),
+        delay(300),
+        press("escape", reason="close_party_config", delay_ms=500),
+    ),
+)
+
+# Party slot-specific configuration flows
+# Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - 队伍配置
+# Slots: 1=(0.30,0.45), 2=(0.40,0.45), 3=(0.50,0.45), 4=(0.60,0.45)
+PARTY_CONFIG_SLOT = UIFlow(
+    name="party_config_slot",
+    description="Configure a single party slot (open party → click slot → select first char → close). "
+                "Slot selection defaults to slot 1 (0.30, 0.45).",
+    precondition_state="world_hud",
+    steps=(
+        wait_state("world_hud", timeout_ms=3000),
+        press("l", reason="open_party_setup", delay_ms=800),
+        wait_state("full_menu", timeout_ms=3000),
+        # Click target slot (default slot 1)
+        click(nx=0.30, ny=0.45, reason="click_party_slot", delay_ms=400),
+        # Select first available character in list
+        click(nx=0.40, ny=0.65, reason="select_character", delay_ms=300),
+        delay(300),
+        press("escape", reason="close_party_config", delay_ms=500),
     ),
 )
 
@@ -531,6 +574,50 @@ WISH_TEN_PULL = UIFlow(
     ),
 )
 
+WISH_SINGLE_PULL = UIFlow(
+    name="wish_single_pull",
+    description="Perform a single pull on the current banner",
+    precondition_state="full_menu",
+    steps=(
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        click(nx=0.70, ny=0.85, reason="x1_wish_button", delay_ms=500),
+        click(nx=0.65, ny=0.85, reason="confirm_wish", delay_ms=1000),
+        loop(
+            body=(
+                press("escape", reason="skip_wish_animation"),
+                delay(1000),
+            ),
+            max_iterations=5,
+            reason="skip_wish_animation",
+        ),
+        click(nx=0.50, ny=0.90, reason="close_wish_results", delay_ms=500),
+    ),
+)
+
+# Composite: Open wish screen → ten pull → close
+WISH_TEN_PULL_FULL = UIFlow(
+    name="wish_ten_pull_full",
+    description="Full wish ten-pull flow: open wish → select banner → pull → close",
+    steps=(
+        press("f3", reason="open_wish_screen"),
+        wait_state("full_menu", timeout_ms=5000),
+        delay(500),
+        click(nx=0.85, ny=0.85, reason="x10_wish_button", delay_ms=500),
+        click(nx=0.65, ny=0.85, reason="confirm_wish", delay_ms=1000),
+        loop(
+            body=(
+                press("escape", reason="skip_wish_animation"),
+                delay(1000),
+            ),
+            max_iterations=10,
+            reason="skip_wish_animation",
+        ),
+        click(nx=0.50, ny=0.90, reason="close_wish_results", delay_ms=500),
+        press("escape", reason="close_wish_screen", delay_ms=500),
+    ),
+)
+
 # ===================================================================
 # Shop flows
 # ===================================================================
@@ -578,6 +665,28 @@ CRAFTING_BENCH_INTERACT = UIFlow(
     steps=(
         press("f", reason="interact_crafting_bench"),
         delay(800),
+    ),
+)
+
+# Composite: Full crafting bench synthesis flow
+# Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - 合成台合成
+CRAFTING_SYNTHESIZE_FULL = UIFlow(
+    name="crafting_synthesize_full",
+    description="Full crafting flow: interact → select type → select recipe → synthesize → close",
+    steps=(
+        press("f", reason="interact_crafting_bench"),
+        delay(800),
+        # Select first crafting type tab (通用合成)
+        click(nx=0.20, ny=0.10, reason="select_crafting_type", delay_ms=500),
+        # Select first recipe in list
+        click(nx=0.30, ny=0.35, reason="select_recipe", delay_ms=400),
+        # Click quantity selector → MAX
+        click(nx=0.65, ny=0.50, reason="quantity_selector", delay_ms=300),
+        click(nx=0.65, ny=0.70, reason="select_max_quantity", delay_ms=300),
+        # Confirm synthesis
+        click(nx=0.65, ny=0.85, reason="confirm_synthesize", delay_ms=500),
+        delay(500),
+        press("escape", reason="close_crafting_bench"),
     ),
 )
 
@@ -973,17 +1082,22 @@ ALL_FLOWS: dict[str, UIFlow] = {
         WEAPON_ENHANCE,
         WEAPON_ENHANCE_FULL,
         WEAPON_REFINE,
+        WEAPON_REFINE_FULL,
         ARTIFACT_EQUIP,
         ARTIFACT_EQUIP_FULL,
         ARTIFACT_ENHANCE,
         ARTIFACT_ENHANCE_FULL,
         PARTY_QUICK_CONFIG,
+        PARTY_CONFIG_SLOT,
         TELEPORT_FLOW,
         DOMAIN_ENTER_AND_CLAIM,
         WISH_TEN_PULL,
+        WISH_SINGLE_PULL,
+        WISH_TEN_PULL_FULL,
         SHOP_OPEN_PAIMON_BARGAINS,
         SHOP_BUY_MONTHLY_FATES,
         CRAFTING_BENCH_INTERACT,
+        CRAFTING_SYNTHESIZE_FULL,
         COOKING_INTERACT,
         COOKING_AUTO_COOK,
         HANDBOOK_TRACK_ENEMY,
@@ -998,7 +1112,6 @@ ALL_FLOWS: dict[str, UIFlow] = {
         STATUE_ELEMENT_RESONANCE,
         # New flows
         ARTIFACT_BATCH_LOCK,
-        WEAPON_REFINE,
         SYNTHESIS_SELECT_QUANTITY,
         FORGE_WEAPON_SELECT_TYPE,
         WAYPOINT_NAVIGATE_PRECISE,
