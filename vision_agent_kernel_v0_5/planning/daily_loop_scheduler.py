@@ -141,6 +141,9 @@ def _build_local_schedule() -> dict[int, dict[int, list[str]]]:
             # Fontaine books (region 5)
             elif book_lower in ("equity", "justice", "order"):
                 region_map.setdefault(5, []).append(book_lower)
+            # Natlan books (region 6)
+            elif book_lower in ("contention", "kindling", "conflict"):
+                region_map.setdefault(6, []).append(book_lower)
         schedule[day] = region_map
     return schedule
 

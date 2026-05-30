@@ -223,7 +223,7 @@ class TalentCost:
 _TALENT_COSTS: dict[int, TalentCost] = {
     1:  TalentCost(1,  12500,   book_teachings=3, book_guide=0, book_philosophies=0,
                    common_t1=6, common_t2=0, common_t3=0, boss_material=0),
-    2:  TalentCost(2,  17500,   book_teachings=2, book_guide=0, book_philosophies=0,
+    2:  TalentCost(2,  17500,   book_teachings=0, book_guide=2, book_philosophies=0,
                    common_t1=0, common_t2=3, common_t3=0, boss_material=0),
     3:  TalentCost(3,  25000,   book_teachings=0, book_guide=4, book_philosophies=0,
                    common_t1=0, common_t2=4, common_t3=0, boss_material=0),
@@ -235,9 +235,9 @@ _TALENT_COSTS: dict[int, TalentCost] = {
                    common_t1=0, common_t2=0, common_t3=4, boss_material=0),
     7:  TalentCost(7,  260000,  book_teachings=0, book_guide=0, book_philosophies=6,
                    common_t1=0, common_t2=0, common_t3=6, boss_material=1),
-    8:  TalentCost(8,  450000,  book_teachings=0, book_guide=0, book_philosophies=9,
+    8:  TalentCost(8,  450000,  book_teachings=0, book_guide=0, book_philosophies=12,
                    common_t1=0, common_t2=0, common_t3=9, boss_material=2),
-    9:  TalentCost(9,  700000,  book_teachings=0, book_guide=0, book_philosophies=12,
+    9:  TalentCost(9,  700000,  book_teachings=0, book_guide=0, book_philosophies=16,
                    common_t1=0, common_t2=0, common_t3=12, boss_material=2, crown=True),
 }
 
@@ -256,9 +256,9 @@ class TalentBookDomain(Enum):
     FORSAKEN_RIFT = "Forsaken Rift"           # Mondstadt: Freedom, Resistance, Ballad
     TAISHAN_MANSION = "Taishan Mansion"       # Liyue: Diligence, Gold, Prosperity
     VIOLET_COURT = "Violet Court"             # Inazuma: Transience, Elegance, Light
-    STEEPLE_OF_SIGNIFICANCE = "Steeple of Ignorance"      # Sumeru: Admonition, Ingenuity, Praxis
-    PALE_FORGOTTEN = "Pale Forgotten Glory"                # Fontaine: Equity, Justice, Order
-    BLAZING_URSA = "Blazing Ruins"                          # Natlan: Contention, Kindling, Conflict
+    STEEPLE_OF_IGNORANCE = "Steeple of Ignorance"      # Sumeru: Admonition, Ingenuity, Praxis
+    PALE_FORGOTTEN_GLORY = "Pale Forgotten Glory"      # Fontaine: Equity, Justice, Order
+    BLAZING_RUINS = "Blazing Ruins"                      # Natlan: Contention, Kindling, Conflict
 
 
 # Talent book to domain mapping
@@ -272,15 +272,15 @@ TALENT_BOOK_DOMAINS: dict[str, TalentBookDomain] = {
     "Transience": TalentBookDomain.VIOLET_COURT,
     "Elegance":   TalentBookDomain.VIOLET_COURT,
     "Light":      TalentBookDomain.VIOLET_COURT,
-    "Admonition":  TalentBookDomain.STEEPLE_OF_SIGNIFICANCE,
-    "Ingenuity":   TalentBookDomain.STEEPLE_OF_SIGNIFICANCE,
-    "Praxis":      TalentBookDomain.STEEPLE_OF_SIGNIFICANCE,
-    "Equity":     TalentBookDomain.PALE_FORGOTTEN,
-    "Justice":    TalentBookDomain.PALE_FORGOTTEN,
-    "Order":      TalentBookDomain.PALE_FORGOTTEN,
-    "Contention": TalentBookDomain.BLAZING_URSA,
-    "Kindling":   TalentBookDomain.BLAZING_URSA,
-    "Conflict":   TalentBookDomain.BLAZING_URSA,
+    "Admonition":  TalentBookDomain.STEEPLE_OF_IGNORANCE,
+    "Ingenuity":   TalentBookDomain.STEEPLE_OF_IGNORANCE,
+    "Praxis":      TalentBookDomain.STEEPLE_OF_IGNORANCE,
+    "Equity":     TalentBookDomain.PALE_FORGOTTEN_GLORY,
+    "Justice":    TalentBookDomain.PALE_FORGOTTEN_GLORY,
+    "Order":      TalentBookDomain.PALE_FORGOTTEN_GLORY,
+    "Contention": TalentBookDomain.BLAZING_RUINS,
+    "Kindling":   TalentBookDomain.BLAZING_RUINS,
+    "Conflict":   TalentBookDomain.BLAZING_RUINS,
 }
 
 # Daily rotation: day_of_week (0=Mon, 6=Sun) -> set of available books
