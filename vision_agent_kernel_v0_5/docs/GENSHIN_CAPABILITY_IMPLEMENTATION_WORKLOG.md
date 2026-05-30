@@ -1103,4 +1103,64 @@
 #### Commits
 - `2b3fb31`: Add SkillRegistry + fix 5 audit issues
 
+### 2026-05-31 — 6 Architecture Dimensions Implementation
+
+#### 1. Error Recovery Architecture ✅
+- **文件**: `runtime/error_classification.py`
+- **测试**: `tests/test_error_classification.py` — 40 tests
+- **覆盖**:
+  - ErrorCategory enum: 7 categories (PERCEPTION/NAVIGATION/COMBAT/UI/INPUT/SYSTEM/ENVIRONMENT)
+  - ErrorSeverity enum: P0_CRITICAL → P3_MINOR
+  - classify_error() heuristic: 35+ error codes mapped to category+severity
+  - RecoveryStateMachine: 6-state flow NORMAL→ANOMALY→DIAGNOSE→PLAN→RECOVER→ESCALATE
+  - Escalation counter: only resets on verification_success, not manual_intervention
+  - Error history trimming at 100 entries → keeps last 50
+
+#### 2. Session Persistence Model ✅
+- **文件**: `runtime/session_state.py`, `runtime/account_state.py`, `runtime/session_checkpoint.py`
+- **测试**: 44 tests across 3 test files
+- **覆盖**:
+  - SessionLifecycle: 7 states, valid transition enforcement, JSONL logging
+  - AccountState: characters/weapons/resources/quest/daily/weekly/team, JSON roundtrip, atomic write-rename
+  - CheckpointStore: incremental/full checkpoints, SHA256 verification, rolling window pruning (max 20)
+  - SaveTrigger system: high/medium/low priority triggers, timed intervals
+
+#### 3. Human-Agent Collaboration Protocol ✅
+- **文件**: `runtime/collaboration_controller.py`
+- **测试**: `tests/test_collaboration_controller.py` — 33 tests
+- **覆盖**:
+  - 4 autonomy levels: L0 Manual → L1 Assisted → L2 Supervised → L3 Autonomous
+  - Permission matrix: 28 low-risk actions auto-approved, 13 high-risk need confirmation, 6 forbidden
+  - Auto-downgrade triggers: perception low, consecutive failures, user input, puzzle, window defocus
+  - Control handover: 7-item checklist validation
+  - Safety limits: primogem budget, mandatory rest intervals (60 min / 5 min)
+  - Confirmation callback for L1 high-risk actions
+
+#### 4. Content Versioning System ✅
+- **文件**: `runtime/content_version_manager.py`
+- **测试**: `tests/test_content_version_manager.py` — 29 tests
+- **覆盖**:
+  - 4 change types: UI/Mechanism/Content/System
+  - GameVersion: parse, compare, ordering
+  - Version registry: 13 known versions (1.0-5.7) with adaptation statuses
+  - Runtime anomaly detection: sliding-window failure rate (window=20, threshold=30%)
+  - Health check: 5 checks with healthy/degraded/critical grades
+  - Compatibility matrix: verified → all capabilities, partial → limited, unknown → none
+
+#### 5. E2E Validation Framework ✅
+- **文件**: `runtime/validation_framework.py`
+- **测试**: `tests/test_validation_framework.py` — 26 tests
+- **覆盖**:
+  - 4-tier test pyramid: Unit/Integration/Scenario/Milestone
+  - Test case registry with tier, domain (12 capability domains), environment, pass criteria
+  - Tier-specific pass criteria: consecutive passes (1/1/3/2), accuracy thresholds
+  - Metrics: per-tier and per-domain pass rates, durations
+  - Dashboard: total registered/verified/coverage, by tier and by domain breakdown
+
+#### Summary
+- **New modules**: 7 files in runtime/
+- **New tests**: 172 tests across 8 test files
+- **Total test count**: 2475 passed (from 2295), 1 known flaky mouse path test
+- **Commits**: 5 commits pushed to codex/pre-realworld-closure
+
 ---
