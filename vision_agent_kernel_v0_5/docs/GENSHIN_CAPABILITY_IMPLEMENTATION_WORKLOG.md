@@ -1445,8 +1445,29 @@
 #### Session 6 Totals
 - **Modified files**: 6 (combat_skill_adapter, skill_registry, session_chains, newbie_tutorial_chain, dialog_branch_analyzer, dialog_driver)
 - **New test files**: 3 (test_abyss_floor, test_dialog_branch_analyzer, test_dialog_driver)
-- **New tests**: 42 tests (4 abyss + 9 recovery/checkpoint + 11 consequence + 18 dialog)
-- **Total test count**: ~2698+ passed, 1 known flaky
-- **Commits**: 4 commits pushed to codex/pre-realworld-closure
+- **New tests**: 59 tests (4 abyss + 9 recovery/checkpoint + 11 consequence + 18 dialog + 17 perception)
+- **Total test count**: ~2741 passed, 1 known flaky
+- **Commits**: 6 commits pushed to codex/pre-realworld-closure
+
+#### 6f. CharacterProgressionSession Team Step Fix
+- **Modified**: `planning/session_chains.py`
+  - Added missing `_step_team()` method (9th step in progression chain)
+  - Steps total now 9 (was 8), success threshold >= 6
+  - Added "team" to `_PROGRESSION_RECOVERY_CATEGORY`
+- **Updated**: `tests/test_session_chains.py`
+  - Added `team_done` assertion in `test_all_stages_completed`
+  - Updated progression count from 5 to 6 semantic actions
+
+#### 6g. Perception Combat Enhancements
+- **New**: `perception/aoe_timing_estimator.py`
+  - AoETimingEstimator: fill-ratio based time-to-impact prediction
+  - Supports circle, line, cone, cross AoE types
+  - Dodge direction recommendations (left/right/away)
+  - Urgency classification (immediate/soon/caution)
+- **New**: `perception/enemy_weak_state_detector.py`
+  - 7 weak state types: staggered, downed, shield_broken, frozen, stunned, paralyzed, exposed_core
+  - Burst window tracking with efficiency metrics
+  - Duration estimates per state type (2s-15s)
+- **Tests**: 17 tests in `tests/test_perception_combat.py`
 
 ---
