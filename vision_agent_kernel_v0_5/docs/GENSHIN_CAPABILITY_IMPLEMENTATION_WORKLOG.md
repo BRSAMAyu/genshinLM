@@ -1258,4 +1258,26 @@
 - **Total test count**: 2575 passed (from 2507), 1 known flaky
 - **Commits**: 2 commits pushed to codex/pre-realworld-closure
 
+#### 3e. Unified Recovery Orchestrator (Long Chain #5)
+- **File**: `planning/recovery_orchestrator.py` (new, ~330 lines)
+- **RecoveryOrchestrator**: Single entry point coordinating all recovery scenarios
+- 7 recovery categories with 22 predefined recovery actions:
+  - Combat: death revive, boss retry, low HP heal, team wipe
+  - Navigation: stuck teleport, lost quest marker, target search
+  - Quest: missing step, marker gone, wrong order fix
+  - UI: stuck menu exit, dialog hung, loading timeout
+  - Environment: sheer cold evacuate, balethunder shelter, drowning, fall damage
+  - System: crash restart, disconnect reconnect, model fallback
+  - Resource: no resin wait, no food craft, wrong team config
+- Escalation system: AUTO → ASSISTED → MANUAL → ABORT
+- Consecutive failure tracking with automatic escalation
+- Category-level fallback when specific failure type not found
+
+#### Session 3 Totals
+- **New modules**: 3 files (environmental handlers, boss handlers, recovery orchestrator)
+- **Modified files**: 4 (combat_skill_adapter, quest_mechanism_router, test_quest_systems, worklog)
+- **New tests**: 82 tests across 3 test files
+- **Total test count**: 2589 passed (from 2507), 1 known flaky
+- **Commits**: 4 commits pushed to codex/pre-realworld-closure
+
 ---
