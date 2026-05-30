@@ -16,7 +16,10 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from planning.recovery_orchestrator import RecoveryOrchestrator
 
 log = logging.getLogger(__name__)
 
@@ -71,6 +74,7 @@ class DailySessionResult:
     steps_completed: int = 0
     steps_total: int = 0
     skipped_steps: list[str] = field(default_factory=list)
+    recovery_events: int = 0
 
 
 class DailySessionChain:
@@ -84,9 +88,11 @@ class DailySessionChain:
         self,
         executor: SemanticExecutor,
         max_duration_sec: float = 1200.0,
+        recovery_orchestrator: RecoveryOrchestrator | None = None,
     ) -> None:
         self._executor = executor
         self._max_duration = max_duration_sec
+        self._recovery = recovery_orchestrator
 
     def run(
         self,
@@ -122,13 +128,34 @@ class DailySessionChain:
                     result.steps_completed += 1
                 else:
                     log.warning("[DailySession] step %s failed", step_name)
+                    if self._recovery is not None:
+                        self._try_recover(step_name, "step_failed", result)
             except Exception as exc:
                 log.warning("[DailySession] step %s exception: %s", step_name, exc)
+                if self._recovery is not None:
+                    self._try_recover(step_name, str(exc), result)
                 result.skipped_steps.append(step_name)
 
         result.duration_sec = time.perf_counter() - started
         result.success = result.commissions_done >= result.commissions_total
         return result
+
+    def _try_recover(
+        self, step_name: str, description: str, result: DailySessionResult,
+    ) -> None:
+        from planning.recovery_orchestrator import (
+            RecoveryCategory,
+            RecoveryEvent,
+            RecoverySeverity,
+        )
+        category = _STEP_RECOVERY_CATEGORY.get(step_name, RecoveryCategory.UI)
+        event = RecoveryEvent(category, RecoverySeverity.MINOR, description)
+        recovery_result = self._recovery.recover(event)
+        if recovery_result.success:
+            result.recovery_events += 1
+            log.info("[DailySession] recovered step %s", step_name)
+        else:
+            log.warning("[DailySession] recovery failed for step %s: %s", step_name, recovery_result.details)
 
     def _step_status_check(self, result: DailySessionChain, initial: SessionSnapshot) -> bool:
         self._executor.execute_semantic("open_menu", context={"reason": "status_check"})
@@ -188,6 +215,17 @@ class DailySessionChain:
         return True
 
 
+_STEP_RECOVERY_CATEGORY: dict[str, str] = {
+    "status_check": "ui",
+    "commissions": "combat",
+    "katheryne": "navigation",
+    "resin_spend": "resource",
+    "bp_claim": "ui",
+    "return_position": "navigation",
+    "report": "ui",
+}
+
+
 # ---------------------------------------------------------------------------
 # Chain 3: Character Progression Session (~30min)
 # ---------------------------------------------------------------------------
@@ -206,6 +244,7 @@ class ProgressionSessionResult:
     duration_sec: float = 0.0
     steps_completed: int = 0
     steps_total: int = 8
+    recovery_events: int = 0
 
 
 class CharacterProgressionSession:
@@ -219,9 +258,11 @@ class CharacterProgressionSession:
         self,
         executor: SemanticExecutor,
         max_duration_sec: float = 2400.0,
+        recovery_orchestrator: RecoveryOrchestrator | None = None,
     ) -> None:
         self._executor = executor
         self._max_duration = max_duration_sec
+        self._recovery = recovery_orchestrator
 
     def run(
         self,
@@ -252,13 +293,35 @@ class CharacterProgressionSession:
             if elapsed > self._max_duration:
                 break
 
-            ok = step_fn(result, character)
+            try:
+                ok = step_fn(result, character)
+            except Exception as exc:
+                log.warning("[Progression] step %s exception: %s", step_name, exc)
+                ok = False
+
             if ok:
                 result.steps_completed += 1
+            elif self._recovery is not None:
+                self._try_recover(step_name, "step_failed", result)
 
         result.duration_sec = time.perf_counter() - started
         result.success = result.steps_completed >= 6  # At least 6/8 steps
         return result
+
+    def _try_recover(
+        self, step_name: str, description: str, result: ProgressionSessionResult,
+    ) -> None:
+        from planning.recovery_orchestrator import (
+            RecoveryCategory,
+            RecoveryEvent,
+            RecoverySeverity,
+        )
+        category = _PROGRESSION_RECOVERY_CATEGORY.get(step_name, RecoveryCategory.UI)
+        event = RecoveryEvent(category, RecoverySeverity.MODERATE, description)
+        recovery_result = self._recovery.recover(event)
+        if recovery_result.success:
+            result.recovery_events += 1
+            log.info("[Progression] recovered step %s", step_name)
 
     def _step_check_status(self, result: ProgressionSessionResult, char: str) -> bool:
         return self._executor.execute_semantic(
@@ -313,6 +376,18 @@ class CharacterProgressionSession:
         )
         result.talent_done = ok
         return ok
+
+
+_PROGRESSION_RECOVERY_CATEGORY: dict[str, str] = {
+    "check_status": "ui",
+    "check_materials": "ui",
+    "farm_materials": "combat",
+    "level_up": "ui",
+    "ascend": "ui",
+    "weapon": "resource",
+    "artifact": "resource",
+    "talent": "resource",
+}
 
 
 # ---------------------------------------------------------------------------

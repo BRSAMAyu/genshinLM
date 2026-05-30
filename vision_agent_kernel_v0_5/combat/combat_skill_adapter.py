@@ -308,6 +308,136 @@ class CombatSkillAdapter:
         return result.success
 
     # ------------------------------------------------------------------
+    # Spiral Abyss high-difficulty floor handler
+    # ------------------------------------------------------------------
+
+    def execute_abyss_floor(
+        self,
+        floor_number: int = 9,
+        context: dict[str, Any] | None = None,
+    ) -> bool:
+        """Execute a Spiral Abyss floor with time-pressure management.
+
+        Uses SpiralAbyssRunner for team building and chamber progression,
+        AbyssTimePressureManager for real-time strategy adjustments.
+        """
+        from combat.spiral_abyss import (
+            AbyssChamber,
+            AbyssCharacter,
+            AbyssRoom,
+            AbyssTeamRole,
+            AbyssTimePressureManager,
+            ChamberStatus,
+            SpiralAbyssRunner,
+        )
+
+        ctx = context or {}
+        runner = SpiralAbyssRunner()
+        pressure_mgr = AbyssTimePressureManager()
+
+        # Build characters from context or defaults
+        _ROLE_MAP = {
+            "dps": AbyssTeamRole.MAIN_DPS,
+            "main_dps": AbyssTeamRole.MAIN_DPS,
+            "sub_dps": AbyssTeamRole.SUB_DPS,
+            "support": AbyssTeamRole.SUPPORT,
+            "healer": AbyssTeamRole.HEALER,
+            "shield": AbyssTeamRole.SHIELD,
+        }
+        chars_data = ctx.get("characters", [
+            {"name": "main_dps", "element": "pyro", "level": 90, "role": "main_dps"},
+            {"name": "sub_dps", "element": "hydro", "level": 90, "role": "sub_dps"},
+            {"name": "support", "element": "cryo", "level": 90, "role": "support"},
+            {"name": "healer", "element": "anemo", "level": 90, "role": "healer"},
+            {"name": "dps2", "element": "electro", "level": 90, "role": "main_dps"},
+            {"name": "sub2", "element": "dendro", "level": 90, "role": "sub_dps"},
+            {"name": "sup2", "element": "geo", "level": 90, "role": "support"},
+            {"name": "heal2", "element": "pyro", "level": 90, "role": "healer"},
+        ])
+        available_chars = [
+            AbyssCharacter(
+                name=c["name"], element=c["element"],
+                level=c.get("level", 80), role=_ROLE_MAP.get(c.get("role", "dps"), AbyssTeamRole.MAIN_DPS),
+            )
+            for c in chars_data
+        ]
+
+        # Build 3 chambers for the floor
+        chambers_data = ctx.get("chambers", [
+            {"enemies_first": ["mob_wave"], "enemies_second": ["mob_wave"]},
+            {"enemies_first": ["elite_shield"], "enemies_second": ["elite_ranged"]},
+            {"enemies_first": ["boss"], "enemies_second": ["boss"]},
+        ])
+        chambers = [
+            AbyssChamber(
+                chamber_id=i + 1,
+                first_half=AbyssRoom(room_id=1, enemies=cd.get("enemies_first", ["mob"])),
+                second_half=AbyssRoom(room_id=2, enemies=cd.get("enemies_second", ["mob"])),
+            )
+            for i, cd in enumerate(chambers_data)
+        ]
+
+        state = runner.prepare_floor(floor_number, available_chars, chambers)
+        log.info(
+            "[CombatSkill] abyss floor %d prepared: team1=%s team2=%s stars=%d",
+            floor_number,
+            [c.name for c in state.team1.characters] if state.team1 else [],
+            [c.name for c in state.team2.characters] if state.team2 else [],
+            state.total_stars,
+        )
+
+        # Execute chambers
+        for chamber_idx in range(len(chambers)):
+            current = state.current_chamber
+            if current is None:
+                break
+
+            # Execute combat for first half
+            is_boss_first = any("boss" in e for e in current.first_half.enemies)
+            executor = _CombatExecutorBridge(self)
+            ok = executor.execute_semantic(
+                "combat_boss" if is_boss_first else "combat_encounter",
+                context={"abyss_half": "first", "floor": floor_number},
+            )
+
+            # Time pressure check
+            pressure = pressure_mgr.analyze_time_pressure(
+                chamber_id=chamber_idx + 1,
+                elapsed_sec=60.0,
+                enemy_health_pct=0.5,
+            )
+            if pressure.should_rush:
+                executor.execute_semantic(
+                    "use_burst", context={"reason": "abyss_time_pressure"},
+                )
+
+            # Execute second half
+            is_boss_second = any("boss" in e for e in current.second_half.enemies)
+            ok2 = executor.execute_semantic(
+                "combat_boss" if is_boss_second else "combat_encounter",
+                context={"abyss_half": "second", "floor": floor_number},
+            )
+
+            if ok and ok2:
+                runner.advance_chamber(state, stars=3)
+            else:
+                runner.fail_chamber(state)
+                log.warning(
+                    "[CombatSkill] abyss floor %d chamber %d failed",
+                    floor_number, chamber_idx + 1,
+                )
+                break
+
+        success = all(
+            c.status == ChamberStatus.COMPLETED for c in state.chambers
+        )
+        log.info(
+            "[CombatSkill] abyss floor %d complete: stars=%d/%d success=%s",
+            floor_number, state.total_stars, len(chambers) * 3, success,
+        )
+        return success
+
+    # ------------------------------------------------------------------
     # Special boss handlers (Narwhal)
     # ------------------------------------------------------------------
 

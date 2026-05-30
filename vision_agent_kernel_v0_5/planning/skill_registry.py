@@ -60,6 +60,7 @@ _COMPOSITE_ROUTES: dict[str, tuple[str, str]] = {
     "combat_multi_wave": ("combat", "execute_multi_wave"),
     "combat_shield_break": ("combat", "execute_shield_break"),
     "combat_abyss_mage": ("combat", "execute_abyss_mage"),
+    "combat_abyss_floor": ("combat", "execute_abyss_floor"),
     # Exploration composites
     "explore_activate_waypoint": ("exploration", "activate_waypoint"),
     "explore_open_chest": ("exploration", "open_chest"),
@@ -87,6 +88,7 @@ _ADAPTER_METHOD_EXTRA_ARGS: dict[str, list[str]] = {
     "combat.execute_multi_wave": ["context"],
     "combat.execute_shield_break": ["context"],
     "combat.execute_abyss_mage": ["context"],
+    "combat.execute_abyss_floor": ["floor_number"],
     "progression.run_full_chain": ["character"],
     "progression.stage1_level_up": ["character"],
     "progression.stage2_ascend": ["character"],

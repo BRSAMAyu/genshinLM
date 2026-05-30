@@ -9,7 +9,10 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import TYPE_CHECKING, Any, Protocol
+
+if TYPE_CHECKING:
+    from runtime.session_checkpoint import CheckpointStore
 
 log = logging.getLogger(__name__)
 
@@ -107,6 +110,8 @@ class NewbieTutorialChain:
     results: list[PhaseResult] = field(default_factory=list)
     max_phase_retries: int = 3
     total_paused_sec: float = 0.0
+    checkpoint_store: CheckpointStore | None = None
+    _session_id: str = field(default_factory=lambda: f"tutorial_{time.strftime('%Y%m%d_%H%M%S')}")
 
     @property
     def completed(self) -> bool:
@@ -126,6 +131,10 @@ class NewbieTutorialChain:
         """Execute the full tutorial chain."""
         log.info("[Tutorial] starting newbie tutorial chain (%d phases)", len(TUTORIAL_PHASES))
 
+        # Resume from latest checkpoint if available
+        if self.checkpoint_store is not None:
+            self._load_checkpoint()
+
         while self.current_phase_idx < len(TUTORIAL_PHASES):
             phase = TUTORIAL_PHASES[self.current_phase_idx]
             result = self._execute_phase(phase)
@@ -133,6 +142,7 @@ class NewbieTutorialChain:
             if result.success:
                 self.results.append(result)
                 self.current_phase_idx += 1
+                self._save_phase_checkpoint(phase)
                 log.info("[Tutorial] phase %s complete (%.1fs) — progress %.0f%%",
                          phase.phase_id, result.duration_sec, self.progress_pct)
             else:
@@ -293,6 +303,37 @@ class NewbieTutorialChain:
     def _handle_prologue_finale(self, phase: TutorialPhase) -> bool:
         self.executor.execute_semantic("skip_cutscene")
         return self.executor.execute_semantic("quest_drive_dialog")
+
+    # ------------------------------------------------------------------
+    # Checkpoint helpers
+    # ------------------------------------------------------------------
+
+    def _save_phase_checkpoint(self, phase: TutorialPhase) -> None:
+        if self.checkpoint_store is None:
+            return
+        cp = self.checkpoint_store.create_checkpoint(
+            session_id=self._session_id,
+            triggered_by=f"tutorial_phase_{phase.phase_id}",
+            task_state={
+                "phase_idx": self.current_phase_idx,
+                "phase_id": phase.phase_id,
+                "completed": [r.phase_id for r in self.results if r.success],
+            },
+        )
+        self.checkpoint_store.save(cp)
+
+    def _load_checkpoint(self) -> None:
+        if self.checkpoint_store is None:
+            return
+        latest = self.checkpoint_store.load_latest()
+        if latest is None:
+            return
+        task = latest.task_state
+        if task and task.get("phase_idx"):
+            self.current_phase_idx = int(task["phase_idx"])
+            log.info(
+                "[Tutorial] resuming from checkpoint at phase_idx=%d", self.current_phase_idx,
+            )
 
     # ------------------------------------------------------------------
     # Default handler for unknown phases

@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from typing import Any
+from unittest.mock import MagicMock
 
 from planning.session_chains import (
     CharacterProgressionSession,
@@ -9,6 +10,7 @@ from planning.session_chains import (
     MainlineSession,
     SessionSnapshot,
 )
+from planning.newbie_tutorial_chain import NewbieTutorialChain
 
 
 class _FakeExecutor:
@@ -154,3 +156,162 @@ class TestMainlineSession:
         session = MainlineSession(executor=ex)
         result = session.run()
         assert not result.success
+
+
+class TestDailySessionChainRecovery:
+    def test_recovery_on_step_failure(self):
+        from planning.recovery_orchestrator import RecoveryOrchestrator, RecoveryResult
+        from planning.recovery_orchestrator import (
+            RecoveryCategory,
+            EscalationLevel,
+        )
+        mock_recovery = MagicMock(spec=RecoveryOrchestrator)
+        mock_recovery.recover.return_value = RecoveryResult(
+            success=True, category=RecoveryCategory.COMBAT,
+            escalation=EscalationLevel.AUTO,
+        )
+        ex = _FakeExecutor()
+        ex.set_fail_on({"run_daily_quick"})
+        chain = DailySessionChain(executor=ex, recovery_orchestrator=mock_recovery)
+        result = chain.run()
+        assert result.recovery_events >= 1
+        mock_recovery.recover.assert_called()
+
+    def test_no_recovery_when_none_provided(self):
+        ex = _FakeExecutor()
+        ex.set_fail_on({"run_daily_quick"})
+        chain = DailySessionChain(executor=ex)
+        result = chain.run()
+        assert result.recovery_events == 0
+
+    def test_recovery_on_exception(self):
+        class _ThrowExecutor:
+            def execute_semantic(self, action: str = "", target: str = "",
+                                context: Any = None) -> bool:
+                if action == "run_daily_quick":
+                    raise RuntimeError("boom")
+                return True
+
+        from planning.recovery_orchestrator import RecoveryOrchestrator, RecoveryResult
+        from planning.recovery_orchestrator import (
+            RecoveryCategory,
+            EscalationLevel,
+        )
+        mock_recovery = MagicMock(spec=RecoveryOrchestrator)
+        mock_recovery.recover.return_value = RecoveryResult(
+            success=True, category=RecoveryCategory.COMBAT,
+            escalation=EscalationLevel.AUTO,
+        )
+        chain = DailySessionChain(
+            executor=_ThrowExecutor(), recovery_orchestrator=mock_recovery,
+        )
+        result = chain.run()
+        assert result.recovery_events >= 1
+
+
+class TestProgressionSessionRecovery:
+    def test_recovery_on_step_failure(self):
+        from planning.recovery_orchestrator import RecoveryOrchestrator, RecoveryResult
+        from planning.recovery_orchestrator import (
+            RecoveryCategory,
+            EscalationLevel,
+        )
+        mock_recovery = MagicMock(spec=RecoveryOrchestrator)
+        mock_recovery.recover.return_value = RecoveryResult(
+            success=True, category=RecoveryCategory.COMBAT,
+            escalation=EscalationLevel.AUTO,
+        )
+        ex = _FakeExecutor()
+        ex.set_fail_on({"combat_world_boss_farming"})
+        session = CharacterProgressionSession(
+            executor=ex, recovery_orchestrator=mock_recovery,
+        )
+        result = session.run(character="hu_tao")
+        assert result.recovery_events >= 1
+        mock_recovery.recover.assert_called()
+
+    def test_recovery_on_exception(self):
+        class _ThrowOnFarm:
+            def execute_semantic(self, action: str = "", target: str = "",
+                                context: Any = None) -> bool:
+                if action == "combat_world_boss_farming":
+                    raise RuntimeError("boss_encounter_error")
+                return True
+
+        from planning.recovery_orchestrator import RecoveryOrchestrator, RecoveryResult
+        from planning.recovery_orchestrator import (
+            RecoveryCategory,
+            EscalationLevel,
+        )
+        mock_recovery = MagicMock(spec=RecoveryOrchestrator)
+        mock_recovery.recover.return_value = RecoveryResult(
+            success=True, category=RecoveryCategory.COMBAT,
+            escalation=EscalationLevel.AUTO,
+        )
+        session = CharacterProgressionSession(
+            executor=_ThrowOnFarm(), recovery_orchestrator=mock_recovery,
+        )
+        result = session.run(character="raiden")
+        assert result.recovery_events >= 1
+
+    def test_no_recovery_when_none_provided(self):
+        ex = _FakeExecutor()
+        ex.set_fail_on({"combat_world_boss_farming"})
+        session = CharacterProgressionSession(executor=ex)
+        result = session.run(character="nahida")
+        assert result.recovery_events == 0
+
+
+class TestNewbieTutorialCheckpoint:
+    def test_checkpoint_saved_after_each_phase(self):
+        from pathlib import Path
+        import tempfile
+        import shutil
+        from runtime.session_checkpoint import CheckpointStore
+        from planning.newbie_tutorial_chain import NewbieTutorialChain
+
+        tmp_dir = Path(tempfile.mkdtemp())
+        try:
+            store = CheckpointStore(checkpoint_dir=tmp_dir)
+            ex = _FakeExecutor()
+            chain = NewbieTutorialChain(executor=ex, checkpoint_store=store)
+            results = chain.run()
+            # All 21 phases completed
+            assert chain.completed
+            # Checkpoints saved for each phase
+            files = list(tmp_dir.glob("checkpoint_*.json"))
+            assert len(files) >= 1
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_resume_from_checkpoint(self):
+        from pathlib import Path
+        import tempfile
+        import shutil
+        from runtime.session_checkpoint import CheckpointStore
+        from planning.newbie_tutorial_chain import NewbieTutorialChain
+
+        tmp_dir = Path(tempfile.mkdtemp())
+        try:
+            store = CheckpointStore(checkpoint_dir=tmp_dir)
+            ex = _FakeExecutor()
+
+            # Run first chain to create checkpoint
+            chain1 = NewbieTutorialChain(executor=ex, checkpoint_store=store)
+            chain1.run()
+            assert chain1.completed
+
+            # Create second chain and verify it loads checkpoint
+            chain2 = NewbieTutorialChain(executor=ex, checkpoint_store=store)
+            chain2._load_checkpoint()
+            # Should resume at phase 21 (completed)
+            assert chain2.current_phase_idx == 21
+        finally:
+            shutil.rmtree(tmp_dir, ignore_errors=True)
+
+    def test_no_checkpoint_without_store(self):
+        ex = _FakeExecutor()
+        chain = NewbieTutorialChain(executor=ex)
+        results = chain.run()
+        assert chain.completed
+        # No errors even without checkpoint store
