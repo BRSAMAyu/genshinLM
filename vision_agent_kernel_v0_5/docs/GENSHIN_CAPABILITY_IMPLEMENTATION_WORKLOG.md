@@ -592,6 +592,12 @@
   - CHARACTER_LEVEL_UP: 移除 precondition_state（假设调用者已在角色菜单），第一步用 delay(400) 替代 wait_state
 
 **测试**: test_ui_flow_skill_adapter.py — 4/4 passed
+**审查修复 (Opus Agent 独立审查)**:
+  - `self._logger` → `log` (AttributeError bug)
+  - 删除 `_step_press_key` 中的 delay_ms 重复处理（原会双重延迟 press 操作）
+  - 删除重复的 WEAPON_REFINE 定义（旧版无 precondition 副本）
+
+**测试**: 2213 passed, 0 failed
   - C-49: ChildeFormDetector (公子形态)
   - C-50: SignoraTempReader (女士温度)
   - C-51: RaidenEyeDetector (雷电将军眼)
