@@ -175,6 +175,14 @@ _BOSS_PHASES: dict[str, list[dict[str, Any]]] = {
             "success_condition": "continue_dps",
         },
     ],
+    "raidenshogun_story": [
+        {
+            "phase": "scripted_fight",
+            "actions": ["attack", "skill_e", "attack"],
+            "mechanic": "normal_combat_scripted",
+            "success_condition": "hp_threshold_reached",
+        },
+    ],
 }
 
 

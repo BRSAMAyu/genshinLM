@@ -60,6 +60,8 @@ _COMPOSITE_ROUTES: dict[str, tuple[str, str]] = {
     "explore_open_chest": ("exploration", "open_chest"),
     "explore_collect_oculus": ("exploration", "collect_oculus"),
     "explore_interact": ("exploration", "interact_with_object"),
+    # Exploration scenario routing
+    "explore_scenario": ("exploration_scenario", "execute_scenario"),
     # Quest composites
     "quest_drive_dialog": ("quest", "drive_dialog"),
     "quest_skip_cutscene": ("quest", "skip_cutscene"),
@@ -89,6 +91,7 @@ _ADAPTER_METHOD_EXTRA_ARGS: dict[str, list[str]] = {
     "exploration.open_chest": [],
     "exploration.collect_oculus": [],
     "exploration.interact_with_object": ["object_type"],
+    "exploration_scenario.execute_scenario": ["scenario"],
     "quest.drive_dialog": ["choice_selector"],
     "quest.skip_cutscene": ["timeout_sec"],
     "quest.follow_quest_marker": ["navigate_fn"],
@@ -96,6 +99,8 @@ _ADAPTER_METHOD_EXTRA_ARGS: dict[str, list[str]] = {
     "quest.check_prerequisites": ["current_ar"],
     "mainline.run_full_progression": ["current_ar"],
     "mainline.execute_chapter": ["chapter_id"],
+    # Exploration scenario routing
+    "explore_scenario": ["scenario"],
 }
 
 
@@ -217,6 +222,8 @@ class SkillRegistry:
                 return self._create_progression_adapter()
             if key == "mainline":
                 return self._create_mainline_adapter()
+            if key == "exploration_scenario":
+                return self._create_exploration_scenario_adapter()
         except Exception as exc:
             log.warning("[SkillRegistry] failed to create adapter '%s': %s", key, exc)
         return None
@@ -286,6 +293,11 @@ class SkillRegistry:
             config=config,
             skill_registry=self,
         )
+
+    def _create_exploration_scenario_adapter(self) -> Any:
+        from exploration.exploration_scenario_router import ExplorationScenarioRouter
+
+        return ExplorationScenarioRouter(skill_executor=self._executor)
 
     # ------------------------------------------------------------------
     # Argument building
