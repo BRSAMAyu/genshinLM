@@ -598,11 +598,17 @@
   - 删除重复的 WEAPON_REFINE 定义（旧版无 precondition 副本）
 
 **测试**: 2213 passed, 0 failed
+
+### UI场景覆盖验证
+- 角色升级/突破/天赋: CHARACTER_LEVEL_UP, CHARACTER_ASCEND, CHARACTER_TALENT_UPGRADE
+- 武器装备/强化/精炼: WEAPON_EQUIP, WEAPON_ENHANCE, WEAPON_REFINE
+- 圣遗物装备/强化: ARTIFACT_EQUIP, ARTIFACT_ENHANCE
+- 队伍配置/祈愿/商店/锻造: PARTY_QUICK_CONFIG, WISH_TEN_PULL, SHOP_*, CRAFTING_*
+- 总计 45 个 UIFlow，其中 9 个带 precondition_state，14 个含 wait_state 步骤
   - C-49: ChildeFormDetector (公子形态)
   - C-50: SignoraTempReader (女士温度)
   - C-51: RaidenEyeDetector (雷电将军眼)
 - knowledge/genshin_boss_mechanisms.py — 视觉特征定义
-- tests/test_combat_survival.py 扩展: 80/80 passed
 
 **测试结果**: 2216 passed, 1 skipped
 
