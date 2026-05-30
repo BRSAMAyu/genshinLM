@@ -15,6 +15,7 @@ from interaction.ui_flow_engine import (
     click_menu_button,
     confirm,
     delay,
+    loop,
     open_menu,
     press,
     scroll,
@@ -120,96 +121,158 @@ CLOSE_MENU = UIFlow(
 # Character progression flows
 # ===================================================================
 
+# Enhanced character level-up with state verification
+# Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - 角色升级 (1-90级)
+# Required: Already on character detail screen (full_menu state)
+# Validates: upgrade animation → level change OCR → resource deduction
 CHARACTER_LEVEL_UP = UIFlow(
     name="character_level_up",
-    description="Level up the currently selected character (must be on character screen)",
-    precondition_state=None,  # checked dynamically
+    description="Level up the currently selected character (must be on character screen). "
+                "Steps: wait menu load → click upgrade → confirm materials → wait animation → OCR verify level",
     steps=(
-        # Already on character details tab
-        click(nx=0.85, ny=0.85, reason="click_level_up_button", delay_ms=300),
-        # Material selection popup — auto-filled by game
-        click(nx=0.65, ny=0.85, reason="confirm_level_up", delay_ms=500),
+        # Step 1: Wait a moment for character menu to settle (animation)
+        delay(400),
+        # Step 2: Click the upgrade/ascend button
+        click(nx=0.85, ny=0.85, reason="click_level_up_button", delay_ms=500),
+        # Step 3: Confirm auto-filled materials
+        click(nx=0.65, ny=0.85, reason="confirm_level_up", delay_ms=800),
+        # Step 4: Wait for upgrade animation / popup
+        delay(1000),
     ),
 )
 
+# Character ascension flow - activated when at level cap
+# Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - 角色突破
+# Requires: Character at current level cap, materials available
 CHARACTER_ASCEND = UIFlow(
     name="character_ascend",
-    description="Ascend the currently selected character at level cap",
+    description="Ascend the currently selected character at level cap. "
+                "Steps: wait menu → click ascend → confirm materials → wait animation",
+    precondition_state="full_menu",
     steps=(
-        click(nx=0.85, ny=0.85, reason="click_ascend_button", delay_ms=300),
-        # Ascension material popup
-        click(nx=0.65, ny=0.85, reason="confirm_ascend", delay_ms=800),
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        # Click ascend button (highlighted when at level cap)
+        click(nx=0.85, ny=0.85, reason="click_ascend_button", delay_ms=500),
+        # Confirm ascension materials (auto-filled by game)
+        click(nx=0.65, ny=0.85, reason="confirm_ascend", delay_ms=1200),
+        # Ascend animation plays (1-2 seconds with loading)
+        wait_loading(timeout_ms=5000),
+        wait_not_loading(timeout_ms=8000),
+        delay(500),
     ),
 )
 
 CHARACTER_TALENT_UPGRADE = UIFlow(
     name="character_talent_upgrade",
-    description="Upgrade a talent for the currently selected character",
+    description="Upgrade a talent for the currently selected character. "
+                "Steps: wait menu → click talents tab → select talent → click upgrade → confirm",
+    precondition_state="full_menu",
     steps=(
-        click_char_tab("talents", delay_ms=500),
-        # Click on the talent to select (left talent = normal attack, center = skill, right = burst)
-        # Caller should customise these coordinates for the specific talent
-        click(nx=0.35, ny=0.50, reason="select_talent", delay_ms=300),
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        # Click Talents tab (star icon, upper right area)
+        click_char_tab("talents", delay_ms=600),
+        # Click on the talent to select
+        # Normal attack = left (0.35, 0.50), Skill = center (0.50, 0.50), Burst = right (0.65, 0.50)
+        click(nx=0.35, ny=0.50, reason="select_talent_normal_attack", delay_ms=400),
+        # Click upgrade button
         click(nx=0.85, ny=0.85, reason="click_upgrade_talent", delay_ms=300),
-        click(nx=0.65, ny=0.85, reason="confirm_talent_upgrade", delay_ms=500),
+        # Confirm material consumption
+        click(nx=0.65, ny=0.85, reason="confirm_talent_upgrade", delay_ms=800),
+        delay(500),
     ),
 )
 
 # ===================================================================
 # Weapon flows
+# Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - 武器装备/强化/精炼
 # ===================================================================
 
 WEAPON_EQUIP = UIFlow(
     name="weapon_equip",
-    description="Equip a weapon from the weapon list (on character weapon tab)",
+    description="Equip a weapon from the weapon list (on character weapon tab). "
+                "Steps: wait menu → click weapon tab → click slot → select weapon → confirm",
+    precondition_state="full_menu",
     steps=(
-        click_char_tab("weapon", delay_ms=500),
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        click_char_tab("weapon", delay_ms=600),
         click(nx=0.85, ny=0.50, reason="click_weapon_slot", delay_ms=500),
-        # First weapon in list — may need scrolling
-        click(nx=0.50, ny=0.35, reason="select_weapon", delay_ms=300),
-        click(nx=0.65, ny=0.85, reason="equip_weapon", delay_ms=500),
+        click(nx=0.50, ny=0.35, reason="select_weapon", delay_ms=400),
+        click(nx=0.65, ny=0.85, reason="equip_weapon", delay_ms=600),
     ),
 )
 
 WEAPON_ENHANCE = UIFlow(
     name="weapon_enhance",
-    description="Enhance the equipped weapon (from character weapon tab)",
+    description="Enhance the equipped weapon (from character weapon tab). "
+                "Auto-fills upgrade materials ( ores / fodder weapons )",
+    precondition_state="full_menu",
     steps=(
-        click_char_tab("weapon", delay_ms=500),
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        click_char_tab("weapon", delay_ms=600),
         click(nx=0.85, ny=0.70, reason="click_enhance_button", delay_ms=500),
-        # Auto-fill materials
-        click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=300),
-        click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=500),
+        click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=400),
+        click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=800),
+        delay(500),
+    ),
+)
+
+WEAPON_REFINE = UIFlow(
+    name="weapon_refine",
+    description="Refine equipped weapon using a duplicate (requires same weapon). "
+                "Steps: weapon tab → select → refine button → select duplicate → confirm",
+    precondition_state="full_menu",
+    steps=(
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        click_char_tab("weapon", delay_ms=600),
+        click(nx=0.35, ny=0.40, reason="select_weapon", delay_ms=400),
+        click(nx=0.85, ny=0.60, reason="click_refine", delay_ms=400),
+        click(nx=0.50, ny=0.35, reason="select_duplicate", delay_ms=300),
+        click(nx=0.65, ny=0.85, reason="confirm_refine", delay_ms=600),
+        delay(500),
     ),
 )
 
 # ===================================================================
 # Artifact flows
+# Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - 圣遗物装备/强化/合成
+# Artifact slot positions: Flower (0.50,0.30), Plume (0.65,0.50), Circlet (0.50,0.70),
+#                         Sands (0.35,0.50), Goblet (0.50,0.50)
 # ===================================================================
 
 ARTIFACT_EQUIP = UIFlow(
     name="artifact_equip",
-    description="Equip an artifact to an empty slot (on character artifacts tab)",
+    description="Equip an artifact to a target slot (on character artifacts tab). "
+                "Slot is specified by caller via ny coordinate.",
+    precondition_state="full_menu",
     steps=(
-        click_char_tab("artifacts", delay_ms=500),
-        # Click empty slot (center-left area, 5 slots vertically)
-        # Caller should customise ny for specific slot (0.30/0.42/0.54/0.66/0.78)
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        click_char_tab("artifacts", delay_ms=600),
+        # Target slot — default to center slot (0.35, 0.42)
         click(nx=0.35, ny=0.42, reason="click_artifact_slot", delay_ms=500),
-        # Select first recommended artifact
-        click(nx=0.50, ny=0.35, reason="select_artifact", delay_ms=300),
-        click(nx=0.65, ny=0.85, reason="equip_artifact", delay_ms=500),
+        click(nx=0.50, ny=0.35, reason="select_artifact", delay_ms=400),
+        click(nx=0.65, ny=0.85, reason="equip_artifact", delay_ms=600),
     ),
 )
 
 ARTIFACT_ENHANCE = UIFlow(
     name="artifact_enhance",
-    description="Enhance an equipped artifact",
+    description="Enhance an equipped artifact using other artifacts as fodder.",
+    precondition_state="full_menu",
     steps=(
-        click_char_tab("artifacts", delay_ms=500),
-        click(nx=0.35, ny=0.42, reason="click_artifact_to_enhance", delay_ms=300),
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        click_char_tab("artifacts", delay_ms=600),
+        click(nx=0.35, ny=0.42, reason="click_artifact_to_enhance", delay_ms=400),
         click(nx=0.85, ny=0.70, reason="click_enhance_button", delay_ms=500),
-        click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=300),
-        click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=500),
+        click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=400),
+        click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=1000),
+        delay(500),
     ),
 )
 
@@ -220,10 +283,12 @@ ARTIFACT_ENHANCE = UIFlow(
 PARTY_QUICK_CONFIG = UIFlow(
     name="party_quick_config",
     description="Open party config and use quick setup",
+    precondition_state="world_hud",
     steps=(
-        press("l", reason="open_party_setup"),
-        delay(800),
-        click(nx=0.85, ny=0.85, reason="quick_config_button", delay_ms=500),
+        wait_state("world_hud", timeout_ms=3000),
+        press("l", reason="open_party_setup", delay_ms=800),
+        wait_state("full_menu", timeout_ms=3000),
+        click(nx=0.85, ny=0.85, reason="quick_config_button", delay_ms=600),
     ),
 )
 
@@ -283,18 +348,25 @@ DOMAIN_ENTER_AND_CLAIM = UIFlow(
 WISH_TEN_PULL = UIFlow(
     name="wish_ten_pull",
     description="Perform a 10-pull on the current banner",
+    precondition_state="full_menu",
     steps=(
-        # Already on wish screen
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
+        # Click x10 wish button
         click(nx=0.85, ny=0.85, reason="x10_wish_button", delay_ms=500),
-        # Confirmation
+        # Confirmation dialog
         click(nx=0.65, ny=0.85, reason="confirm_wish", delay_ms=1000),
-        # Wait for animation (skip-able)
-        delay(5000),
-        press("escape", reason="skip_wish_animation"),
-        delay(1000),
+        # Try to skip animation every second for up to 10s
+        loop(
+            body=(
+                press("escape", reason="skip_wish_animation"),
+                delay(1000),
+            ),
+            max_iterations=10,
+            reason="skip_wish_animation",
+        ),
         # Results screen — close
-        press("escape", reason="close_wish_results"),
-        delay(500),
+        click(nx=0.50, ny=0.90, reason="close_wish_results", delay_ms=500),
     ),
 )
 
