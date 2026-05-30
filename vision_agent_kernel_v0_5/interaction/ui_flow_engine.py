@@ -385,8 +385,6 @@ class UIFlowExecutor:
         )
         if not self._worker.submit_lease(up):
             raise RuntimeError("input worker rejected key-up lease")
-        if step.delay_ms > 0:
-            self._sleep(step.delay_ms / 1000.0)
 
     def _step_click_at(self, step: UIStep) -> None:
         if step.nx is None or step.ny is None:
@@ -506,7 +504,7 @@ class UIFlowExecutor:
         body = step.loop_body
         max_iter = step.loop_max_iterations
         for i in range(max_iter):
-            self._logger.debug(
+            log.debug(
                 f"loop iteration {i + 1}/{max_iter} for: {step.reason!r}"
             )
             for sub_step in body:
@@ -533,7 +531,7 @@ class UIFlowExecutor:
             return
         # Skip precondition when no observation is available (test/mock environments)
         if current == "unknown":
-            self._logger.debug(
+            log.debug(
                 "[UIFlow] no observation available, skipping precondition for %s",
                 flow.name,
             )

@@ -639,30 +639,6 @@ ARTIFACT_BATCH_LOCK = UIFlow(
 )
 
 # ===================================================================
-# U-55: Weapon refinement flow
-# ===================================================================
-
-WEAPON_REFINE = UIFlow(
-    name="weapon_refine",
-    description="Refine equipped weapon using duplicate",
-    steps=(
-        press("l", reason="open_party_setup"),
-        delay(800),
-        click(nx=0.35, ny=0.35, reason="select_character", delay_ms=500),
-        click_char_tab("weapon", delay_ms=300),
-        # Click on weapon
-        click(nx=0.35, ny=0.40, reason="select_weapon", delay_ms=300),
-        # Click refine option
-        click(nx=0.85, ny=0.60, reason="click_refine", delay_ms=300),
-        # Select duplicate if available
-        click(nx=0.50, ny=0.35, reason="select_duplicate", delay_ms=200),
-        confirm(reason="confirm_refine"),
-        delay(500),
-        press("escape", reason="close_party"),
-    ),
-)
-
-# ===================================================================
 # U-56: Synthesis quantity selection
 # ===================================================================
 
