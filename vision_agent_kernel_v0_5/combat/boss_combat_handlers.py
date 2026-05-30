@@ -1,11 +1,12 @@
-"""Boss combat handlers for 5 major weekly bosses.
+"""Boss combat handlers for 6 major weekly bosses.
 
-Implements boss scenarios #4-8 from GENSHIN_COMBAT_SCENARIO_BREAKDOWN.md:
+Implements boss scenarios #4-9 from GENSHIN_COMBAT_SCENARIO_BREAKDOWN.md:
 - DvalinHandler (#4): 风魔龙·特瓦林 — multi-phase aerial + platform fight
 - ChildeHandler (#5): 公子·达达利亚 — 3-phase elemental switching
 - SignoraHandler (#6): 女士·罗莎琳 — dual-environment temperature management
 - RaidenShogunHandler (#7): 雷电将军 — high-frequency dodge + burst windows
 - ShoukiNoKamiHandler (#8): 正机之神·散兵 — energy ball + construct mechanics
+- NarwhalHandler (#9): 吞噬一切的巨鲸 — outside/inside dual-space combat
 
 Each handler is a state machine that tracks boss phases and delegates to
 the SemanticExecutor for combat, dodge, and mechanic-specific actions.
@@ -550,3 +551,101 @@ class ShoukiNoKamiHandler:
             context={"duration_sec": 3.0, "target": "defense_tower", "priority": "high"},
         )
         state.towers_destroyed += 1
+
+
+# ---------------------------------------------------------------------------
+# #9: Narwhal (All-Devouring) — outside/inside dual-space
+# ---------------------------------------------------------------------------
+
+class NarwhalPhase(Enum):
+    OUTSIDE = "outside"       # Fighting on the ship deck
+    INGESTED = "ingested"     # Inside the narwhal
+    BERSERK = "berserk"       # Final enraged phase
+
+
+@dataclass(slots=True)
+class NarwhalState:
+    phase: NarwhalPhase = NarwhalPhase.OUTSIDE
+    cycle_count: int = 0       # Number of outside→inside cycles
+    parasite_defeated: int = 0
+    core_damage_dealt: int = 0
+
+
+class NarwhalHandler:
+    """吞噬一切的巨鲸: Dual-space outside/inside combat.
+
+    Mechanic loop:
+    1. Outside: Attack whale when it surfaces, dodge charges/tail slaps
+    2. Whale swallows player → Inside: defeat parasites + attack core
+    3. Expelled back outside → whale takes more damage
+    4. Repeat 2-3 times until whale HP depleted
+    """
+
+    MAX_CYCLES: int = 3
+    PHASE_TIMEOUT_SEC: float = 600.0
+
+    def __init__(self, executor: SemanticExecutor) -> None:
+        self._executor = executor
+
+    def execute(self) -> BossCombatResult:
+        started = time.perf_counter()
+        state = NarwhalState()
+        deaths = 0
+
+        while state.cycle_count < self.MAX_CYCLES:
+            elapsed = time.perf_counter() - started
+            if elapsed > self.PHASE_TIMEOUT_SEC:
+                return BossCombatResult(
+                    False, "narwhal", state.cycle_count * 2, 6,
+                    deaths, elapsed, "timeout",
+                )
+
+            # Outside phase: attack whale during surface windows
+            state.phase = NarwhalPhase.OUTSIDE
+            outside_ok = self._executor.execute_semantic(
+                "combat_boss", target="narwhal",
+                context={"phase": "outside", "timeout_sec": 60.0},
+            )
+
+            # Whale swallows player — enter inside phase
+            state.phase = NarwhalPhase.INGESTED
+            self._executor.execute_semantic(
+                "navigate_to", target="parasite_cluster",
+                context={"reason": "inside_narwhal"},
+            )
+            # Defeat parasites
+            parasite_ok = self._executor.execute_semantic(
+                "combat_basic_attack",
+                context={"duration_sec": 10.0, "target": "parasite"},
+            )
+            if parasite_ok:
+                state.parasite_defeated += 1
+
+            # Attack core
+            core_ok = self._executor.execute_semantic(
+                "combat_boss", target="narwhal_core",
+                context={"phase": "inside_core", "timeout_sec": 30.0},
+            )
+            if core_ok:
+                state.core_damage_dealt += 1
+
+            state.cycle_count += 1
+            log.info(
+                "[Narwhal] cycle %d/%d complete", state.cycle_count, self.MAX_CYCLES,
+            )
+
+            # Check if whale is defeated (outside combat succeeded = whale surfacing less)
+            if outside_ok and state.cycle_count >= 2:
+                # Final phase
+                state.phase = NarwhalPhase.BERSERK
+                break
+
+        # Final outside burst
+        ok = self._executor.execute_semantic(
+            "combat_boss", target="narwhal",
+            context={"phase": "final_berserk", "timeout_sec": 60.0},
+        )
+
+        elapsed = time.perf_counter() - started
+        phases = 6 if ok else state.cycle_count * 2
+        return BossCombatResult(ok, "narwhal", phases, 6, deaths, elapsed)

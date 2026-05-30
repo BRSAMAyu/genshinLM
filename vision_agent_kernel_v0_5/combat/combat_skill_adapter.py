@@ -299,6 +299,20 @@ class CombatSkillAdapter:
         return result.success
 
     # ------------------------------------------------------------------
+    # Special boss handlers (Narwhal)
+    # ------------------------------------------------------------------
+
+    def execute_narwhal_combat(self, context: dict[str, Any] | None = None) -> bool:
+        """Execute the Narwhal (All-Devouring) boss encounter."""
+        # Narwhal uses the standard boss combat pipeline with narwhal boss_id
+        return self.execute_boss_combat(
+            team_elements=["dendro", "electro", "cryo", "anemo"],
+            team_characters=["nahida", "shinobu", "zhongli", "baizhu"],
+            boss_id="narwhal",
+            duration_sec=(context or {}).get("timeout_sec", 300.0),
+        )
+
+    # ------------------------------------------------------------------
     # Environmental combat handlers (#12, #13)
     # ------------------------------------------------------------------
 
@@ -371,6 +385,8 @@ class CombatSkillAdapter:
             "raiden_shogun": self._make_boss_handler("raiden_shogun", executor),
             "shouki_no_kami": self._make_boss_handler("shouki_no_kami", executor),
             "scaramouche": self._make_boss_handler("shouki_no_kami", executor),
+            "narwhal": self._make_boss_handler("narwhal", executor),
+            "all_devouring_narwhal": self._make_boss_handler("narwhal", executor),
         }
 
     def _make_boss_handler(self, boss_key: str, executor: _CombatExecutorBridge) -> Any:
