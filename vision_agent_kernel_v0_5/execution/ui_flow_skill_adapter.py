@@ -184,7 +184,6 @@ class UIFlowSkillAdapter:
             "scroll_up": self._handle_action_intent,
             "open_quest_log": self._handle_open_menu_alias,
             "open_character_screen": self._handle_open_menu_alias,
-            "basic_attack": self._handle_action_intent,
             "auto_combat": self._handle_action_intent,
         }
 
@@ -344,13 +343,16 @@ class UIFlowSkillAdapter:
                 def frame_source():
                     obs = self._bus.latest_observation.get()
                     return obs.image if obs else None
-                return self._quest_follower.navigate_to_marker(
+                follower_result = self._quest_follower.navigate_to_marker(
                     frame_source=frame_source,
                     max_steps=500,
                     shutdown_event=getattr(self._quest_follower, "_shutdown", None),
                 )
+                if follower_result:
+                    return True
             except Exception as exc:
                 log.warning("[UIFlowSkillAdapter] QuestMarkerFollower failed: %s", exc)
+                return False
 
         backend = self._backend()
         if hasattr(backend, "action_intent"):

@@ -199,6 +199,7 @@ class CombatSkillAdapter:
                 return None
             data: dict[str, Any] = {
                 "hp_ratio": getattr(obs, "hp_ratio", 1.0),
+                "stamina_ratio": getattr(obs, "stamina_ratio", 1.0),
                 "target_offset_x": getattr(obs, "target_offset_x", 0.0),
                 "signals": dict(getattr(obs, "signals", {})),
             }
@@ -217,8 +218,6 @@ class CombatSkillAdapter:
                         break
                 elif cond.startswith("stamina") and "<" in cond:
                     stamina_val = data.get("stamina_ratio", 1.0)
-                    if stamina_val not in data:
-                        data["stamina_ratio"] = stamina_val
                     try:
                         threshold = float(cond.split("<", 1)[1])
                     except (ValueError, IndexError):

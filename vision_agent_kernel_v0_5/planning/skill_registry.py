@@ -66,6 +66,9 @@ _COMPOSITE_ROUTES: dict[str, tuple[str, str]] = {
     "quest_follow_marker": ("quest", "follow_quest_marker"),
     "quest_advance": ("quest", "advance_quest"),
     "quest_check_prerequisites": ("quest", "check_prerequisites"),
+    # Mainline progression
+    "mainline_full_progression": ("mainline", "run_full_progression"),
+    "mainline_execute_chapter": ("mainline", "execute_chapter"),
 }
 
 _ADAPTER_METHOD_EXTRA_ARGS: dict[str, list[str]] = {
@@ -76,9 +79,9 @@ _ADAPTER_METHOD_EXTRA_ARGS: dict[str, list[str]] = {
     "progression.stage1_level_up": ["character"],
     "progression.stage2_ascend": ["character"],
     "progression.stage3_weapon": ["character"],
-    "progression.stage4_artifact": [],
+    "progression.stage4_artifact": ["character"],
     "progression.stage5_talent": ["character"],
-    "progression.stage6_team_config": [],
+    "progression.stage6_team_config": ["character"],
     "daily_routine.execute_layer1": ["context"],
     "daily_routine.execute_layer2": ["context"],
     "daily_routine.execute_layer3": ["context"],
@@ -91,6 +94,8 @@ _ADAPTER_METHOD_EXTRA_ARGS: dict[str, list[str]] = {
     "quest.follow_quest_marker": ["navigate_fn"],
     "quest.advance_quest": ["evidence"],
     "quest.check_prerequisites": ["current_ar"],
+    "mainline.run_full_progression": ["current_ar"],
+    "mainline.execute_chapter": ["chapter_id"],
 }
 
 
@@ -171,12 +176,16 @@ class SkillRegistry:
             log.warning("[SkillRegistry] %s.%s failed: %s", adapter_key, method_name, exc)
             return False
 
-        # Adapters return bool except progression chain (list[ProgressionResult])
+        # Adapters return bool, list[ProgressionResult], or dataclass with .success
         if isinstance(result, bool):
             return result
         if isinstance(result, list):
             return all(getattr(r, "success", False) for r in result)
-        return bool(result)
+        # Dataclass results: check .success field
+        success = getattr(result, "success", None)
+        if success is not None:
+            return bool(success)
+        return True
 
     @property
     def composite_actions(self) -> tuple[str, ...]:
@@ -206,6 +215,8 @@ class SkillRegistry:
                 return self._create_daily_routine_adapter()
             if key == "progression":
                 return self._create_progression_adapter()
+            if key == "mainline":
+                return self._create_mainline_adapter()
         except Exception as exc:
             log.warning("[SkillRegistry] failed to create adapter '%s': %s", key, exc)
         return None
@@ -266,6 +277,16 @@ class SkillRegistry:
         config = CharacterProgressionConfig(max_level=self._config.progression_max_level)
         return CharacterProgressionAdapter(skill_executor=self._executor, config=config)
 
+    def _create_mainline_adapter(self) -> Any:
+        from planning.mainline.mainline_progression_adapter import MainlineProgressionAdapter, MainlineProgressionConfig
+
+        config = MainlineProgressionConfig()
+        return MainlineProgressionAdapter(
+            skill_executor=self._executor,
+            config=config,
+            skill_registry=self,
+        )
+
     # ------------------------------------------------------------------
     # Argument building
     # ------------------------------------------------------------------
@@ -284,7 +305,7 @@ class SkillRegistry:
         for param in param_names:
             if param in context:
                 args[param] = context[param]
-            elif target and param in ("character", "object_type", "evidence"):
+            elif target and param in ("character", "object_type", "evidence", "chapter_id"):
                 args[param] = target
             # Provide safe defaults for missing params
             elif param == "team_elements":
