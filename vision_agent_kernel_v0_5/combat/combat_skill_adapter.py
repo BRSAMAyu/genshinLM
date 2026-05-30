@@ -75,7 +75,7 @@ class CombatSkillAdapter:
         )
 
         steps = self._rotation_to_steps(playbook.default_rotation)
-        obs_stream = self._make_obs_stream()
+        obs_stream = self._make_obs_stream_with_triggers(playbook.priority_triggers)
 
         for attempt in range(self._config.max_retries + 1):
             if attempt > 0:
@@ -100,7 +100,7 @@ class CombatSkillAdapter:
         boss_profile: Any | None = None,
         duration_sec: float = 30.0,
     ) -> bool:
-        """Execute a boss encounter with boss-aware playbook."""
+        """Execute a boss encounter with boss-aware playbook and retry."""
         playbook, _team_plan = self._planner.generate_boss_playbook(
             team_elements=team_elements,
             team_characters=team_characters,
@@ -114,22 +114,30 @@ class CombatSkillAdapter:
         )
 
         steps = self._rotation_to_steps(playbook.default_rotation)
-        obs_stream = self._make_obs_stream()
+        obs_stream = self._make_obs_stream_with_triggers(playbook.priority_triggers)
 
-        result = self._actuator.execute_combat_loop(
-            playbook_steps=steps,
-            obs_stream=obs_stream,
-            duration_limit_sec=duration_sec,
-        )
+        for attempt in range(self._config.max_retries + 1):
+            if attempt > 0:
+                log.info("[CombatSkill] boss retry attempt %d/%d", attempt, self._config.max_retries)
+            result = self._actuator.execute_combat_loop(
+                playbook_steps=steps,
+                obs_stream=obs_stream,
+                duration_limit_sec=duration_sec,
+            )
+            if result:
+                self._active_playbook_id = None
+                return True
+
         self._active_playbook_id = None
-        return result
+        log.warning("[CombatSkill] boss combat failed after %d attempts", self._config.max_retries + 1)
+        return False
 
     def execute_basic_attack(self, duration_sec: float = 2.0) -> bool:
         """Execute a simple auto-attack sequence for easy encounters."""
         steps = [
             {"type": "attack", "duration": duration_sec},
         ]
-        obs_stream = self._make_obs_stream()
+        obs_stream = self._make_obs_stream_with_triggers([])
         return self._actuator.execute_combat_loop(
             playbook_steps=steps,
             obs_stream=obs_stream,
@@ -139,10 +147,10 @@ class CombatSkillAdapter:
     def get_combat_context(self) -> CombatContext:
         """Read current combat state from StateBus."""
         if self._bus is None:
-            return CombatContext()
+            return CombatContext(target_visible=False)
         obs = self._bus.latest_observation.get()
         if obs is None:
-            return CombatContext()
+            return CombatContext(target_visible=False)
         hp_ratio = getattr(obs, "hp_ratio", 1.0)
         target_visible = getattr(obs, "target_visible", False)
         stamina = getattr(obs, "stamina_ratio", 1.0)
@@ -157,29 +165,57 @@ class CombatSkillAdapter:
     @staticmethod
     def _rotation_to_steps(rotation: list[Any]) -> list[dict[str, Any]]:
         """Convert CombatAction list to LiveCombatActuator step dicts."""
+        _ACTION_MAP: dict[str, str] = {
+            "normal_attack": "attack",
+            "attack": "attack",
+            "e_skill": "skill_e",
+            "use_skill": "skill_e",
+            "skill": "skill_e",
+            "q_burst": "burst_q",
+            "use_burst": "burst_q",
+            "burst": "burst_q",
+            "switch": "switch",
+            "dodge": "dodge",
+            "charge_attack": "attack",
+            "dash": "dodge",
+            "heal": "skill_e",
+            "shield": "skill_e",
+            "retreat": "dodge",
+        }
         steps: list[dict[str, Any]] = []
         for action in rotation:
-            if action.action in ("normal_attack", "attack"):
+            step_type = _ACTION_MAP.get(action.action)
+            if step_type == "attack":
                 steps.append({"type": "attack", "duration": 0.5 * action.repeat})
-            elif action.action in ("e_skill", "use_skill", "skill"):
-                steps.append({"type": "skill_e"})
-            elif action.action in ("q_burst", "use_burst", "burst"):
-                steps.append({"type": "burst_q"})
-            elif action.action == "switch":
+            elif step_type == "switch":
                 steps.append({"type": "switch", "character": action.character})
+            elif step_type is not None:
+                steps.append({"type": step_type})
         return steps
 
-    def _make_obs_stream(self) -> Callable[[], dict[str, Any] | None]:
-        """Create an observation stream callable for LiveCombatActuator."""
+    def _make_obs_stream_with_triggers(
+        self,
+        triggers: list[Any],
+    ) -> Callable[[], dict[str, Any] | None]:
+        """Create an observation stream that evaluates priority triggers."""
         def _stream() -> dict[str, Any] | None:
             if self._bus is None:
                 return None
             obs = self._bus.latest_observation.get()
             if obs is None:
                 return None
-            return {
+            data: dict[str, Any] = {
                 "hp_ratio": getattr(obs, "hp_ratio", 1.0),
                 "target_offset_x": getattr(obs, "target_offset_x", 0.0),
-                "signals": getattr(obs, "signals", {}),
+                "signals": dict(getattr(obs, "signals", {})),
             }
+            # Evaluate priority triggers — inject interrupt signals
+            hp = data["hp_ratio"]
+            for trigger in triggers:
+                cond = trigger.condition
+                if "hp" in cond and "<" in cond:
+                    if hp < self._config.hp_threshold_retreat:
+                        data["signals"]["attack_incoming"] = 1.0
+                        break
+            return data
         return _stream

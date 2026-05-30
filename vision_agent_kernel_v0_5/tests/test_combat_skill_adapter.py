@@ -70,14 +70,14 @@ def test_boss_combat_generates_playbook():
 def test_get_combat_context_no_bus():
     adapter = CombatSkillAdapter(backend=ConsoleInputBackend())
     ctx = adapter.get_combat_context()
+    assert ctx.target_visible is False  # safe default: no target without bus
     assert ctx.hp_ratio == 1.0
-    assert ctx.target_visible is True
 
 
 def test_get_combat_context_with_fake_bus():
     adapter = CombatSkillAdapter(backend=ConsoleInputBackend(), state_bus=_FakeBus())
     ctx = adapter.get_combat_context()
-    assert ctx.hp_ratio == 1.0
+    assert ctx.target_visible is False  # no observation → no target visible
 
 
 def test_rotation_to_steps_converts_correctly():
@@ -96,6 +96,26 @@ def test_rotation_to_steps_converts_correctly():
     assert steps[2]["type"] == "burst_q"
     assert steps[3]["type"] == "switch"
     assert steps[3]["character"] == 4
+
+
+def test_rotation_to_steps_handles_all_action_types():
+    from combat.genshin_combat_planner import CombatAction
+    rotation = [
+        CombatAction("dodge", 1),
+        CombatAction("charge_attack", 1, repeat=2),
+        CombatAction("dash", 2),
+        CombatAction("heal", 3),
+        CombatAction("shield", 4),
+        CombatAction("retreat", 1),
+    ]
+    steps = CombatSkillAdapter._rotation_to_steps(rotation)
+    assert len(steps) == 6
+    assert steps[0]["type"] == "dodge"
+    assert steps[1]["type"] == "attack"  # charge_attack → attack
+    assert steps[2]["type"] == "dodge"   # dash → dodge
+    assert steps[3]["type"] == "skill_e" # heal → skill_e
+    assert steps[4]["type"] == "skill_e" # shield → skill_e
+    assert steps[5]["type"] == "dodge"   # retreat → dodge
 
 
 def test_execute_combat_single_element_team():

@@ -105,6 +105,8 @@ class LiveCombatActuator:
             elif step_type == "attack":
                 duration = step.get("duration", 0.5)
                 self._perform_attack(duration)
+            elif step_type == "dodge":
+                self._perform_dodge()
             else:
                 # Default: small pause or walk
                 _chunked_sleep(0.1)
@@ -188,3 +190,13 @@ class LiveCombatActuator:
             except Exception:
                 pass
             _chunked_sleep(0.12)
+
+    def _perform_dodge(self) -> None:
+        log.info("[LiveCombat] Dodge/sprint")
+        try:
+            self._backend.key_down("shift", reason="combat_dodge")
+            _chunked_sleep(0.08)
+            self._backend.key_up("shift", reason="combat_dodge_done")
+        except Exception:
+            pass
+        _chunked_sleep(0.3)
