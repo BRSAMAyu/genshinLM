@@ -290,11 +290,13 @@ class SessionStateManager:
     """Manages session state for crash recovery.
 
     Periodically saves checkpoints and maintains recovery state.
+    Optionally persists checkpoints via runtime.session_checkpoint.CheckpointStore.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, checkpoint_store: Any | None = None) -> None:
         self._current_session: SessionState | None = None
         self._recovery_orchestrator = CrashRecoveryOrchestrator()
+        self._checkpoint_store = checkpoint_store
 
     def start_session(self, session_id: str) -> SessionState:
         """Start a new session."""
@@ -342,6 +344,21 @@ class SessionStateManager:
         self._current_session.checkpoint = checkpoint
         self._current_session.last_checkpoint_time = now
         self._recovery_orchestrator.set_checkpoint(checkpoint)
+
+        # Persist to CheckpointStore if available
+        if self._checkpoint_store is not None:
+            try:
+                session_id = self._current_session.session_id
+                cp = self._checkpoint_store.create_checkpoint(
+                    session_id=session_id,
+                    triggered_by="auto_checkpoint",
+                    account_snapshot={"resin": resin, "mora": mora},
+                    task_state={"quest_id": quest_id, "quest_phase": quest_phase},
+                    location_snapshot={"x": location[0], "y": location[1], "z": location[2]},
+                )
+                self._checkpoint_store.save(cp)
+            except Exception as exc:
+                log.debug("[SessionMgr] checkpoint store save failed: %s", exc)
 
         log.info("[SessionMgr] checkpoint saved for quest=%s", quest_id)
 
