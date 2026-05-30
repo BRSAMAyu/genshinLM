@@ -1064,4 +1064,43 @@
 - UI flows: 59 registered flows
 - Semantic aliases in UIFlowSkillAdapter: 80+ entries
 
+### 2026-05-31 (cont.) — SkillRegistry + Audit Fixes
+
+#### Review Agent Audit (5 adapters + integration)
+- **P1 CRITICAL**: No AutonomousTaskBrain integration — all 5 adapters were standalone library code
+- **P2 MEDIUM**: CombatSkillAdapter._active_playbook_id mutated without lock (thread safety)
+- **P3 MEDIUM**: QuestSkillAdapter._handle_dialog_choices always passes empty choice list
+- **P4 MEDIUM**: ExplorationSkillAdapter never uses StateBus for verification (always lambda:True)
+- **P5 LOW**: CombatSkillAdapter trigger evaluation uses fragile string matching
+- **P6 LOW**: CharacterProgressionAdapter stages 3/4 use OR logic (equip OR enhance = success)
+
+#### SkillRegistry (P1 fix)
+- **File**: `planning/skill_registry.py` — Composite action routing registry
+  - 22 composite action routes: daily_routine (3), progression (7), combat (3), exploration (4), quest (5)
+  - Lazy adapter instantiation — adapters created on first use, cached
+  - _build_method_args: maps context/target to adapter method parameters with safe defaults
+  - Handles list→bool conversion for progression chain results
+- **File**: `execution/ui_flow_skill_adapter.py` — Modified to accept skill_registry
+  - execute_semantic delegates to registry for composite actions before UIFlow fallback
+  - can_handle checks registry for composite actions
+  - Removed incorrect run_daily_* aliases (were mapped to domain_enter_and_claim)
+
+#### P2-P6 Fixes
+- **P2**: Removed `_active_playbook_id` from CombatSkillAdapter (was only for logging, caused thread race)
+- **P3**: QuestSkillAdapter._handle_dialog_choices now extracts choices from dialog handler
+  (current_choices/get_choices), defaults to ["continue"] if none available
+- **P4**: ExplorationSkillAdapter now uses `_verify_screen_change()` which reads StateBus
+  observation ui_state and signals for interaction confirmation, falls back to True when no bus
+- **P5**: CombatSkillAdapter trigger evaluation parses structured conditions ("hp<0.2", "stamina<0.3")
+  with proper threshold extraction instead of fragile "hp" in cond and "<" in cond
+- **P6**: CharacterProgressionAdapter stages 3/4 use AND logic with partial success fallback
+  (equip AND enhance = full success, either alone = partial success, both fail = failure)
+
+#### Tests
+- `tests/test_skill_registry.py` — 12 tests (routing, caching, config, error handling)
+- 2260 total tests passed, 0 failed
+
+#### Commits
+- `2b3fb31`: Add SkillRegistry + fix 5 audit issues
+
 ---
