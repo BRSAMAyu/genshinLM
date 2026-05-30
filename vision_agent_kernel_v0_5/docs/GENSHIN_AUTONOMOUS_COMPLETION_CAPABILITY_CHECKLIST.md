@@ -42,16 +42,16 @@
 | P-06 | 对话框检测 | 检测对话框出现、对话选项、NPC 肖像 | ✅ 已有 (dialog_driver.py) |
 | P-07 | 加载画面检测 | 检测加载画面出现/消失，防止加载中误操作 | ✅ 已有 (loading_transition_protector.py) |
 | P-08 | 死亡/复活画面检测 | 检测角色死亡画面、复活选项 | ✅ 已有 |
-| P-09 | 弹窗/通知检测 | 检测成就弹窗、升级通知、邮件提示 | ⚠️ 部分有 |
+| P-09 | 弹窗/通知检测 | 检测成就弹窗、升级通知、邮件提示 | ✅ 已有 (perception_enhancements.py PopupDetector + genshin_screen_classifier._detect_notification) |
 | P-10 | Boss 阶段转换检测 | 检测 Boss 进入无敌/新阶段的视觉信号（发光、形态变化） | ✅ 已有 (genshin_visual_detectors.py BossPhaseDetection) |
-| P-11 | AoE 地面指示器检测 | 检测红色/橙色地面圆圈（即将到来的范围攻击） | ⚠️ 部分有 (danger_detector.py) |
+| P-11 | AoE 地面指示器检测 | 检测红色/橙色地面圆圈（即将到来的范围攻击） | ✅ 已有 (perception_enhancements.py AoEGroundDetector + danger_detector._detect_ground_danger) |
 | P-12 | 元素附着可视化检测 | 检测敌人身上的元素附着状态（火光环、冰蓝色等） | ✅ 已有 (genshin_visual_detectors.py ElementalAuraDetection) |
 | P-13 | 草原核/反应物检测 | 检测地面上的草原核、燃烧区域等可交互反应物 | ✅ 已有 (genshin_visual_detectors.py elemental auras) |
 | P-14 | 天气/环境效果检测 | 检测严寒（龙脊雪山）、雷暴（稻妻）等环境计量条 | ✅ 已有 (genshin_visual_detectors.py EnvironmentGauge) |
 | P-15 | 体力条检测 | 检测角色体力条当前值（攀爬/游泳/滑翔时关键） | ✅ 已有 (genshin_visual_detectors.py StaminaBarState) |
 | P-16 | 倒计时/计时器检测 | 检测限时挑战的倒计时 UI 元素 | ✅ 已有 (genshin_visual_detectors.py CountdownTimer) |
 | P-17 | 宝箱品质识别 | 区分 普通/精致/珍贵/华丽/奇珍 宝箱 | ✅ 已有 (genshin_visual_detectors.py ChestDetection) |
-| P-18 | 任务标记颜色区分 | 区分黄色（魔神）/蓝色（传说/世界）/特殊图标 | ⚠️ 部分有 |
+| P-18 | 任务标记颜色区分 | 区分黄色（魔神）/蓝色（传说/世界）/特殊图标 | ✅ 已有 (perception_enhancements.py QuestMarkerClassifier) |
 
 ### 1.2 OCR 与文字识别
 
@@ -59,8 +59,8 @@
 |---|------|------|------|
 | P-19 | 任务目标文字 OCR | 读取任务追踪器的文字目标 | ✅ 已有 (glm_ocr_provider.py) |
 | P-20 | 对话文字 OCR | 读取 NPC 对话内容和选项文字 | ✅ 已有 |
-| P-21 | 数值读取 | 读取伤害数字、血量数值、资源数量 | ⚠️ 部分有 |
-| P-22 | 菜单文字 OCR | 读取角色属性、材料数量、商店价格等 | ⚠️ 需加强 |
+| P-21 | 数值读取 | 读取伤害数字、血量数值、资源数量 | ✅ 已有 (perception_enhancements.py NumericValueReader + glm_ocr_provider.py) |
+| P-22 | 菜单文字 OCR | 读取角色属性、材料数量、商店价格等 | ✅ 已有 (perception_enhancements.py MenuTextReader + glm_ocr_provider.py) |
 | P-23 | 地图地名/区域名 OCR | 读取地图上的地名标注 | ✅ 已有 (advanced_perception.py GameTextReader) |
 | P-24 | 材料名称识别 | 在背包/合成台中识别材料名称和数量 | ✅ 已有 (advanced_perception.py read_material_info) |
 | P-25 | 技能描述文字 OCR | 读取天赋描述、技能效果文字 | ✅ 已有 (advanced_perception.py read_skill_description) |
@@ -70,10 +70,10 @@
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
 | P-26 | 场景整体理解 | VLM 分析当前屏幕场景语义 | ✅ 已有 (GLM-4V-Flash) |
-| P-27 | 可交互物体识别 | 识别可交互的 NPC、物品、机关 | ⚠️ 需加强 |
-| P-28 | 敌人类型识别 | 识别敌人种类、元素属性、护盾类型 | ⚠️ 部分有 (YOLO) |
+| P-27 | 可交互物体识别 | 识别可交互的 NPC、物品、机关 | ✅ 已有 (perception_enhancements.py InteractiveObjectDetector + interaction_detector.py) |
+| P-28 | 敌人类型识别 | 识别敌人种类、元素属性、护盾类型 | ✅ 已有 (perception_enhancements.py EnemyTypeClassifier + yolo_detector.py) |
 | P-29 | 谜题状态识别 | 识别谜题当前状态（已激活/未激活/错误） | ✅ 已有 (advanced_perception.py PuzzleDetector) |
-| P-30 | 角色当前状态识别 | 识别当前操控角色、队伍配置 | ⚠️ 部分有 |
+| P-30 | 角色当前状态识别 | 识别当前操控角色、队伍配置 | ✅ 已有 (perception_enhancements.py CharacterStateDetector) |
 
 ---
 
@@ -122,7 +122,7 @@
 | N-02 | 传送点间快速移动 | 多段传送：传送点A → 传送点B → 步行到目标 | ✅ 已有 |
 | N-03 | 任务标记跟随 | 跟随小地图上的任务标记导航 | ✅ 已有 (quest_marker_follower.py) |
 | N-04 | 小地图任务标记读取 | 解析小地图上的任务方向标记 | ✅ 已有 (minimap_quest_reader.py) |
-| N-05 | 开放世界步移导航 | 在大世界中控制角色移动到指定位置 | ⚠️ 部分有 |
+| N-05 | 开放世界步移导航 | 在大世界中控制角色移动到指定位置 | ✅ 已有 (navigation/genshin_navigator.py + camera_servo.py + progress_supervisor.py) |
 | N-06 | 相机伺服 | FOV 感知的像素→角度转换，追踪目标 | ✅ 已有 (camera_servo.py) |
 
 ### 3.2 特殊移动
@@ -143,8 +143,8 @@
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
 | N-15 | 多目标路径优化 | 规划访问多个目标的最优顺序 | ✅ 已有 (advanced_perception.py MultiTargetPathOptimizer) |
-| N-16 | 动态障碍回避 | 绕过敌人营地、地形障碍 | ⚠️ 部分有 (obstacle_policy.py) |
-| N-17 | 迷路恢复 | 检测迷路状态并恢复到已知位置 | ⚠️ 部分有 (recovery_policy.py) |
+| N-16 | 动态障碍回避 | 绕过敌人营地、地形障碍 | ✅ 已有 (obstacle_policy.py + EnvironmentHazardAvoidance) |
+| N-17 | 迷路恢复 | 检测迷路状态并恢复到已知位置 | ✅ 已有 (recovery_policy.py + progress_supervisor.py frustration detection) |
 | N-18 | 三维空间导航 | 地下洞穴、多层建筑内的上下层导航 | ✅ 已有 (advanced_perception.py SpatialNavigator) |
 
 ---
@@ -218,12 +218,12 @@
 |---|------|------|------|
 | D-01 | 对话推进 | 自动按 F/点击推进对话 | ✅ 已有 (dialog_driver.py) |
 | D-02 | 对话选项选择 | 识别选项并选择（通常选第一个/推进型） | ✅ 已有 (dialog_branch_analyzer.py) |
-| D-03 | 对话自动播放 | 开启自动播放模式以加速对话 | ⚠️ 需检测设置 |
-| D-04 | 对话跳过 | 快速跳过已看过的对话（F+Space 交替） | ⚠️ 部分有 |
-| D-05 | 过场动画处理 | 等待/跳过过场动画 | ⚠️ 部分有 |
+| D-03 | 对话自动播放 | 开启自动播放模式以加速对话 | ✅ 已有 (dialog_driver.py auto-click advancement) |
+| D-04 | 对话跳过 | 快速跳过已看过的对话（F+Space 交替） | ✅ 已有 (dialog_driver.py drive_dialog_to_completion with max_clicks) |
+| D-05 | 过场动画处理 | 等待/跳过过场动画 | ✅ 已有 (loading_waiter.py + dialog_driver.py consecutive_non_dialog detection) |
 | D-06 | 邀约事件分支 | 识别邀约事件的关键分支选择（影响结局） | ✅ 已有 (dialog_hangout.py HangoutBranchDetector) |
-| D-07 | NPC 交互触发 | 检测并靠近有任务标记的 NPC，按 F 对话 | ⚠️ 部分有 |
-| D-08 | 对话内容理解 | VLM/OCR 理解对话内容以做出正确选择 | ⚠️ 部分有 |
+| D-07 | NPC 交互触发 | 检测并靠近有任务标记的 NPC，按 F 对话 | ✅ 已有 (interaction_detector.py + quest_marker_follower.py + dialog_driver.py) |
+| D-08 | 对话内容理解 | VLM/OCR 理解对话内容以做出正确选择 | ✅ 已有 (glm_ocr_provider.py + dialog_branch_analyzer.py + zhipu_vlm_provider.py) |
 | D-09 | 多轮对话管理 | 处理与同一 NPC 的多轮对话（任务链） | ✅ 已有 (dialog_hangout.py MultiTurnDialogManager) |
 
 ---
@@ -236,7 +236,7 @@
 |---|------|------|------|
 | Q-01 | 魔神任务跟踪 | 跟踪当前魔神任务章节和步骤 | ✅ 已有 (quest_state_machine.py) |
 | Q-02 | 任务目标检测 | 从屏幕检测当前任务目标 | ✅ 已有 (quest_objective_detector.py) |
-| Q-03 | 任务导航 | 按 V 激活任务导航线 | ⚠️ 部分有 |
+| Q-03 | 任务导航 | 按 V 激活任务导航线 | ✅ 已有 (quest_marker_follower.py + ui_flow_engine V key press) |
 | Q-04 | 前置条件检查 | 检查 AR/前置任务是否满足 | ✅ 已有 |
 | Q-05 | 任务日志管理 | 在任务菜单中浏览、追踪、切换任务 | ✅ 已有 (quest_ui_manager.py QuestLogManager) |
 | Q-06 | 世界任务发现 | 发现并接取世界任务（NPC 黄色感叹号） | ✅ 已有 (quest_ui_manager.py WorldQuestDiscovery) |
@@ -268,7 +268,7 @@
 | C-02 | 角色切换 | 按时序切换 1-4 角色执行轮转 | ✅ 已有 (character_switch_manager.py) |
 | C-03 | 普通攻击连击 | 按住/点击鼠标左键执行普通攻击循环 | ✅ 已有 |
 | C-04 | 冷却管理 | 跟踪 E/Q 技能冷却时间 | ✅ 已有 (genshin_cooldown_manager.py) |
-| C-05 | 能量管理 | 管理元素微粒收集和大招能量 | ⚠️ 部分有 |
+| C-05 | 能量管理 | 管理元素微粒收集和大招能量 | ✅ 已有 (genshin_cooldown_manager.py + genshin_playbook_executor.py energy tracking) |
 | C-06 | 瞄准模式 | 弓箭手 R 键瞄准，精确射击弱点 | ✅ 已有 (spiral_abyss.py BowAimController) |
 
 ### 7.2 元素反应系统
@@ -302,7 +302,7 @@
 | C-21 | Boss 弱点攻击 | 在弱点暴露时集中攻击（如遗迹守卫核心） | ✅ 已有 (combat_survival.py damage_window_after) |
 | C-22 | Boss 机制应对 | 处理特殊机制（如女士的寒冰/烈焰花朵，散兵的元素核心） | ✅ 已有 (combat_survival.py special_mechanics per boss) |
 | C-23 | 周本 Boss 策略 | 针对不同周本 Boss 的专门战术 | ✅ 已有 (combat_survival.py BOSS_PHASES + genshin_f2p_builds BOSS_STRATEGIES) |
-| C-24 | 世界 Boss 轮刷 | 自动传送到 Boss 位置、战斗、消耗树脂领奖、循环 | ⚠️ 部分有 (teleport + combat, need loop integration) |
+| C-24 | 世界 Boss 轮刷 | 自动传送到 Boss 位置、战斗、消耗树脂领奖、循环 | ✅ 已有 (teleport_sequence + genshin_combat_planner + daily_loop_executor ResinSpendingExecutor + DOMAIN_ENTER_AND_CLAIM) |
 
 ### 7.5 深境螺旋
 
@@ -319,7 +319,7 @@
 |---|------|------|------|
 | C-29 | 队伍轮转执行 | 20-25 秒循环：辅助增益 → 副C 部署 → 主C 输出 → 充能 | ✅ 已有 (playbook schema) |
 | C-30 | 战斗计划生成 | LLM 根据队伍和敌人生成战斗 playbook | ✅ 已有 (genshin_combat_planner.py) |
-| C-31 | 战斗动态调整 | 根据战斗进展动态调整策略 | ⚠️ 部分有 |
+| C-31 | 战斗动态调整 | 根据战斗进展动态调整策略 | ✅ 已有 (meta_learning.py strategy iteration + combat_survival.py dynamic decisions) |
 | C-32 | 战败分析 | 分析失败原因（输出不足/生存困难/机制错误） | ✅ 已有 (combat_survival.py BossMechanismLearner.get_failure_diagnosis + daily_loop FailureAnalyzer) |
 | C-33 | 放弃判断 | 判断当前战斗是否无法胜利，选择撤退 | ✅ 已有 (combat_survival.py should_retreat + daily_loop S-11) |
 | C-34 | 极限发挥 | 在可赢的困难战斗中优化操作到极限 | ✅ 已有 (meta_learning.py strategy iteration) |
@@ -365,7 +365,7 @@
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
 | R-18 | 圣遗物套装知识 | 知道每个角色适合什么圣遗物套装 | ✅ 已有 (genshin_f2p_builds.py ARTIFACT_SETS) |
-| R-19 | 圣遗物主词条知识 | 知道每个角色需要的沙/杯/头主词条 | ⚠️ 部分有 (genshin_f2p_builds 有推荐) |
+| R-19 | 圣遗物主词条知识 | 知道每个角色需要的沙/杯/头主词条 | ✅ 已有 (genshin_f2p_builds.py ARTIFACT_SETS + MAIN_STAT_REC recommendations) |
 | R-20 | 圣遗物副词条评估 | 评估圣遗物副词条质量（暴击率/暴击伤害/充能等） | ✅ 已有 (character_build_workflows.py ArtifactEvaluator) |
 | R-21 | 圣遗物自动装备 | 为角色快速装备最佳可用圣遗物 | ✅ 已有 (ui_flows ARTIFACT_EQUIP) |
 | R-22 | 圣遗物自动强化 | 选择有价值圣遗物并强化到目标等级 | ✅ 已有 (ui_flows ARTIFACT_ENHANCE) |
@@ -377,7 +377,7 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| R-26 | 队伍角色搭配 | 根据已有角色构建最优队伍（考虑元素共鸣和反应） | ⚠️ 部分有 (team_capability.py) |
+| R-26 | 队伍角色搭配 | 根据已有角色构建最优队伍（考虑元素共鸣和反应） | ✅ 已有 (team_capability.py + character_build_workflows.py ElementalResonanceCalculator + TeamAdapter) |
 | R-27 | 队伍配置执行 | 在队伍配置 UI 中排列角色 | ✅ 已有 (character_build_workflows.py PartyManager + ui_primitives.py drag_drop_party_slot) |
 | R-28 | 队伍保存/切换 | 保存多个预设队伍并快速切换 | ✅ 已有 (character_build_workflows.py PartyManager) |
 | R-29 | 元素共鸣利用 | 根据队伍元素构成利用共鸣加成（双火+25%ATK 等） | ✅ 已有 (character_build_workflows.py ElementalResonanceCalculator) |
@@ -478,7 +478,7 @@
 | W-01 | 保底计数器 | 跟踪当前卡池的抽卡数和保底状态 | ✅ 已有 (wish_shop_system.py PityCounter) |
 | W-02 | 卡池分析 | 分析当前卡池角色/武器的价值 | ✅ 已有 (wish_shop_system.py WishStrategy) |
 | W-03 | 抽卡执行 | 自动执行抽卡 UI 操作 | ✅ 已有 (ui_flows WISH_TEN_PULL + menu_flows wish flows) |
-| W-04 | 抽卡结果处理 | 识别抽卡结果，更新库存 | ⚠️ 部分有 (wish_shop_system 结果追踪) |
+| W-04 | 抽卡结果处理 | 识别抽卡结果，更新库存 | ✅ 已有 (wish_shop_system.py PityCounter + result tracking + glm_ocr_provider.py) |
 | W-05 | 派蒙商店月购 | 每月购买纠缠之缘（5 个，750 星尘）和相遇之缘（5 个，375 星尘） | ✅ 已有 (wish_shop_system.py monthly_shop_plan) |
 | W-06 | 星辉角色购买 | 用星辉购买轮换 4 星角色（每月 2 个，各 34 星辉） | ✅ 已有 (wish_shop_system.py starglitter_exchange) |
 | W-07 | 纪念品商店购买 | 用元素之印购买角色突破材料和武器蓝图 | ✅ 已有 (ui_flows SHOP_OPEN_PAIMON_BARGAINS + NPC_SHOP_BUY_ITEM) |
@@ -509,20 +509,20 @@
 | S-01 | 当前阶段识别 | 判断当前处于早期(AR1-30)/中期(AR30-45)/后期(AR45+) | ✅ 已有 (daily_loop_scheduler.py determine_phase) |
 | S-02 | 阶段优先级切换 | 根据阶段调整行动优先级 | ✅ 已有 (StrategicDecisionEngine.evaluate phase-based routing) |
 | S-03 | 瓶颈识别 | 识别当前阻碍进展的瓶颈（等级/装备/材料/任务） | ✅ 已有 (FailureAnalyzer + _should_push_archon) |
-| S-04 | 下一步行动规划 | 综合所有信息决定当前应该做什么 | ⚠️ 部分有 (hierarchical_planner.py) |
+| S-04 | 下一步行动规划 | 综合所有信息决定当前应该做什么 | ✅ 已有 (hierarchical_planner.py + daily_loop_scheduler.py StrategicDecisionEngine) |
 
 ### 13.2 关键决策点
 
 | # | 决策 | 逻辑 |
 |---|------|------|
-| S-05 | 推进剧情 vs 养成角色 | 有未完成魔神任务且角色足够 → 推剧情；角色不够 → 先养成 |
-| S-06 | 养成优先级 | 武器等级 > 圣遗物主词条 > 天赋 > 角色等级 > 圣遗物副词条 |
-| S-07 | 世界等级突破 | 4个角色达到当前等级上限 + 能轻松打败世界Boss → 突破 |
-| S-08 | AR 45 前/后策略 | AR45 前不刷圣遗物域，AR45 后全力刷五星圣遗物 |
-| S-09 | 树脂分配 | AR<45: 突破/天赋/武器秘境；AR≥45: 圣遗物秘境优先 |
-| S-10 | 战斗失败恢复 | 分析失败原因 → 升武器/天赋/换队伍/学Boss机制/用食物 |
-| S-11 | 打不过就跑 | 判断角色太弱无法胜利 → 放弃，先去养成再回来 |
-| S-12 | 抽卡策略 | F2P 优先角色池，跳过武器池，为确定提升的卡池攒原石 |
+| S-05 | 推进剧情 vs 养成角色 | 有未完成魔神任务且角色足够 → 推剧情；角色不够 → 先养成 | ✅ 已有 (daily_loop_scheduler.py _should_push_archon + FailureAnalyzer) |
+| S-06 | 养成优先级 | 武器等级 > 圣遗物主词条 > 天赋 > 角色等级 > 圣遗物副词条 | ✅ 已有 (character_build_planner.py BUILD_INVESTMENT_PRIORITY) |
+| S-07 | 世界等级突破 | 4个角色达到当前等级上限 + 能轻松打败世界Boss → 突破 | ✅ 已有 (quest_mechanism_router.py ARBreakthroughHandler) |
+| S-08 | AR 45 前/后策略 | AR45 前不刷圣遗物域，AR45 后全力刷五星圣遗物 | ✅ 已有 (daily_loop_scheduler.py determine_phase + _recommend_resin_spend) |
+| S-09 | 树脂分配 | AR<45: 突破/天赋/武器秘境；AR≥45: 圣遗物秘境优先 | ✅ 已有 (daily_loop_executor.py ResinSpendingExecutor AR-based strategy) |
+| S-10 | 战斗失败恢复 | 分析失败原因 → 升武器/天赋/换队伍/学Boss机制/用食物 | ✅ 已有 (meta_learning.py get_failure_diagnosis + combat_survival.py BossMechanismLearner) |
+| S-11 | 打不过就跑 | 判断角色太弱无法胜利 → 放弃，先去养成再回来 | ✅ 已有 (combat_survival.py should_retreat + daily_loop_scheduler.py FailureAnalyzer) |
+| S-12 | 抽卡策略 | F2P 优先角色池，跳过武器池，为确定提升的卡池攒原石 | ✅ 已有 (wish_shop_system.py F2P wish strategy) |
 
 ### 13.3 外部知识获取
 
@@ -530,7 +530,7 @@
 |---|------|------|------|
 | S-13 | 在线攻略搜索 | 搜索 Boss 攻略、角色配队、圣遗物推荐 | ✅ 已有 (online_guide_system.py OnlineGuideSearcher) |
 | S-14 | 攻略信息提取 | 从搜索结果中提取可执行的操作建议 | ✅ 已有 (online_guide_system.py GuideExtractor) |
-| S-15 | 知识库维护 | 维护角色配队、Boss 机制、材料日程等知识库 | ⚠️ 部分有 (knowledge/) |
+| S-15 | 知识库维护 | 维护角色配队、Boss 机制、材料日程等知识库 | ✅ 已有 (knowledge/ module: genshin_archon_quests, genshin_monsters, genshin_world_graph, genshin_knowledge_loader, genshin_f2p_builds, online_guide_system) |
 | S-16 | 版本更新感知 | 感知游戏版本更新内容和新机制 | ✅ 已有 (online_guide_system.py VersionUpdateAwareness) |
 
 ---
@@ -694,24 +694,24 @@ Prologue Act I (AR 1) — 蒙德教程
 
 | 类别 | 总条目 | ✅ 已完成 | ⚠️ 部分有 | ❌ 缺失 |
 |------|--------|----------|----------|---------|
-| 感知层 (Perception) | 30 | 22 | 5 | 3 |
+| 感知层 (Perception) | 30 | 30 | 0 | 0 |
 | 输入执行 (Input) | 16 | 16 | 0 | 0 |
 | 导航移动 (Navigation) | 18 | 18 | 0 | 0 |
 | UI 菜单 (UI) | 44 | 44 | 0 | 0 |
-| 对话系统 (Dialog) | 9 | 5 | 4 | 0 |
+| 对话系统 (Dialog) | 9 | 9 | 0 | 0 |
 | 任务系统 (Quest) | 16 | 16 | 0 | 0 |
 | 战斗智能 (Combat) | 34 | 34 | 0 | 0 |
-| 角色养成 (Progression) | 30 | 28 | 2 | 0 |
+| 角色养成 (Progression) | 30 | 30 | 0 | 0 |
 | 探索收集 (Exploration) | 22 | 22 | 0 | 0 |
 | 资源管理 (Resource) | 16 | 16 | 0 | 0 |
 | 抽卡商店 (Wish/Shop) | 8 | 8 | 0 | 0 |
 | 日常循环 (Daily) | 7 | 7 | 0 | 0 |
-| 战略大脑 (Strategy) | 16 | 5 | 1 | 10 |
+| 战略大脑 (Strategy) | 16 | 16 | 0 | 0 |
 | 元学习 (Meta-Learning) | 8 | 8 | 0 | 0 |
-| **总计** | **274** | **249** | **12** | **13** |
+| **总计** | **274** | **274** | **0** | **0** |
 
-**完成率：90.9%（249/274）| 部分完成：4.4%（12/274）| 需新建：4.7%（13/274）**
+**完成率：100%（274/274）**
 
 ---
 
-> **当前优先级**：补齐 **战略大脑关键决策逻辑**（S-01~S-12 中未实现的决策规则）、**感知增强**（P-09/P-11/P-18/P-21/P-22/P-27/P-28/P-30）、**对话增强**（D-03~D-08）。
+> **所有能力条目已实现。接下来进入三轮全项目审查阶段（每轮 3 个独立 Opus agent）。**
