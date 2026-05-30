@@ -325,7 +325,157 @@ BUILD_PRIORITY: tuple[str, ...] = (
     "collei",       # B-tier Dendro support (after Sumeru)
 )
 
+
+# ---------------------------------------------------------------------------
+# Weapon alternative picker (R-37)
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True, frozen=True)
+class WeaponAltOption:
+    """An alternative weapon option."""
+    weapon_name: str
+    rarity: int        # 1-5 stars
+    source: str        # "gacha", "bp", "forge", "fishing", "event", "f2p"
+    reason: str = ""
+
+
+WEAPON_ALT_PICKER_DB: dict[str, tuple[str, ...]] = {
+    "xiangling": ("The Catch", "Dragon's Bane", "Kitain Cross Spear", "Crescent Pike"),
+    "xingqiu": ("Sacrificial Sword", "Favonius Sword", "Amenoma Kageuchi", "Harbinger of Dawn"),
+    "bennett": ("Sapwood Blade", "Favonius Sword", "Prototype Rancour", "Iron Sting"),
+    "fischl": ("The Stringless", "Favonius Warbow", "Rust", "Prototype Crescent"),
+    "kaeya": ("Amenoma Kageuchi", "Favonius Sword", "Harbinger of Dawn", "Cool Steel"),
+    "barbara": ("Thrilling Tales of Dragon Slayers", "Prototype Amber", "Magic Guide", "Emerald Orb"),
+    "collei": ("Favonius Warbow", "The Stringless", "End of the Line", "Sharpshooter's Oath"),
+    "lisa": ("Thrilling Tales of Dragon Slayers", "Mappa Mare", "Prototype Amber", "Apprentice's Notes"),
+    "noelle": ("Whiteblind", "Prototype Archaic", "Debate Club", "Ferrous Shadow"),
+    "amber": ("Favonius Warbow", "Sharpshooter's Oath", "Recurve Bow", "Messenger"),
+}
+
+
+class WeaponAltPicker:
+    """Picks alternative weapons based on player's weapon inventory (R-37)."""
+
+    def __init__(self) -> None:
+        self._db = WEAPON_ALT_PICKER_DB
+
+    def recommend_alts(
+        self,
+        character_id: str,
+        owned_weapons: set[str],
+    ) -> list[WeaponAltOption]:
+        """Recommend alternative weapons based on what's owned."""
+        alts = self._db.get(character_id, ())
+        recommendations: list[WeaponAltOption] = []
+
+        for weapon_name in alts:
+            owned = weapon_name.lower() in [w.lower() for w in owned_weapons]
+            rarity = self._get_rarity(weapon_name)
+            source = self._get_source(weapon_name)
+
+            recommendations.append(WeaponAltOption(
+                weapon_name=weapon_name,
+                rarity=rarity,
+                source=source,
+                reason="Currently equipped" if owned else "Available in inventory",
+            ))
+
+        # Sort: owned first, then by rarity descending
+        recommendations.sort(key=lambda x: (not ("Currently equipped" in x.reason), -x.rarity))
+        return recommendations
+
+    def pick_best_owned(
+        self,
+        character_id: str,
+        owned_weapons: set[str],
+    ) -> str | None:
+        """Pick the best owned weapon for a character."""
+        alts = self.recommend_alts(character_id, owned_weapons)
+        for alt in alts:
+            if "Currently equipped" in alt.reason:
+                return alt.weapon_name
+        return None
+
+    @staticmethod
+    def _get_rarity(weapon_name: str) -> int:
+        """Determine weapon rarity from name."""
+        event_weapons = {"the catch", "song of stillness", "hamayumi"}
+        bp_weapons = {"serpent spine", "deathmatch", "the viridescent hunt"}
+        if weapon_name.lower() in event_weapons:
+            return 4
+        if weapon_name.lower() in bp_weapons:
+            return 4
+        return 3
+
+    @staticmethod
+    def _get_source(weapon_name: str) -> str:
+        """Determine weapon source."""
+        name_lower = weapon_name.lower()
+        if name_lower == "the catch":
+            return "fishing"
+        if name_lower in {"favonius sword", "favonius lance"}:
+            return "gacha"
+        if name_lower == "favonius warbow":
+            return "forge"  # Favonius Warbow is a forge weapon
+        if name_lower in {"prototype archaic", "prototype amber", "prototype rancour"}:
+            return "forge"
+        if name_lower in {"thrilling tales of dragon slayers", "whiteblind"}:
+            return "f2p"
+        if name_lower in {"amenoma kageuchi"}:
+            return "forge"  # Can be obtained from blacksmith
+        return "f2p"
+
+
+# ---------------------------------------------------------------------------
+# Substat weights by character role (R-48)
+# ---------------------------------------------------------------------------
+
+from planning.character_build_workflows import SubstatType, SUBSTAT_WEIGHTS as BASE_SUBSTAT_WEIGHTS
+
+ROLE_SUBSTAT_BOOSTS: dict[str, dict[str, float]] = {
+    "main_dps": {
+        "crit_rate": 1.2,
+        "crit_dmg": 1.2,
+        "atk_percent": 1.1,
+    },
+    "off_field_dps": {
+        "crit_rate": 1.1,
+        "crit_dmg": 1.1,
+        "energy_recharge": 1.3,
+    },
+    "support": {
+        "energy_recharge": 1.5,
+        "atk_percent": 1.0,
+        "hp_percent": 1.0,
+    },
+    "healer": {
+        "hp_percent": 1.3,
+        "energy_recharge": 1.2,
+    },
+    "em_reaction": {
+        "elemental_mastery": 1.5,
+        "energy_recharge": 1.1,
+    },
+}
+
+
+def get_role_adjusted_weights(role: str) -> dict[SubstatType, float]:
+    """Get substat weights adjusted for a specific character role (R-48)."""
+    role_key = role.lower()
+    boosts = ROLE_SUBSTAT_BOOSTS.get(role_key, {})
+
+    adjusted: dict[SubstatType, float] = {}
+    for stat, base_weight in BASE_SUBSTAT_WEIGHTS.items():
+        boost = boosts.get(stat.value if hasattr(stat, 'value') else str(stat), 1.0)
+        adjusted[stat] = base_weight * boost
+
+    return adjusted
+
+
+# ---------------------------------------------------------------------------
 # Teams to build in order
+# ---------------------------------------------------------------------------
+
 TEAM_PROGRESSION: tuple[dict[str, Any], ...] = (
     {
         "name": "Early Survival Team",

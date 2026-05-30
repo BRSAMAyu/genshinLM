@@ -32,6 +32,303 @@ log = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# Crown allocation strategy (R-39)
+# ---------------------------------------------------------------------------
+
+class CrownPriority(str, Enum):
+    """Priority for crown usage."""
+    CORE = "core"           # Core characters (national team, etc.)
+    SUB_DPS = "sub_dps"     # Sub DPS characters
+    SUPPORT = "support"     # Support characters
+    FLEX = "flex"           # Flex/situational characters
+
+
+@dataclass(slots=True)
+class CrownAllocation:
+    """Crown allocation decision."""
+    character_id: str
+    talent: str
+    current_level: int
+    target_level: int
+    priority: CrownPriority
+    crowns_needed: int = 1
+
+
+@dataclass(slots=True)
+class CrownBudget:
+    """Budget for crown allocation across multiple characters."""
+    crowns_owned: int = 0
+    crowns_reserved: int = 0
+
+    @property
+    def crowns_available(self) -> int:
+        return max(0, self.crowns_owned - self.crowns_reserved)
+
+
+class CrownAllocator:
+    """Allocates crown resources based on character priority (R-39).
+
+    Distinguishes between core characters (burst to 9/10) and
+    utility characters (skill to 6 or skip).
+    """
+
+    # Characters and their crown priorities
+    CORE_CHARACTERS: frozenset[str] = frozenset({
+        "xiangling", "xingqiu", "bennett", "kaeya",
+    })
+    SUB_DPS_CHARACTERS: frozenset[str] = frozenset({
+        "fischl", "barbara", "noelle", "collei",
+    })
+    SUPPORT_CHARACTERS: frozenset[str] = frozenset({
+        "lisa", "amber",
+    })
+
+    # Crown thresholds
+    CORE_BURST_TARGET = 9      # Core burst to 9 (needs crown)
+    CORE_OTHER_TARGET = 6       # Core other talents to 6 (no crown)
+    SUB_DPS_TARGET = 6          # Sub DPS talents to 6
+    SUPPORT_SKIP = 4            # Support talents stop at 4
+
+    def get_priority(self, character_id: str) -> CrownPriority:
+        """Determine crown priority for a character."""
+        if character_id in self.CORE_CHARACTERS:
+            return CrownPriority.CORE
+        if character_id in self.SUB_DPS_CHARACTERS:
+            return CrownPriority.SUB_DPS
+        if character_id in self.SUPPORT_CHARACTERS:
+            return CrownPriority.SUPPORT
+        return CrownPriority.FLEX
+
+    def plan_allocation(
+        self,
+        character_states: list[Any],
+        crowns_owned: int,
+    ) -> list[CrownAllocation]:
+        """Plan crown allocation across multiple characters."""
+        allocations: list[CrownAllocation] = []
+        available = crowns_owned
+
+        # Sort by priority
+        sorted_chars = sorted(
+            character_states,
+            key=lambda c: (
+                list(CrownPriority).index(self.get_priority(c.character_id)),
+                -max(c.talent_levels.values()) if c.talent_levels else 0,
+            ),
+        )
+
+        for state in sorted_chars:
+            if available <= 0:
+                break
+
+            priority = self.get_priority(state.character_id)
+            crown_talent, crown_needed = self._calculate_needs(state, priority)
+
+            if crown_needed > 0 and available >= crown_needed:
+                allocations.append(CrownAllocation(
+                    character_id=state.character_id,
+                    talent=crown_talent,
+                    current_level=state.talent_levels.get(crown_talent, 1),
+                    target_level=state.talent_levels.get(crown_talent, 1) + crown_needed,
+                    priority=priority,
+                    crowns_needed=crown_needed,
+                ))
+                available -= crown_needed
+
+        return allocations
+
+    def _calculate_needs(
+        self,
+        state: Any,
+        priority: CrownPriority,
+    ) -> tuple[str, int]:
+        """Calculate crown needs for a character."""
+        if priority == CrownPriority.CORE:
+            burst = state.talent_levels.get("burst", 1)
+            if burst < self.CORE_BURST_TARGET:
+                return ("burst", self.CORE_BURST_TARGET - burst)
+            return ("", 0)
+        if priority == CrownPriority.SUB_DPS:
+            # Check which talent is lowest
+            lowest_talent = min(state.talent_levels.items(), key=lambda x: x[1])
+            if lowest_talent[1] < self.SUB_DPS_TARGET:
+                return (lowest_talent[0], self.SUB_DPS_TARGET - lowest_talent[1])
+            return ("", 0)
+        return ("", 0)
+
+    def reserve_crowns(self, crowns_needed: int, allocations: list[CrownAllocation]) -> int:
+        """Calculate crowns to reserve for planned allocations."""
+        return sum(a.crowns_needed for a in allocations if a.crowns_needed > 0)
+
+
+# ---------------------------------------------------------------------------
+# R-40~R-41: Material planning with uncertainty and scarcity detection
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class WeeklyBossUncertainty:
+    """Tracks uncertainty in weekly boss material acquisition."""
+    boss_name: str
+    material_id: str
+    expected_drop_rate: float = 0.5  # ~50% expected drop rate
+    runs_estimated: int = 1
+    risk_level: str = "normal"  # "low", "normal", "high"
+
+
+@dataclass(slots=True)
+class ScarceMaterial:
+    """Identifies scarce/hard-to-acquire materials."""
+    material_id: str
+    name: str
+    acquisition_difficulty: str = "normal"  # "easy", "normal", "hard", "very_hard"
+    acquisition_locations: list[str] = field(default_factory=list)
+    time_to_acquire_hours: float = 0.0
+    is_time_gated: bool = False
+
+
+# Local specialty scarcity data
+LOCAL_SPECIALTY_SCARCIty: dict[str, ScarceMaterial] = {
+    "wind_aster": ScarceMaterial(
+        material_id="wind_aster",
+        name="Wind Aster",
+        acquisition_difficulty="easy",
+        acquisition_locations=["Mondstadt", "Starfell Valley"],
+        time_to_acquire_hours=1.0,
+    ),
+    "philanemo_mushroom": ScarceMaterial(
+        material_id="philanemo_mushroom",
+        name="Philanemo Mushroom",
+        acquisition_difficulty="hard",
+        acquisition_locations=["Starsnatch Cliff", "Windrise"],
+        time_to_acquire_hours=3.0,
+    ),
+    "crystal_marrow": ScarceMaterial(
+        material_id="crystal_marrow",
+        name="Crystal Marrow",
+        acquisition_difficulty="very_hard",
+        acquisition_locations=["Inazuma (only from enemies, time-gated)"],
+        time_to_acquire_hours=8.0,
+        is_time_gated=True,
+    ),
+}
+
+
+class MaterialUncertaintyAnalyzer:
+    """Analyzes uncertainty in material acquisition (R-40)."""
+
+    def __init__(self) -> None:
+        self._weekly_boss_runs: dict[str, int] = {}
+
+    def estimate_weekly_boss_runs(
+        self,
+        material_id: str,
+        quantity_needed: int,
+    ) -> int:
+        """Estimate number of weekly boss runs needed for material.
+
+        Uses expected drop rate to estimate runs.
+        """
+        expected_rate = 0.5  # ~50% drop rate
+        base_runs = int(quantity_needed / expected_rate)
+
+        # Count current runs
+        current_runs = self._weekly_boss_runs.get(material_id, 0)
+
+        # Buffer for variance
+        buffer = max(1, int(base_runs * 0.3))
+        return base_runs + buffer
+
+    def get_uncertainty(
+        self,
+        material_id: str,
+        quantity_needed: int,
+    ) -> WeeklyBossUncertainty | None:
+        """Get uncertainty info for a weekly boss material."""
+        weekly_materials = {
+            "diluc_talent", "ningguang_talent", "mona_talent",
+            "tartaglia_talent", "keqing_talent",
+        }
+
+        if material_id not in weekly_materials:
+            return None
+
+        runs = self.estimate_weekly_boss_runs(material_id, quantity_needed)
+
+        return WeeklyBossUncertainty(
+            boss_name=material_id,
+            material_id=material_id,
+            expected_drop_rate=0.5,
+            runs_estimated=runs,
+            risk_level="high" if runs > 4 else "normal",
+        )
+
+    def get_scarce_materials(
+        self,
+        material_ids: list[str],
+    ) -> list[ScarceMaterial]:
+        """Identify scarce materials from a list."""
+        scarce: list[ScarceMaterial] = []
+        for mat_id in material_ids:
+            if mat_id in LOCAL_SPECIALTY_SCARCIty:
+                scarcity = LOCAL_SPECIALTY_SCARCIty[mat_id]
+                if scarcity.acquisition_difficulty in ("hard", "very_hard"):
+                    scarce.append(scarcity)
+        return scarce
+
+
+class MaterialScarcityDetector:
+    """Detects scarcity in material acquisition paths (R-41)."""
+
+    SCARCE_MATERIALS: frozenset[str] = frozenset({
+        "crystal_marrow",  # Inazuma - very hard
+        "sea_ganoderma",    # Inazuma water areas
+        "sand_grease_pupae",  # Sumeru desert
+        "lightning_essential_oil",  # Event limited
+        "floral_essence",  # Event limited
+    })
+
+    def is_scarce(self, material_id: str) -> bool:
+        """Check if a material is considered scarce."""
+        return material_id in self.SCARCE_MATERIALS
+
+    def get_scarcity_alert(
+        self,
+        material_id: str,
+        current_count: int,
+        needed_count: int,
+    ) -> dict[str, Any] | None:
+        """Generate scarcity alert if material is rare."""
+        if not self.is_scarce(material_id):
+            return None
+
+        deficit = max(0, needed_count - current_count)
+        if deficit == 0:
+            return None
+
+        scarcity = LOCAL_SPECIALTY_SCARCIty.get(material_id)
+        difficulty = scarcity.acquisition_difficulty if scarcity else "hard"
+
+        return {
+            "material_id": material_id,
+            "acquisition_difficulty": difficulty,
+            "deficit": deficit,
+            "estimated_time_hours": (scarcity.time_to_acquire_hours if scarcity else 5.0) * deficit,
+            "recommendation": f"Start farming {material_id} early - it's scarce",
+            "is_time_gated": scarcity.is_time_gated if scarcity else False,
+        }
+
+
+# ---------------------------------------------------------------------------
+# R-38: Refinement priority (imported from knowledge module)
+# ---------------------------------------------------------------------------
+
+from knowledge.weapon_refinement_priority import (
+    RefinementPriorityCalculator,
+    MultiCharacterRefinementPlan,
+)
+
+
+# ---------------------------------------------------------------------------
 # Data types
 # ---------------------------------------------------------------------------
 

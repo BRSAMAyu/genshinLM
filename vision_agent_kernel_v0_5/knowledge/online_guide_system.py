@@ -449,3 +449,235 @@ class VersionUpdateAwareness:
                  info.version, len(info.new_regions),
                  len(info.new_characters), len(info.new_mechanics))
         return info
+
+
+# ---------------------------------------------------------------------------
+# S-27: Version update awareness integration with guide system
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class VersionUpdateAlert:
+    """Alert about a version update affecting strategy."""
+    version: str
+    alert_type: str            # "new_character", "mechanic_change", "balance_update"
+    affected_content: list[str]
+    recommended_action: str
+    priority: str = "medium"   # "high", "medium", "low"
+
+
+class VersionGuideIntegration:
+    """Integrates version awareness with guide system (S-27).
+
+    Detects version updates and triggers guide re-search for affected content.
+    """
+
+    def __init__(self) -> None:
+        self._version_awareness = VersionUpdateAwareness()
+        self._last_alert_version: str = ""
+
+    def check_for_updates(self) -> list[VersionUpdateAlert] | None:
+        """Check for version updates and generate alerts.
+
+        Returns list of alerts if updates found, None otherwise.
+        """
+        update = self._version_awareness.check_for_updates()
+        if update is None:
+            return None
+
+        alerts: list[VersionUpdateAlert] = []
+
+        if update.new_characters:
+            alerts.append(VersionUpdateAlert(
+                version=update.version,
+                alert_type="new_character",
+                affected_content=update.new_characters,
+                recommended_action="Search guides for new character builds",
+                priority="high",
+            ))
+
+        if update.new_mechanics:
+            alerts.append(VersionUpdateAlert(
+                version=update.version,
+                alert_type="mechanic_change",
+                affected_content=update.new_mechanics,
+                recommended_action="Review new mechanics before continuing",
+                priority="medium",
+            ))
+
+        if update.balance_changes:
+            alerts.append(VersionUpdateAlert(
+                version=update.version,
+                alert_type="balance_update",
+                affected_content=update.balance_changes,
+                recommended_action="Re-evaluate affected character builds",
+                priority="medium",
+            ))
+
+        self._last_alert_version = update.version
+        return alerts
+
+    def trigger_guide_refresh(self, update: VersionUpdateInfo) -> list[str]:
+        """Trigger guide refresh for version update content.
+
+        Returns list of guide search queries to execute.
+        """
+        queries: list[str] = []
+
+        for char in update.new_characters:
+            queries.append(f"原神 {char} 攻略 配队 圣遗物")
+            queries.append(f"Genshin {char} build guide artifacts")
+
+        for mechanic in update.new_mechanics:
+            queries.append(f"原神 {mechanic} 机制 攻略")
+            queries.append(f"Genshin {mechanic} mechanic guide")
+
+        return queries
+
+
+# ---------------------------------------------------------------------------
+# S-28: New character evaluation system
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True, frozen=True)
+class CharacterEvaluation:
+    """Evaluation of a new character."""
+    character_id: str
+    character_name: str
+    element: str
+    weapon_type: str
+
+    # Evaluation scores (0.0-1.0)
+    f2p_friendly_score: float = 0.0   # How friendly for F2P
+    team_synergy_score: float = 0.0   # Works well with existing teams
+    investment_efficiency: float = 0.0  # ROI of investment
+    overall_rating: float = 0.0       # Overall value score
+
+    # Recommendations
+    build_priority: str = ""          # "high", "medium", "low"
+    recommended_role: str = ""
+    notes: str = ""
+
+
+class NewCharacterEvaluator:
+    """Evaluates new characters for F2P progression (S-28).
+
+    Integrates with online guides to assess character value
+    and recommend investment priorities.
+    """
+
+    # Character evaluation database (simplified)
+    CHARACTER_EVALUATION_DB: dict[str, CharacterEvaluation] = {
+        "xiangling": CharacterEvaluation(
+            character_id="xiangling",
+            character_name="香菱",
+            element="Pyro",
+            weapon_type="Polearm",
+            f2p_friendly_score=0.95,
+            team_synergy_score=0.95,
+            investment_efficiency=0.95,
+            overall_rating=0.95,
+            build_priority="high",
+            recommended_role="off_field_dps",
+            notes="National team core - highest priority",
+        ),
+        "xingqiu": CharacterEvaluation(
+            character_id="xingqiu",
+            character_name="行秋",
+            element="Hydro",
+            weapon_type="Sword",
+            f2p_friendly_score=0.9,
+            team_synergy_score=0.95,
+            investment_efficiency=0.9,
+            overall_rating=0.92,
+            build_priority="high",
+            recommended_role="off_field_dps",
+            notes="Essential for vaporize and hyperbloom teams",
+        ),
+        "bennett": CharacterEvaluation(
+            character_id="bennett",
+            character_name="班尼特",
+            element="Pyro",
+            weapon_type="Sword",
+            f2p_friendly_score=0.95,
+            team_synergy_score=0.98,
+            investment_efficiency=0.95,
+            overall_rating=0.96,
+            build_priority="high",
+            recommended_role="support_buffer",
+            notes="Best support in game - build immediately",
+        ),
+    }
+
+    def evaluate_character(
+        self,
+        character_id: str,
+        guide_data: dict[str, Any] | None = None,
+    ) -> CharacterEvaluation:
+        """Evaluate a character for F2P progression.
+
+        Args:
+            character_id: Character identifier
+            guide_data: Optional guide data for learning
+
+        Returns:
+            CharacterEvaluation with investment recommendations
+        """
+        # Check database first
+        if character_id in self.CHARACTER_EVALUATION_DB:
+            return self.CHARACTER_EVALUATION_DB[character_id]
+
+        # New character: evaluate based on guide data or default
+        default_eval = CharacterEvaluation(
+            character_id=character_id,
+            character_name=character_id.replace("_", " ").title(),
+            element="Unknown",
+            weapon_type="Unknown",
+            f2p_friendly_score=0.5,
+            team_synergy_score=0.5,
+            investment_efficiency=0.5,
+            overall_rating=0.5,
+            build_priority="medium",
+            recommended_role="unknown",
+            notes="No data available - evaluate after guide search",
+        )
+
+        # Adjust based on guide data
+        if guide_data:
+            if "recommended_team" in guide_data:
+                default_eval.team_synergy_score = 0.7
+            if "weapon_recommendation" in guide_data:
+                default_eval.f2p_friendly_score = 0.6
+
+        return default_eval
+
+    def get_top_characters(self, min_rating: float = 0.8) -> list[CharacterEvaluation]:
+        """Get top-rated characters above a rating threshold."""
+        return [
+            eval for eval in self.CHARACTER_EVALUATION_DB.values()
+            if eval.overall_rating >= min_rating
+        ]
+
+    def get_investment_recommendations(
+        self,
+        available_characters: list[str],
+    ) -> list[tuple[str, str]]:
+        """Get investment recommendations for available characters.
+
+        Returns list of (character_id, recommendation) tuples.
+        """
+        recommendations: list[tuple[str, str]] = []
+
+        for char_id in available_characters:
+            evaluation = self.evaluate_character(char_id)
+            recommendations.append((
+                char_id,
+                f"{evaluation.build_priority.upper()}: {evaluation.notes}",
+            ))
+
+        # Sort by overall rating
+        recommendations.sort(
+            key=lambda x: self.CHARACTER_EVALUATION_DB.get(x[0], CharacterEvaluation(x[0], x[0])).overall_rating,
+            reverse=True,
+        )
+
+        return recommendations

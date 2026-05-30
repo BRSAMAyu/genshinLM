@@ -58,7 +58,7 @@ class TeleportSequence:
         # In production, VLM would locate the waypoint by name
         try:
             self._executor._click_at_normalized(0.5, 0.5, reason=f"select_{waypoint_name}")
-            time.sleep(0.5)
+            self._chunked_sleep(0.5, shutdown_event)
         except Exception as exc:
             log.warning("[Teleport] click waypoint failed: %s", exc)
             self._executor._press_key_safe("escape", "close_map", 0.3)
@@ -67,7 +67,7 @@ class TeleportSequence:
         # Step 4: Click teleport button (bottom right of map)
         try:
             self._executor._click_at_normalized(0.85, 0.85, reason="teleport_confirm")
-            time.sleep(0.5)
+            self._chunked_sleep(0.5, shutdown_event)
         except Exception as exc:
             log.warning("[Teleport] confirm failed: %s", exc)
             self._executor._press_key_safe("escape", "close_map", 0.3)
@@ -77,6 +77,10 @@ class TeleportSequence:
         if not self._wait_for_loading_complete(frame_source, timeout, shutdown_event):
             log.warning("[Teleport] loading did not complete within %.1fs", timeout)
             return False
+
+        # Q-20: Wait for quest marker to refresh after teleport (1-2 second delay)
+        if not self._wait_for_marker_refresh(frame_source, 3.0, shutdown_event):
+            log.warning("[Teleport] marker refresh timeout - continuing anyway")
 
         elapsed = time.perf_counter() - started
         log.info("[Teleport] teleported to %s in %.1fs", waypoint_name, elapsed)
@@ -128,3 +132,37 @@ class TeleportSequence:
                         return True
             time.sleep(0.3)
         return False
+
+    # Q-20: Wait for quest marker refresh after teleport
+    def _wait_for_marker_refresh(
+        self,
+        frame_source,
+        timeout: float,
+        shutdown_event: threading.Event | None,
+    ) -> bool:
+        """Wait for quest marker to update after teleport (1-2 second delay)."""
+        deadline = time.perf_counter() + timeout
+        # Wait for marker to start updating (with interrupt check)
+        self._chunked_sleep(1.5, shutdown_event)
+        while time.perf_counter() < deadline:
+            if shutdown_event and shutdown_event.is_set():
+                return False
+            if frame_source:
+                frame = frame_source()
+                if frame is not None:
+                    state = self._classifier.classify(frame)
+                    # Check if screen is stable and markers are visible
+                    if state.state in ("world_hud", "overworld"):
+                        return True
+            self._chunked_sleep(0.2, shutdown_event)
+        return False
+
+    def _chunked_sleep(self, seconds: float, shutdown_event: threading.Event | None) -> None:
+        """Non-blocking chunked sleep with interrupt check (CLAUDE.md compliance)."""
+        deadline = time.perf_counter() + seconds
+        chunk = 0.05
+        while time.perf_counter() < deadline:
+            if shutdown_event and shutdown_event.is_set():
+                return
+            remaining = max(0.0, deadline - time.perf_counter())
+            time.sleep(min(chunk, remaining))

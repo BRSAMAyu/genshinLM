@@ -38,10 +38,16 @@ class PopupType(str, Enum):
     QUEST_COMPLETE = "quest_complete"
     REWARD = "reward"
     SYSTEM_NOTICE = "system_notice"
+    # U-45~U-53: Resource insufficiency and confirmation popups
+    RESIN_INSUFFICIENT = "resin_insufficient"
+    MATERIAL_INSUFFICIENT = "material_insufficient"
+    MORA_INSUFFICIENT = "mora_insufficient"
+    CONSTELLATION_CONFIRM = "constellation_confirm"
+    WISH_RESULT = "wish_result"
     UNKNOWN = "unknown"
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class PopupDetection:
     """Detected popup/notification."""
     popup_type: PopupType
@@ -74,6 +80,18 @@ class PopupDetector:
 
         if has_gold:
             popup_type = PopupType.ACHIEVEMENT
+        # U-45: Resin insufficient
+        elif "树脂" in text_hint or "resin" in text_hint.lower():
+            popup_type = PopupType.RESIN_INSUFFICIENT
+        # U-46: Material insufficient
+        elif "材料" in text_hint or "material" in text_hint.lower():
+            popup_type = PopupType.MATERIAL_INSUFFICIENT
+        # U-52: Mora insufficient
+        elif "摩拉" in text_hint or "mora" in text_hint.lower():
+            popup_type = PopupType.MORA_INSUFFICIENT
+        # U-51: Constellation confirm
+        elif "命座" in text_hint or "constellation" in text_hint.lower():
+            popup_type = PopupType.CONSTELLATION_CONFIRM
         elif "rank" in text_hint.lower() or "冒险等阶" in text_hint:
             popup_type = PopupType.ADVENTURE_RANK_UP
         elif "level" in text_hint.lower() or "等级" in text_hint:
@@ -88,6 +106,8 @@ class PopupDetector:
         requires_action = popup_type in (
             PopupType.ACHIEVEMENT, PopupType.LEVEL_UP,
             PopupType.ADVENTURE_RANK_UP, PopupType.REWARD,
+            PopupType.RESIN_INSUFFICIENT, PopupType.MATERIAL_INSUFFICIENT,
+            PopupType.MORA_INSUFFICIENT, PopupType.CONSTELLATION_CONFIRM,
         )
 
         return PopupDetection(
@@ -112,7 +132,7 @@ class AoEType(str, Enum):
     UNKNOWN = "unknown"
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class AoEDetection:
     """Detected AoE ground indicator."""
     aoe_type: AoEType
@@ -195,7 +215,7 @@ class QuestMarkerType(str, Enum):
     UNKNOWN = "unknown"
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class QuestMarkerDetection:
     """Detected quest marker on minimap or screen."""
     marker_type: QuestMarkerType
@@ -255,7 +275,7 @@ class QuestMarkerClassifier:
 # P-21/P-22: Numeric Reading + Menu Text OCR Enhancement
 # ---------------------------------------------------------------------------
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class NumericReading:
     """A read numeric value from the screen."""
     value: float
@@ -397,7 +417,7 @@ class InteractiveObjectType(str, Enum):
     UNKNOWN = "unknown"
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class InteractiveObject:
     """Detected interactive object."""
     object_type: InteractiveObjectType

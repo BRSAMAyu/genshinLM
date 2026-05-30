@@ -6,6 +6,8 @@ import time
 from dataclasses import dataclass
 from typing import Any
 
+import numpy as np
+
 from planning.screen_state_claim import (
     ClaimSource,
     PlayerStatusClaim,
@@ -50,6 +52,7 @@ class ScreenStateClaimBuilder:
         self,
         game_id: str,
         frame_id: int,
+        frame_raw: np.ndarray | None = None,
         vlm: VLMOutput | None = None,
         classifier: ClassifierOutput | None = None,
         ocr_results: list[OcrOutput] | None = None,
@@ -64,6 +67,10 @@ class ScreenStateClaimBuilder:
         scene_description = vlm.scene_description if vlm else ""
         raw_vlm = vlm.raw_text if vlm else ""
         raw_ocr = tuple(r.text for r in (ocr_results or []))
+
+        # Gap 5 fix: fuse HSV-enhanced perception detectors into claim
+        if frame_raw is not None and frame_raw.size > 0:
+            self._fuse_hsv_detections(frame_raw, player_status, ui_elements)
 
         return ScreenStateClaim(
             game_id=game_id,
@@ -236,6 +243,106 @@ class ScreenStateClaimBuilder:
                 )):
                     return ocr.text
         return ""
+
+
+    # Gap 5 fix: HSV fusion passes numpy arrays to frame-based wrappers
+    def _fuse_hsv_detections(
+        self,
+        frame: np.ndarray,
+        player_status: PlayerStatusClaim,
+        ui_elements: list[UIElementClaim],
+    ) -> None:
+        """Fuse local HSV detector outputs into the claim.
+
+        Wraps AoEGroundDetector, QuestMarkerClassifier, PopupDetector to accept
+        numpy frames by extracting ROI features first.
+        """
+        try:
+            from perception.perception_enhancements import (
+                AoEGroundDetector,
+                QuestMarkerClassifier,
+                PopupDetector,
+            )
+
+            h, w = frame.shape[:2]
+
+            # AoE: sample center area for ground danger (red/orange circles)
+            aoe_det = AoEGroundDetector()
+            aoe_roi = frame[max(0, h // 4):min(h * 3 // 4), max(0, w // 4):min(w * 3 // 4)]
+            aoe_hsv = __import__('cv2', fromlist=['cvtColor']).cvtColor(aoe_roi, __import__('cv2', fromlist=['COLOR_BGR2HSV']).COLOR_BGR2HSV)
+            avg_hue = float(aoe_hsv[:, :, 0].mean())
+            avg_sat = float(aoe_hsv[:, :, 1].mean())
+            avg_val = float(aoe_hsv[:, :, 2].mean())
+            danger_pixels = __import__('cv2', fromlist=['countNonZero']).countNonZero(
+                __import__('cv2', fromlist=['inRange']).inRange(
+                    aoe_hsv,
+                    __import__('numpy').array([0, 150, 150]),
+                    __import__('numpy').array([20, 255, 255]),
+                )
+            )
+            intensity = danger_pixels / max(aoe_roi.shape[0] * aoe_roi.shape[1], 1)
+            aoe = aoe_det.detect_aoe({
+                "hue": avg_hue, "intensity": intensity,
+                "center": (w // 2, h // 2), "radius": 100,
+            })
+            if aoe and aoe.danger_level.value != "safe":
+                player_status.metadata["aoe_danger"] = {
+                    "type": aoe.aoe_type.value,
+                    "danger_level": aoe.danger_level.value,
+                    "center": aoe.center,
+                }
+
+            # Quest marker: sample minimap area (top-right quadrant)
+            marker_det = QuestMarkerClassifier()
+            mm_x1, mm_y1 = int(w * 0.78), int(h * 0.02)
+            mm_x2, mm_y2 = int(w * 0.98), int(h * 0.42)
+            mm_roi = frame[mm_y1:mm_y2, mm_x1:mm_x2]
+            mm_hsv = __import__('cv2', fromlist=['cvtColor']).cvtColor(mm_roi, __import__('cv2', fromlist=['COLOR_BGR2HSV']).COLOR_BGR2HSV)
+            marker = marker_det.classify_marker({
+                "hue": float(mm_hsv[:, :, 0].mean()),
+                "saturation": float(mm_hsv[:, :, 1].mean()),
+                "value": float(mm_hsv[:, :, 2].mean()),
+                "position": (0, 0),
+                "direction": 0.0,
+                "size": 10,
+            })
+            if marker and marker.marker_type.value != "unknown":
+                player_status.metadata["active_quest_marker"] = {
+                    "type": marker.marker_type.value,
+                    "distance": marker.distance,
+                }
+
+            # Popup: sample top-center for achievement/notification
+            popup_det = PopupDetector()
+            pc_x1, pc_y1 = int(w * 0.30), int(h * 0.05)
+            pc_x2, pc_y2 = int(w * 0.70), int(h * 0.35)
+            pc_roi = frame[pc_y1:pc_y2, pc_x1:pc_x2]
+            pc_hsv = __import__('cv2', fromlist=['cvtColor']).cvtColor(pc_roi, __import__('cv2', fromlist=['COLOR_BGR2HSV']).COLOR_BGR2HSV)
+            gold_mask = __import__('cv2', fromlist=['inRange']).inRange(
+                pc_hsv,
+                __import__('numpy').array([15, 150, 200]),
+                __import__('numpy').array([30, 255, 255]),
+            )
+            gold_pixels = __import__('cv2', fromlist=['countNonZero']).countNonZero(gold_mask)
+            popup = popup_det.classify_popup({
+                "region": "top_center",
+                "has_gold_tint": gold_pixels > 50,
+                "has_icon": False,
+                "text": "",
+            })
+            if popup and popup.requires_action:
+                player_status.metadata["popup_alert"] = popup.popup_type.value
+                ui_elements.append(UIElementClaim(
+                    element_id=f"popup:{popup.popup_type.value}",
+                    role="button",
+                    text=f"dismiss_{popup.popup_type.value}",
+                    bbox_norm=(0.4, 0.4, 0.6, 0.6),
+                    confidence=popup.confidence,
+                    source="popup_detector",
+                    clickable=True,
+                ))
+        except Exception as exc:
+            log.debug("[ScreenStateClaimBuilder] HSV fusion skipped: %s", exc)
 
 
 def _infer_role(key: str) -> str:

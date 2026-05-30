@@ -556,6 +556,528 @@ class EventExecutor:
 
 
 # ---------------------------------------------------------------------------
+# M-27: Battle pass task order optimization
+# ---------------------------------------------------------------------------
+
+class BattlePassTaskOrderOptimizer:
+    """Optimizes battle pass task execution order (M-27).
+
+    Prioritizes tasks that can be completed together to save time,
+    and orders tasks by efficiency.
+    """
+
+    # Task synergy groups (tasks that can be done together)
+    TASK_SYNERGIES: dict[str, list[str]] = {
+        "daily_commission": ["defeat_enemies", "use_transport"],
+        "defeat_enemies": ["domain_clear", "boss_clear"],
+        "artifact_domain": ["defeat_enemies", "use_transport"],
+        "talent_domain": ["defeat_enemies", "use_transport"],
+    }
+
+    def optimize_order(
+        self,
+        tasks: list[BattlePassTask],
+    ) -> list[BattlePassTask]:
+        """Optimize battle pass task order for efficiency.
+
+        Groups synergizing tasks together and orders by time cost.
+        """
+        if not tasks:
+            return []
+
+        # Group by synergy
+        optimized: list[BattlePassTask] = []
+        remaining = list(tasks)
+
+        while remaining:
+            current = remaining.pop(0)
+            optimized.append(current)
+
+            # Find synergistic tasks
+            synergy_ids = self.TASK_SYNERGIES.get(current.task_id, [])
+            for task in remaining[:]:
+                if task.task_id in synergy_ids:
+                    optimized.append(task)
+                    remaining.remove(task)
+
+        # Sort remaining by target (lower targets first = faster)
+        remaining.sort(key=lambda t: t.target)
+
+        # Interleave quick tasks
+        result = []
+        slow_tasks = []
+        quick_tasks = []
+
+        for task in optimized + remaining:
+            if task.target <= 3:
+                quick_tasks.append(task)
+            else:
+                slow_tasks.append(task)
+
+        # Interleave: quick, slow, quick, slow...
+        while quick_tasks or slow_tasks:
+            if quick_tasks:
+                result.append(quick_tasks.pop(0))
+            if slow_tasks:
+                result.append(slow_tasks.pop(0))
+
+        return result
+
+
+# ---------------------------------------------------------------------------
+# M-28: Monthly card value analysis
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class MonthlyCardValue:
+    """Value analysis for monthly card."""
+    name: str
+    cost_primogems: int = 6800      # Actual cost
+    daily_primogems: int = 90        # Daily claim
+    total_primogems: int = 3000      # Over 30 days
+    genesis_crystals: int = 160     # Bonus genesis
+    value_score: float = 0.0       # 0.0-1.0
+
+
+class MonthlyCardValueAnalyzer:
+    """Analyzes value of monthly card and similar purchases (M-28)."""
+
+    MONTHLY_CARD = MonthlyCardValue(
+        name="Blessing of the Welkin Moon",
+        cost_primogems=6800,  # ~$5 USD
+        daily_primogems=90,
+        total_primogems=3000,
+        genesis_crystals=160,
+        value_score=0.85,
+    )
+
+    def should_buy(self, days_remaining: int, primogems_available: int) -> dict[str, Any]:
+        """Decide if monthly card is worth buying.
+
+        Returns:
+            Decision dict with recommendation and reasoning
+        """
+        if days_remaining <= 0:
+            return {
+                "recommendation": "skip",
+                "reasoning": "No days remaining in month",
+                "value_lost": 0,
+            }
+
+        # Calculate value if bought
+        remaining_days_value = self.MONTHLY_CARD.daily_primogems * days_remaining
+        value_per_day = remaining_days_value / max(days_remaining, 1)
+
+        # Compare to cost
+        cost_per_day = self.MONTHLY_CARD.cost_primogems / 30
+
+        if primogems_available >= self.MONTHLY_CARD.cost_primogems:
+            roi = value_per_day / cost_per_day
+            return {
+                "recommendation": "buy" if roi > 0.5 else "skip",
+                "reasoning": f"ROI {roi:.1f}x (value {value_per_day:.0f}/day vs cost {cost_per_day:.0f}/day)",
+                "days_remaining": days_remaining,
+                "expected_primogems": remaining_days_value,
+                "value_score": min(1.0, remaining_days_value / self.MONTHLY_CARD.total_primogems),
+            }
+
+        return {
+            "recommendation": "skip",
+            "reasoning": "Insufficient primogems",
+            "days_remaining": days_remaining,
+        }
+
+
+# ---------------------------------------------------------------------------
+# M-29: Souvenir shop priority
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True, frozen=True)
+class SouvenirItem:
+    """A souvenir shop item."""
+    item_id: str
+    name: str
+    cost_currency: str = "realm_currency"
+    cost_amount: int = 0
+    value_score: float = 0.0
+    is_limited: bool = False
+
+
+SOUVENIR_SHOP_PRIORITY: list[SouvenirItem] = [
+    SouvenirItem(item_id="sanctifying_essence", name="圣精", cost_amount=1200, value_score=9.0),
+    SouvenirItem(item_id="artifact_EXP", name="圣遗物经验", cost_amount=400, value_score=7.0),
+    SouvenirItem(item_id="mora_pack", name="摩拉", cost_amount=200, value_score=5.0),
+    SouvenirItem(item_id="character_EXP", name="角色经验", cost_amount=150, value_score=6.0),
+]
+
+
+class SouvenirShopPriority:
+    """Calculates souvenir shop purchase priority (M-29)."""
+
+    def recommend_purchases(
+        self,
+        realm_currency: int,
+        priorities: list[str] | None = None,
+    ) -> list[SouvenirItem]:
+        """Recommend souvenir shop purchases based on currency and priority.
+
+        Args:
+            realm_currency: Current realm currency amount
+            priorities: Optional list of item IDs to prioritize
+
+        Returns:
+            List of recommended purchases
+        """
+        recommendations: list[SouvenirItem] = []
+
+        for item in SOUVENIR_SHOP_PRIORITY:
+            if realm_currency >= item.cost_amount:
+                if priorities and item.item_id in priorities:
+                    recommendations.insert(0, item)
+                else:
+                    recommendations.append(item)
+                realm_currency -= item.cost_amount
+
+        return recommendations
+
+
+# ---------------------------------------------------------------------------
+# M-30: Parametric transformer cost-effectiveness
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class ParametricValue:
+    """Cost-effectiveness of parametric transformer."""
+    material_type: str
+    material_count: int = 0
+    point_value: int = 1
+    is_worth_sending: bool = False
+
+
+class ParametricTransformerValueAnalyzer:
+    """Analyzes cost-effectiveness of parametric transformer submissions (M-30)."""
+
+    # Material point values (higher = more worth sending)
+    MATERIAL_POINTS: dict[str, int] = {
+        "weapon_material_t1": 1,
+        "weapon_material_t2": 2,
+        "weapon_material_t3": 4,
+        "talent_book_t1": 2,
+        "talent_book_t2": 3,
+        "talent_book_t3": 5,
+        "common_drop_t1": 1,
+        "common_drop_t2": 1,
+        "common_drop_t3": 2,
+        "ascension_material_t1": 2,
+        "ascension_material_t2": 3,
+        "ascension_material_t3": 5,
+    }
+
+    TARGET_POINTS = 150
+
+    def evaluate_material(
+        self,
+        material_id: str,
+        count: int,
+    ) -> ParametricValue:
+        """Evaluate if material is worth sending to parametric transformer.
+
+        Args:
+            material_id: Material identifier
+            count: Number of materials available
+
+        Returns:
+            ParametricValue with evaluation
+        """
+        points = self.MATERIAL_POINTS.get(material_id, 1)
+        total_points = points * count
+
+        # Worth sending if it contributes meaningfully
+        is_worth = total_points >= 10  # At least 10 points
+
+        return ParametricValue(
+            material_type=material_id,
+            material_count=count,
+            point_value=points,
+            is_worth_sending=is_worth,
+        )
+
+    def plan_submission(
+        self,
+        available_materials: dict[str, int],
+    ) -> list[ParametricValue]:
+        """Plan which materials to submit to reach target points.
+
+        Args:
+            available_materials: Dict of material_id -> count
+
+        Returns:
+            List of materials to submit with evaluation
+        """
+        plan: list[ParametricValue] = []
+        total_points = 0
+
+        # Sort by point value (use highest value first)
+        sorted_materials = sorted(
+            available_materials.items(),
+            key=lambda x: self.MATERIAL_POINTS.get(x[0], 0),
+            reverse=True,
+        )
+
+        for mat_id, count in sorted_materials:
+            if total_points >= self.TARGET_POINTS:
+                break
+
+            eval_result = self.evaluate_material(mat_id, count)
+            if eval_result.is_worth_sending:
+                plan.append(eval_result)
+                total_points += eval_result.point_value * count
+
+        return plan
+
+
+# ---------------------------------------------------------------------------
+# M-31: Teapot trust rank rewards
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class TeapotTrustReward:
+    """Teapot trust rank reward."""
+    trust_level: int
+    reward_type: str
+    reward_amount: int
+    is_claimed: bool = False
+
+
+TEAPOT_TRUST_REWARDS: list[TeapotTrustReward] = [
+    TeapotTrustReward(trust_level=2, reward_type="realm_currency", reward_amount=200),
+    TeapotTrustReward(trust_level=4, reward_type="mora", reward_amount=20000),
+    TeapotTrustReward(trust_level=6, reward_type="hero_wit", reward_amount=3),
+    TeapotTrustReward(trust_level=8, reward_type="mora", reward_amount=40000),
+    TeapotTrustReward(trust_level=10, reward_type="intertwined_fate", reward_amount=1),
+]
+
+
+class TeapotTrustRewardManager:
+    """Manages teapot trust rank rewards (M-31)."""
+
+    def get_unclaimed_rewards(self, current_trust: int) -> list[TeapotTrustReward]:
+        """Get unclaimed rewards up to current trust level."""
+        unclaimed = []
+        for reward in TEAPOT_TRUST_REWARDS:
+            if reward.trust_level <= current_trust and not reward.is_claimed:
+                unclaimed.append(reward)
+        return unclaimed
+
+    def recommend_trust_actions(self, current_trust: int) -> list[str]:
+        """Recommend actions to increase trust rank.
+
+        Returns:
+            List of recommended actions
+        """
+        actions = []
+
+        if current_trust < 2:
+            actions.append("Place more furnishings in teapot")
+            actions.append("Collect teapot currency daily")
+        elif current_trust < 4:
+            actions.append("Use companion furnishings")
+            actions.append("Place companion character furniture")
+        elif current_trust < 6:
+            actions.append("Maximize load limit usage with quality furnishings")
+            actions.append("Use set bonuses from matching furniture sets")
+        elif current_trust < 8:
+            actions.append("Reach max load for maximum trust gain")
+            actions.append("Use Adeptalab to full capacity")
+        else:
+            actions.append("Maintain teapot to prevent trust decay")
+
+        return actions
+
+
+# ---------------------------------------------------------------------------
+# M-25: Expedition bonus tracking
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class ExpeditionBonus:
+    """Tracks expedition bonus multipliers."""
+    expedition_slot: int
+    base_reward: int = 300
+    bonus_multiplier: float = 1.0
+
+    @property
+    def final_reward(self) -> int:
+        return int(self.base_reward * self.bonus_multiplier)
+
+
+class ExpeditionBonusTracker:
+    """Tracks and calculates expedition bonuses (M-25)."""
+
+    # Bonus sources
+    TRUST_BONUSES: dict[int, float] = {
+        2: 1.1,
+        4: 1.2,
+        6: 1.3,
+        8: 1.4,
+        10: 1.5,
+    }
+
+    def get_bonus(
+        self,
+        teapot_trust_level: int,
+    ) -> float:
+        """Get expedition bonus multiplier based on teapot trust level.
+
+        Args:
+            teapot_trust_level: Current trust rank
+
+        Returns:
+            Bonus multiplier (1.0 = no bonus, 1.5 = 50% bonus)
+        """
+        return self.TRUST_BONUSES.get(teapot_trust_level, 1.0)
+
+    def calculate_total_bonus(
+        self,
+        expeditions: list[ExpeditionBonus],
+        teapot_trust: int,
+    ) -> int:
+        """Calculate total bonus from all expedition slots.
+
+        Args:
+            expeditions: List of expedition slots
+            teapot_trust: Teapot trust level
+
+        Returns:
+            Total additional rewards from bonuses
+        """
+        base_total = sum(e.final_reward for e in expeditions)
+        bonus = self.get_bonus(teapot_trust)
+        bonus_total = int(base_total * bonus) - base_total
+        return bonus_total
+
+
+# ---------------------------------------------------------------------------
+# M-26: Task claim reminder
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class ClaimReminder:
+    """Reminder for unclaimed daily rewards."""
+    task_name: str
+    reward_type: str
+    reward_amount: int
+    urgency: str = "low"   # "low", "medium", "high"
+    deadline_hours: float = 0.0
+
+
+class ClaimReminderSystem:
+    """Tracks unclaimed rewards and sends reminders (M-26)."""
+
+    def __init__(self) -> None:
+        self._unclaimed: list[ClaimReminder] = []
+
+    def add_reminder(
+        self,
+        task_name: str,
+        reward_type: str,
+        reward_amount: int,
+        urgency: str = "low",
+    ) -> None:
+        """Add a claim reminder."""
+        self._unclaimed.append(ClaimReminder(
+            task_name=task_name,
+            reward_type=reward_type,
+            reward_amount=reward_amount,
+            urgency=urgency,
+        ))
+
+    def get_high_priority_reminders(self) -> list[ClaimReminder]:
+        """Get reminders with high or medium urgency."""
+        return [r for r in self._unclaimed if r.urgency in ("high", "medium")]
+
+    def clear_claimed(self, task_name: str) -> None:
+        """Remove reminder for claimed task."""
+        self._unclaimed = [r for r in self._unclaimed if r.task_name != task_name]
+
+    def get_total_pending_value(self) -> dict[str, int]:
+        """Get total value of all pending claims."""
+        total: dict[str, int] = {}
+        for reminder in self._unclaimed:
+            total[reminder.reward_type] = total.get(reminder.reward_type, 0) + reminder.reward_amount
+        return total
+
+
+# ---------------------------------------------------------------------------
+# M-27: Battle pass task order optimization
+# ---------------------------------------------------------------------------
+
+class BattlePassTaskOrderOptimizer:
+    """Optimizes battle pass task execution order (M-27).
+
+    Prioritizes tasks that can be completed together to save time,
+    and orders tasks by efficiency.
+    """
+
+    # Task synergy groups (tasks that can be done together)
+    TASK_SYNERGIES: dict[str, list[str]] = {
+        "daily_commission": ["defeat_enemies", "use_transport"],
+        "defeat_enemies": ["domain_clear", "boss_clear"],
+        "artifact_domain": ["defeat_enemies", "use_transport"],
+        "talent_domain": ["defeat_enemies", "use_transport"],
+    }
+
+    def optimize_order(
+        self,
+        tasks: list[BattlePassTask],
+    ) -> list[BattlePassTask]:
+        """Optimize battle pass task order for efficiency.
+
+        Groups synergizing tasks together and orders by time cost.
+        """
+        if not tasks:
+            return []
+
+        # Group by synergy
+        optimized: list[BattlePassTask] = []
+        remaining = list(tasks)
+
+        while remaining:
+            current = remaining.pop(0)
+            optimized.append(current)
+
+            # Find synergistic tasks
+            synergy_ids = self.TASK_SYNERGIES.get(current.task_id, [])
+            for task in remaining[:]:
+                if task.task_id in synergy_ids:
+                    optimized.append(task)
+                    remaining.remove(task)
+
+        # Sort remaining by target (lower targets first = faster)
+        remaining.sort(key=lambda t: t.target)
+
+        # Interleave quick tasks
+        result = []
+        slow_tasks = []
+        quick_tasks = []
+
+        for task in optimized + remaining:
+            if task.target <= 3:
+                quick_tasks.append(task)
+            else:
+                slow_tasks.append(task)
+
+        # Interleave: quick, slow, quick, slow...
+        while quick_tasks or slow_tasks:
+            if quick_tasks:
+                result.append(quick_tasks.pop(0))
+            if slow_tasks:
+                result.append(slow_tasks.pop(0))
+
+        return result
+
+
+# ---------------------------------------------------------------------------
 # Unified daily loop scheduler (DL-07)
 # ---------------------------------------------------------------------------
 

@@ -22,6 +22,82 @@ log = logging.getLogger(__name__)
 
 
 # ---------------------------------------------------------------------------
+# AR Phase switching (R-43) - Expanded phase definitions
+# ---------------------------------------------------------------------------
+
+class ARPhase(Enum):
+    """Detailed AR phases for strategic decision making (R-43)."""
+    AR_1_20 = "ar_1_20"       # Early game: establish core team
+    AR_20_35 = "ar_20_35"    # Mid-early: build national team core
+    AR_35_45 = "ar_35_45"    # Mid-late: talent/weapon focus
+    AR_45_PLUS = "ar_45_plus"  # Late game: artifact optimization
+
+
+@dataclass(slots=True)
+class PhaseStrategy:
+    """Strategic focus for each AR phase."""
+    phase: ARPhase
+    focus_areas: tuple[str, ...]
+    domain_priority: tuple[str, ...]
+    team_size_target: int
+    character_level_cap: int
+    notes: str
+
+
+AR_PHASE_STRATEGIES: dict[ARPhase, PhaseStrategy] = {
+    ARPhase.AR_1_20: PhaseStrategy(
+        phase=ARPhase.AR_1_20,
+        focus_areas=("quest", "exploration", "character_level"),
+        domain_priority=("ley_line", "world_boss"),
+        team_size_target=4,
+        character_level_cap=20,
+        notes="Focus on story and exploration. Use free characters. Don't invest in artifacts.",
+    ),
+    ARPhase.AR_20_35: PhaseStrategy(
+        phase=ARPhase.AR_20_35,
+        focus_areas=("character_level", "ascension", "talent"),
+        domain_priority=("talent_domain", "weapon_domain", "world_boss"),
+        team_size_target=4,
+        character_level_cap=60,
+        notes="Build national team core (Xiangling, Xingqiu, Bennett). Level to 60/70.",
+    ),
+    ARPhase.AR_35_45: PhaseStrategy(
+        phase=ARPhase.AR_35_45,
+        focus_areas=("talent", "weapon_level", "ascension"),
+        domain_priority=("talent_domain", "weapon_domain", "artifact_domain"),
+        team_size_target=4,
+        character_level_cap=80,
+        notes="Max talent levels for core team. Start preparing for AR45 artifact farming.",
+    ),
+    ARPhase.AR_45_PLUS: PhaseStrategy(
+        phase=ARPhase.AR_45_PLUS,
+        focus_areas=("artifact", "constellation", "team_building"),
+        domain_priority=("artifact_domain", "talent_domain", "weapon_domain"),
+        team_size_target=8,
+        character_level_cap=90,
+        notes="Full artifact optimization. Build second team for Abyss. Use fragile resin.",
+    ),
+}
+
+
+def get_ar_phase(ar: int) -> ARPhase:
+    """Determine AR phase from adventure rank."""
+    if ar < 20:
+        return ARPhase.AR_1_20
+    if ar < 35:
+        return ARPhase.AR_20_35
+    if ar < 45:
+        return ARPhase.AR_35_45
+    return ARPhase.AR_45_PLUS
+
+
+def get_phase_strategy(ar: int) -> PhaseStrategy:
+    """Get strategic focus for the given AR."""
+    phase = get_ar_phase(ar)
+    return AR_PHASE_STRATEGIES[phase]
+
+
+# ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
 
@@ -96,8 +172,9 @@ class ActionRecommendation:
 class DailySchedule:
     """Ordered list of recommended actions for the current game state."""
 
-    phase: GamePhase
-    actions: list[ActionRecommendation]
+    phase: GamePhase = GamePhase.EARLY
+    ar_phase: ARPhase = ARPhase.AR_1_20
+    actions: list[ActionRecommendation] = field(default_factory=list)
     notes: str = ""
 
 

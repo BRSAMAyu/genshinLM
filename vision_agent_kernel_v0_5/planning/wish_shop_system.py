@@ -206,3 +206,408 @@ class WishDecisionEngine:
     def should_buy_monthly(self) -> bool:
         """Check if monthly purchases should be made."""
         return self.stardust >= 75  # at least one acquaint fate
+
+
+# ---------------------------------------------------------------------------
+# Wish decision tree (M-23)
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class WishDecisionTree:
+    """Decision tree for limited character vs weapon banners (M-23)."""
+    should_pull: bool
+    banner_type: str           # "character", "weapon"
+    target: str                # Featured character/weapon name
+    pull_count: int            # Recommended pull count
+    reasoning: str = ""
+    priority_score: float = 0.0  # 0.0-1.0
+
+
+class WishDecisionTreeEngine:
+    """Decides between limited character and weapon banners (M-23).
+
+    Decision tree:
+    1. F2P should NEVER pull on weapon banners
+    2. Character banners: only pull if guaranteed or near pity
+    3. Standard banners: only use acquaints, not primogems
+    4. Chronicled: evaluate based on constellation needs
+    """
+
+    # Character importance tiers for decision making
+    HIGH_VALUE_CHARACTERS: frozenset[str] = frozenset({
+        "bennett", "xiangling", "xingqiu", "fischl", "xianyun",
+    })
+    MEDIUM_VALUE_CHARACTERS: frozenset[str] = frozenset({
+        "kaeya", "barbara", "noelle", "collei", "diona", "rosaria",
+    })
+
+    def evaluate_banner(
+        self,
+        banner_type: str,
+        featured_character: str,
+        pity_counter: PityCounter,
+        total_wishes: int,
+        is_guaranteed: bool = False,
+    ) -> WishDecisionTree:
+        """Evaluate a banner using the decision tree."""
+        # Node 1: Weapon banner = SKIP for F2P
+        if banner_type == "weapon":
+            return WishDecisionTree(
+                should_pull=False,
+                banner_type=banner_type,
+                target=featured_character,
+                pull_count=0,
+                reasoning="F2P should NEVER pull on weapon banners",
+                priority_score=0.0,
+            )
+
+        # Node 2: Character banner evaluation
+        if banner_type == "character":
+            return self._evaluate_character_banner(
+                featured_character, pity_counter, total_wishes, is_guaranteed
+            )
+
+        # Node 3: Standard banner
+        if banner_type == "standard":
+            return WishDecisionTree(
+                should_pull=False,
+                banner_type=banner_type,
+                target=featured_character,
+                pull_count=0,
+                reasoning="Standard banner: use acquaints only, not primogems",
+                priority_score=0.1,
+            )
+
+        # Node 4: Chronicled banner
+        if banner_type == "chronicled":
+            return self._evaluate_chronicled_banner(
+                featured_character, pity_counter, total_wishes
+            )
+
+        return WishDecisionTree(
+            should_pull=False,
+            banner_type=banner_type,
+            target=featured_character,
+            pull_count=0,
+            reasoning="Unknown banner type",
+            priority_score=0.0,
+        )
+
+    def _evaluate_character_banner(
+        self,
+        featured_character: str,
+        pity: PityCounter,
+        total_wishes: int,
+        is_guaranteed: bool,
+    ) -> WishDecisionTree:
+        """Evaluate character banner using decision tree."""
+        character_value = self._get_character_value(featured_character)
+
+        # Decision branch: guaranteed featured
+        if is_guaranteed:
+            if total_wishes >= pity.pulls_until_hard_pity:
+                return WishDecisionTree(
+                    should_pull=True,
+                    banner_type="character",
+                    target=featured_character,
+                    pull_count=pity.pulls_until_hard_pity,
+                    reasoning=f"Guaranteed featured {featured_character} - pull now",
+                    priority_score=0.9 + character_value * 0.1,
+                )
+            else:
+                return WishDecisionTree(
+                    should_pull=False,
+                    banner_type="character",
+                    target=featured_character,
+                    pull_count=0,
+                    reasoning=f"Not enough wishes ({total_wishes}) for guarantee on {featured_character}",
+                    priority_score=0.5 + character_value * 0.3,
+                )
+
+        # Decision branch: near pity (within 30 pulls)
+        if pity.pulls_until_hard_pity <= 30:
+            # High value character: pull
+            if character_value >= 0.8:
+                return WishDecisionTree(
+                    should_pull=True,
+                    banner_type="character",
+                    target=featured_character,
+                    pull_count=min(total_wishes, pity.pulls_until_hard_pity),
+                    reasoning=f"Near pity ({pity.pulls_since_5star}/{HARD_PITY_5STAR}), {featured_character} is high value",
+                    priority_score=0.8 + character_value * 0.1,
+                )
+            # Medium value: evaluate
+            if character_value >= 0.5 and total_wishes >= 60:
+                return WishDecisionTree(
+                    should_pull=True,
+                    banner_type="character",
+                    target=featured_character,
+                    pull_count=min(60, total_wishes),
+                    reasoning=f"{featured_character} has medium value, near pity",
+                    priority_score=0.5 + character_value * 0.3,
+                )
+            # Low value: skip unless guaranteed
+            return WishDecisionTree(
+                should_pull=False,
+                banner_type="character",
+                target=featured_character,
+                pull_count=0,
+                reasoning=f"{featured_character} is low value - save for better banners",
+                priority_score=character_value * 0.3,
+            )
+
+        # Not near pity: skip unless high value and lots of wishes
+        if character_value >= 0.9 and total_wishes >= 120:
+            return WishDecisionTree(
+                should_pull=True,
+                banner_type="character",
+                target=featured_character,
+                pull_count=min(120, total_wishes),
+                reasoning=f"Very high value {featured_character}, enough wishes for guarantee",
+                priority_score=0.9,
+            )
+
+        return WishDecisionTree(
+            should_pull=False,
+            banner_type="character",
+            target=featured_character,
+            pull_count=0,
+            reasoning="Not near pity - save primogems for better opportunities",
+            priority_score=0.2,
+        )
+
+    def _evaluate_chronicled_banner(
+        self,
+        featured_character: str,
+        pity: PityCounter,
+        total_wishes: int,
+    ) -> WishDecisionTree:
+        """Evaluate chronicled banner."""
+        character_value = self._get_character_value(featured_character)
+
+        # Chronicled has no soft pity - evaluate carefully
+        if character_value >= 0.8 and total_wishes >= 90:
+            return WishDecisionTree(
+                should_pull=True,
+                banner_type="chronicled",
+                target=featured_character,
+                pull_count=min(90, total_wishes),
+                reasoning=f"High value {featured_character} in chronicled",
+                priority_score=0.7,
+            )
+
+        return WishDecisionTree(
+            should_pull=False,
+            banner_type="chronicled",
+            target=featured_character,
+            pull_count=0,
+            reasoning="Chronicled banner: evaluate constellations needs first",
+            priority_score=0.3,
+        )
+
+    def _get_character_value(self, character_id: str) -> float:
+        """Get character value score (0.0-1.0)."""
+        char_lower = character_id.lower()
+        if char_lower in self.HIGH_VALUE_CHARACTERS:
+            return 0.9
+        if char_lower in self.MEDIUM_VALUE_CHARACTERS:
+            return 0.6
+        return 0.4
+
+
+# ---------------------------------------------------------------------------
+# M-24: Stardust priority system (星辉优先级)
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True, frozen=True)
+class StardustPurchase:
+    """A stardust purchase option."""
+    item_id: str
+    item_name: str
+    stardust_cost: int
+    starglitter_cost: int
+    is_stardust_only: bool = True
+    monthly_stock: int = 5
+    value_score: float = 0.0
+
+
+@dataclass(slots=True)
+class StardustPriorityDecision:
+    """Decision on stardust/shop purchases."""
+    recommended_purchases: list[StardustPurchase]
+    stardust_remaining: int
+    priority_order: list[str]
+    total_spent: int = 0
+
+
+# Stardust shop items (M-24 priority system)
+STARDUST_SHOP_PRIORITY: list[StardustPurchase] = [
+    StardustPurchase(
+        item_id="intertwined_fate_stardust",
+        item_name="Intertwined Fate",
+        stardust_cost=75,
+        starglitter_cost=0,
+        is_stardust_only=True,
+        value_score=10.0,  # High value: wish currency
+    ),
+    StardustPurchase(
+        item_id="acquaint_fate_stardust",
+        item_name="Acquaint Fate",
+        stardust_cost=75,
+        starglitter_cost=0,
+        is_stardust_only=True,
+        value_score=8.0,  # Medium value
+    ),
+    StardustPurchase(
+        item_id="hero_wit_stardust",
+        item_name="Hero's Wit",
+        stardust_cost=20,
+        starglitter_cost=0,
+        is_stardust_only=True,
+        monthly_stock=10,
+        value_score=5.0,  # Lower priority - use resin instead
+    ),
+]
+
+# Starglitter shop priority (M-24)
+STARGLITTER_SHOP_PRIORITY: list[StardustPurchase] = [
+    StardustPurchase(
+        item_id="intertwined_fate_glitter",
+        item_name="Intertwined Fate",
+        stardust_cost=0,
+        starglitter_cost=5,
+        is_stardust_only=False,
+        monthly_stock=2,
+        value_score=9.0,  # High priority: rare wishes
+    ),
+    StardustPurchase(
+        item_id="refined_dishes",
+        item_name="Refined Dishes",
+        stardust_cost=0,
+        starglitter_cost=3,
+        is_stardust_only=False,
+        monthly_stock=3,
+        value_score=4.0,  # Convenience food
+    ),
+]
+
+
+class StardustPriorityCalculator:
+    """Calculates optimal stardust/shop purchase priority (M-24)."""
+
+    def calculate_priority(
+        self,
+        stardust: int,
+        starglitter: int,
+        intertwined_fates: int = 0,
+        character_banner_pity: int = 0,
+    ) -> StardustPriorityDecision:
+        """Calculate optimal stardust purchase priority.
+
+        Args:
+            stardust: Current stardust amount
+            starglitter: Current starglitter amount
+            intertwined_fates: Current intertwined fates
+            character_banner_pity: Current pity count
+
+        Returns:
+            StardustPriorityDecision with recommended purchases
+        """
+        purchases: list[StardustPurchase] = []
+        remaining_stardust = stardust
+        remaining_glitter = starglitter
+
+        # Priority 1: Intertwined Fates (for character wishes)
+        for item in STARDUST_SHOP_PRIORITY:
+            if item.item_id == "intertwined_fate_stardust":
+                # Buy 5 intertwined fates max
+                max_buy = min(5, item.monthly_stock)
+                affordable = remaining_stardust // item.stardust_cost
+                buy_count = min(max_buy, affordable)
+                if buy_count > 0:
+                    purchases.append(item)
+                    remaining_stardust -= buy_count * item.stardust_cost
+
+        # Priority 2: Acquaint Fates
+        for item in STARDUST_SHOP_PRIORITY:
+            if item.item_id == "acquaint_fate_stardust":
+                max_buy = min(5, item.monthly_stock)
+                affordable = remaining_stardust // item.stardust_cost
+                buy_count = min(max_buy, affordable)
+                if buy_count > 0:
+                    purchases.append(item)
+                    remaining_stardust -= buy_count * item.stardust_cost
+
+        # Priority 3: Starglitter Intertwined Fates (if near pity)
+        if character_banner_pity >= 60 or intertwined_fates >= 10:
+            for item in STARGLITTER_SHOP_PRIORITY:
+                if item.item_id == "intertwined_fate_glitter":
+                    max_buy = min(item.monthly_stock, remaining_glitter // item.starglitter_cost)
+                    if max_buy > 0:
+                        purchases.append(item)
+                        remaining_glitter -= max_buy * item.starglitter_cost
+
+        total_spent = stardust - remaining_stardust + starglitter - remaining_glitter
+
+        return StardustPriorityDecision(
+            recommended_purchases=purchases,
+            stardust_remaining=remaining_stardust,
+            priority_order=[p.item_name for p in purchases],
+            total_spent=total_spent,
+        )
+
+
+# ---------------------------------------------------------------------------
+# U-65: Star glitter refresh detection
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class ShopRefreshState:
+    """Tracks shop refresh state."""
+    last_refresh: str = ""  # ISO date
+    stardust_count: int = 0
+    starglitter_count: int = 0
+    monthly_items_bought: dict[str, int] = field(default_factory=dict)
+
+
+class ShopRefreshDetector:
+    """Detects when the Paimon's Bargains shop has refreshed (U-65).
+
+    Shop resets monthly on 1st day of each month.
+    """
+
+    MONTHLY_RESET_DAY = 1  # First day of month
+
+    def check_refresh(self, current_day: int, last_known_day: int) -> bool:
+        """Check if shop has refreshed.
+
+        Returns True if refresh detected.
+        """
+        if current_day == self.MONTHLY_RESET_DAY and last_known_day != self.MONTHLY_RESET_DAY:
+            return True
+        return False
+
+    def get_monthly_items_status(
+        self,
+        bought_counts: dict[str, int],
+        max_stocks: dict[str, int],
+    ) -> dict[str, Any]:
+        """Get status of monthly shop items.
+
+        Returns which items are still available.
+        """
+        available: list[str] = []
+        sold_out: list[str] = []
+
+        for item_id, bought in bought_counts.items():
+            max_stock = max_stocks.get(item_id, 0)
+            if bought < max_stock:
+                available.append(item_id)
+            else:
+                sold_out.append(item_id)
+
+        return {
+            "available_items": available,
+            "sold_out_items": sold_out,
+            "needs_refresh": len(available) == 0,
+        }

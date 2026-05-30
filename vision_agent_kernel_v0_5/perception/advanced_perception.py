@@ -41,7 +41,7 @@ class OCRResult:
         self.position = position
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
 class MapRegionInfo:
     """Detected map region information."""
     region_name: str

@@ -411,3 +411,115 @@ class ExplorationEngine:
             else:
                 candidates.append(target)
         return candidates
+
+
+# ---------------------------------------------------------------------------
+# S-38: 100% exploration strategy
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class ExplorationCompletionPlan:
+    """Plan for achieving 100% exploration in a region."""
+    region: Region
+    targets_remaining: int = 0
+    chests_remaining: int = 0
+    waypoints_remaining: int = 0
+    oculi_remaining: int = 0
+    estimated_hours: float = 0.0
+    priority_order: list[str] = field(default_factory=list)
+
+
+class HundredPercentExplorationStrategy:
+    """Strategy for achieving 100% exploration in all regions (S-38).
+
+    Identifies unexplored areas, optimizes route planning, and tracks
+    progress toward complete exploration.
+    """
+
+    # Exploration completion thresholds per region
+    REGION_COMPLETION_THRESHOLDS: dict[Region, float] = {
+        Region.MONDSTADT: 100.0,
+        Region.LIYUE: 100.0,
+        Region.INAZUMA: 100.0,
+        Region.SUMERU: 100.0,
+        Region.FONTAINE: 100.0,
+        Region.NATLAN: 100.0,
+    }
+
+    def __init__(self, exploration_engine: ExplorationEngine) -> None:
+        self._engine = exploration_engine
+
+    def generate_completion_plan(
+        self,
+        region: Region,
+        current_progress: RegionProgress,
+    ) -> ExplorationCompletionPlan:
+        """Generate a plan for 100% exploration of a region.
+
+        Args:
+            region: Target region
+            current_progress: Current exploration progress
+
+        Returns:
+            ExplorationCompletionPlan with targets and time estimates
+        """
+        plan = ExplorationCompletionPlan(region=region)
+
+        # Calculate remaining targets
+        plan.waypoints_remaining = max(0, current_progress.waypoints_total - current_progress.waypoints_unlocked)
+        plan.chests_remaining = max(0, current_progress.chests_total - current_progress.chests_opened)
+        plan.oculi_remaining = max(0, current_progress.oculi_total - current_progress.oculi_collected)
+        plan.targets_remaining = plan.waypoints_remaining + plan.chests_remaining
+
+        # Estimate time (waypoints faster, chests slower, oculi slowest)
+        plan.estimated_hours = (
+            plan.waypoints_remaining * 0.5 +  # 30 min per waypoint
+            plan.chests_remaining * 1.0 +        # 60 min per chest
+            plan.oculi_remaining * 1.5          # 90 min per oculus
+        )
+
+        # Generate priority order
+        plan.priority_order = self._generate_priority_order(region, current_progress)
+
+        return plan
+
+    def _generate_priority_order(
+        self,
+        region: Region,
+        progress: RegionProgress,
+    ) -> list[str]:
+        """Generate priority order for exploration targets."""
+        priorities = []
+
+        # Priority 1: Oculi (unlock statue bonuses)
+        priorities.extend([f"{region.value}_oculus_{i}" for i in range(progress.oculi_collected, progress.oculi_total)])
+
+        # Priority 2: Waypoints (enable fast travel)
+        priorities.extend([f"{region.value}_waypoint_{i}" for i in range(progress.waypoints_unlocked, progress.waypoints_total)])
+
+        # Priority 3: Chests (AR EXP and primogems)
+        priorities.extend([f"{region.value}_chest_{i}" for i in range(progress.chests_opened, progress.chests_total)])
+
+        return priorities
+
+    def is_exploration_complete(self, region: Region, progress: RegionProgress) -> bool:
+        """Check if exploration is 100% complete."""
+        threshold = self.REGION_COMPLETION_THRESHOLDS.get(region, 100.0)
+        return progress.exploration_pct >= threshold
+
+    def get_remaining_exploration(
+        self,
+        regions: list[Region],
+    ) -> dict[Region, float]:
+        """Get remaining exploration percentage for all regions.
+
+        Returns dict of region -> remaining percentage.
+        """
+        remaining = {}
+        for region in regions:
+            progress = self._engine.get_progress(region)
+            if progress.exploration_pct < 100.0:
+                remaining[region] = 100.0 - progress.exploration_pct
+            else:
+                remaining[region] = 0.0
+        return remaining

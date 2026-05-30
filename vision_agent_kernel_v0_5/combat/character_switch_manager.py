@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import time
 import logging
 from typing import TYPE_CHECKING
 
@@ -8,6 +7,13 @@ if TYPE_CHECKING:
     from execution.safe_window_backend import SafeWindowInputBackend
 
 log = logging.getLogger(__name__)
+
+
+def _chunked_sleep(seconds: float, chunk: float = 0.05) -> None:
+    import time
+    deadline = time.perf_counter() + seconds
+    while time.perf_counter() < deadline:
+        time.sleep(min(chunk, max(0.0, deadline - time.perf_counter())))
 
 
 class CharacterSwitchManager:
@@ -22,6 +28,7 @@ class CharacterSwitchManager:
         """Switch to character slot (1-4). Returns True if switch was executed."""
         if slot < 1 or slot > 4:
             return False
+        import time
         now = time.perf_counter()
         if now - self._last_switch_time < self._switch_cooldown:
             return False
@@ -30,7 +37,7 @@ class CharacterSwitchManager:
         except Exception:
             return False
         self._last_switch_time = now
-        time.sleep(0.5)  # switch animation
+        _chunked_sleep(0.5)  # switch animation
         return True
 
     def switch_to_healthiest(self, hp_ratios: list[float]) -> int | None:

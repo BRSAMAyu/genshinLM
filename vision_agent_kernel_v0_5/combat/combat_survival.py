@@ -352,6 +352,10 @@ class CombatSurvivalEngine:
         return best
 
 
+# Alias for extended class
+_BaseEngine = CombatSurvivalEngine
+
+
 # ---------------------------------------------------------------------------
 # Boss learning system (C-19, C-20, L-02, L-03, L-04)
 # ---------------------------------------------------------------------------
@@ -439,3 +443,254 @@ class BossMechanismLearner:
         else:
             recommendations["action"] = "fight"
         return recommendations
+
+
+# ---------------------------------------------------------------------------
+# Environment Hazard Types (C-37)
+# ---------------------------------------------------------------------------
+
+class EnvHazardType(Enum):
+    NONE = "none"
+    SHEER_COLD = "sheer_cold"       # Dragonspine frost
+    BALETHUNDER = "balethunder"      # Inazuma electro storm
+    PHOGRISTON = "phlogiston"       # Natlan heat
+    PYRO_COLD = "pyro_cold"          # Pyro hypotheria (overheat)
+
+
+@dataclass(frozen=True, slots=True)
+class EnvHazardDecision:
+    action: str                   # "evacuate", "collect_item", "use_food", "wait"
+    target_position: str | None    # "hearth", "warmth_spot", "cool_spot", None
+    urgency: int                   # 0=immediate, higher=less urgent
+    reason: str = ""
+    duration_estimate_sec: float = 0.0
+
+
+# ---------------------------------------------------------------------------
+# Food Buff Planner (C-41)
+# ---------------------------------------------------------------------------
+
+import time as _time_module
+
+@dataclass(frozen=True, slots=True)
+class FoodBuffPlan:
+    food_name: str
+    buff_type: str
+    duration_sec: float
+    refresh_window_sec: float     # When to refresh before expiry
+    priority: int                 # 0=highest priority
+    reason: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class BuffStatus:
+    buff_type: str
+    food_name: str
+    remaining_sec: float
+    should_refresh: bool
+
+
+class FoodBuffPlanner:
+    """Plans and executes food buff usage with duration refresh decisions.
+
+    Tracks active food buffs and decides optimal refresh timing to maintain
+    buff coverage during long combat encounters.
+    """
+
+    REFRESH_THRESHOLD_SEC: float = 30.0
+    MIN_REFRESH_WORTHWHILE_SEC: float = 60.0
+
+    def __init__(self, now: float | None = None) -> None:
+        self._now_fn = (lambda: now) if now is not None else _time_module.perf_counter
+        self._active_buffs: dict[str, float] = {}   # buff_type -> expiry_time
+        self._planned_refresh: dict[str, FoodBuffPlan] = {}
+
+    @property
+    def active_buffs(self) -> dict[str, float]:
+        return self._active_buffs.copy()
+
+    def set_buff(self, buff_type: str, food_name: str, duration_sec: float) -> None:
+        now = self._now_fn()
+        self._active_buffs[buff_type] = now + duration_sec
+
+    def clear_buff(self, buff_type: str) -> None:
+        self._active_buffs.pop(buff_type, None)
+
+    def should_refresh(self, buff_type: str) -> bool:
+        expiry = self._active_buffs.get(buff_type)
+        if expiry is None:
+            return False
+        now = self._now_fn()
+        remaining = expiry - now
+        return 0 < remaining < self.REFRESH_THRESHOLD_SEC
+
+    def get_buff_status(self, buff_type: str) -> BuffStatus | None:
+        expiry = self._active_buffs.get(buff_type)
+        if expiry is None:
+            return None
+        now = self._now_fn()
+        remaining = expiry - now
+        return BuffStatus(
+            buff_type=buff_type,
+            food_name="",
+            remaining_sec=max(0.0, remaining),
+            should_refresh=self.should_refresh(buff_type),
+        )
+
+    def get_refresh_decision(self, buff_type: str, duration_sec: float) -> bool:
+        if not self.should_refresh(buff_type):
+            return False
+        remaining = self._active_buffs.get(buff_type, 0.0) - self._now_fn()
+        return remaining >= self.MIN_REFRESH_WORTHWHILE_SEC
+
+    def get_all_statuses(self) -> list[BuffStatus]:
+        return [s for s in (self.get_buff_status(bt) for bt in self._active_buffs) if s is not None]
+
+    def reset(self) -> None:
+        self._active_buffs.clear()
+        self._planned_refresh.clear()
+
+
+# ---------------------------------------------------------------------------
+# Extended CombatSurvivalEngine with Environment Hazard Support (C-37)
+# ---------------------------------------------------------------------------
+
+class CombatSurvivalEngine(_BaseEngine):
+    """Extended combat survival engine with environment hazard response.
+
+    Adds C-37 functionality:
+    - Tracks Sheer Cold, Balethunder, Phlogiston gauges
+    - Makes survival decisions based on environment hazard level
+    - Triggers emergency evacuation to safe zones
+    """
+
+    GAUGE_CRITICAL: float = 0.85
+    GAUGE_WARNING: float = 0.60
+    GAUGE_SAFE: float = 0.30
+
+    def evaluate(
+        self,
+        hp_ratios: tuple[float, ...],
+        active_slot: int,
+        danger_level: float,
+        now: float,
+        stamina_ratio: float = 1.0,
+        env_gauge_level: float = 0.0,
+        env_hazard_type: EnvHazardType = EnvHazardType.NONE,
+    ) -> CombatSurvivalDecision | None:
+        # P0: Environment hazard critical
+        if env_gauge_level >= self.GAUGE_CRITICAL and env_hazard_type != EnvHazardType.NONE:
+            if self._can_dash(now, stamina_ratio):
+                self._consume_dash(now)
+                return CombatSurvivalDecision(
+                    action="dash",
+                    priority=0,
+                    reason=f"evacuate_env_{env_hazard_type.value}",
+                )
+            return CombatSurvivalDecision(
+                action="retreat",
+                priority=0,
+                reason=f"env_critical_{env_hazard_type.value}",
+            )
+
+        # P1: Environment hazard warning
+        if env_gauge_level >= self.GAUGE_WARNING and env_hazard_type != EnvHazardType.NONE:
+            decision = self._make_env_response(env_hazard_type, env_gauge_level, now)
+            if decision is not None:
+                return decision
+
+        return super().evaluate(
+            hp_ratios=hp_ratios,
+            active_slot=active_slot,
+            danger_level=danger_level,
+            now=now,
+            stamina_ratio=stamina_ratio,
+        )
+
+    def _make_env_response(
+        self,
+        hazard_type: EnvHazardType,
+        gauge_level: float,
+        now: float,
+    ) -> CombatSurvivalDecision | None:
+        if hazard_type == EnvHazardType.SHEER_COLD:
+            return CombatSurvivalDecision(
+                action="collect_item",
+                priority=2,
+                reason="sheer_cold_warmth",
+                target_position="warmth_spot",
+            )
+        elif hazard_type == EnvHazardType.BALETHUNDER:
+            return CombatSurvivalDecision(
+                action="retreat",
+                priority=2,
+                reason="balethunder_shelter",
+                target_position="hearth",
+            )
+        elif hazard_type == EnvHazardType.PHOGRISTON:
+            return CombatSurvivalDecision(
+                action="collect_item",
+                priority=2,
+                reason="phlogiston_cool",
+                target_position="cool_spot",
+            )
+        elif hazard_type == EnvHazardType.PYRO_COLD:
+            return CombatSurvivalDecision(
+                action="use_food",
+                priority=3,
+                reason="pyro_cold_hypothermia",
+            )
+        return None
+
+
+# ---------------------------------------------------------------------------
+# Environment Hazard Analyzer (C-37)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True, slots=True)
+class EnvHazardAssessment:
+    hazard_type: EnvHazardType
+    gauge_level: float
+    is_critical: bool
+    safe_zone_distance: str
+    recommended_action: str
+
+
+class EnvHazardAnalyzer:
+    """Analyzes environment hazards and recommends safe zone evacuation."""
+
+    CRITICAL_THRESHOLD: float = 0.80
+    WARNING_THRESHOLD: float = 0.50
+
+    def __init__(self) -> None:
+        self._last_assessment: EnvHazardAssessment | None = None
+
+    @property
+    def last_assessment(self) -> EnvHazardAssessment | None:
+        return self._last_assessment
+
+    def assess(
+        self,
+        hazard_type: EnvHazardType,
+        gauge_level: float,
+        safe_zone_visible: bool = True,
+    ) -> EnvHazardAssessment:
+        is_critical = gauge_level >= self.CRITICAL_THRESHOLD
+
+        if hazard_type == EnvHazardType.NONE:
+            action = "continue"
+        elif is_critical:
+            action = "evacuate_immediately"
+        elif gauge_level >= self.WARNING_THRESHOLD:
+            action = "plan_evacuation"
+        else:
+            action = "monitor"
+
+        self._last_assessment = EnvHazardAssessment(
+            hazard_type=hazard_type,
+            gauge_level=gauge_level,
+            is_critical=is_critical,
+            safe_zone_distance="medium",
+            recommended_action=action,
+        )
+        return self._last_assessment

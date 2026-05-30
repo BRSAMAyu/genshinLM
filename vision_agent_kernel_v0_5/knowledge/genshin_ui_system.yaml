@@ -1,0 +1,1823 @@
+# Genshin Impact Complete UI/UX System Reference
+# Sparkle Project - Vision Agent Kernel v0.5
+# Researched from official wiki, HoYoLAB patch notes, Game8, DefKey
+# All coordinates relative to 1920x1080 reference resolution
+# Last updated: 2026-05-30 (covers through v5.7)
+
+# =============================================================================
+# SECTION 1: KEY BINDINGS (Complete PC Control Map)
+# =============================================================================
+key_bindings:
+  movement:
+    W: "Move forward"
+    A: "Move left"
+    S: "Move backward"
+    D: "Move right"
+    Left_Shift: "Sprint (hold) / Continuous sprint (toggle in settings)"
+    Right_Mouse: "Sprint (while moving)"
+    Space: "Jump / Climb / Glide (while airborne)"
+    X: "Drop (while gliding/climbing)"
+    Left_Ctrl: "Walk mode (hold, slower movement)"
+
+  combat:
+    Left_Click: "Normal Attack (press) / Charged Attack (hold)"
+    E: "Elemental Skill"
+    Q: "Elemental Burst (requires full energy)"
+    R: "Aim mode (bow characters) / Toggle aim"
+    Middle_Click: "Elemental Sight (hold)"
+
+  character_switch:
+    "1": "Switch to character slot 1"
+    "2": "Switch to character slot 2"
+    "3": "Switch to character slot 3"
+    "4": "Switch to character slot 4"
+    Alt_1: "Use Elemental Burst for character slot 1 (without switching)"
+    Alt_2: "Use Elemental Burst for character slot 2"
+    Alt_3: "Use Elemental Burst for character slot 3"
+    Alt_4: "Use Elemental Burst for character slot 4"
+
+  interaction:
+    F: "Interact / Talk / Pick up / Open"
+    Z: "Use equipped gadget"
+    V: "Quest navigation (track next quest objective)"
+    P: "Abandon current quest navigation"
+
+  menus:
+    Esc: "Open Paimon Menu (pause game, central hub)"
+    B: "Open Inventory"
+    C: "Open Character Menu"
+    M: "Open Map"
+    J: "Open Quest Menu"
+    L: "Open Party Setup"
+    G: "Open Tutorials"
+    Y: "Open Notifications"
+    O: "Open Friends list"
+    Enter: "Open Chat"
+    Tab: "Open Shortcut Wheel (quick access wheel)"
+
+  function_keys:
+    F1: "Adventurer Handbook"
+    F2: "Co-Op Mode"
+    F3: "Wish (Gacha)"
+    F4: "Battle Pass"
+    F5: "Events panel"
+    F6: "Settings (only in Serenitea Pot / Cat's Tail)"
+    F7: "Furnishing Placement (Serenitea Pot)"
+    F8: "Stellar Reunion (returning player event, time-limited)"
+    U: "Special Environment Info (Dragonspine, etc.)"
+
+  other:
+    F12: "Screenshot (saves to Screenshots folder)"
+    PrtScn: "Screenshot (fullscreen capture)"
+    H: "Hide/show UI (photo mode)"
+
+# =============================================================================
+# SECTION 2: PAIMON MENU (Esc - Central Hub)
+# =============================================================================
+paimon_menu:
+  hotkey: "Esc"
+  layout:
+    description: "Dark semi-transparent overlay covering the game world. Game is paused in single-player."
+    profile_section:
+      position: "Top-left area"
+      contents:
+        - "Character avatar (clickable, opens avatar selection)"
+        - "Nickname (clickable to edit)"
+        - "Signature (clickable to edit)"
+        - "Adventure Rank (AR) number"
+        - "World Level"
+        - "Server name"
+        - "UID number"
+        - "Namecard background (changes with equipped namecard)"
+      edit_buttons:
+        - "Edit Nickname (pencil icon next to name)"
+        - "Edit Signature (pencil icon next to signature)"
+        - "Change Avatar (click avatar portrait)"
+        - "Change Namecard (via profile sub-menu)"
+
+    sidebar:
+      position: "Left side, below profile"
+      buttons:
+        - text: "Feedback"
+          action: "Opens browser to feedback page"
+        - text: "Bug Report"
+          action: "Opens browser to bug report page"
+
+    contents_section:
+      position: "Center-right, scrollable grid of buttons"
+      description: "Large square buttons arranged in a grid, scrollable. Each opens a game system."
+      buttons:
+        - name: "Inventory"
+          icon: "Backpack icon"
+          hotkey_shortcut: "B"
+        - name: "Character"
+          icon: "Character silhouette"
+          hotkey_shortcut: "C"
+        - name: "Quest Menu"
+          icon: "Scroll icon"
+          hotkey_shortcut: "J"
+        - name: "Map"
+          icon: "Map icon"
+          hotkey_shortcut: "M"
+        - name: "Adventurer Handbook"
+          icon: "Book icon"
+          hotkey_shortcut: "F1"
+        - name: "Wish"
+          icon: "Star/shooting star"
+          hotkey_shortcut: "F3"
+        - name: "Battle Pass"
+          icon: "BP shield icon"
+          hotkey_shortcut: "F4"
+        - name: "Events"
+          icon: "Event banner icon"
+          hotkey_shortcut: "F5"
+        - name: "Co-Op Mode"
+          icon: "Multiplayer icon"
+          hotkey_shortcut: "F2"
+        - name: "Notifications"
+          icon: "Bell icon"
+          hotkey_shortcut: "Y"
+        - name: "Friends"
+          icon: "Handshake icon"
+          hotkey_shortcut: "O"
+        - name: "Party Setup"
+          icon: "Party icon"
+          hotkey_shortcut: "L"
+        - name: "Chat"
+          icon: "Chat bubble"
+          hotkey_shortcut: "Enter"
+        - name: "Tutorials"
+          icon: "Question mark"
+          hotkey_shortcut: "G"
+        - name: "Settings"
+          icon: "Gear icon"
+          hotkey_shortcut: "no direct hotkey outside Paimon menu (F6 only in Teapot/Cat Tail)"
+        - name: "Edit Profile"
+          icon: "Profile card"
+        - name: "Namecard"
+          icon: "Card icon"
+        - name: "Achievements"
+          icon: "Trophy icon"
+        - name: "Character Archive"
+          icon: "Book with faces"
+        - name: "Weapon Archive"
+          icon: " crossed swords"
+        - name: "Viewpoint"
+          icon: "Camera/eye icon"
+        - name: "Living Beings"
+          icon: "Animal/paw icon"
+        - name: "Travel Seriendipity"
+          icon: "Serenitea Pot icon"
+        - name: "Geography"
+          icon: "Globe icon"
+        - name: "Serenitea Pot"
+          icon: "Teapot icon"
+
+    close_button:
+      position: "Bottom-right or top-right 'X' button"
+      hotkey: "Esc again or Right Click"
+
+  navigation:
+    open_from: "World HUD (Esc key)"
+    close_to: "World HUD (Esc / right-click / click X)"
+    sub_menus: "Each button opens the corresponding screen; Esc returns to Paimon menu first, then to world"
+    notes: "Two presses of Esc needed: first closes sub-menu, second closes Paimon menu. Some screens bypass Paimon (B, C, M, J, etc. open directly from world)."
+
+  visual_state_changes:
+    - "Background dims and blurs when Paimon menu opens"
+    - "Game world visible but darkened behind semi-transparent overlay"
+    - "Selected button highlights with golden border"
+    - "Scroll arrows appear when content exceeds visible area"
+
+  pitfalls:
+    - "Esc from a sub-menu returns to Paimon menu, NOT to world - need second Esc press"
+    - "Game is paused in single-player but NOT paused in Co-Op"
+    - "Profile section edit buttons are small and easy to miss-click"
+    - "Contents section scrolls - buttons below fold may be invisible"
+
+# =============================================================================
+# SECTION 3: CHARACTER MENU (C)
+# =============================================================================
+character_menu:
+  hotkey: "C"
+  layout:
+    description: "Full-screen overlay showing selected character model with tab navigation on the right side."
+    character_display:
+      position: "Center-left, large area"
+      contents:
+        - "3D character model (rotatable by dragging)"
+        - "Character name and constellation"
+        - "Level display with ascension indicator"
+        - "Element icon"
+
+    right_panel:
+      position: "Right side of screen"
+      contents:
+        - "Character portrait (small, top-right)"
+        - "Stats summary (HP, ATK, DEF, EM, Crit Rate, Crit DMG, ER, Element DMG Bonus)"
+        - "Active tab content (varies by sub-tab)"
+
+    tab_bar:
+      position: "Right side, vertical tab strip"
+      tabs:
+        - name: "Profile/Details"
+          icon: "Character silhouette"
+          description: "Character overview, level, friendship level, namecard"
+        - name: "Weapon"
+          icon: "Sword/weapon icon"
+          description: "Equipped weapon, refine, upgrade"
+        - name: "Artifacts"
+          icon: "Goblet artifact icon"
+          description: "5 artifact slots (Flower, Plume, Sands, Goblet, Circlet)"
+        - name: "Talents"
+          icon: "Star talent icon"
+          description: "Normal Attack, Elemental Skill, Elemental Burst levels and upgrade"
+        - name: "Constellation"
+          icon: "Star constellation icon"
+          description: "6 constellation nodes (C1-C6)"
+
+    character_list:
+      position: "Bottom strip, horizontal scrollable"
+      description: "All owned character portraits in a row. Click to switch character view."
+      current_indicator: "Golden border around currently viewed character"
+
+  sub_tabs:
+    details:
+      layout: "Character model center, stats on right, level + friendship on left"
+      actions:
+        - "View character stats"
+        - "Check friendship level and rewards"
+        - "Preview namecard"
+
+    weapon:
+      layout: "Equipped weapon shown center-right with stats below"
+      actions:
+        - "Equip: Opens weapon selection grid"
+        - "Enhance: Opens enhancement menu (consume fodder weapons + ores)"
+        - "Refine: Opens refinement menu (consume duplicate weapon)"
+      equip_grid:
+        description: "Grid of owned weapons sorted by rarity/level. Click to select, then 'Equip' button."
+        filters: "Weapon type filter (Sword, Claymore, Polearm, Bow, Catalyst), Rarity, Level, Equipped/Unequipped"
+
+    artifacts:
+      layout: "5 artifact slots arranged in a cross pattern (Flower top, Plume right, Sands center, Goblet left, Circlet bottom)"
+      slot_positions:
+        flower: "Top slot"
+        plume: "Right slot (or second position)"
+        sands: "Center slot (or third position)"
+        goblet: "Left slot (or fourth position)"
+        circlet: "Bottom slot (or fifth position)"
+      actions:
+        - "Equip: Opens artifact selection for that slot"
+        - "Enhance: Opens enhancement with fodder artifacts"
+        - "Fast Equip (v4.4+): AI-suggested artifact recommendations"
+        - "Auto-Lock (v4.3+): Lock artifacts matching criteria"
+        - "Salvage (v5.0+): Destroy artifacts for Artifact XP material (Sanctifying Elixir/Unction)"
+        - "Loadouts (v5.7+): Save/load artifact builds per character"
+      artifact_details:
+        main_stat: "Varies by slot type"
+        sub_stats: "0-4 substats depending on enhancement level"
+        set_bonus: "2-piece and 4-piece set effects displayed"
+
+    talents:
+      layout: "Three talent cards: Normal Attack (left), Elemental Skill (center), Elemental Burst (right)"
+      actions:
+        - "Upgrade: Consume Talent Books + Boss Drops + Mora to level up"
+        - "Preview: See next level values"
+      restrictions: "Talent level capped by character ascension phase"
+
+    constellation:
+      layout: "6 constellation nodes arranged in character-specific pattern"
+      actions:
+        - "Activate: Consume Stella Fortuna (duplicate character) to unlock"
+        - "Preview: View effect of each constellation"
+      restrictions: "Must activate in order (C1 before C2, etc.)"
+
+  navigation:
+    open_from: "World HUD (C key) or Paimon Menu -> Character"
+    close_to: "Esc returns to world HUD (or Paimon menu if opened from there)"
+    character_switch: "Click character portrait in bottom strip to change character without leaving menu"
+    tab_switch: "Click tab icons on right side to switch between Details/Weapon/Artifacts/Talents/Constellation"
+
+  visual_state_changes:
+    - "Tab highlights with golden border when selected"
+    - "Artifact slots glow when empty (indicating missing equipment)"
+    - "Character model animates when viewing talents (demonstrates skill)"
+    - "Enhancement/upgrade animations play on success"
+    - "Constellation nodes light up when activated, grayed out when locked"
+
+  pitfalls:
+    - "Easy to accidentally hit 'Enhance' instead of 'Equip' on weapon/artifact screens"
+    - "Artifact auto-equip may recommend wrong stats - always verify suggestions"
+    - "Talent upgrade materials are specific to character region/day of week"
+    - "Can only activate constellations in order - cannot skip"
+    - "Bottom character strip scrolls - characters off-screen may be forgotten"
+
+# =============================================================================
+# SECTION 4: WEAPONS SCREEN (within Character > Weapon tab)
+# =============================================================================
+weapons_screen:
+  access: "Character Menu > Weapon tab, or Inventory > Weapons tab"
+  layout:
+    description: "Grid of weapon cards with filter/sort options"
+    grid_position: "Center of screen"
+    card_info: "Weapon icon, name, rarity stars, level, refinement rank"
+    filters:
+      position: "Top of grid area"
+      options:
+        - "Weapon Type: All / Sword / Claymore / Polearm / Bow / Catalyst"
+        - "Rarity: All / 5-star / 4-star / 3-star"
+        - "Equipped Status: All / Equipped / Unequipped"
+    sort_options:
+      - "Level (high to low)"
+      - "Rarity (high to low)"
+      - "Refinement (high to low)"
+
+  actions:
+    equip: "Select weapon -> Click 'Equip' -> Confirms if replacing currently equipped weapon"
+    enhance: "Select weapon -> Click 'Enhance' -> Opens enhancement panel (drag fodder weapons/ores)"
+    refine: "Select weapon -> Click 'Refine' -> Requires duplicate weapon, increases refinement rank (R1-R5)"
+
+  navigation:
+    open_from: "Character Menu Weapon tab or Inventory Weapons tab"
+    close_to: "Back button or Esc"
+    cross_reference: "Weapons equipped on characters show character icon overlay in Inventory"
+
+  visual_state_changes:
+    - "Equipped weapons show small character portrait badge"
+    - "Selected weapon highlights with golden border"
+    - "Enhancement success shows particle animation"
+    - "Rarity indicated by background color (gold=5, purple=4, blue=3, green=2, gray=1)"
+
+  pitfalls:
+    - "Enhancing consumes ALL dragged materials - verify before confirming"
+    - "Refinement requires exact duplicate weapon, not just same type"
+    - "Locked weapons cannot be used as enhancement fodder"
+
+# =============================================================================
+# SECTION 5: ARTIFACTS SCREEN (within Character > Artifacts tab)
+# =============================================================================
+artifacts_screen:
+  access: "Character Menu > Artifacts tab, or Inventory > Artifacts tab"
+  layout:
+    description: "5 artifact slots in cross pattern with equip/enhance/salvage options"
+    slot_layout:
+      flower:
+        position: "Top"
+        main_stat: "Flat HP (always)"
+        substats: "ATK%, DEF%, HP%, EM, Crit Rate, Crit DMG, ER, Flat ATK, Flat DEF"
+      plume:
+        position: "Right or second"
+        main_stat: "Flat ATK (always)"
+        substats: "Same pool as Flower"
+      sands:
+        position: "Center or third"
+        main_stat: "HP% / DEF% / ATK% / EM / ER"
+        substats: "Varies"
+      goblet:
+        position: "Left or fourth"
+        main_stat: "HP% / DEF% / ATK% / EM / Physical DMG% / Elemental DMG% (any element)"
+        substats: "Varies"
+      circlet:
+        position: "Bottom or fifth"
+        main_stat: "HP% / DEF% / ATK% / EM / Crit Rate% / Crit DMG% / Healing Bonus%"
+        substats: "Varies"
+
+  management_features:
+    auto_lock_v43:
+      version: "4.3+"
+      description: "Automatically lock artifacts matching user-defined criteria"
+      criteria: "Set by main stat, substats, rarity (4-star and 5-star only)"
+      trigger: "When artifact is obtained (domain, boss, etc.)"
+
+    fast_equip_v44:
+      version: "4.4+"
+      description: "AI recommends artifacts based on common builds"
+      trigger: "Click 'Fast Equip' button on artifact tab"
+      note: "Recommendations are community-average, may not match optimal build"
+
+    salvage_v50:
+      version: "5.0+"
+      description: "Destroy artifacts for Artifact XP materials (Sanctifying Unction/Elixir)"
+      trigger: "Select artifacts -> Click 'Salvage'"
+      restrictions: "Locked artifacts cannot be salvaged. Only 4-star and 5-star for Elixir."
+
+    loadouts_v57:
+      version: "5.7+"
+      description: "Save and load complete artifact builds per character"
+      slots: "Multiple loadout slots per character"
+      trigger: "Artifact tab -> Loadout button"
+      actions:
+        - "Save current build as loadout"
+        - "Load saved build (swaps artifacts)"
+        - "Rename loadout"
+        - "Delete loadout"
+
+  enhancement:
+    description: "Level up artifact using other artifacts as fodder"
+    max_level:
+      "5-star": 20
+      "4-star": 16
+      "3-star": 12
+      "2-star": 8
+      "1-star": 4
+    cost: "Mora per enhancement (scales with artifact rarity and level)"
+
+  navigation:
+    open_from: "Character Menu > Artifacts tab"
+    close_to: "Esc or back button"
+
+  visual_state_changes:
+    - "Empty slots show placeholder with '+' icon"
+    - "Set bonus text highlights in gold when 2-piece or 4-piece is active"
+    - "Substats appear/glow when enhancement milestone reached (+4 per substat unlock)"
+    - "Locked artifacts show padlock icon overlay"
+
+  pitfalls:
+    - "Salvage is IRREVERSIBLE - locked artifacts are safe but unlock before salvage is dangerous"
+    - "Fast Equip may replace good artifacts with mediocre ones"
+    - "Goblet main stat is the hardest to get right (elemental DMG% is rare)"
+    - "5 artifacts, each with different main stat pools - slot-specific understanding required"
+
+# =============================================================================
+# SECTION 6: INVENTORY (B)
+# =============================================================================
+inventory:
+  hotkey: "B"
+  layout:
+    description: "Full-screen overlay with category tabs on left, item grid in center, item details on right."
+    tab_bar:
+      position: "Left side, vertical tabs"
+      tabs:
+        - name: "Weapons"
+          icon: "Crossed swords"
+          capacity: 2000
+          sub_categories: "Sword, Claymore, Polearm, Bow, Catalyst"
+        - name: "Artifacts"
+          icon: "Goblet"
+          capacity: 2400
+          sub_categories: "Flower, Plume, Sands, Goblet, Circlet"
+        - name: "Character Development Items"
+          icon: "Character EXP icon"
+          capacity: 2300
+          sub_categories: "EXP Materials, Ascension Materials, Talent Materials, Common Materials"
+        - name: "Food"
+          icon: "Plate/food icon"
+          capacity: 2300
+          sub_categories: "Recovery Food, Attack Food, Defense Food, Stamina Food, Other Food, Ingredients"
+          max_stack:
+            most_food: 2000
+            special_dishes: 2000
+        - name: "Materials"
+          icon: "Ore/ingot icon"
+          capacity: 2300
+          sub_categories: "Forging Materials, Wood, Crafting Materials, Fish Bait"
+          max_stack:
+            enhancement_ore: 99999
+            most_materials: 9999
+        - name: "Gadgets"
+          icon: "Compass/gadget icon"
+          capacity: 2300
+          sub_categories: "Gadgets (only one of each can be owned)"
+        - name: "Quest"
+          icon: "Scroll icon"
+          capacity: "Unlimited"
+          sub_categories: "Quest items (cannot be deleted)"
+        - name: "Precious Items"
+          icon: "Crown/treasure icon"
+          capacity: "Varies"
+          sub_categories: "Crown of Insight, Nameless Ward, etc."
+        - name: "Furnishings"
+          icon: "Chair/furniture icon"
+          capacity: 2600
+          sub_categories: "Furnishings, Furnishing Sets, Landscape, Interior"
+
+    item_grid:
+      position: "Center, scrollable grid"
+      description: "Grid of item icons sorted by rarity/quantity. Each shows icon, quantity, and rarity stars."
+      interaction: "Click to select, double-click or right-click for quick actions"
+
+    detail_panel:
+      position: "Right side"
+      contents:
+        - "Item icon (large)"
+        - "Item name"
+        - "Rarity stars"
+        - "Description text"
+        - "Source/obtain method"
+        - "Use button (for consumables)"
+        - "Lock/Unlock toggle"
+        - "Destroy button (if applicable)"
+
+    sort_filter:
+      position: "Top of grid area"
+      sort_options:
+        - "Quality (rarity)"
+        - "Quantity"
+        - "Name"
+        - "Acquisition Time"
+      filter_options:
+        - "Rarity: 5/4/3/2/1 stars"
+        - "Equipped status (for weapons/artifacts)"
+        - "Locked/Unlocked"
+
+  quick_actions:
+    use_item: "Select consumable -> Click 'Use' -> Amount selector appears -> Confirm"
+    lock: "Select item -> Click lock icon -> Prevents accidental destruction/use as fodder"
+    destroy: "Select item -> Click 'Destroy' -> Confirmation dialog -> Item removed"
+    enhance_from_inventory: "Select weapon/artifact -> 'Enhance' button"
+
+  special_items:
+    condensed_resin:
+      max_quantity: 5
+      crafting: "40 Original Resin + 1 Crystal Core at alchemy table"
+      note: "Cap shown in inventory. Cannot exceed 5."
+    fragile_resin:
+      max_quantity: "No hard cap"
+      use: "Restores 60 Original Resin"
+    enhancement_ore:
+      types: ["Enhancement Ore (2k EXP)", "Fine Enhancement Ore (6k EXP)", "Mystic Enhancement Ore (12k EXP)"]
+      max_stack: 99999
+
+  navigation:
+    open_from: "World HUD (B) or Paimon Menu -> Inventory"
+    close_to: "Esc returns to world (or Paimon menu if opened from there)"
+    tab_switch: "Click category tabs on left side"
+    item_select: "Click item in grid to view details"
+    use_flow: "Select item -> Use button -> Quantity picker -> Confirm"
+
+  visual_state_changes:
+    - "Selected item highlights with golden border in grid"
+    - "Locked items show padlock icon in corner"
+    - "Equipped weapons/artifacts show character portrait badge"
+    - "New items may have 'NEW' indicator"
+    - "Full-capacity warnings appear when approaching limit"
+
+  pitfalls:
+    - "Destroying items is irreversible - always lock valuable items first"
+    - "Using enhancement ores from inventory is slower than from Character > Enhance screen"
+    - "Quest items tab cannot be managed - items auto-added/removed by quests"
+    - "Furnishings capacity (2600) fills quickly in Serenitea Pot"
+    - "Gadgets can only have ONE copy - using 'Use' equips it, not consumes it"
+    - "Condensed Resin cap of 5 is easy to forget during resin planning"
+
+# =============================================================================
+# SECTION 7: MAP SCREEN (M)
+# =============================================================================
+map_screen:
+  hotkey: "M"
+  layout:
+    description: "Full-screen map overlay with the game world map, region tabs, markers, and tools."
+    map_area:
+      position: "Center (majority of screen)"
+      description: "Scrollable, zoomable top-down map of Teyvat and sub-areas."
+      zoom_levels:
+        min: "Shows entire regions"
+        max: "Shows individual item/resource locations"
+      navigation: "WASD to pan, scroll wheel to zoom, click to place marker"
+
+    region_tabs:
+      position: "Top-center or left side"
+      tabs:
+        - name: "Teyvat (overworld)"
+          regions: ["Mondstadt", "Liyue", "Inazuma", "Sumeru", "Fontaine", "Natlan", "Nod-Krai"]
+        - name: "Enkanomiya"
+          description: "Underwater area below Inazuma, separate map layer"
+        - name: "The Chasm: Underground"
+          description: "Underground mines, separate map layer"
+        - name: "Sea of Bygone Eras"
+          description: "Sub-area in Fontaine region"
+        - name: "Ancient Sacred Mountain"
+          description: "Sub-area in Natlan region"
+        - name: "Serenitea Pot"
+          description: "Housing instance, separate map"
+        - name: "Cat's Tail"
+          description: "Genius Invokation TCG arena"
+        - name: "Imaginarium Theater Lobby"
+          description: "Theater lobby instance"
+        - name: "Event Maps"
+          description: "Temporary event-specific maps during events"
+
+    marker_types:
+      teleport_waypoint:
+        icon: "Blue diamond/chevron"
+        description: "Fast travel point. Unlocked (bright) vs locked (dimmed)."
+        interaction: "Click to teleport. Locked waypoints require in-world activation."
+      statue_of_the_seven:
+        icon: "Statue figure"
+        description: "Region-specific, restores HP, provides stamina upgrades, reveals map"
+        interaction: "Click to teleport. Offers healing mode, statue's blessings."
+      domain:
+        icon: "Pillar/tower shape"
+        description: "Instance entrance for artifacts, weapon mats, talent mats, weekly bosses"
+        interaction: "Click to teleport. Shows domain name and type."
+      oculi:
+        types: ["Anemoculus", "Geoculus", "Electroculus", "Dendroculus", "Hydroculus", "Pyculus"]
+        icon: "Star-shaped element icon"
+        description: "Collectible for Statue offerings. Resonance Stone gadget helps locate."
+      chest:
+        types: ["Common", "Exquisite", "Precious", "Luxurious", "Remarkable"]
+        icon: "Chest icon of varying detail"
+        description: "Loot containers. Only shown if nearby or revealed."
+      custom_pins:
+        max_pins: 300
+        icon: "User-selected pin icon (multiple icon options)"
+        description: "Player-placed markers. Click to place, right-click to remove."
+        creation: "Click empty map area -> Place Pin -> Select icon -> Add description"
+
+    toolbar:
+      position: "Right side, vertical"
+      tools:
+        - name: "Pin"
+          icon: "Pin/marker icon"
+          action: "Place custom pin at clicked location"
+        - name: "Measure Distance"
+          icon: "Ruler icon"
+          action: "Click two points to measure distance"
+        - name: "Custom Markers"
+          icon: "Filter icon"
+          action: "Toggle visibility of different marker types"
+        - name: "Domain Names"
+          icon: "List icon"
+          action: "Show/hide domain names on map"
+        - name: "Player Search"
+          icon: "Magnifying glass"
+          action: "Search for player pins (Co-Op)"
+
+    search_bar:
+      position: "Top of map area"
+      description: "Search for locations, domains, quests by name"
+
+    teleport_confirmation:
+      description: "When clicking a teleport point, a confirmation popup appears"
+      contents:
+        - "Location name"
+        - "Distance from current position"
+        - "'Teleport' button (confirm)"
+        - "'Cancel' button"
+
+    map_settings:
+      position: "Bottom or side panel"
+      options:
+        - "Show Custom Markers (toggle)"
+        - "Show Domain Names (toggle)"
+        - "Show Resource Icons (based on zoom level)"
+        - "Player Location Sharing"
+
+    condensed_resin_display:
+      version: "5.7+"
+      position: "Top-right area of map"
+      description: "Shows Original Resin count and Condensed Resin count directly on map screen"
+      format: "Original Resin: X/200 | Condensed Resin: X/5"
+
+  navigation:
+    open_from: "World HUD (M) or Paimon Menu -> Map"
+    close_to: "Esc or M returns to world HUD"
+    teleport_flow: "Click waypoint/statue/domain -> Teleport confirmation -> Loading screen -> Arrive at location"
+    region_switch: "Click region tabs to switch between overworld and sub-areas"
+    pin_management: "Click map -> Place pin -> Select icon -> Confirm; Right-click pin -> Delete"
+
+  visual_state_changes:
+    - "Unlocked waypoints bright, locked waypoints dimmed with lock icon"
+    - "Active quest tracking shows golden path/marker"
+    - "Zoom reveals more detail (NPCs, resources at max zoom)"
+    - "Discovered areas fully colored, undiscovered areas dark/fogged"
+    - "Teleporting shows loading screen with destination name"
+
+  pitfalls:
+    - "300 pin limit - easy to hit cap without cleanup"
+    - "Event map tabs disappear when event ends - pins on event maps are lost"
+    - "Locked waypoints can't be teleported to - must visit in-world first"
+    - "Enkanomiya/Chasm Underground are separate map layers - won't show on overworld"
+    - "Teleporting during combat triggers loading screen (disorienting)"
+    - "Pin icons are small - easy to place pins on wrong spot when zoomed out"
+
+# =============================================================================
+# SECTION 8: WISH SCREEN (F3)
+# =============================================================================
+wish_screen:
+  hotkey: "F3"
+  layout:
+    description: "Gacha/pull screen with animated banners. Shows current and standard banners."
+    banner_area:
+      position: "Center-left, large display area"
+      contents:
+        - "Banner artwork for current featured character/weapon"
+        - "Banner name and duration timer"
+        - "5-star and 4-star featured items preview"
+        - "'Details' button showing full item pool"
+
+    wish_buttons:
+      position: "Bottom-right or right side"
+      options:
+        - text: "Wish x1"
+          cost: "160 Primogems / 1 Acquaint Fate / 1 Intertwined Fate"
+        - text: "Wish x10"
+          cost: "1600 Primogems / 10 Acquaint Fates / 10 Intertwined Fates"
+
+    banner_tabs:
+      position: "Left or bottom, horizontal tabs"
+      tabs:
+        - name: "Character Event Wish"
+          currency: "Intertwined Fate"
+          pity: "90 pulls hard pity, 50/50 system at soft pity ~74"
+        - name: "Character Event Wish-2"
+          currency: "Intertwined Fate"
+          description: "Second concurrent character banner (shares pity with Wish-1)"
+        - name: "Weapon Event Wish"
+          currency: "Intertwined Fate"
+          pity: "80 pulls hard pity, epitomized path system (choose weapon)"
+        - name: "Standard Wish (Wanderlust Invocation)"
+          currency: "Acquaint Fate"
+          pity: "90 pulls hard pity"
+
+    history_button:
+      position: "Bottom area"
+      description: "View past wish results (last 6 months). Used for tracking pity."
+      format: "Tabular list showing each pull: item name, rarity, type, time"
+
+    currency_display:
+      position: "Top-right"
+      contents:
+        - "Primogem count"
+        - "Acquaint Fate count"
+        - "Intertwined Fate count"
+        - "Genesis Crystal count (premium currency)"
+
+    shop_button:
+      position: "Bottom or side"
+      description: "Opens shop to purchase fates with primogems/stardust/starglitter"
+
+  pull_animation:
+    description: "After confirming wish, animated sequence plays"
+    outcomes:
+      - "3-star: Purple/blue meteor trail (most common)"
+      - "4-star: Purple/pink meteor trail"
+      - "5-star: Golden meteor trail"
+    skip: "Click or press any key to skip animation"
+    multi_pull: "Wish x10 shows condensed results screen with all 10 items"
+
+  navigation:
+    open_from: "World HUD (F3) or Paimon Menu -> Wish"
+    close_to: "Esc or click close button"
+    banner_switch: "Click banner tabs to switch between active banners"
+    details_view: "Click 'Details' on banner to see full rate-up items and base rates"
+
+  visual_state_changes:
+    - "Banner artwork animates (character moves/effects)"
+    - "Pull animation plays before showing results"
+    - "5-star gold flash is unmistakable"
+    - "Results screen shows all items from pull with rarity colors"
+
+  pitfalls:
+    - "Wish x10 does NOT guarantee 5-star - only guarantees 4-star+ every 10 pulls"
+    - "Character Event Wish-1 and Wish-2 share pity counter - pulls on either count toward pity"
+    - "Skipping animation too fast may miss the gold/purple indicator"
+    - "History page only shows last 6 months - older pulls cannot be verified"
+    - "Stardust/Starglitter exchange resets monthly - don't forget to buy fates"
+
+# =============================================================================
+# SECTION 9: ADVENTURER HANDBOOK (F1)
+# =============================================================================
+adventurer_handbook:
+  hotkey: "F1"
+  layout:
+    description: "Book-style overlay with 6 tabs providing game progression guidance."
+    tab_bar:
+      position: "Top or left side"
+      tabs:
+        - name: "Experience"
+          icon: "EXP star icon"
+          description: "9 chapters of guided objectives with rewards"
+        - name: "Commissions"
+          icon: "Daily commission icon"
+          description: "Daily commissions management"
+        - name: "Domains"
+          icon: "Domain tower icon"
+          description: "Domain list and tracking"
+        - name: "Enemies"
+          icon: "Monster icon"
+          description: "Enemy catalog with locations"
+        - name: "Guide"
+          icon: "Guide book icon"
+          description: "Priority quest guidance"
+        - name: "Embattle"
+          icon: "Shield/sword icon"
+          description: "Elemental trial challenges"
+
+  sub_tabs:
+    experience:
+      layout: "Chapters displayed as cards or list. Each chapter has objectives."
+      chapters: 9
+      rewards: "Primogems, Mora, EXP materials, etc. per chapter completion"
+      track: "Click objective to set navigation marker"
+
+    commissions:
+      layout: "4 daily commission slots with completion status"
+      features:
+        - "Shows current day's commissions (0/4)"
+        - "Commission name, location, and description"
+        - "'Navigate' button sets quest marker to commission location"
+        - "Encounter Points display (v4.x+): Earn from quests/exploration to skip commissions"
+        - "Region selection for commission region"
+      encounter_points:
+        description: "Alternate commission completion via exploration"
+        mechanics: "Earn encounter points through quests and exploration, use to auto-complete commissions"
+
+    domains:
+      layout: "Domain list with filters"
+      filters:
+        - "Domain: Artifacts (sorted by artifact set)"
+        - "Weapon Ascension Materials (sorted by day of week)"
+        - "Talent Ascension Materials (sorted by day of week)"
+        - "Trounce Domains (weekly bosses)"
+        - "Spiral Abyss"
+        - "Imaginarium Theater"
+        - "Envisaged Echoes"
+      navigation: "Click domain -> 'Navigate' button -> Map opens with waypoint"
+      resin_cost:
+        artifact_domain: "20 Resin (40 for double rewards with Condensed Resin)"
+        weapon_talent_domain: "20 Resin"
+        trounce_domain: "30/40/60 Resin (first 3 discounts per week)"
+
+    enemies:
+      layout: "Filterable enemy list with location tracking"
+      filters: "Common / Elite / Boss / Weekly Boss"
+      features:
+        - "Enemy name, type, and element"
+        - "Drop table preview"
+        - "'Navigate' button tracks nearest spawn on map"
+        - "Defeat counter for tracking"
+
+    guide:
+      layout: "Priority quest recommendations"
+      content: "Suggests which quests/activities to do next based on AR and progress"
+
+    embattle:
+      layout: "Elemental ascension trial challenges"
+      chapters: 4
+      unlock_ar: [20, 25, 30, 35]
+      description: "Combat trials with element-specific teams"
+
+  navigation:
+    open_from: "World HUD (F1) or Paimon Menu -> Adventurer Handbook"
+    close_to: "Esc returns to world"
+    tab_switch: "Click tabs at top/left to switch sections"
+    domain_navigate: "Select domain -> Click 'Navigate' -> Map opens showing domain location"
+
+  visual_state_changes:
+    - "Completed commissions show green checkmark"
+    - "Incomplete commissions show empty circle"
+    - "Domain list grays out domains not yet unlocked"
+    - "Chapter objectives show progress bar"
+
+  pitfalls:
+    - "Domain materials are DAY-LOCKED: Talent/Weapon domains rotate Mon/Thu, Tue/Fri, Wed/Sat"
+    - "Sunday: All material types available"
+    - "Trounce domain discount resets Monday 4:00 AM server time"
+    - "Navigate button opens the MAP, doesn't teleport - must click teleport separately"
+    - "Encounter Points have weekly cap - cannot stockpile infinitely"
+    - "Commissions reset daily at 4:00 AM server time"
+
+# =============================================================================
+# SECTION 10: BATTLE PASS (F4)
+# =============================================================================
+battle_pass:
+  hotkey: "F4"
+  layout:
+    description: "Tiered reward track with free and paid (Gnostic Hymn) paths."
+    level_display:
+      position: "Top area"
+      contents:
+        - "Current Battle Pass level (1-50)"
+        - "XP progress bar to next level"
+        - "Season name and remaining time"
+
+    reward_track:
+      position: "Center, horizontal scrollable"
+      description: "50 levels of rewards displayed as columns"
+      columns:
+        free_track:
+          position: "Left/center column per level"
+          rewards: "Mora, EXP materials, enhancement ores, etc."
+        gnostic_hymn:
+          position: "Right column per level"
+          rewards: "Talent materials, billets, primogems, BP weapon box at level 30"
+          cost: "$9.99 USD or equivalent"
+          unlock: "Any time during the season, retroactively unlocks all paid rewards"
+
+    mission_tabs:
+      position: "Bottom or side panel"
+      tabs:
+        - name: "Daily Missions"
+          count: "Up to 6 per day"
+          xp_each: 120
+          reset: "Daily at 4:00 AM server time"
+          examples:
+            - "Complete 1 domain"
+            - "Mine 5 items"
+            - "Use 150 Original Resin"
+            - "Complete 1 daily commission"
+            - "Log in"
+        - name: "Weekly Missions"
+          count: "Up to 10 per week"
+          xp_each: 450-600
+          reset: "Monday 4:00 AM server time"
+          examples:
+            - "Complete 20 domains"
+            - "Collect 100 artifacts"
+            - "Complete 15 daily commissions"
+            - "Use 1200 Original Resin"
+            - "Defeat 10 elite enemies"
+        - name: "BP Period Missions"
+          count: "One-time per season"
+          xp_each: 1500-2250
+          examples:
+            - "Reach AR 50"
+            - "Clear Spiral Abyss 8-x"
+            - "Complete specific quests"
+
+    bp_weapon_box:
+      trigger: "Gnostic Hymn level 30"
+      weapons:
+        - "Serpent Spine (Claymore) - Crit Rate"
+        - "The Black Sword (Sword) - Crit Rate"
+        - "Deathmatch (Polearm) - Crit Rate"
+        - "Solar Pearl (Catalyst) - Crit Rate"
+        - "The Viridescent Hunt (Bow) - Crit Rate"
+        - "Wolf-Fang (Sword) - Crit Rate"
+        - "Ballad of the Fjords (Polearm) - Crit Rate"
+        - "Sacrificial Jade (Catalyst) - Crit Rate"
+        - "Scion of the Blazing Sun (Bow) - Crit Rate"
+        - "Talking Stick (Claymore) - Crit Rate"
+      note: "Can only select ONE weapon per BP season. Choose wisely."
+
+  xp_math:
+    daily_max: "720 XP (6 missions x 120)"
+    weekly_max: "~6000 XP (varies by mission values)"
+    bp_period_max: "~10000 XP"
+    total_for_50: "50000 XP (1000 XP per level)"
+    max_free_level: "50 (free track ends at 50 too, but with lesser rewards)"
+
+  navigation:
+    open_from: "World HUD (F4) or Paimon Menu -> Battle Pass"
+    close_to: "Esc returns to world"
+    section_switch: "Switch between Rewards/Missions tabs"
+
+  visual_state_changes:
+    - "Claimed rewards show 'Claimed' status"
+    - "Unclaimed rewards show 'Claim' button with glow"
+    - "Level progress bar fills up as XP is earned"
+    - "Season timer counts down in days/hours"
+    - "Gnostic Hymn track has golden/purple styling"
+
+  pitfalls:
+    - "BP level cap is 50 - excess XP is wasted"
+    - "BP weapon box at level 30 - choose carefully, can't change selection"
+    - "Season end removes all unclaimed rewards - claim before deadline"
+    - "Buying Gnostic Hymn retroactively unlocks ALL previous paid rewards"
+    - "Daily/weekly missions reset even if BP is maxed - no carryover"
+    - "Gnostic Hymn is per-season purchase, doesn't carry over"
+
+# =============================================================================
+# SECTION 11: EVENTS PANEL (F5)
+# =============================================================================
+events_panel:
+  hotkey: "F5"
+  layout:
+    description: "Scrollable list of current and upcoming events."
+    event_list:
+      position: "Center/left area"
+      format: "Cards or list items showing event name, duration, and status"
+      per_event:
+        - "Event banner/thumbnail"
+        - "Event name"
+        - "Duration (start/end date)"
+        - "Event type icon (combat, exploration, puzzle, etc.)"
+        - "'Go' or 'Navigate' button to start event"
+
+    event_detail:
+      position: "Right panel (opens when event selected)"
+      contents:
+        - "Event description"
+        - "Event rules"
+        - "Reward list"
+        - "Progress/requirements"
+        - "'Participate' or 'Teleport' button"
+
+    event_types:
+      - "Major Events (version-length, significant rewards)"
+      - "Minor Events (1-2 weeks, moderate rewards)"
+      - "Daily Login Events (7-day login bonuses)"
+      - "Web Events (browser-based, separate from in-game)"
+      - "Permanent Events (always available, e.g., ongoing combat events)"
+
+  navigation:
+    open_from: "World HUD (F5) or Paimon Menu -> Events"
+    close_to: "Esc returns to world"
+    event_participate: "Click event -> Read details -> Click 'Go'/'Teleport' -> Map or instance loads"
+
+  visual_state_changes:
+    - "Active events show bright banners"
+    - "Completed events show checkmark or 'Completed' tag"
+    - "Expired events grayed out or removed"
+    - "New events may have 'NEW' indicator"
+
+  pitfalls:
+    - "Event timers use SERVER TIME, not local time"
+    - "Some events require minimum AR to participate"
+    - "Event instances may be separate maps - leaving can lose progress"
+    - "'Go' button may open map for teleport OR start event directly - read carefully"
+    - "Event rewards must be claimed individually before event ends"
+
+# =============================================================================
+# SECTION 12: CO-OP MODE (F2)
+# =============================================================================
+coop_mode:
+  hotkey: "F2"
+  requirements:
+    adventure_rank: 16
+    quest: "Prologue Act I completed"
+  layout:
+    description: "Multiplayer screen showing available hosts and join options."
+    player_list:
+      position: "Center area"
+      format: "List of available hosts/players to join"
+      per_player:
+        - "Player name and AR"
+        - "World Level"
+        - "Current activity"
+        - "Ping/latency indicator"
+        - "'Join' button"
+
+    world_permissions:
+      position: "Settings area"
+      options:
+        - text: "Reject All Join Requests"
+          value: 0
+        - text: "Allow Direct Join"
+          value: 1
+          description: "Anyone can join without approval"
+        - text: "Join After Approval"
+          value: 2
+          description: "Join requests must be accepted by host"
+
+    current_session:
+      description: "When in a Co-Op session, shows all connected players"
+      player_cards:
+        - "Player avatar and name"
+        - "Character being used"
+        - "AR and World Level"
+        - "'Kick' button (host only)"
+
+  restrictions_in_coop:
+    - "Only host can interact with NPCs for some quests"
+    - "Only host's world resources respawn on their timer"
+    - "Chest opening is shared or host-only depending on type"
+    - "Some story quests unavailable in Co-Op"
+    - "Serenitea Pot access limited"
+    - "Cannot advance Archon Quests in Co-Op"
+
+  enemy_scaling:
+    description: "Enemy HP scales with number of players"
+    table:
+      1_player: "100% HP (normal)"
+      2_players: "150% HP"
+      3_players: "200% HP"
+      4_players: "250% HP"
+    note: "Attack patterns and damage do NOT scale, only HP"
+
+  navigation:
+    open_from: "World HUD (F2) or Paimon Menu -> Co-Op Mode"
+    close_to: "Esc returns to world"
+    join_flow: "Select player from list -> 'Join' -> Loading screen -> Arrive in host's world"
+    leave_flow: "Open Co-Op panel -> 'Leave' button -> Return to own world"
+
+  visual_state_changes:
+    - "Player avatars visible in host's world"
+    - "Party setup changes to show all players' characters"
+    - "Minimap shows other players' positions"
+    - "Chat becomes multiplayer chat"
+
+  pitfalls:
+    - "Joining another world means using YOUR characters in THEIR world"
+    - "Host can kick you at any time without warning"
+    - "Domain progress in Co-Op may not count for guest's quests"
+    - "Resource collection in host's world uses host's respawn timers"
+    - "Desync/lag can cause rubber-banding and missed inputs"
+    - "Cannot pause game in Co-Op"
+
+# =============================================================================
+# SECTION 13: SETTINGS
+# =============================================================================
+settings:
+  access: "Paimon Menu -> Settings (gear icon) or F6 (Serenitea Pot / Cat's Tail only)"
+  layout:
+    description: "Full settings panel with category navigation on left, options on right."
+    category_bar:
+      position: "Left side, vertical list"
+      categories:
+        - name: "Graphics"
+          options:
+            - "Render Resolution"
+            - "Shadow Quality"
+            - "Visual Effects"
+            - "SFX Quality"
+            - "Environment Detail"
+            - "Reflections"
+            - "Motion Blur"
+            - "Bloom"
+            - "Crowd Density"
+            - "Teammate Effects"
+            - "Volumetric Fog"
+            - "Reflection"
+            - "Co-Op Teammate Effects"
+        - name: "Audio"
+          options:
+            - "Master Volume"
+            - "Music Volume"
+            - "SFX Volume"
+            - "Voice Volume"
+            - "Audio Output"
+        - name: "Controls"
+          options:
+            - "Camera Sensitivity"
+            - "Aim Sensitivity"
+            - "Invert Camera (Y-axis)"
+            - "Auto-Climb"
+            - "Sprint Toggle vs Hold"
+            - "Key Bindings (customizable)"
+        - name: "Language"
+          options:
+            - "Game Language (Voice)"
+            - "Game Language (Text)"
+            - "Supported: EN, JP, CN, KR"
+        - name: "Account"
+          options:
+            - "User Center"
+            - "Link accounts"
+            - "Redeem Code"
+            - "Hoyolab Check-In"
+        - name: "Other"
+          options:
+            - "Show Damage Numbers"
+            - "Show HP Numbers"
+            - "Auto-Targeting"
+            - "Event Notifications"
+            - "Show Online Status"
+            - "Discord Rich Presence"
+
+  key_binding_customization:
+    access: "Settings > Controls > Key Bindings"
+    description: "Remappable keys for most controls"
+    non_remappable:
+      - "Esc (Paimon Menu)"
+      - "F12 (Screenshot)"
+    remappable:
+      - "WASD (Movement)"
+      - "E/Q (Skills)"
+      - "1-4 (Character Switch)"
+      - "All other bindings"
+
+  redeem_code:
+    access: "Settings > Account > Redeem Code"
+    flow: "Enter code -> Click 'Redeem' -> Rewards sent to in-game mail"
+    note: "Codes are case-sensitive and time-limited"
+
+  navigation:
+    open_from: "Paimon Menu -> Settings"
+    close_to: "Esc returns to Paimon Menu"
+    category_switch: "Click category in left panel"
+
+  visual_state_changes:
+    - "Slider controls show current value"
+    - "Dropdown menus expand on click"
+    - "Changed settings apply immediately (no 'Save' button needed for most)"
+    - "Graphics changes may show loading indicator"
+
+  pitfalls:
+    - "No 'Save' button - most settings apply instantly"
+    - "No 'Reset to Default' button for individual settings"
+    - "Changing resolution requires game restart"
+    - "Language change requires large download (voice packs)"
+    - "F6 only works in Serenitea Pot / Cat's Tail - confusing UX"
+    - "Redeem code input is case-sensitive"
+
+# =============================================================================
+# SECTION 14: PARTY SETUP (L)
+# =============================================================================
+party_setup:
+  hotkey: "L"
+  layout:
+    description: "Team composition screen for selecting and arranging 4 party members."
+    party_slots:
+      position: "Center, 4 character slots in a row"
+      slot_info:
+        - "Slot 1 (leftmost): Active character when entering world"
+        - "Slots 2-4: Available for mid-combat switching"
+      display: "Character portrait, name, level, element, weapon type"
+      interaction: "Click slot -> Character selection grid appears"
+
+    character_grid:
+      position: "Bottom or side panel (appears when slot clicked)"
+      format: "Grid of owned character portraits"
+      filters: "Element, Weapon Type, Rarity"
+      sorting: "Level, Rarity, Element"
+      interaction: "Click character to place in selected slot"
+
+    party_buttons:
+      position: "Right side or bottom"
+      buttons:
+        - text: "Switch"
+          action: "Swap two characters (drag-and-drop or select then select target)"
+        - text: "Quick Setup"
+          action: "AI-suggested team composition (based on elements/reactions)"
+        - text: "Save Party"
+          action: "Save current party to a slot (multiple saved parties)"
+        - text: "Load Party"
+          action: "Load a previously saved party"
+
+    saved_parties:
+      description: "Multiple saved party configurations"
+      max_saved: "10+ party slots"
+      naming: "Custom name for each saved party"
+
+  restrictions:
+    - "Cannot change party during combat"
+    - "Cannot change party inside domains (must exit first)"
+    - "Elemental Resonance applies based on party element composition"
+    - "In Co-Op, party is replaced by all players' active characters"
+
+  elemental_resonance:
+    description: "Passive buffs based on party element composition"
+    conditions: "2+ characters of same element"
+    examples:
+      - "2 Pyro: +25% ATK, reduces Cryo duration"
+      - "2 Hydro: +25% Max HP, reduces Pyro duration"
+      - "2 Cryo: +15% Crit Rate vs frozen/CRYO affected, reduces Electro duration"
+      - "2 Electro: Particles on reaction, reduces Hydro duration"
+      - "2 Anemo: -15% Stamina consumption, +10% movement speed, -8% cooldown"
+      - "2 Geo: +15% shield strength, +15% DMG when shielded"
+      - "2 Dendro: +50 EM after bloom/reaction, +30 EM after Quicken/Aggravate"
+      - "4 Unique Elements: +15% All Elemental RES (Protective Canopy)"
+
+  navigation:
+    open_from: "World HUD (L) or Paimon Menu -> Party Setup"
+    close_to: "Esc returns to world"
+    character_select: "Click slot -> Grid appears -> Click character to place"
+
+  visual_state_changes:
+    - "Active slot highlighted with golden border"
+    - "Elemental Resonance icons appear below party when conditions met"
+    - "Character model preview shows in detail panel when selected"
+    - "Incompatible indicators show when party violates restrictions"
+
+  pitfalls:
+    - "Must exit combat before switching party members"
+    - "Active character takes damage during party menu (enemies still attack in overworld)"
+    - "Quick Setup suggestions may not account for synergy"
+    - "Saved parties can reference characters in other saved parties (no conflict)"
+
+# =============================================================================
+# SECTION 15: IN-GAME HUD
+# =============================================================================
+ingame_hud:
+  description: "Overlay visible during normal gameplay (world exploration)"
+  layout:
+    minimap:
+      position: "Top-left corner, circular"
+      size: "~200x200 px at 1080p"
+      contents:
+        - "Circular map with player position (white arrow)"
+        - "Cardinal direction indicator (N/S/E/W)"
+        - "Quest marker (golden dot/arrow pointing to objective)"
+        - "Nearby points of interest (domains, chests, resources)"
+        - "Zoom level indicator"
+      interaction: "Click minimap to open full Map (M)"
+
+    hp_bar:
+      position: "Bottom-center, left portion"
+      reference_roi: "610,970 to 1310,1010 at 1920x1080"
+      contents:
+        - "Green HP bar (full = healthy)"
+        - "Yellow HP bar (taking damage recently)"
+        - "Red HP bar (low health warning)"
+        - "Character portrait on left end"
+        - "HP numbers (if enabled in settings)"
+
+    skill_bar:
+      position: "Bottom-center, right portion"
+      reference_roi: "1490,940 to 1890,1070 at 1920x1080"
+      contents:
+        - "Normal Attack icon (leftmost)"
+        - "Elemental Skill icon (E key) - shows cooldown timer when on CD"
+        - "Elemental Burst icon (Q key) - shows energy fill gauge"
+        - "Active character element color on skill icons"
+
+    party_strip:
+      position: "Right side, vertical"
+      contents:
+        - "4 character portraits (1 active, 3 reserve)"
+        - "HP bars for reserve characters"
+        - "Elemental Burst ready indicator (golden glow on burst icon)"
+        - "Cooldown indicator on portraits"
+        - "Keys 1-4 labels for quick switching"
+
+    active_effects:
+      position: "Top-center or below HP bar"
+      contents:
+        - "Active buff/debuff icons"
+        - "Duration timers on effects"
+        - "Elemental application indicators"
+
+    quest_tracker:
+      position: "Right side, below minimap"
+      contents:
+        - "Active quest name"
+        - "Current objective text"
+        - "Distance/progress indicator"
+        - "Click to open Quest Menu (J)"
+
+    dialogue_box:
+      position: "Bottom of screen, overlapping game view"
+      reference_roi: "0,756 to 1920,1080 at 1920x1080"
+      contents:
+        - "Speaker name (top of box)"
+        - "Dialogue text (scrolling)"
+        - "Dialogue choices (when available)"
+        - "'Continue' prompt (press F or click)"
+
+    notification_area:
+      position: "Top-right"
+      reference_roi: "1400,100 to 1900,500 at 1920x1080"
+      contents:
+        - "Pop-up notifications (quest updates, item obtained, etc.)"
+        - "Auto-dismiss after ~5 seconds"
+        - "Stack when multiple appear"
+
+    combat_indicators:
+      position: "Around HP bar and in game view"
+      reference_roi: "770,930 to 850,970 at 1920x1080"
+      contents:
+        - "Damage numbers (white = normal, crit = larger gold text)"
+        - "Healing numbers (green)"
+        - "Elemental reaction text"
+        - "Enemy HP bars (above enemies)"
+
+    death_screen:
+      position: "Full screen overlay"
+      reference_roi: "660,400 to 1260,680 at 1920x1080"
+      contents:
+        - "Gray desaturated game world"
+        - "'Character Fallen' text"
+        - "'Revive' button (costs food or revive item)"
+        - "'Return to nearest Statue' button (free)"
+        - "Timer before auto-revive at statue"
+
+    loading_screen:
+      position: "Full screen"
+      contents:
+        - "Dark/black screen with loading indicator"
+        - "Tips text (random gameplay tip)"
+        - "Loading bar or spinner"
+      detection: "Mean brightness < 30, std deviation < 20"
+
+    domain_entrance:
+      position: "Full screen overlay"
+      reference_roi: "35-65% width, 45-65% height for start button"
+      contents:
+        - "Dark background"
+        - "Domain name and info"
+        - "'Start' button (bright, center)"
+        - "Party display"
+        - "Recommended elements"
+
+  visual_state_changes:
+    - "HP bar color changes: green (healthy) -> yellow (damaged) -> red (critical)"
+    - "Skill icons gray out during cooldown, show timer number"
+    - "Burst icon fills with energy (visual gauge), glows when ready"
+    - "Minimap quest marker rotates as player turns"
+    - "Death screen desaturates entire game view"
+    - "Dialogue text types in character-by-character"
+    - "Notifications slide in from right, fade out after delay"
+    - "Loading screen appears during teleport and domain entry"
+
+  pitfalls:
+    - "Minimap is circular, distorting directions at edges"
+    - "Skill cooldown timers are approximate, not frame-precise"
+    - "Notification stack can obscure important quest updates"
+    - "Death in Co-Op: must wait for teammate revive or auto-revive timer"
+    - "Loading screens can be long on slow storage (HDD)"
+
+# =============================================================================
+# SECTION 16: CONFIRMATION DIALOGS
+# =============================================================================
+confirmation_dialogs:
+  description: "Modal popups requiring player confirmation before proceeding."
+  layout:
+    position: "Center of screen, modal overlay"
+    contents:
+      - "Dialog title/header text"
+      - "Description body (what will happen)"
+      - "Confirm button (often right, prominent)"
+      - "Cancel button (often left, secondary)"
+    styling: "Semi-transparent dark backdrop. Dialog box has golden/brown Genshin UI theme."
+
+  dialog_types:
+    destructive_actions:
+      description: "Actions that permanently destroy or consume items"
+      examples:
+        - "Destroy item: 'Are you sure you want to destroy [Item Name]? This action cannot be undone.'"
+        - "Salvage artifact (v5.0+): 'The selected artifacts will be destroyed for [XP Material].'"
+        - "Unequip artifact: 'This will remove the artifact from [Character].'"
+        - "Use fragile resin: 'Use Fragile Resin to restore 60 Original Resin?'"
+      behavior: "Single confirmation. Confirm/Cancel buttons."
+
+    high_value_actions:
+      description: "Actions involving premium or rare resources"
+      examples:
+        - "Wish/Pull: 'Spend [X] Primogems/Crystals for [X] Wish(es)?'"
+        - "Character ascension: 'Ascend [Character] to Phase [X]? (consumes materials and Mora)'"
+        - "Weapon refinement: 'Refine [Weapon] using [Duplicate]? This will consume the duplicate.'"
+      behavior: "Single confirmation. Some have quantity selector before confirm."
+
+    teleport:
+      description: "Confirming fast travel"
+      example: "Teleport to [Location Name]?"
+      buttons: "'Teleport' / 'Cancel'"
+      behavior: "Single confirmation."
+
+    quest_actions:
+      description: "Starting or abandoning quests"
+      examples:
+        - "Start quest: '[Quest Name] - Begin this quest?'"
+        - "Abandon quest: 'Abandon [Quest Name]? Progress will be lost.'"
+      behavior: "Single confirmation."
+
+    party_change:
+      description: "Changing party in restricted contexts"
+      example: "Changing party will exit current domain/instance. Continue?"
+      behavior: "Single confirmation with warning."
+
+    multiplayer:
+      description: "Co-Op related confirmations"
+      examples:
+        - "Join [Player]'s world?"
+        - "Allow [Player] to join your world?"
+        - "Kick [Player] from your world?"
+      behavior: "Single confirmation."
+
+    trade_exchange:
+      description: "Shop/exchange confirmations"
+      examples:
+        - "Purchase [Item] for [X] Mora/Stardust/Starglitter?"
+        - "Exchange [X] Stardust for [5] Intertwined Fates?"
+      behavior: "Quantity selector then confirm."
+
+  navigation:
+    confirm: "Click Confirm button or press Enter"
+    cancel: "Click Cancel button or press Esc"
+    note: "Some dialogs can be dismissed by clicking outside the dialog area"
+
+  visual_state_changes:
+    - "Dialog appears with fade-in animation"
+    - "Confirm button often styled in gold/bright color"
+    - "Cancel button styled in gray/dark color"
+    - "Backdrop dims the game world behind dialog"
+
+  pitfalls:
+    - "No undo for confirmed destructive actions - verify before clicking"
+    - "Some rapid sequences of dialogs can cause accidental double-confirm"
+    - "Dialog position is always center screen, can overlap important UI"
+    - "Keyboard Enter confirms - don't accidentally press Enter while reading"
+    - "Wish dialogs don't show pity count - easy to lose track of pulls"
+
+# =============================================================================
+# SECTION 17: NOTIFICATION SYSTEM
+# =============================================================================
+notification_system:
+  hotkey: "Y"
+  layout:
+    description: "In-game notification panel accessible from HUD and Paimon Menu."
+    notification_types:
+      map_notifications:
+        position: "Top-right of screen, fade in/out during gameplay"
+        reference_roi: "1400,100 to 1900,500 at 1920x1080"
+        types:
+          - "Quest objective updates"
+          - "Item obtained notifications"
+          - "Achievement unlocked"
+          - "Daily commission completion"
+          - "Resin fully recovered"
+          - "Domain completion rewards"
+          - "Friend requests"
+          - "Co-Op join/leave notifications"
+        behavior: "Auto-dismiss after ~5 seconds. Stack vertically when multiple appear."
+
+      notification_panel:
+        access: "Y key or Paimon Menu -> Notifications"
+        layout:
+          position: "Full-screen overlay"
+          tabs:
+            - name: "Notices"
+              description: "Official game announcements, maintenance notices, version updates"
+              contents: "Scrollable list of notice cards with timestamps"
+            - name: "Events"
+              description: "Current event summaries and reminders"
+              contents: "Event cards with remaining time"
+            - name: "Mail"
+              description: "In-game mailbox"
+              contents: "List of received mail items"
+              actions:
+                - "Read mail"
+                - "Claim attachments (items, primogems)"
+                - "Delete mail (after claiming)"
+
+      mail_system:
+        access: "Notification Panel > Mail tab"
+        layout:
+          position: "Full-screen overlay"
+          mail_list:
+            position: "Left panel"
+            format: "Sender icon, subject line, time received, read/unread indicator"
+          mail_content:
+            position: "Right panel"
+            contents:
+              - "Sender name"
+              - "Subject"
+              - "Mail body text"
+              - "Attachments (items)"
+              - "'Claim All' or 'Claim' button for attachments"
+              - "'Delete' button"
+        restrictions:
+          - "Mail expires after 30 days (type-dependent)"
+          - "Some mail cannot be deleted until attachment is claimed"
+          - "Gift mail (from friends) has shorter expiry"
+
+    notification_settings:
+      access: "Settings > Other > Event Notifications"
+      options:
+        - "Toggle specific notification types on/off"
+        - "Resin recovery notification threshold"
+        - "Expedition completion notification"
+
+  navigation:
+    open_from: "Y key or Paimon Menu -> Notifications"
+    close_to: "Esc returns to world or Paimon menu"
+    mail_flow: "Open Mail tab -> Select mail -> Read -> Claim attachment -> Delete"
+
+  visual_state_changes:
+    - "Unread mail has gold dot/indicator"
+    - "Read mail has no indicator"
+    - "New notifications slide in from right side of screen"
+    - "Notification count badge appears on bell icon in Paimon menu"
+    - "Claimed attachments show checkmark"
+
+  pitfalls:
+    - "Mail expires - unclaimed items in expired mail are lost permanently"
+    - "Map notifications auto-dismiss - important updates can be missed during combat"
+    - "Claim All in mail claims EVERYTHING - verify before using"
+    - "Some event mail has very short expiry (7 days vs 30 days)"
+    - "Notification panel doesn't show map notification history - once dismissed, it's gone"
+
+# =============================================================================
+# SECTION 18: ADDITIONAL SCREENS AND SYSTEMS
+# =============================================================================
+additional_screens:
+  quest_menu:
+    hotkey: "J"
+    layout:
+      description: "Full-screen quest log with active, archived, and world quests."
+      tabs:
+        - name: "Story Quests"
+          contents: "Archon Quests, Story Quests, Hangout Events"
+        - name: "World Quests"
+          contents: "Region-specific side quests"
+        - name: "Commissions"
+          contents: "Daily commission status"
+        - name: "Archived"
+          contents: "Completed quests"
+      per_quest:
+        - "Quest name and chapter"
+        - "Current objective"
+        - "'Navigate' button (sets map marker)"
+        - "'Abandon' button (for repeatable/world quests)"
+    navigation:
+      open_from: "J key or Paimon Menu -> Quests"
+      close_to: "Esc"
+
+  friends_list:
+    hotkey: "O"
+    layout:
+      description: "Friends management screen"
+      contents:
+        - "Online friends list with status"
+        - "Offline friends list"
+        - "Add friend (by UID)"
+        - "Recent players"
+        - "Block list"
+    actions:
+      - "Send friend request"
+      - "Join friend's world (if Co-Op allowed)"
+      - "Remove friend"
+      - "Block player"
+
+  chat:
+    hotkey: "Enter"
+    layout:
+      position: "Bottom-left overlay"
+      description: "Text chat panel"
+      modes:
+        - "All (visible to all nearby in Co-Op)"
+        - "Party (party members only)"
+        - "Private (whisper to specific friend)"
+      auto_open: "Opens when pressing Enter during gameplay"
+    pitfalls:
+      - "Chat input captures keyboard - character won't respond to movement keys while typing"
+      - "Press Enter again or Esc to close chat and resume gameplay"
+
+  tutorials:
+    hotkey: "G"
+    layout:
+      description: "Library of gameplay tutorials"
+      contents: "Categorized list of tutorial entries with images and text"
+      categories: ["Combat", "Exploration", "Elements", "Progression", "Systems"]
+    navigation:
+      open_from: "G key or Paimon Menu -> Tutorials"
+      close_to: "Esc"
+
+  elemental_sight:
+    hotkey: "Middle Mouse Button (hold)"
+    layout:
+      description: "Overlay mode showing elemental traces in the game world"
+      visual: "Screen tints blue/purple. Interactive objects highlighted with element-colored outlines."
+      duration: "Hold to maintain, releases when button released"
+    uses:
+      - "Find hidden objects and chests"
+      - "Track elemental trails for investigations"
+      - "Identify element type of enemies/shields"
+    pitfalls:
+      - "Must HOLD middle mouse - releasing deactivates immediately"
+      - "Character cannot attack while Elemental Sight is active"
+      - "Movement is slowed during Elemental Sight"
+
+  shortcut_wheel:
+    hotkey: "Tab"
+    layout:
+      description: "Radial menu for quick access to common actions"
+      position: "Center of screen, circular wheel"
+      slots:
+        - "Party Setup"
+        - "Quest Menu"
+        - "Inventory"
+        - "Map"
+        - "Character Menu"
+        - "Adventurer Handbook"
+        - "Other common screens"
+      interaction: "Hold Tab, move mouse to select, release Tab to confirm"
+    pitfalls:
+      - "Must hold Tab and select - releasing without selecting does nothing"
+      - "Can accidentally select wrong option if mouse drifts"
+
+# =============================================================================
+# SECTION 19: SCREEN STATE MACHINE FOR AGENT NAVIGATION
+# =============================================================================
+screen_state_machine:
+  description: "State transitions for autonomous agent navigation between all screens."
+
+  states:
+    world_hud:
+      description: "Normal gameplay with HUD visible"
+      indicators: ["minimap", "hp_bar", "skill_icons"]
+      transitions:
+        Esc: "paimon_menu"
+        B: "inventory"
+        C: "character_menu"
+        M: "map"
+        J: "quest_menu"
+        L: "party_setup"
+        F1: "adventurer_handbook"
+        F2: "coop_mode"
+        F3: "wish_screen"
+        F4: "battle_pass"
+        F5: "events_panel"
+        Y: "notifications"
+        O: "friends_list"
+        Enter: "chat"
+        G: "tutorials"
+        Tab: "shortcut_wheel"
+        F_or_interaction: "dialog"
+        death: "death_screen"
+
+    paimon_menu:
+      description: "Paused game, central hub"
+      indicators: ["dark_overlay", "profile_section", "contents_grid"]
+      transitions:
+        Esc: "world_hud"
+        right_click: "world_hud"
+        click_button: "any_sub_menu"
+        click_inventory: "inventory"
+        click_character: "character_menu"
+        click_map: "map"
+        click_settings: "settings"
+
+    inventory:
+      description: "Item management screen"
+      indicators: ["tab_bar_left", "item_grid_center", "detail_panel_right"]
+      transitions:
+        Esc: "world_hud"
+        tab_click: "switch_inventory_category"
+
+    character_menu:
+      description: "Character details screen"
+      indicators: ["character_model", "tab_bar_right", "character_strip_bottom"]
+      transitions:
+        Esc: "world_hud"
+        tab_click: "switch_character_sub_tab"
+        character_click: "switch_character_view"
+
+    map:
+      description: "World map overlay"
+      indicators: ["map_area", "region_tabs", "marker_icons"]
+      transitions:
+        Esc: "world_hud"
+        M: "world_hud"
+        waypoint_click: "teleport_confirm"
+        pin_place: "custom_pin_created"
+
+    dialog:
+      description: "NPC conversation active"
+      indicators: ["dialog_box_bottom", "speaker_name", "dialogue_text"]
+      transitions:
+        F_or_click: "advance_dialog"
+        choice_select: "dialog_branch"
+        Esc: "skip_dialog (if skippable)"
+
+    death_screen:
+      description: "Character has fallen"
+      indicators: ["gray_desaturated", "revive_button", "statue_button"]
+      transitions:
+        click_revive: "world_hud (with food consumption)"
+        click_statue: "world_hud (teleported to statue)"
+
+    loading_screen:
+      description: "Loading/transition screen"
+      indicators: ["dark_frame", "loading_indicator", "tip_text"]
+      transitions:
+        load_complete: "destination_screen"
+
+    combat:
+      description: "Active combat with enemies"
+      indicators: ["minimap", "hp_bar", "combat_indicator", "enemy_hp_bars"]
+      transitions:
+        all_enemies_dead: "world_hud"
+        character_death: "death_screen"
+        Esc: "paimon_menu"
+
+  universal_navigation_rules:
+    - "Esc almost universally returns to the previous screen or closes current overlay"
+    - "From any sub-menu, first Esc returns to Paimon menu, second Esc returns to world"
+    - "Direct hotkeys (B, C, M, etc.) open screens directly from world HUD, bypassing Paimon menu"
+    - "Right-click often works as 'back' in menus"
+    - "Enter confirms dialog selections"
+    - "Loading screens cannot be skipped (except wish animations)"
+
+# =============================================================================
+# SECTION 20: COMMON AGENT PITFALLS SUMMARY
+# =============================================================================
+agent_pitfalls:
+  timing:
+    - "Daily reset at 4:00 AM server time (not local time)"
+    - "Weekly reset Monday 4:00 AM server time"
+    - "BP season end is a specific date - no grace period"
+    - "Event timers show server time"
+
+  screen_navigation:
+    - "Two Esc presses needed from sub-menu to world (sub-menu -> Paimon -> world)"
+    - "Hotkeys bypass Paimon menu - use direct hotkeys for efficiency"
+    - "Chat input mode captures keyboard - agent must detect and close chat"
+    - "Elemental Sight requires HOLD, not toggle"
+    - "Tab shortcut wheel requires hold-and-select, not click"
+
+  visual_detection:
+    - "Dark screen could be: Paimon menu, loading screen, death screen, or domain entrance"
+    - "Classifier must check multiple ROIs to disambiguate dark states"
+    - "Minimap presence distinguishes world_hud from menu screens"
+    - "Notification area can overlap with other UI elements"
+    - "HP bar color indicates health state (green/yellow/red)"
+
+  interaction_traps:
+    - "Confirm dialogs for destructive actions have no undo"
+    - "Artifact salvage is irreversible"
+    - "Wish animations can be skipped but pity is invisible"
+    - "Domain entry requires party selection - wrong team = wasted resin"
+    - "Co-Op disables certain single-player features"
+    - "Teleporting during combat works but is disorienting"
+
+  resource_management:
+    - "Original Resin: 200 cap, regenerates 1 per 8 minutes"
+    - "Condensed Resin: Max 5, crafted at alchemy table"
+    - "Inventory caps differ per category (2000 weapons, 2400 artifacts, etc.)"
+    - "300 map pin limit"
+    - "Battle Pass level 50 cap - excess XP wasted"
+    - "Stardust exchange resets monthly"

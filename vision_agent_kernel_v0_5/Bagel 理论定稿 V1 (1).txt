@@ -1,0 +1,1012 @@
+BAGEL 理论定稿 v1.1
+项目代号：BAGEL — Belief Attribution Graphs for Executable-feedback Learning
+副标题：From Failure to Falsifiable Belief Revision
+定位：面向长程 Agent 的可证伪信念归因运行时理论
+当前状态：理论定稿 v1.1，用于后续 BAGEL-Coder / BAGEL-GUI / 原神 Agent / 深度学习框架自动修复等方向
+的统一理论指导。
+0. v1.1 更新摘要
+本版在 v1 基础上补齐以下关键理论修正：
+1. Feedback Coupling 时序悖论：将 Belief 生命周期拆分为 Nominal Belief 与 Attributed 
+Belief ，把 feedback coupling 从前向入图条件降级为后验质量验证条件。
+2. Evidence Matrix 消极稀释问题：替换线性求和公式，引入非对称因果激活，避免大量无关通过信号淹
+没一个核心矛盾信号。
+3. 多 Auditor 数字妥协问题：加入冲突系数与 Tie-Breaker Popper Probe，禁止在强分歧时简单平均模型
+意见。
+4. 反事实干预 OOD 退化问题：加入 Counterfactual Priming，确保对 Belief 的 do-干预不会把模型推入
+上下文分布外崩溃。
+5. CascadeRisk 黑盒问题：给出可计算近似公式。
+6. Belief Identity Bootstrap 问题：明确定义 pre-commit 阶段 provisional identity 与 action
+materialization 后 confirmed identity。
+7. Best-of-N 理论优势边界：给出基于 T 、Terr、Tprefix、attribution overhead 的有界分析。
+1. 最终裁定
+BAGEL 的最终理论共识是：
+长程 Agent 的失败恢复不是盲目重试，而是在有限预算下，用外部可执行反馈、异构审计和伪
+证探针，将失败归因到最值得修正的可干预信念单元，并通过安全修正恢复任务轨迹。
+最压缩的科学命题是：
+Credit assignment over falsifiable beliefs is the missing primitive for self-correcting
+long-horizon agents.
+对可证伪信念进行信用分配，是自修复长程 Agent 缺失的基础原语。
+BAGEL 不声称模型真正“知道自己在想什么”。它采取操作主义立场：
+Belief 不是模型内心真实状态，而是上下文中可行动、可证伪、可干预，并且能够在后验审计中
+与外部反馈建立经验耦合的行为控制变量。
+这使 BAGEL 避免落入“LLM 自省是否可靠”的认识论陷阱。我们研究的不是模型主观意识，而是：
+1
+修改某个结构化信念单元，是否能可测地改变后续动作与环境反馈分布。
+2. BAGEL 解决的根问题
+现有长程 Agent 在软件开发、GUI 操作、游戏控制、长期规划中普遍存在以下模式：
+1. Agent 在早期形成某个隐式假设；
+2. 后续大量动作都建立在这个假设之上；
+3. 最终失败反馈往往很稀疏、延迟、离散；
+4. Agent 无法判断失败是由哪一个中间假设造成；
+5. 系统只能全局重试、语言反思、多 Agent 辩论或扩大采样；
+6. 这些方式经常导致 token 浪费、上下文污染、重复犯错和错误传播。
+因此，BAGEL 重新定义长程 Agent 失败恢复问题：
+给定一条长程 Agent 执行轨迹和外部失败反馈，如何在有限预算下定位、证伪并修正最可能导
+致失败的可干预信念集合，使最终交付成功率最大化？
+这不是普通 retry 问题，而是：
+belief-state credit assignment under executable feedback。
+3. 非目标与边界声明
+为了避免理论过度宣称，BAGEL 明确不主张以下内容：
+1. 不主张 LLM verbalized belief 等于模型内部真实计算状态。
+我们只把 belief 视为可干预的运行时控制变量。
+2. 不主张 BAGEL 能精确识别唯一真实原因。
+失败可能由多个信念组合导致，因此 BAGEL 输出的是高价值候选修正集合，而不是哲学意义上的唯一
+真因。
+3. 不主张多模型天然偏差正交。
+不同厂商模型只是潜在异构性来源，是否有价值必须通过任务上的归因分歧、探针裁决率和历史可信度
+经验测量。
+4. 不主张 BAGEL 在所有任务上优于 Best-of-N。
+BAGEL 的效率优势只在特定条件下成立：持久性信念错误、长程累积结构、局部可修正性和反馈可裁决
+性。
+5. 不主张每次修正都会单调提升成功率。
+信念修正可能破坏偶然正确的下游动作，因此必须引入 Safe Revision 和 cascade risk。
+6. 不把 Amortized Failure Memory 作为第一篇论文必须完全兑现的核心贡献。
+它是 BAGEL 的长期系统扩展方向和第二阶段研究目标；第一阶段核心贡献集中在 FIG、异构审计、证据
+裁决和安全修正。
+2
+4. 核心对象：FIG — Falsifiable Intervention Graph
+BAGEL 的中心数据结构不是普通聊天记录，不是普通 CoT，也不是传统知识图谱，而是：
+FIG：Falsifiable Intervention Graph，可证伪干预图。
+形式化定义：
+G = (B, A,Y, H, E)
+其中：
+• B：Belief Nodes，可证伪信念节点；
+• A：Action Nodes，执行动作节点；
+• Y：Feedback Nodes，外部反馈节点；
+• H：Probe Nodes，归因探针节点；
+• E：Typed Edges，带类型依赖边。
+4.1 节点类型
+4.1.1 Belief Node
+Belief Node 是 BAGEL 的核心中间变量。
+一个合法 Belief Node 在前向阶段必须至少包含：
+{
+"belief_id": "b_017",
+"lifecycle_state": "nominal | attributed | noise_disturbance | retired | stale | survived",
+"identity": {
+"target_object": "broadcast_shape behavior",
+"causal_role": "bug_localization_hypothesis",
+"supported_action_fingerprint": "intent_or_confirmed_fingerprint",
+"fingerprint_status": "provisional | confirmed | mismatch",
+"fingerprint_source": "intent | symbolic_anchor | ast | dataflow | hybrid"
+},
+"claim": "The failure is likely caused by incorrect broadcasting behavior for singleton dimensions.",
+"evidence_refs": ["stack_trace_001", "test_failure_003"],
+"dependencies": ["b_012", "b_014"],
+"supported_actions": ["a_021"],
+"falsification_condition": "If singleton and empty-dimension probes pass but dtype/device probes 
+fail, downgrade this belief.",
+"valid_while": ["target function unchanged", "input contract unchanged"],
+"valid_while_structured": [],
+"invalidated_by": ["code_edit_on_target", "dependency_contract_change"],
+"version": 1
+}
+3
+4.1.2 Action Node
+Action Node 表示一次具体外部干预：修改代码、运行测试、执行 shell command、点击 GUI、移动游戏角色
+等。
+{
+"action_id": "a_021",
+"action_type": "code_edit | test_run | command | gui_action | probe_execution",
+"intent": "Patch broadcasting branch for singleton dimension handling.",
+"supported_by_beliefs": ["b_017"],
+"expected_effect": "The failing shape test should pass.",
+"risk": "May affect existing broadcasting semantics.",
+"status": "proposed | executed | failed | succeeded"
+}
+4.1.3 Feedback Node
+Feedback Node 是环境返回的客观事实。它不能混入 LLM 解释。
+{
+"feedback_id": "y_009",
+"source": "pytest | compiler | static_analyzer | coverage | gui_detector | game_state",
+"raw_output_ref": "logs/pytest_y009.txt",
+"result": "failed",
+"signal_quality": "valid_signal | noisy_signal | environment_error | insufficient_signal",
+"observed_failure": "empty tensor case still fails",
+"timestamp": "..."
+}
+4.1.4 Probe Node
+Probe Node 是专门用于证伪或区分候选 Belief 的外部实验。
+{
+"probe_id": "h_004",
+"target_beliefs": ["b_017", "b_019"],
+"target_invariant": "shape_broadcasting",
+"mutation_operator": "inject_empty_dimension",
+"expected_discrimination": "Distinguish shape-localization error from patch implementation 
+error.",
+"sanity_status": "valid | rejected | unsafe | noisy_risk",
+"execution_result": "..."
+}
+4.2 边类型
+FIG 中的边必须显式带类型：
+4
+depends_on belief -> belief
+supports belief -> action
+uses action -> belief / artifact
+contradicts feedback/probe -> belief
+falsifies probe_result -> belief
+invalidates action -> belief
+revises belief_version -> belief_version
+stales action/feedback -> belief
+condensed_from condensed_node -> subgraph
+amortizes_to failure_case -> failure_mode_memory
+5. Belief 的严格定义与生命周期
+5.1 操作主义定义
+BAGEL 中的 Belief 不是任意自然语言想法。它必须是：
+一个可行动、可证伪、可干预，并且在后验审计中可与外部反馈变化建立经验耦合的结构化假
+设。
+为了避免 Feedback Coupling 的时序悖论，BAGEL 将 Belief 生命周期拆分为两个阶段：
+Nominal Belief:
+ 前向注册期。
+ 只要求满足 action-relevance、falsifiability、intervenability-by-design。
+Attributed Belief:
+ 反向审计期。
+ 在 failure / probe / revision 后，确认该 belief 的干预与外部 feedback 变化存在经验耦合。
+5.2 前向注册条件：Nominal Belief
+运行时在 Action 之前无法观测 ，因此不能用 feedback coupling 作为入图条件。
+一个 Nominal Belief 只需要满足：
+Action relevance：
+即它支持至少一个动作，或明确声明将支持某一动作意图。
+Falsifiability：
+ΔY
+1. 
+∃aj ∈ A, bi → aj
+1. 
+∃hk ∈ H, hk can challenge bi
+5
+即存在可构造的证伪探针或反馈条件。
+1. Intervenability-by-design：
+修改该 claim 理论上会改变 Action 的构造方式，例如 patch target、test strategy、probe choice、GUI
+operation plan。
+在前向阶段，Runtime 只校验这些结构条件。
+5.3 反向确认条件：Attributed Belief
+当发生 failure、probe 或 revision 后，系统才评估后验反馈耦合：
+I(ΔP(A); ΔY ∣ do(bi → b
+′
+i)) > ϵY
+这里的作用不是“决定是否入图”，而是：
+1. 评估 attribution quality；
+2. 判断该 Belief 是否从 Nominal 晋升为 Attributed；
+3. 更新该 belief type 的历史先验；
+4. 判断某些节点是否应标记为 noise_disturbance 。
+因此：
+前向：Nominal Belief 可以入图并驱动动作。
+后向：只有通过反馈耦合检验的 Belief 才能被视为高质量 Attributed Belief。
+未通过者：标记为 noise_disturbance，不进入长期 failure memory。
+5.4 为什么需要该双时序设计
+否则系统会陷入时序逆反悖论：在 Action 和 Feedback 尚未发生时，无法计算互信息；但如果不做前向注册，
+又无法建立可审计轨迹。
+BAGEL 的回答是：
+前向允许结构合格的名义信念进入 FIG；后向用外部反馈过滤其因果质量。
+6. Belief Identity：信念同一性与版本图
+Belief 的同一性不由文本内容决定，而由它在因果图中的角色决定。
+定义：
+Identity(bi) = ⟨target_object, causal_role, supported_action_fingerprint⟩
+其中：
+• target_object ：指向的外部对象或事实，例如函数、模块、API contract、GUI object；
+6
+causal_role ：它在任务中的因果角色，例如 bug localization、environment assumption、shape
+invariant、visual affordance；
+supported_action_fingerprint ：它支持的动作作用范围。
+6.1 Belief Identity Bootstrap
+由于 Belief 必须在 Action 前提交，pre-commit 时尚无真实 AST/dataflow 指纹。因此 identity 必须采用两阶
+段机制。
+Phase 1：Pre-commit provisional identity
+supported_action_fingerprint = intent_description
+fingerprint_status = provisional
+示例：
+will patch the broadcasting branch in torch/functional.py
+Phase 2：Action materialization confirmed identity
+Action 生成后，Runtime 提取真实指纹：
+AST 签名；
+函数边界；
+patch diff fingerprint；
+调用图；
+数据流近似；
+输入输出 contract。
+然后回填：
+supported_action_fingerprint = confirmed_symbolic_or_ast_fingerprint
+fingerprint_status = confirmed
+若实际 Action 与 intent 差异过大，触发：
+identity_mismatch_alert
+此时该 Belief 不能直接用于高置信归因，必须进入 Auditor 审查。
+6.2 Version DAG
+如果修正前后仍保持同一 Identity，则记为同一个 Belief 的新版本：
+如果三元组不再保持连续，则旧 Belief retire，新建 Belief。
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+bi
+(t) revises bi
+(t+1)
+7
+每个 Belief 维护版本图：
+b_017:v1 -> b_017:v2 -> b_017:v3
+记录：
+被什么反馈挑战；
+被什么 probe 证伪；
+为什么 revision；
+revision 后支持了哪些新 action；
+旧版本是否 retired 或 stale。
+7. Faulty Belief 与目标函数
+BAGEL 不假设失败只由单个 Belief 导致。失败可能来自一个集合。
+定义候选信念集合：
+若修正 后预期成功率提升，则 是候选 faulty belief set。
+BAGEL 的优化目标不是“找到唯一真凶”，而是：
+其中：
+：修正该集合带来的预期成功率提升；
+：probe、LLM 调用、代码重写、测试执行成本；
+：级联破坏风险；
+：拓扑影响范围，即受影响的下游节点规模。
+在工程中，我们不求全局最优，只求预算内近似：
+rank candidate beliefs
+select top-k high-value revisions
+validate with probes
+apply safe or expanded revision
+7.1 Counterfactual Priming
+对 Belief 的 do-干预可能造成上下文分布外退化。若只是把 JSON 中的 粗暴替换为 ，自回归模型可能出现
+语境断层、代码语法崩溃或无关漂移。
+因此，BAGEL 在 Model Gateway 层使用 Counterfactual Priming：
+• 
+• 
+• 
+• 
+• 
+S ⊆ B
+S S
+S
+∗ = arg E[ΔSuccess(S)] − λ Cost(S) − λ Risk(S) − λ Impact(S)
+S⊆B
+max [ 1 2 3 ]
+• ΔSuccess(S)
+• Cost(S)
+• Risk(S)
+• Impact(S)
+bi bi
+′
+8
+当 Runtime 执行 时，Gateway 不直接发送裸 JSON，而是使用标准少样本引导模
+板，明确告诉模型当前正在执行假设对照变异，并要求保持上游拓扑、代码结构和动作意图连
+续，只局部调整受该信念影响的策略。
+示例约束：
+You are revising only the hypothesis b_i.
+Keep all unrelated upstream assumptions unchanged.
+Regenerate only actions whose support depends on b_i.
+Preserve code style, API contract, and unaffected tests.
+这使反事实干预更接近局部语义平移，而不是 OOD prompt 震荡。
+8. Evidence Matrix：证据矩阵与 Arbiter 更新规则
+Evidence Matrix 必须被定义到可独立实现。
+8.1 最小定义
+给定候选错误信念集合 和外部信号集合 ，Evidence Matrix 定义为：
+其中：
+行 ：候选 Belief ；
+列 ：外部信号 ，例如测试结果、编译错误、probe 结果、静态分析结果；
+元素 ：信号 对“ 是 faulty belief”的支持程度。
+最小离散取值：
+含义：
+值 含义
+信号支持 为错误，即该信号与 的 claim 矛盾
+信号反对 为错误，即该信号与 的 claim 一致或使其存活
+信号与 无关
+信号质量不足，不参与归因
+注意：无关通过测试必须记为 ，不能记为 。只有与 直接相关的存活信号才可记为 。
+do(bi ← bi
+′)
+Bc = {b1,…, bn} S = {s1,…, sm}
+M ∈ R
+n×m
+• i bi
+• j sj
+• Mij sj bi
+Mij ∈ {+1, 0, −1, NaN}
++1 bi bi
+−1 bi bi
+0 bi
+NaN
+0 −1 bi −1
+9
+8.2 信号质量权重
+每个信号 有权重 ：
+其中：
+：signal quality 权重；
+：信号可靠性，例如 deterministic test > flaky test；
+：信号覆盖度或定位强度。
+示例：
+signal_quality
+valid_signal 1.0
+noisy_signal 0.2
+environment_error 0.0
+insufficient_signal 0.0
+8.3 多 Auditor 情况
+如果存在多个 Auditor ，先构成证据张量：
+每个 Auditor 有历史可信度 ，按任务类型动态估计：
+其中 不来自模型自报 confidence，而来自历史归因被外部反馈确认的经验准确率。
+8.4 多 Auditor 冲突与 Tie-Breaker Popper Probe
+当不同 Auditor 对同一 Belief 给出高权重相反判断时，不允许通过简单平均妥协。
+定义 Belief 级冲突系数：
+若：
+则程序 Arbiter 必须：
+暂停数字合流；
+sj wj
+wj = q(sj ) ⋅ r(sj ) ⋅ c(sj )
+• q(sj )
+• r(sj )
+• c(sj )
+q(sj )
+M(k)
+Mij
+(k)
+ρk(t)
+Mˉ
+ij = ρ (t)M
+k
+∑ k ij
+(k)
+ρk(t)
+Conflict(bi) = ρ ρ ⋅
+k<l
+∑ k l ∣scorek(bi) − scorel(bi)∣
+Conflict(bi) > τconflict
+1. 
+10
+触发 Tie-Breaker Popper Probe；
+要求 probe 直接区分冲突假设交叉点上的关键不变量；
+用 probe 的外部执行结果更新矩阵。
+原则：
+模型分歧不靠语言辩论或数字平均解决，而靠可执行伪证探针裁决。
+8.5 非对称因果激活：替换线性求和
+v1 中的线性公式：
+存在严重缺陷：大量无关通过信号可能淹没一个核心矛盾信号。
+v1.1 改为非对称因果激活。
+定义：
+最终得分：
+其中：
+：最强矛盾信号激活；
+：相关存活信号总量；
+：相关证据密度；
+：极微弱的存活/密度调节系数；
+：防止除零。
+也可采用实现等价形式：
+核心原则：
+一个强证伪信号应具备近似一票否决权；大量弱存活信号不能淹没核心失败。
+2. 
+3. 
+4. 
+score(bi) = w
+j
+∑ jMˉ
+ij
+Ci = w ⋅ I[M = +1]
+j
+max ( j ij )
+Si = w ⋅
+j
+∑ j I[Mij = −1]
+Ri = w ⋅
+j
+∑ j I[M = ij  0]
+score(bi) = Ci + α ⋅
+ϵ + Si
+Ri
+• Ci
+• Si
+• Ri
+• α ∈ [0, 0.1]
+• ϵ
+score(bi) = (w ⋅
+j
+max j I[Mij = +1]) + α ⋅
+ϵ + w ⋅ I[M = −1] ∑j
+j ij
+w ⋅ I[M = 0] ∑j
+j ij 
+11
+若任一 high-quality core probe 直接反驳 ，则 足以推动 越过 ，触发修正或进一步 Safe
+Revision 检查。
+8.6 归一化与熵
+为便于排序，可转成归一化分布：
+这里 仅用于排序与熵估计，不声称是绝对校准概率。
+经验归因熵：
+决策规则：
+if max(conflict) > tau_conflict:
+ trigger tie-breaker probe
+elif max(score) < θ_low:
+ 证据不足，触发额外审计或 probe
+elif H(B) > η:
+ 归因分歧大，触发异构 Auditor 或新 probe
+elif max(score) > θ_high and SafeRevision(target):
+ 执行定向修正
+else:
+ 保持 challenged 状态，继续收集证据
+8.7 为什么 Arbiter 不直接读自然语言
+语义解释由 Auditor 完成，Arbiter 只操作证据矩阵。这样避免让一个 LLM manager 作为最终裁判，降低黑箱
+审判风险。
+9. 经验熵校准：替代模型自报 confidence
+LLM 自报 confidence: 0.68 不具备统计可信度。
+BAGEL 用 empirical attribution entropy 代替模型自信度。
+9.1 单模型采样熵
+对同一 failure，在轻微温度扰动下采样 次归因：
+统计每个候选 Belief 被选为 faulty 的频率：
+bi Ci score(bi) θhigh
+pi = ∑l
+exp(score(bl)/τ )
+exp(score(bi)/τ )
+pi
+H(B) = − p log p
+i
+∑ i i
+K
+{z1, z2,…, zK }
+12
+经验熵：
+9.2 触发异构审计
+若满足：
+或：
+failure repeated
+hub belief challenged
+pre-commit before high-risk final delivery
+single-auditor evidence conflict
+则触发 Heterogeneous Attribution Committee。
+10. 双账本协议：Pre-commit + Independent Audit
+10.1 Executor Ledger
+Executor Ledger 是执行者提交的不可变账本：
+BeliefCommit；
+ActionProposal；
+executed command；
+patch diff；
+model id；
+prompt hash；
+output hash；
+snapshot id；
+timestamp。
+关键原则：
+BeliefCommit 必须发生在 Action 之前。
+否则就是事后合理化。
+p(b ) = ^ i I[z = K
+1
+k=1
+∑
+K
+k bi]
+Hemp(B) = − (b )log (b )
+i
+∑p^ i p^ i
+Hemp(B) > η
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+13
+10.2 Critic Ledger
+Critic Ledger 是审计者独立生成的账本：
+• candidate faulty beliefs；
+• omitted beliefs；
+• alternative explanations；
+• evidence matrix entries；
+• proposed probes；
+• probe sanity status。
+Critic 不应直接读 Executor 的长篇自然语言叙事，而应读 Shadow Fingerprint Graph。
+11. Omitted Belief：遗漏信念的轨迹锚定
+Omitted Belief 是一等公民，但不能靠 Critic 脑补。
+定义：
+Bomitted = ExtractNecessity(A, Trace, AST, DataFlow) ∖ Bcommitted
+其中 ExtractNecessity 由符号系统或结构化分析产生，例如：
+• AST 中新增条件分支；
+• patch 中引入的 shape/rank/dtype 假设；
+• 调用图中的 API contract；
+• 数据流中的隐式前置条件；
+• 测试 trace 显示的实际依赖。
+11.1 示例
+Coder 提交的 Belief：
+bug 在 broadcasting branch。
+Action patch 中出现：
+if len(x.shape) == 2:
+...
+但 Coder 没声明：
+输入 tensor rank 应该为 2。
+Runtime 可从 AST/dataflow 反推出 omitted belief：
+14
+The patch assumes input tensor rank is 2.
+这种 omitted belief 合法，因为它被执行轨迹锚定。
+12. Adversarial Probe：伪证优先探针
+BAGEL 的 Harness 不是验证器，而是归因探针。
+核心原则：
+不要证明信念正确，优先尝试杀死它。
+12.1 探针生成约束
+LLM 不应自由手写测试。它只选择：
+target invariant
+mutation operator
+expected discrimination
+具体 probe 由 deterministic mutator、AST tool、Hypothesis、sandbox 或 GUI detector 生成。
+12.2 Probe Sanity
+任何 probe 执行前必须通过 sanity check：
+是否只测试声明的 invariant；
+是否有明确失败判据；
+是否可能产生 timeout/noisy signal；
+是否安全；
+是否能区分至少两个候选 Belief。
+第 1–4 项优先由规则系统判断；第 5 项在 MVP 阶段可由 LLM 辅助，但必须明确标记为 semantic sanity
+check，不能伪装成纯确定性判断。
+13. Heterogeneous Evidence-Mediated Audit
+多 Agent 在 BAGEL 中不是角色扮演，而是偏差隔离与证据审计。
+13.1 角色
+角色 作用
+Executor 生成 BeliefCommit 和 ActionProposal
+Primary Auditor 独立审计 FIG 快照，填 Evidence Matrix
+1. 
+2. 
+3. 
+4. 
+5. 
+15
+角色 作用
+Adversarial Auditor 在高不确定时挑战 Primary Auditor 归因
+Arbiter 程序化更新 evidence，不做语言理解
+Environment Oracle 测试、编译、probe、sandbox、GUI verifier
+13.2 关键原则
+不假设跨厂商模型天然正交；
+异构性需要经验测量；
+分歧不由投票、平均或辩论解决；
+分歧必须转化为 Tie-Breaker Popper Probe，由外部反馈裁决；
+Auditor 的权重由历史任务类型上的归因可信度决定。
+13.3 触发条件
+只在以下情况启用异构审计：
+attribution entropy 高；
+同一 failure 重复；
+hub belief 被挑战；
+final delivery 前；
+single-auditor 与 feedback 矛盾；
+patch 影响范围大。
+14. Safe Revision：非单调修正问题的正式回答
+信念修正不是单调的。修正一个 Belief 可能破坏基于错误 Belief 而偶然正确的下游 action。
+因此 BAGEL 必须定义 Safe Revision。
+14.1 Affected Action Set
+给定 Belief ，定义受影响动作集合：
+即所有从 可达、直接或间接依赖它的动作。
+14.2 CascadeRisk 的可计算定义
+CascadeRisk 不能是黑盒。
+第一版定义为：
+其中：
+1. 
+2. 
+3. 
+4. 
+5. 
+• 
+• 
+• 
+• 
+• 
+• 
+bi
+Affected(bi) = {aj ∈ A ∣ bi ⇝ aj}
+bi
+CascadeRisk(bi) = affected_ratio(bi) ⋅ coupling(bi) ⋅ (1 − verification_coverage(bi))
+16
+耦合分数：
+独立验证覆盖率：
+因此：
+影响范围越大，风险越高；
+下游耦合越强，风险越高；
+独立验证越少，风险越高。
+14.3 Safe Revision 定义
+对 的修正 是 safe 的，当且仅当：
+需要重新生成的动作主要位于 内；
+不依赖 的下游动作不会被破坏；
+cascade risk 小于阈值；
+probe 或 regression subset 能验证核心不变量未破坏。
+形式化：
+其中：
+：级联失败风险；
+：拓扑影响规模；
+：拓扑影响预算。
+14.4 Revision Protocol
+if SafeRevision(b_i):
+ revise belief
+ regenerate affected local actions
+ run targeted probes
+else:
+ mark downstream nodes stale
+affected_ratio(bi) = max(1, ∣A∣)
+∣Affected(b )∣ i
+coupling(bi) = c(a , b )
+∣Affected(bi)∣
+1
+a ∈Affected(b ) j i
+∑ j i
+c(aj
+, bi) = {1.0, aj
+ directly supported by bi 0.5, aj
+ transitively depends on bi 0, aj
+ independent
+verification_coverage(bi) = max(1, ∣Affected(bi)∣)
+#downstream actions verified by independent probes/regression checks
+bi bi → bi
+′
+1. Affected(bi)
+2. bi
+3. 
+4. 
+SafeRevision(bi) = I[CascadeRisk(bi) < κ ∧ Impact(bi) < K]
+• CascadeRisk
+• Impact
+• K
+17
+ estimate expanded revision cost
+ either expand revision scope or degrade to broader retry
+这把“修正可能变坏”的问题转化为可计算风险判断。
+15. Lazy Revision 与 Stale Marking
+当 hub belief 被证伪时，不应立即重写所有下游节点，否则 token 和时间成本爆炸。
+BAGEL 使用 lazy stale marking：
+1. 修正 hub belief
+2. 将所有依赖它的 downstream nodes 标记 stale
+3. 暂不物理重生成全部下游 action
+4. 当某个 stale action 即将被执行时，JIT regeneration
+5. 执行前运行局部 probe
+这避免级联重写，同时不保留错误节点的活跃地位。
+16. Best-of-N 挑战：BAGEL 优势的理论条件与有界分析
+BAGEL 不声称总是优于 Best-of-N + Verifier。它只在特定任务结构下有理论优势。
+16.1 Best-of-N 基线
+若任务长度为 T ，每一步盲目采样走对概率为 p，则单条轨迹成功概率近似为：
+Psingle ≈ p
+T
+Best-of-N 成功率：
+PBoN = 1 − (1 − p
+T
+)
+N
+当 T 大且 p < 1 时，p
+T
+ 指数衰减。Best-of-N 需要大量样本才能撞中完整正确轨迹。
+16.2 BAGEL 优势成立条件
+BAGEL 在同预算下优于 Best-of-N 的必要条件至少包括：
+条件 1：Persistent Belief Error
+失败根源是持久性信念错误，而非随机采样噪声。
+18
+如果失败只是随机生成质量波动，Best-of-N 更有效。
+如果失败来自同一错误信念重复污染后续动作，BAGEL 更有效。
+条件 2：Long-Horizon Accumulation
+任务具有长程累积结构，同一错误信念会跨多个步骤持续造成失败。
+条件 3：Local Revisability
+错误是局部可修正的，即修正少量 Belief 后，大部分轨迹或上下文可复用。
+条件 4：Executable Feedback Informative
+外部反馈或 probe 能提供可裁决信号。
+16.3 有界成本分析
+设：
+• T ：完整轨迹长度；
+• Terr：错误信念污染的后续步骤数；
+• Tprefix = T − Terr：局部修正后可复用的前缀长度；
+• Cattrib：归因成本；
+• Cprobe：探针成本；
+• Cregen：局部重生成成本，近似与 Terr 成正比；
+• N：Best-of-N 的采样条数。
+Best-of-N 每次采样需要走完整轨迹：
+CostBoN ≈ N ⋅ T
+BAGEL 的成本近似为：
+CostBAGEL ≈ Tprefix + Cattrib + Cprobe + Terr
+因为已有前缀可复用，实际新增恢复成本可写为：
+Costrecovery ≈ Cattrib + Cprobe + Terr
+当：
+Terr ≪ T
+且：
+Cattrib + Cprobe ≪ (N − 1)T
+或更保守地，在比较“失败后恢复”成本时：
+Cattrib + Cprobe ≪ (N − 1)Terr
+19
+则 BAGEL 具备 cost-to-success 优势。
+这不是无条件定理，而是可测量的有界分析。实验应直接测量：
+T_err / T
+C_attrib
+C_probe
+C_regen
+N required by Best-of-N
+actual cost-to-success
+17. Amortized Failure Memory 的定位
+Amortized Failure Memory 是 BAGEL 的长期扩展方向，不作为第一篇论文必须完全兑现的核心贡献。
+17.1 它存什么
+不是存具体 bug 怎么修，而是存结构失效模式：
+{
+"task_signature": ["PyTorch", "distributed", "multi-GPU", "all_reduce"],
+"high_risk_belief_type": "environment_assumption",
+"common_failure_pattern": "rank/world_size mismatch or inconsistent tensor shape across ranks",
+"recommended_falsification_policy": [
+"check rank/world_size consistency",
+"run CPU/GPU differential probe",
+"validate tensor shape across ranks"
+],
+"historical_support": {
+"cases": 12,
+"confirmed": 8
+}
+}
+17.2 它如何用
+在新任务初始化时，它作为风险先验：
+This task resembles previous distributed backend failures.
+Prioritize environment_assumption probes before patching.
+17.3 定稿定位
+第一阶段：可作为系统 extension 与未来研究。
+第二阶段：若实现完整记忆检索和 cold-start 提升实验，可升级为正式 contribution。
+20
+18. 存储与呈现：不可变事件流 + Shadow Fingerprint Graph
+18.1 Truth Source
+底层真相源：
+SQLite WAL + immutable event stream
+任何事件只追加，不覆盖。
+核心事件：
+BeliefCommitted
+ActionProposed
+ActionExecuted
+FeedbackReceived
+AuditStarted
+AuditCompleted
+ProbeGenerated
+ProbeExecuted
+ArbiterUpdated
+BeliefRevised
+BeliefRetired
+BeliefStaled
+SubgraphCondensed
+FailureModeAmortized
+18.2 Active FIG
+内存中使用：
+NetworkX MultiDiGraph
+维护当前任务活跃 FIG。
+18.3 Shadow Fingerprint Graph
+Critic 不直接读取完整 Executor Transcript。Runtime 从事件流投影出 Shadow Fingerprint Graph：
+包括：
+• atomic claim；
+• belief identity；
+• supported action fingerprint；
+• patch diff fingerprint；
+• AST/dataflow necessity set；
+21
+• raw feedback summary；
+• signal quality；
+• dependency edges；
+• omitted-belief anchors。
+排除：
+• 未结构化 CoT；
+• Coder 长篇自我叙事；
+• 情绪化措辞；
+• 多余聊天上下文。
+目的：降低 Critic 被 Executor 叙事污染的概率。
+19. Snapshot Isolation：归因周期的快照隔离
+一次 failure 触发一个 attribution cycle。
+在该周期内：
+1. FIG 冻结为只读快照；
+2. Auditor 和 Arbiter 基于同一 snapshot 工作；
+3. Executor 不产生新的外部 action；
+4. Arbiter 裁决后才提交 revision；
+5. revision 生成新 graph version。
+这保证因果分析是在静止世界上进行，避免图版本不一致。
+20. BAGEL Runtime 标准循环
+1. Task enters runtime.
+2. Executor reads active FIG slice.
+3. Executor emits Nominal BeliefCommit before high-impact action.
+4. Runtime validates forward structural constraints:
+ - identity exists, even if provisional
+ - falsification condition exists
+ - supported action intent exists
+ - not duplicate / stale / taboo
+ - no feedback coupling required at this stage
+5. Executor emits ActionProposal.
+6. Runtime materializes action fingerprint and updates belief identity:
+ - provisional -> confirmed
+ - or identity_mismatch_alert
+22
+7. Runtime executes action in sandbox.
+8. Environment emits raw Feedback.
+9. Runtime labels signal_quality.
+10. If success:
+ - update belief survival statistics
+ - maybe condense stable subgraph
+ - maybe store success/failure pattern
+11. If failure:
+ - freeze graph snapshot
+ - sample attribution K times
+ - compute empirical entropy
+12. If low uncertainty:
+ - run local attribution
+13. If high uncertainty / high impact:
+ - trigger heterogeneous auditor
+14. Auditor receives Shadow Fingerprint Graph.
+15. Auditor fills Evidence Matrix:
+ - support / contradiction scores
+ - omitted belief candidates anchored to trace
+ - proposed invariant probes
+16. Arbiter checks conflict:
+ - if conflict high, trigger Tie-Breaker Popper Probe
+17. Probe Sanity Checker filters probes.
+18. Runtime executes valid probes.
+19. Arbiter performs asymmetric causal activation update.
+20. Runtime marks beliefs:
+ - attributed
+ - noise_disturbance
+ - revised
+ - retired
+ - stale
+ - survived
+21. SafeRevision check.
+22. Executor regenerates affected local slice or broader retry.
+23
+23. Task continues.
+21. 实验协议
+21.1 实验 A：同预算 Best-of-N 对比
+必须固定：
+same base model；
+same token budget；
+same tool budget；
+same time budget；
+same environment；
+same task set。
+指标：
+final success rate；
+recovery after first failure；
+cost-to-success；
+wasted retry ratio；
+number of full resamples avoided；
+measured ；
+measured attribution overhead。
+21.2 实验 B：Attribution → Recovery 因果链
+消融：
+Variant 目的
+no FIG 证明图表示必要
+no pre-commit 证明防事后合理化必要
+no omitted belief audit 证明隐藏假设检测必要
+no adversarial probe 证明伪证探针必要
+no heterogeneous audit 证明异构审计在高不确定任务有价值
+no safe revision 证明非单调修正控制必要
+linear evidence aggregation 证明非对称聚合必要
+no counterfactual priming 证明反事实干预稳定性必要
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• 
+• Terr/T
+• 
+24
+21.3 实验 C：Probe 信息增益
+比较：
+• random probe；
+• Executor-generated probe；
+• Auditor-generated probe；
+• deterministic invariant mutator probe；
+• tie-breaker probe。
+指标：
+• attribution entropy reduction；
+• valid signal rate；
+• noisy signal rate；
+• recovery success。
+21.4 实验 D：Omitted Belief Audit
+评估 Critic 是否能发现未声明但被 AST/dataflow 证实的隐含依赖。
+指标：
+• omitted belief precision；
+• omitted belief recall；
+• downstream recovery improvement；
+• false hallucinated omitted belief rate。
+21.5 实验 E：Safe Revision
+比较：
+• direct revision；
+• lazy stale marking；
+• topological impact analysis；
+• full retry。
+指标：
+• cascade failure rate；
+• local repair success；
+• regression breakage；
+• cost-to-recovery。
+22. 第一论文的贡献边界
+第一阶段论文建议只承诺三项核心贡献：
+25
+Contribution 1：新问题定义
+Long-horizon agent recovery as falsifiable belief-state credit assignment under executable
+feedback.
+Contribution 2：新表示
+FIG：Falsifiable Intervention Graph，把轨迹表示为 belief-action-feedback-probe 结构。
+Contribution 3：新机制
+Nominal/Attributed belief lifecycle、Pre-commit dual ledger、trace-anchored omitted
+belief、heterogeneous evidence audit、asymmetric Evidence Matrix Arbiter、Tie-Breaker
+Popper Probe、adversarial probe、safe lazy revision、counterfactual priming。
+Extension：Amortized Failure Memory
+作为扩展机制和后续论文方向，不在第一阶段过度承诺。
+23. 产品化路线
+23.1 BAGEL-Coder
+主战场。
+目标：同模型同预算下，提高 coding agent 的最终交付成功率、失败后恢复率和 cost-to-success。
+适合任务：
+SWE-bench 类真实 issue 修复；
+DL framework bug repair；
+terminal long-horizon task；
+repo-level feature implementation；
+fuzzing / harness generation。
+23.2 BAGEL-GUI / Genshin Agent
+第二验证域。
+目标：证明同一套 FIG + probe + attribution + safe revision 可迁移到视觉长程任务。
+对应关系：
+Coding Agent GUI / Genshin Agent
+code invariant visual / state invariant
+pytest screen verifier
+AST/dataflow UI element / map state graph
+• 
+• 
+• 
+• 
+• 
+26
+Coding Agent GUI / Genshin Agent
+patch click / move / interact
+probe test viewpoint shift / OCR / map open / minimap check
+24. 最终理论边界
+BAGEL 有优势的任务：
+long-horizon
+sparse delayed feedback
+persistent belief error
+local revisability
+executable or semi-executable feedback
+reusable intermediate structure
+BAGEL 不适合或优势较弱的任务：
+single-shot generation
+pure creativity
+no executable feedback
+failure dominated by random sampling noise
+global non-local dependencies
+all-or-nothing tasks with no reusable structure
+25. 最终共识句
+BAGEL 的最终灵魂句：
+BAGEL makes agents recover by falsifying and revising the beliefs that caused their
+failures, rather than blindly retrying actions.
+中文：
+BAGEL 让 Agent 通过证伪并修正导致失败的信念来恢复，而不是盲目重试动作。
+更学术的版本：
+BAGEL formulates long-horizon agent recovery as evidence-mediated credit
+assignment over falsifiable intervention handles.
+中文：
+27
+BAGEL 将长程 Agent 的失败恢复形式化为：在外部证据媒介下，对可证伪干预点进行信用分
+配。
+26. 定稿结论
+BAGEL 当前理论版本已经达到：
+1. 理论自洽：Belief、Feedback、Evidence Matrix、Revision、Audit 均有操作定义；
+2. 工程可行：NetworkX + SQLite + sandbox + API model 即可做 MVP；
+3. 实验可证伪：每个核心模块都有对应消融；
+4. 边界诚实：明确承认不适用所有任务，不承诺绝对因果识别或必然收敛；
+5. 产品有价值：在长程 coding / GUI / 游戏 / 软件可靠性任务中，有机会显著提升最终交付质量。
+因此，BAGEL 可以作为接下来一段时间项目推进的理论指导。下一步应进入 BAGEL-Coder MVP：用最小实现
+验证 FIG、双账本、Evidence Matrix、伪证探针、安全修正和同预算 Best-of-N 对比。
+28

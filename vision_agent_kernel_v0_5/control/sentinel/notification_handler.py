@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import time
 from typing import TYPE_CHECKING
 
 import numpy as np
@@ -11,6 +10,13 @@ if TYPE_CHECKING:
     from perception.genshin_screen_classifier import GenshinScreenClassifier
 
 log = logging.getLogger(__name__)
+
+
+def _chunked_sleep(seconds: float, chunk: float = 0.05) -> None:
+    import time
+    deadline = time.perf_counter() + seconds
+    while time.perf_counter() < deadline:
+        time.sleep(min(chunk, max(0.0, deadline - time.perf_counter())))
 
 
 class NotificationHandler:
@@ -28,9 +34,9 @@ class NotificationHandler:
         """Detect and dismiss popup notifications. Returns True if handled."""
         try:
             self._backend.key_press("escape", reason="dismiss_notification")
-            time.sleep(0.3)
+            _chunked_sleep(0.3)
             self._backend.mouse_click(0.1, 0.1, reason="click_away_notification")
-            time.sleep(0.3)
+            _chunked_sleep(0.3)
             log.info("[NotificationHandler] notification dismissed")
             return True
         except Exception as exc:

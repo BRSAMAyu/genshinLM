@@ -91,6 +91,104 @@ class UIFlow:
 
 
 # ---------------------------------------------------------------------------
+# U-58: Waypoint navigation with precision
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class WaypointNavigation:
+    """Waypoint navigation with precision and coordinate tolerance."""
+    waypoint_id: str
+    target_coords: tuple[float, float, float]
+    tolerance_pixels: float = 5.0   # Pixel tolerance for clicking
+    max_attempts: int = 3
+
+
+class WaypointNavigator:
+    """Navigates to waypoints with precision (U-58).
+
+    Handles coordinate tolerance for imprecise waypoint positions.
+    """
+
+    # Waypoint click tolerance (in normalized coordinates)
+    CLICK_TOLERANCE = 0.02  # ~2% of screen = ~5 pixels on 1920x1080
+
+    def __init__(self) -> None:
+        self._waypoint_map: dict[str, tuple[float, float]] = {}
+
+    def register_waypoint(self, waypoint_id: str, coords: tuple[float, float]) -> None:
+        """Register a waypoint position."""
+        self._waypoint_map[waypoint_id] = coords
+
+    def get_adjusted_click(
+        self,
+        waypoint_id: str,
+        base_coords: tuple[float, float],
+    ) -> tuple[float, float]:
+        """Get adjusted click coordinates with tolerance.
+
+        Args:
+            waypoint_id: Waypoint identifier
+            base_coords: Base normalized coordinates
+
+        Returns:
+            Adjusted coordinates within tolerance
+        """
+        # If we have exact position, use it
+        if waypoint_id in self._waypoint_map:
+            return self._waypoint_map[waypoint_id]
+
+        # Otherwise, use base with small randomization for tolerance
+        import random
+        offset_x = random.uniform(-self.CLICK_TOLERANCE, self.CLICK_TOLERANCE)
+        offset_y = random.uniform(-self.CLICK_TOLERANCE, self.CLICK_TOLERANCE)
+
+        return (
+            max(0.0, min(1.0, base_coords[0] + offset_x)),
+            max(0.0, min(1.0, base_coords[1] + offset_y)),
+        )
+
+    def should_retry(
+        self,
+        waypoint_id: str,
+        current_screen: str,
+        attempts: int,
+    ) -> bool:
+        """Decide if navigation should be retried."""
+        if current_screen == "loading_screen":
+            return False  # Loading is good, wait
+        if current_screen == "map" and attempts < 3:
+            return True   # Retry map click
+        return False
+
+
+# ---------------------------------------------------------------------------
+# U-59: Coordinate numeric tolerance
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class NumericTolerance:
+    """Numeric tolerance for coordinate comparisons."""
+    tolerance_pct: float = 0.05      # 5% tolerance by default
+    absolute_tolerance: float = 5.0  # 5 pixel absolute tolerance
+
+    def compare_coords(
+        self,
+        coord_a: tuple[float, float],
+        coord_b: tuple[float, float],
+    ) -> bool:
+        """Compare coordinates within tolerance.
+
+        Returns True if coordinates are within tolerance.
+        """
+        dx = abs(coord_a[0] - coord_b[0])
+        dy = abs(coord_a[1] - coord_b[1])
+
+        # Check both percentage and absolute tolerance
+        return (dx <= self.tolerance_pct or dx <= self.absolute_tolerance / 1920) and \
+               (dy <= self.tolerance_pct or dy <= self.absolute_tolerance / 1080)
+
+
+# ---------------------------------------------------------------------------
 # Step-type constants (for type-safe step construction)
 # ---------------------------------------------------------------------------
 
@@ -107,6 +205,8 @@ STEP_SCROLL_UP = "scroll_up"
 STEP_SCROLL_DOWN = "scroll_down"
 STEP_OPEN_MENU = "open_menu"
 STEP_HOLD_CLICK = "hold_click"
+STEP_DRAG = "drag"
+STEP_DOUBLE_CLICK = "double_click"
 
 # Canonical confirm / cancel positions (normalised to client area)
 _CONFIRM_NX = 0.65

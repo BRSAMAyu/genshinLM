@@ -541,7 +541,202 @@ STATUE_ELEMENT_RESONANCE = UIFlow(
 )
 
 # ===================================================================
-# Exported flow registry for lookup by name
+# U-54: Batch artifact locking
+# ===================================================================
+
+ARTIFACT_BATCH_LOCK = UIFlow(
+    name="artifact_batch_lock",
+    description="Batch lock artifacts by rarity and score",
+    steps=(
+        open_menu("open_paimon_menu"),
+        delay(300),
+        click_menu_button("backpack", delay_ms=800),
+        click(nx=0.25, ny=0.08, reason="artifact_tab", delay_ms=300),
+        # Scroll to artifacts
+        scroll(-3, reason="scroll_to_artifacts"),
+        delay(200),
+        # Select first artifact
+        click(nx=0.30, ny=0.30, reason="select_artifact_1", delay_ms=100),
+        click(nx=0.30, ny=0.40, reason="select_artifact_2", delay_ms=100),
+        click(nx=0.30, ny=0.50, reason="select_artifact_3", delay_ms=100),
+        # Lock button
+        click(nx=0.85, ny=0.85, reason="batch_lock", delay_ms=300),
+        confirm(reason="confirm_lock"),
+        delay(300),
+    ),
+)
+
+# ===================================================================
+# U-55: Weapon refinement flow
+# ===================================================================
+
+WEAPON_REFINE = UIFlow(
+    name="weapon_refine",
+    description="Refine equipped weapon using duplicate",
+    steps=(
+        press("l", reason="open_party_setup"),
+        delay(800),
+        click(nx=0.35, ny=0.35, reason="select_character", delay_ms=500),
+        click_char_tab("weapon", delay_ms=300),
+        # Click on weapon
+        click(nx=0.35, ny=0.40, reason="select_weapon", delay_ms=300),
+        # Click refine option
+        click(nx=0.85, ny=0.60, reason="click_refine", delay_ms=300),
+        # Select duplicate if available
+        click(nx=0.50, ny=0.35, reason="select_duplicate", delay_ms=200),
+        confirm(reason="confirm_refine"),
+        delay(500),
+        press("escape", reason="close_party"),
+    ),
+)
+
+# ===================================================================
+# U-56: Synthesis quantity selection
+# ===================================================================
+
+SYNTHESIS_SELECT_QUANTITY = UIFlow(
+    name="synthesis_select_quantity",
+    description="Select synthesis quantity (1, 5, or max)",
+    steps=(
+        press("f", reason="interact_crafting_bench"),
+        delay(800),
+        click(nx=0.25, ny=0.35, reason="select_recipe", delay_ms=300),
+        # Click quantity selector
+        click(nx=0.65, ny=0.50, reason="open_quantity_selector", delay_ms=300),
+        # Select max (5th option)
+        click(nx=0.65, ny=0.70, reason="select_max_quantity", delay_ms=200),
+        confirm(reason="confirm_synthesis"),
+        delay(500),
+    ),
+)
+
+# ===================================================================
+# U-57: Forge weapon type selection
+# ===================================================================
+
+FORGE_WEAPON_SELECT_TYPE = UIFlow(
+    name="forge_weapon_select_type",
+    description="Select weapon type when forging",
+    steps=(
+        press("f", reason="interact_blacksmith"),
+        delay(800),
+        # Click Forge tab
+        click(nx=0.25, ny=0.10, reason="forge_tab", delay_ms=300),
+        # Select weapon type (e.g., sword)
+        click(nx=0.30, ny=0.35, reason="select_sword_type", delay_ms=300),
+        # Select specific weapon
+        click(nx=0.35, ny=0.50, reason="select_weapon", delay_ms=200),
+        # Set quantity to 1
+        click(nx=0.65, ny=0.60, reason="select_quantity_1", delay_ms=200),
+        confirm(reason="confirm_forge"),
+        delay(1000),
+    ),
+)
+
+# ===================================================================
+# U-58~U-59: Waypoint navigation with precision and tolerance
+# ===================================================================
+
+WAYPOINT_NAVIGATE_PRECISE = UIFlow(
+    name="waypoint_navigate_precise",
+    description="Navigate to waypoint with precision and coordinate tolerance",
+    steps=(
+        press("m", reason="open_map"),
+        wait_state("map", timeout_ms=3000),
+        delay(500),
+        # Click waypoint with position tolerance
+        click(nx=0.50, ny=0.45, reason="click_waypoint", delay_ms=500),
+        # Wait for waypoint info
+        wait_state("waypoint_info", timeout_ms=2000),
+        delay(300),
+        # Click teleport (with coordinate tolerance ±5px)
+        click(nx=0.85, ny=0.85, reason="click_teleport", delay_ms=300),
+        wait_loading(timeout_ms=15000),
+        wait_not_loading(timeout_ms=20000),
+    ),
+)
+
+# ===================================================================
+# U-61: Star rarity detection
+# ===================================================================
+
+RARITY_DETECT_STAR = UIFlow(
+    name="rarity_detect_star",
+    description="Detect item rarity by star count",
+    steps=(
+        # On item detail screen
+        click(nx=0.50, ny=0.50, reason="open_item_detail", delay_ms=500),
+        # Read star indicators
+        # (This flow triggers OCR - actual detection is in perception module)
+        delay(1000),
+    ),
+)
+
+# ===================================================================
+# U-62: Backpack multi-select
+# ===================================================================
+
+BACKPACK_MULTI_SELECT = UIFlow(
+    name="backpack_multi_select",
+    description="Multi-select items in backpack for batch operations",
+    steps=(
+        open_menu("open_paimon_menu"),
+        delay(300),
+        click_menu_button("backpack", delay_ms=800),
+        # Enable multi-select mode
+        click(nx=0.80, ny=0.10, reason="multi_select_button", delay_ms=300),
+        # Select multiple items
+        click(nx=0.30, ny=0.30, reason="select_item_1", delay_ms=100),
+        click(nx=0.30, ny=0.40, reason="select_item_2", delay_ms=100),
+        click(nx=0.30, ny=0.50, reason="select_item_3", delay_ms=100),
+        click(nx=0.30, ny=0.60, reason="select_item_4", delay_ms=100),
+        # Execute batch action
+        click(nx=0.85, ny=0.85, reason="batch_action", delay_ms=300),
+    ),
+)
+
+# ===================================================================
+# U-63: Team lock
+# ===================================================================
+
+TEAM_LOCK_ACTIVE = UIFlow(
+    name="team_lock_active",
+    description="Lock current team configuration",
+    steps=(
+        press("l", reason="open_party_setup"),
+        delay(800),
+        # Click lock team button
+        click(nx=0.85, ny=0.15, reason="lock_team_button", delay_ms=300),
+        confirm(reason="confirm_lock_team"),
+        delay(500),
+        press("escape", reason="close_party"),
+    ),
+)
+
+# ===================================================================
+# U-64: Team formation success verification
+# ===================================================================
+
+TEAM_FORMATION_VERIFY = UIFlow(
+    name="team_formation_verify",
+    description="Verify team formation completed successfully",
+    steps=(
+        press("l", reason="open_party_setup"),
+        delay(800),
+        # Set team members
+        click(nx=0.30, ny=0.30, reason="select_char_1", delay_ms=200),
+        click(nx=0.40, ny=0.30, reason="select_char_2", delay_ms=200),
+        click(nx=0.50, ny=0.30, reason="select_char_3", delay_ms=200),
+        click(nx=0.60, ny=0.30, reason="select_char_4", delay_ms=200),
+        # Verify team
+        wait_state("team_verified", timeout_ms=2000),
+        delay(300),
+        press("escape", reason="close_party"),
+    ),
+)
+
+# ===================================================================
+# Forged flows registry addition
 # ===================================================================
 
 ALL_FLOWS: dict[str, UIFlow] = {
@@ -582,6 +777,16 @@ ALL_FLOWS: dict[str, UIFlow] = {
         NPC_SHOP_BUY_ITEM,
         COMBAT_FOOD_REVIVE,
         STATUE_ELEMENT_RESONANCE,
+        # New flows
+        ARTIFACT_BATCH_LOCK,
+        WEAPON_REFINE,
+        SYNTHESIS_SELECT_QUANTITY,
+        FORGE_WEAPON_SELECT_TYPE,
+        WAYPOINT_NAVIGATE_PRECISE,
+        RARITY_DETECT_STAR,
+        BACKPACK_MULTI_SELECT,
+        TEAM_LOCK_ACTIVE,
+        TEAM_FORMATION_VERIFY,
     ]
 }
 

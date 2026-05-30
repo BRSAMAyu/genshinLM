@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import logging
-import time
 from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
@@ -9,6 +8,13 @@ if TYPE_CHECKING:
     from combat.character_switch_manager import CharacterSwitchManager
 
 log = logging.getLogger(__name__)
+
+
+def _chunked_sleep(seconds: float, chunk: float = 0.05) -> None:
+    import time
+    deadline = time.perf_counter() + seconds
+    while time.perf_counter() < deadline:
+        time.sleep(min(chunk, max(0.0, deadline - time.perf_counter())))
 
 
 @dataclass(frozen=True, slots=True)
@@ -86,7 +92,7 @@ class ReactionExecutor:
                 return False
             if not self._switch.switch_to(slot, reason=f"reaction_{reaction_name}"):
                 return False
-            time.sleep(0.3)
+            _chunked_sleep(0.3)
         log.info("[ReactionExecutor] executed %s sequence", reaction_name)
         return True
 

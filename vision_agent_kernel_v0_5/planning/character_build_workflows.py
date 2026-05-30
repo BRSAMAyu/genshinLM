@@ -619,3 +619,643 @@ class RealmManager:
         amount = self._currency.current
         self._currency.current = 0
         return amount
+
+
+# ---------------------------------------------------------------------------
+# Artifact main stat validator (R-34)
+# ---------------------------------------------------------------------------
+
+# Main stat requirements by slot and character role
+VALID_MAIN_STATS: dict[str, dict[str, tuple[str, ...]]] = {
+    "sands": {
+        "dps": ("atk_percent", "elemental_mastery", "energy_recharge"),
+        "support": ("energy_recharge", "hp_percent", "atk_percent"),
+        "healer": ("hp_percent", "energy_recharge"),
+    },
+    "goblet": {
+        "dps": ("physical_dmg_bonus", "pyro_dmg_bonus", "hydro_dmg_bonus", "electro_dmg_bonus",
+                "cryo_dmg_bonus", "anemo_dmg_bonus", "geo_dmg_bonus", "dendro_dmg_bonus"),
+        "support": ("elemental_mastery", "hp_percent", "atk_percent"),
+        "healer": ("hp_percent", "healing_bonus"),
+    },
+    "circlet": {
+        "dps": ("crit_rate", "crit_dmg", "atk_percent"),
+        "support": ("crit_rate", "healing_bonus", "hp_percent"),
+        "healer": ("healing_bonus", "hp_percent", "crit_rate"),
+    },
+}
+
+
+@dataclass(slots=True)
+class MainStatValidation:
+    """Result of main stat validation."""
+    is_valid: bool
+    expected_stats: tuple[str, ...]
+    actual_stat: str
+    slot: str
+    severity: str = "none"  # "none", "warning", "error"
+
+
+class MainStatValidator:
+    """Validates artifact main stat correctness (R-34).
+
+    Detects wrong main stat on Sands/Goblet/Circlet based on character role.
+    """
+
+    def validate(
+        self,
+        slot: str,
+        main_stat: str,
+        character_role: str,
+    ) -> MainStatValidation:
+        """Check if main stat is appropriate for slot and role."""
+        slot_key = slot.lower()
+        role_key = character_role.lower()
+
+        # Normalize role to known categories
+        if role_key in ("main_dps", "off_field_dps", "sub_dps", "dps"):
+            role_key = "dps"
+        elif role_key in ("support", "off_field_support"):
+            role_key = "support"
+        elif role_key in ("healer", "healer_support"):
+            role_key = "healer"
+
+        valid_stats = VALID_MAIN_STATS.get(slot_key, {}).get(role_key, ())
+        stat_lower = main_stat.lower().replace(" ", "_")
+
+        is_valid = stat_lower in valid_stats
+
+        return MainStatValidation(
+            is_valid=is_valid,
+            expected_stats=valid_stats,
+            actual_stat=stat_lower,
+            slot=slot_key,
+            severity="error" if not is_valid else "none",
+        )
+
+    def validate_batch(
+        self,
+        artifacts: list[tuple[str, str]],  # (slot, main_stat) pairs
+        character_role: str,
+    ) -> list[MainStatValidation]:
+        """Validate multiple artifacts at once."""
+        return [
+            self.validate(slot, main_stat, character_role)
+            for slot, main_stat in artifacts
+        ]
+
+
+# ---------------------------------------------------------------------------
+# AR-phase artifact evaluator (R-35)
+# ---------------------------------------------------------------------------
+
+class ARPhaseAwareEvaluator:
+    """Artifact evaluator that adjusts thresholds based on AR phase (R-35).
+
+    Before AR45, don't chase 5-star artifacts or high rolls.
+    """
+
+    # Thresholds by AR phase
+    PHASE_THRESHOLDS: dict[str, tuple[float, float, float]] = {
+        "early": (0.2, 0.3, 0.4),    # AR < 30: very lenient
+        "mid": (0.3, 0.4, 0.5),     # AR 30-44: moderate
+        "late": (0.4, 0.6, 0.8),    # AR 45+: full standards
+    }
+
+    # Prioritize 4-star artifacts before AR45
+    STAR_PREFERENCE: dict[str, int] = {
+        "early": 4,
+        "mid": 4,
+        "late": 5,
+    }
+
+    def __init__(self, base_evaluator: ArtifactEvaluator) -> None:
+        self._base = base_evaluator
+
+    def _get_phase(self, ar: int) -> str:
+        if ar < 30:
+            return "early"
+        if ar < 45:
+            return "mid"
+        return "late"
+
+    def evaluate(
+        self,
+        substats: list[ArtifactSubstat],
+        ar: int,
+        main_stat_relevant: bool = True,
+        priority_stats: list[SubstatType] | None = None,
+    ) -> ArtifactEval:
+        """Evaluate artifact with AR-adapted thresholds."""
+        phase = self._get_phase(ar)
+        thresholds = self.PHASE_THRESHOLDS[phase]
+        keep_thresh, good_thresh, great_thresh = thresholds
+
+        total_weight = 0.0
+        max_possible = 0.0
+
+        for sub in substats:
+            weight = SUBSTAT_WEIGHTS.get(sub.stat_type, 0.1)
+            if priority_stats and sub.stat_type in priority_stats:
+                weight *= 1.5
+            total_weight += weight * sub.roll_quality
+            max_possible += weight
+
+        score = total_weight / max_possible if max_possible > 0 else 0.0
+        score = min(score, 1.0)
+
+        return ArtifactEval(
+            score=score,
+            is_good=score >= good_thresh,
+            is_great=score >= great_thresh,
+            should_keep=score >= keep_thresh,
+            recommended_fodder=score < keep_thresh,
+        )
+
+    def preferred_rarity(self, ar: int) -> int:
+        """Return preferred artifact rarity for the given AR."""
+        phase = self._get_phase(ar)
+        return self.STAR_PREFERENCE.get(phase, 5)
+
+
+# ---------------------------------------------------------------------------
+# R-44: Breakthrough material overflow conversion (Artifact → ascension)
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class OverflowConversionPlan:
+    """Plan for converting excess materials to useful forms."""
+    source_material: str
+    target_material: str
+    conversion_ratio: int  # e.g., 3:1
+    available_count: int
+    converted_count: int = 0
+    is_efficient: bool = True
+
+
+class MaterialOverflowConverter:
+    """Converts excess ascension/breakthrough materials to other forms (R-44).
+
+    E.g., excess boss materials → synthesize into talent books,
+    or use excess for weapon ascension.
+    """
+
+    # Materials that can be converted
+    CONVERSION_PAIRS: dict[str, tuple[str, int]] = {
+        # Boss material -> Talent book material
+        "pyro_everlasting_essence": ("teachings_of_gold", 1),
+        "electro_everlasting_essence": ("teachings_of_freedom", 1),
+        # Weekly boss drops (1:1 conversion to weapon ascension)
+        "dream_solvent": ("spirit_bound_essence", 1),
+    }
+
+    def plan_conversion(
+        self,
+        excess_materials: dict[str, int],
+        target_material: str | None = None,
+    ) -> list[OverflowConversionPlan]:
+        """Plan conversions for excess materials."""
+        plans: list[OverflowConversionPlan] = []
+
+        for mat_id, count in excess_materials.items():
+            if count < 3:  # Minimum for conversion
+                continue
+
+            conversion = self.CONVERSION_PAIRS.get(mat_id)
+            if conversion:
+                target, ratio = conversion
+                plans.append(OverflowConversionPlan(
+                    source_material=mat_id,
+                    target_material=target,
+                    conversion_ratio=ratio,
+                    available_count=count,
+                    converted_count=count // 3,
+                    is_efficient=count >= 6,
+                ))
+
+        return plans
+
+
+# ---------------------------------------------------------------------------
+# R-45: Triple elemental resonance analyzer
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class TripleResonanceResult:
+    """Result of checking triple elemental team composition."""
+    active_resonances: list[str]
+    bonus_effect: str
+    is_synergistic: bool
+    recommendation: str
+
+
+class TripleResonanceAnalyzer:
+    """Analyzes team elemental composition for 3+ element resonance effects (R-45).
+
+    Genshin has double resonance, but certain team compositions benefit from
+    having specific element distributions for different content.
+    """
+
+    # Resonance effects
+    RESONANCE_EFFECTS: dict[str, str] = {
+        "fervent_flames": "ATK +25%",
+        "soothing_waters": "Max HP +25%",
+        "high_voltage": "Energy Recharge +10% for 8s after Electro reaction",
+        "shattering_ice": "CRIT Rate +15% vs frozen enemies",
+        "impetuous_winds": "Movement SPD +10%, CD -5%",
+        "enduring_rock": "Shield strength +15%",
+        "sprawling_green": "EM +50",
+    }
+
+    # Optimal element distributions
+    OPTIMAL_DISTRIBUTIONS: dict[str, tuple[str, int]] = {
+        "vaporize_team": ("pyro", 2),   # 2 pyro + hydro
+        "melt_team": ("pyro", 2),      # 2 pyro + cryo
+        "freeze_team": ("cryo", 2),    # 2 cryo + hydro
+        "hyperbloom": ("dendro", 2),   # 2 dendro + hydro + electro
+    }
+
+    def analyze_team(
+        self,
+        elements: list[str],
+        team_type: str | None = None,
+    ) -> TripleResonanceResult:
+        """Analyze elemental composition for resonance effects."""
+        active_resonances: list[str] = []
+
+        # Count elements
+        element_counts: dict[str, int] = {}
+        for elem in elements:
+            element_counts[elem] = element_counts.get(elem, 0) + 1
+
+        # Check resonances
+        for elem, count in element_counts.items():
+            if count >= 2:
+                resonance = self._get_resonance_for_element(elem)
+                if resonance:
+                    active_resonances.append(resonance)
+
+        # Determine if team is synergistic
+        is_synergistic = len(active_resonances) >= 2
+
+        # Generate recommendation
+        recommendation = ""
+        if not active_resonances:
+            recommendation = "Add 2 characters of same element for resonance"
+        elif len(active_resonances) == 1:
+            recommendation = "Good resonance active, consider adding more"
+
+        return TripleResonanceResult(
+            active_resonances=active_resonances,
+            bonus_effect=", ".join(active_resonances),
+            is_synergistic=is_synergistic,
+            recommendation=recommendation,
+        )
+
+    def _get_resonance_for_element(self, element: str) -> str:
+        """Get resonance name for element."""
+        mapping = {
+            "pyro": "fervent_flames",
+            "hydro": "soothing_waters",
+            "electro": "high_voltage",
+            "cryo": "shattering_ice",
+            "anemo": "impetuous_winds",
+            "geo": "enduring_rock",
+            "dendro": "sprawling_green",
+        }
+        return mapping.get(element, "")
+
+
+# ---------------------------------------------------------------------------
+# R-46: Energy recharge calculator
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class EnergyRechargeNeed:
+    """Energy recharge requirement for a character."""
+    character_id: str
+    base_cost: int                # Base burst energy cost
+    optimal_er: float             # Optimal ER%
+    current_er: float = 100.0     # Current ER from artifacts
+    needs_battery: bool = False
+    battery_character: str = ""
+
+
+class EnergyRechargeCalculator:
+    """Calculates optimal energy recharge requirements for team battery (R-46).
+
+    Determines how much ER is needed for consistent burst uptime and
+    recommends battery characters.
+    """
+
+    # Base energy costs by character
+    BASE_ENERGY_COST: dict[str, int] = {
+        "xiangling": 80,
+        "xingqiu": 80,
+        "bennett": 60,
+        "kaeya": 60,
+        "fischl": 60,
+        "barbara": 80,
+        "noelle": 80,
+        "collei": 60,
+    }
+
+    # Battery efficiency (ER needed per energy generated)
+    BATTERY_EFFICIENCY = 0.5  # For Favonius weapons
+
+    def calculate_er_need(
+        self,
+        character_id: str,
+        team_elements: list[str],
+        has_favonius: bool = False,
+    ) -> EnergyRechargeNeed:
+        """Calculate optimal ER requirement for a character."""
+        base_cost = self.BASE_ENERGY_COST.get(character_id, 60)
+
+        # Adjust for team composition
+        has_pyro = "pyro" in team_elements  # Benny buff
+        has_electro = "electro" in team_elements  # Particle generation
+
+        optimal_er = 100.0
+        needs_battery = False
+        battery_char = ""
+
+        # If no Favonius and no battery
+        if not has_favonius:
+            if base_cost >= 80:
+                optimal_er = 180.0 if not has_pyro else 150.0
+                needs_battery = True
+            elif base_cost >= 60:
+                optimal_er = 140.0 if not has_pyro else 120.0
+
+            if needs_battery:
+                battery_char = self._find_battery(team_elements)
+
+        # With Favonius, can reduce ER requirement
+        if has_favonius:
+            optimal_er *= 0.8
+
+        return EnergyRechargeNeed(
+            character_id=character_id,
+            base_cost=base_cost,
+            optimal_er=optimal_er,
+            needs_battery=needs_battery,
+            battery_character=battery_char,
+        )
+
+    def _find_battery(self, elements: list[str]) -> str:
+        """Find best battery character for the team."""
+        if "anemo" in elements:
+            return "traveler"
+        if "electro" in elements:
+            return "fischl"
+        if "pyro" in elements:
+            return "bennett"
+        return "xingqiu"
+
+
+# ---------------------------------------------------------------------------
+# R-47: Four-star artifact alternatives
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class FourStarAlternative:
+    """Four-star artifact as alternative to five-star."""
+    set_name: str
+    slot: str
+    main_stat: str
+    substat_priority: tuple[str, ...]
+    replacement_for_5star: str
+    efficiency_pct: float
+
+
+FOUR_STAR_ALTERNATIVES: list[FourStarAlternative] = [
+    FourStarAlternative(
+        set_name="Martial Hero",
+        slot="circlet",
+        main_stat="crit_rate",
+        substat_priority=("crit_dmg", "atk_percent", "energy_recharge"),
+        replacement_for_5star="Gladiator's Finale",
+        efficiency_pct=75.0,
+    ),
+    FourStarAlternative(
+        set_name="Exile",
+        slot="sands",
+        main_stat="energy_recharge",
+        substat_priority=("atk_percent", "hp_percent"),
+        replacement_for_5star="Emblem of Severed Fate",
+        efficiency_pct=60.0,
+    ),
+    FourStarAlternative(
+        set_name="Scholar",
+        slot="goblet",
+        main_stat="atk_percent",
+        substat_priority=("crit_rate", "crit_dmg"),
+        replacement_for_5star="Noblesse Oblige",
+        efficiency_pct=70.0,
+    ),
+]
+
+
+class FourStarAlternativeRecommender:
+    """Recommends four-star artifacts as alternatives to five-star (R-47).
+
+    Used when player hasn't reached AR45 for reliable 5-star drops.
+    """
+
+    def recommend_for_role(
+        self,
+        role: str,
+        ar: int,
+    ) -> list[FourStarAlternative]:
+        """Recommend 4-star alternatives for a character role."""
+        if ar >= 45:
+            return []  # No need, can farm 5-star
+
+        # Pre-AR45: recommend 4-star alternatives
+        if role in ("main_dps", "off_field_dps"):
+            return [alt for alt in FOUR_STAR_ALTERNATIVES if alt.efficiency_pct >= 70]
+        return FOUR_STAR_ALTERNATIVES
+
+
+# ---------------------------------------------------------------------------
+# R-49: Enhancement stop-loss decision (+12 vs +16 vs +20)
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class EnhancementDecision:
+    """Decision on artifact enhancement level."""
+    recommended_level: int        # +12, +16, or +20
+    reasoning: str
+    is_cost_effective: bool
+    risk_score: float = 0.0       # 0.0-1.0
+
+
+class EnhancementStopLoss:
+    """Determines optimal artifact enhancement levels (R-49).
+
+    Implements stop-loss logic for +12 vs +16 vs +20 decisions.
+    """
+
+    # Enhancement costs (mora) and risk levels
+    ENHANCEMENT_COSTS: dict[int, int] = {
+        4: 2000,
+        8: 4000,
+        12: 8000,
+        16: 16000,
+        20: 40000,
+    }
+
+    # Risk thresholds
+    STOP_AT_12_RISK = 0.7        # Stop if risk > 70%
+    STOP_AT_16_RISK = 0.4        # Stop at 16 if risk > 40%
+
+    def decide(
+        self,
+        artifact_score: float,
+        main_stat_relevant: bool,
+        substat_roll_quality: float,
+        current_level: int,
+        mora_available: int,
+    ) -> EnhancementDecision:
+        """Decide optimal enhancement level.
+
+        Args:
+            artifact_score: Overall artifact quality (0.0-1.0)
+            main_stat_relevant: Whether main stat is correct
+            substat_roll_quality: Average substat roll quality (0.0-1.0)
+            current_level: Current enhancement level
+            mora_available: Available mora for enhancement
+
+        Returns:
+            EnhancementDecision with recommendation
+        """
+        # Calculate risk score
+        risk_score = 1.0 - artifact_score
+        if not main_stat_relevant:
+            risk_score += 0.2
+        risk_score = min(1.0, risk_score)
+
+        # Determine recommended level
+        if risk_score >= self.STOP_AT_12_RISK:
+            # High risk: stop at +12
+            target_level = 12
+            reasoning = "High risk artifact - stop at +12"
+        elif risk_score >= self.STOP_AT_16_RISK:
+            # Medium risk: stop at +16
+            target_level = 16
+            reasoning = "Medium risk - stop at +16 to limit investment"
+        else:
+            # Low risk: continue to +20 if good quality
+            if artifact_score >= 0.7 and substat_roll_quality >= 0.6:
+                target_level = 20
+                reasoning = "High quality artifact - fully enhance to +20"
+            else:
+                target_level = 16
+                reasoning = "Good artifact - enhance to +16"
+
+        # Check if we have enough mora
+        cost_remaining = sum(
+            self.ENHANCEMENT_COSTS.get(l, 0)
+            for l in range(current_level + 1, target_level + 1)
+        )
+
+        is_cost_effective = cost_remaining <= mora_available
+
+        if not is_cost_effective:
+            target_level = current_level + 4  # Limit to affordable
+            reasoning = f"Limited by mora budget - enhance to +{target_level}"
+
+        return EnhancementDecision(
+            recommended_level=target_level,
+            reasoning=reasoning,
+            is_cost_effective=is_cost_effective,
+            risk_score=risk_score,
+        )
+
+
+# ---------------------------------------------------------------------------
+# Inventory capacity manager (R-36)
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class InventoryCapacityWarning:
+    """Warning about inventory capacity."""
+    current: int
+    max_capacity: int
+    usage_percent: float
+    severity: str = "none"  # "none", "caution", "warning", "critical"
+    recommended_actions: list[str] = field(default_factory=list)
+
+
+class InventoryCapacityManager:
+    """Manages inventory capacity warnings and batch filtering (R-36)."""
+
+    DEFAULT_CAPACITY = 1500
+    CAUTION_THRESHOLD = 0.80   # 80%
+    WARNING_THRESHOLD = 0.90   # 90%
+    CRITICAL_THRESHOLD = 0.95  # 95%
+
+    def __init__(self, max_capacity: int = DEFAULT_CAPACITY) -> None:
+        self._max_capacity = max_capacity
+        self._categories: dict[str, int] = {
+            "material": 999,
+            "weapon": 999,
+            "artifact": 999,
+            "food": 999,
+            "gadget": 999,
+        }
+
+    def check_capacity(
+        self,
+        total_items: int,
+        artifact_count: int = 0,
+        material_count: int = 0,
+    ) -> InventoryCapacityWarning:
+        """Check current inventory capacity and return warnings."""
+        usage = total_items / self._max_capacity
+        severity = "none"
+
+        if usage >= self.CRITICAL_THRESHOLD:
+            severity = "critical"
+        elif usage >= self.WARNING_THRESHOLD:
+            severity = "warning"
+        elif usage >= self.CAUTION_THRESHOLD:
+            severity = "caution"
+
+        actions: list[str] = []
+        if severity in ("warning", "critical"):
+            actions.append("Feed trash artifacts as enhancement material")
+        if severity == "critical":
+            actions.append("Use Mystic Offering to convert 3 artifacts into 1 targeted 5-star")
+            actions.append("Batch lock good artifacts, mass-feed the rest")
+        if artifact_count > 200:
+            actions.append(f"Consider filtering: {artifact_count} artifacts detected")
+
+        return InventoryCapacityWarning(
+            current=total_items,
+            max_capacity=self._max_capacity,
+            usage_percent=usage,
+            severity=severity,
+            recommended_actions=actions,
+        )
+
+    def batch_filter_recommendation(
+        self,
+        artifact_scores: list[tuple[str, float]],  # (artifact_id, score)
+        keep_threshold: float = 0.4,
+    ) -> list[str]:
+        """Suggest batch filtering based on artifact scores."""
+        keep: list[str] = []
+        feed: list[str] = []
+
+        for artifact_id, score in artifact_scores:
+            if score >= keep_threshold:
+                keep.append(artifact_id)
+            else:
+                feed.append(artifact_id)
+
+        return [
+            f"Keep {len(keep)} artifacts (score >= {keep_threshold})",
+            f"Feed {len(feed)} artifacts as fodder",
+        ]

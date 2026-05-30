@@ -472,3 +472,198 @@ class SpiralAbyssRunner:
 
         current.status = ChamberStatus.FAILED
         return ChamberStatus.FAILED
+
+
+# ---------------------------------------------------------------------------
+# S-30: Spiral Abyss time pressure management
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class AbyssTimePressure:
+    """Time pressure analysis for Abyss chambers."""
+    chamber_id: int
+    time_limit_sec: float = 180.0      # 3 min per chamber
+    time_remaining_sec: float = 180.0
+    is_under_pressure: bool = False
+    pressure_level: str = "none"       # "none", "low", "medium", "high", "critical"
+
+    @property
+    def elapsed_pct(self) -> float:
+        return ((self.time_limit_sec - self.time_remaining_sec) / self.time_limit_sec) * 100.0
+
+    @property
+    def should_rush(self) -> bool:
+        return self.pressure_level in ("high", "critical")
+
+
+@dataclass(slots=True)
+class AbyssTimeStrategy:
+    """Strategy recommendation based on time pressure."""
+    recommended_dps_burst: bool
+    recommended_rotation: str
+    recommended_ult_timing: str
+    emergency_actions: list[str] = field(default_factory=list)
+    reasoning: str = ""
+
+
+class AbyssTimePressureManager:
+    """Manages time pressure in Spiral Abyss chambers (S-30).
+
+    Provides real-time time pressure analysis and strategic recommendations
+    to optimize DPS during time-critical chambers.
+    """
+
+    # Time thresholds (seconds)
+    FULL_TIME = 180.0      # Full time
+    LOW_PRESSURE = 120.0   # > 120 sec remaining = low pressure
+    MEDIUM_PRESSURE = 90.0  # 90-120 sec = medium pressure
+    HIGH_PRESSURE = 60.0    # 60-90 sec = high pressure
+    CRITICAL_PRESSURE = 30.0  # < 30 sec = critical pressure
+
+    def analyze_time_pressure(
+        self,
+        chamber_id: int,
+        elapsed_sec: float,
+        enemy_health_pct: float,
+    ) -> AbyssTimePressure:
+        """Analyze time pressure for a chamber.
+
+        Args:
+            chamber_id: Chamber number (1-3)
+            elapsed_sec: Time elapsed in chamber
+            enemy_health_pct: Remaining enemy health percentage
+
+        Returns:
+            AbyssTimePressure with pressure analysis
+        """
+        time_remaining = max(0.0, self.FULL_TIME - elapsed_sec)
+        elapsed_pct = (elapsed_sec / self.FULL_TIME) * 100.0
+
+        # Determine pressure level
+        pressure_level = "none"
+        is_under_pressure = False
+
+        if time_remaining < self.CRITICAL_PRESSURE:
+            pressure_level = "critical"
+            is_under_pressure = True
+        elif time_remaining < self.HIGH_PRESSURE:
+            pressure_level = "high"
+            is_under_pressure = True
+        elif time_remaining < self.MEDIUM_PRESSURE:
+            pressure_level = "medium"
+            is_under_pressure = True
+        elif time_remaining < self.LOW_PRESSURE:
+            pressure_level = "low"
+
+        return AbyssTimePressure(
+            chamber_id=chamber_id,
+            time_limit_sec=self.FULL_TIME,
+            time_remaining_sec=time_remaining,
+            is_under_pressure=is_under_pressure,
+            pressure_level=pressure_level,
+        )
+
+    def get_strategy(
+        self,
+        pressure: AbyssTimePressure,
+        team_elements: list[str],
+    ) -> AbyssTimeStrategy:
+        """Get strategic recommendations based on time pressure.
+
+        Args:
+            pressure: Current time pressure analysis
+            team_elements: Team element composition
+
+        Returns:
+            AbyssTimeStrategy with recommendations
+        """
+        if pressure.pressure_level == "critical":
+            return AbyssTimeStrategy(
+                recommended_dps_burst=True,
+                recommended_rotation="burst_all",
+                recommended_ult_timing="use_all_ults_immediately",
+                emergency_actions=[
+                    "Switch to main DPS",
+                    "Use all burst abilities",
+                    "Focus fire on lowest health enemy",
+                    "Use food if available",
+                ],
+                reasoning="Critical time pressure - all resources now",
+            )
+
+        if pressure.pressure_level == "high":
+            return AbyssTimeStrategy(
+                recommended_dps_burst=True,
+                recommended_rotation="fast_rotation",
+                recommended_ult_timing="save_ults_for_burst_window",
+                emergency_actions=[
+                    "Optimize rotation speed",
+                    "Switch characters quickly",
+                    "Use reactions for quick damage",
+                ],
+                reasoning="High pressure - maintain DPS burst",
+            )
+
+        if pressure.pressure_level == "medium":
+            return AbyssTimeStrategy(
+                recommended_dps_burst=False,
+                recommended_rotation="standard_rotation",
+                recommended_ult_timing="normal_ult_timing",
+                emergency_actions=[
+                    "Monitor time closely",
+                    "Prepare for burst if needed",
+                ],
+                reasoning="Medium pressure - stay on standard rotation",
+            )
+
+        return AbyssTimeStrategy(
+            recommended_dps_burst=False,
+            recommended_rotation="normal",
+            recommended_ult_timing="normal",
+            emergency_actions=[],
+            reasoning="No time pressure - continue normally",
+        )
+
+    def should_use_food(
+        self,
+        pressure: AbyssTimePressure,
+        team_health_pct: float,
+        mora_available: int,
+    ) -> tuple[bool, str]:
+        """Decide if food should be used during time pressure.
+
+        Returns (should_use, reason).
+        """
+        if not pressure.is_under_pressure:
+            return False, "No time pressure"
+
+        if pressure.pressure_level == "critical" and team_health_pct < 50:
+            if mora_available >= 5000:
+                return True, "Critical pressure + low health - use emergency heal"
+            return True, "Critical pressure + low health - use any available heal"
+
+        if pressure.pressure_level == "high" and team_health_pct < 30:
+            return True, "High pressure + critical health - heal before burst"
+
+        return False, "Health sufficient for current pressure"
+
+    def estimate_clear_probability(
+        self,
+        current_time_sec: float,
+        enemy_health_pct: float,
+        team_dps: float,
+    ) -> float:
+        """Estimate probability of clearing chamber.
+
+        Uses simple model: can we deal remaining damage in remaining time?
+        """
+        time_remaining = max(0.0, self.FULL_TIME - current_time_sec)
+        if time_remaining <= 0:
+            return 0.0
+
+        # Rough estimate
+        damage_needed = enemy_health_pct * 10000  # Assume 10k total enemy HP
+        possible_damage = team_dps * time_remaining
+
+        probability = min(1.0, possible_damage / damage_needed)
+        return probability
