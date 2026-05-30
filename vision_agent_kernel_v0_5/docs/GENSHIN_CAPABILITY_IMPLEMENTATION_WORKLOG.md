@@ -1396,3 +1396,57 @@
 - **Commits**: 5 commits pushed to codex/pre-realworld-closure
 
 ---
+
+### 2026-05-31 — Session 6: Spiral Abyss + Recovery Integration + Dialog Enhancement
+
+#### 6a. Spiral Abyss High-Difficulty Floor Handler
+- **Modified**: `combat/combat_skill_adapter.py`
+  - `execute_abyss_floor()` method integrating SpiralAbyssRunner + AbyssTimePressureManager
+  - Uses `_CombatExecutorBridge(self)` for semantic execution (not `self._executor`)
+  - Default 8-character context for team splitting
+- **Modified**: `planning/skill_registry.py`
+  - Added `combat_abyss_floor` composite route with `floor_number` param
+- **Tests**: 4 tests in `tests/test_abyss_floor.py`
+
+#### 6b. RecoveryOrchestrator Integration into Session Chains
+- **Modified**: `planning/session_chains.py`
+  - `DailySessionChain` accepts optional `recovery_orchestrator`
+  - `CharacterProgressionSession` accepts optional `recovery_orchestrator`
+  - Both use structured recovery on step failure/exception instead of bare except
+  - `_STEP_RECOVERY_CATEGORY` and `_PROGRESSION_RECOVERY_CATEGORY` maps
+  - `recovery_events` counter on result dataclasses
+- **Tests**: 6 recovery tests in `tests/test_session_chains.py`
+
+#### 6c. NewbieTutorialChain Checkpoint Integration
+- **Modified**: `planning/newbie_tutorial_chain.py`
+  - Accepts optional `checkpoint_store: CheckpointStore`
+  - `_save_phase_checkpoint()` after each phase completion
+  - `_load_checkpoint()` for resume from latest checkpoint
+  - Auto-generated `_session_id`
+- **Tests**: 3 checkpoint tests in `tests/test_session_chains.py`
+
+#### 6d. Dialog Consequence Tracking (D-branch enhancement)
+- **Modified**: `interaction/dialog_branch_analyzer.py`
+  - `ConsequenceTracker`: records choices and observed outcomes per quest
+  - Hash-based linking between choices and consequences
+  - Rolling window (200 max) to prevent unbounded growth
+  - `DialogBranchAnalyzer` optionally records via tracker
+- **Tests**: 11 tests in `tests/test_dialog_branch_analyzer.py`
+
+#### 6e. D-03 Conditional Dialog + D-04 Affection System
+- **Modified**: `interaction/dialog_driver.py`
+  - `ConditionalDialogSelector`: quest/item/affection-gated dialog choices
+  - `AffectionDialogManager`: NPC relationship tracking with 5 levels (STRANGER→TRUSTED)
+  - `NpcRelationship` dataclass: affection, dialog_count, quests_completed, gifts_given
+  - Affection gains: +2/dialog, +10/quest, +5/gift (capped at 100)
+  - `DialogCondition`: condition_type (quest_active, item_owned, affection_level)
+- **Tests**: 18 tests in `tests/test_dialog_driver.py`
+
+#### Session 6 Totals
+- **Modified files**: 6 (combat_skill_adapter, skill_registry, session_chains, newbie_tutorial_chain, dialog_branch_analyzer, dialog_driver)
+- **New test files**: 3 (test_abyss_floor, test_dialog_branch_analyzer, test_dialog_driver)
+- **New tests**: 42 tests (4 abyss + 9 recovery/checkpoint + 11 consequence + 18 dialog)
+- **Total test count**: ~2698+ passed, 1 known flaky
+- **Commits**: 4 commits pushed to codex/pre-realworld-closure
+
+---
