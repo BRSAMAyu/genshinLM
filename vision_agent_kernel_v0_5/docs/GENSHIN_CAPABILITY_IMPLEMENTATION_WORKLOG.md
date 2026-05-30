@@ -1163,4 +1163,43 @@
 - **Total test count**: 2475 passed (from 2295), 1 known flaky mouse path test
 - **Commits**: 5 commits pushed to codex/pre-realworld-closure
 
+### 2026-05-31 (Session 2) — Scenario Gap Fill + Tutorial Chain
+
+#### Combat Rotation Runners ✅
+- **文件**: `combat/combat_rotation_runners.py`
+- **测试**: `tests/test_combat_rotation_runners.py` — 20 tests
+- **覆盖**:
+  - WeeklyBossRotation (#14): cycle through weekly bosses, discount tracking, teleport→combat→claim
+  - WorldBossFarming (#15): continuous farming with resin management (resin_per_run=40)
+  - MultiWaveDefense (#16): wave counter, defend-target HP monitoring, wave timeout
+  - ShieldMitachurlStrategy (#2): counter-element switching, shield break, behind-attack
+- **集成**: 4 new composite routes in SkillRegistry, CombatSkillAdapter bridge
+
+#### Quest Chapter Step Data ✅
+- **文件**: `knowledge/genshin_archon_quests.py`
+- **覆盖**:
+  - AQ006: Chapter 1 Act 3 "迫近的客星" (5 steps: golden house → childe → pursuit → zhongli → farewell)
+  - AQ_CH2_01: Chapter 2 Act 1 "不动鸣神" (5 steps: travel → ritou → city → resistance → raiden boss)
+  - AQ_CH3_01: Chapter 3 Act 1 "穿越烟帷与暗林" (4 steps: travel → akademiya → dream loop → scaramouche boss)
+  - AQ_CH4_01: Chapter 4 Act 1 "始如冬日之犬" (4 steps: travel → trial → underwater → meropide)
+  - AQ_CH5_01: Chapter 5 Act 1 "荣花与炎日之途" (4 steps: travel → pilgrimage → tribes → boss)
+
+#### Newbie Tutorial Chain ✅
+- **文件**: `planning/newbie_tutorial_chain.py`
+- **测试**: `tests/test_newbie_tutorial_chain.py` — 12 tests
+- **覆盖**: 21-phase tutorial (T01-T21), from opening cutscene to Stormterror defeat
+  - Movement/swim/climb/glide tutorials
+  - First combat, first chest, skill tutorial
+  - City navigation, NPC dialog, knight induction
+  - Temple exploration, Stormterror exterior/interior
+  - Boss aerial pursuit + platform combat
+  - Prologue finale
+
+#### Session Summary
+- **New modules**: 2 files (combat runner + tutorial chain)
+- **Modified files**: 2 (archon quests + skill registry)
+- **New tests**: 32 tests across 2 test files
+- **Total test count**: 2507 passed (from 2475), 1 known flaky
+- **Commits**: 3 commits pushed to codex/pre-realworld-closure
+
 ---
