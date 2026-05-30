@@ -45,7 +45,6 @@ class LoopPhase(str, Enum):
     EVENTS = "events"
     ARCHON_QUEST = "archon_quest"
     EXPLORATION = "exploration"
-    SHOP_PURCHASE = "shop_purchase"
     COMPLETE = "complete"
 
 
@@ -363,13 +362,26 @@ class ExpeditionSlot:
 class ExpeditionExecutor:
     """Manages daily expedition dispatches (DL-04).
 
-    Dispatches 5 expedition slots for 20h resource gathering.
+    Dispatches 3-5 expedition slots based on AR:
+    - AR 1-24: 3 slots
+    - AR 25-34: 4 slots
+    - AR 35+: 5 slots
     """
 
-    MAX_SLOTS = 5
     DEFAULT_DURATION = 20  # hours
 
-    def __init__(self) -> None:
+    def __init__(self, max_slots: int = 5) -> None:
+        self._max_slots = max_slots
+        self._slots: list[ExpeditionSlot] = []
+
+    @staticmethod
+    def slots_for_ar(ar: int) -> int:
+        """Return the number of expedition slots available at given AR."""
+        if ar < 25:
+            return 3
+        if ar < 35:
+            return 4
+        return 5
         self._slots: list[ExpeditionSlot] = []
 
     @property
@@ -380,7 +392,7 @@ class ExpeditionExecutor:
                         ) -> list[ExpeditionSlot]:
         """Plan which expedition slots to dispatch."""
         if active_slots is not None:
-            self._slots = active_slots[:self.MAX_SLOTS]
+            self._slots = active_slots[:self._max_slots]
 
         pending = [s for s in self._slots if not s.is_active and not s.is_complete]
         return pending
@@ -519,8 +531,12 @@ class EventExecutor:
         active = self.active_events()
         if not active:
             return None
-        # Prefer events ending soonest
-        return min(active, key=lambda e: e.rewards_remaining, default=None)
+        # Prefer events ending soonest (by end_date if available)
+        dated = [e for e in active if e.end_date]
+        if dated:
+            return min(dated, key=lambda e: e.end_date)
+        # Fallback: fewest rewards remaining
+        return min(active, key=lambda e: e.rewards_remaining)
 
     def complete_event(self, event_id: str) -> LoopPhaseResult:
         """Mark an event as completed."""
@@ -821,6 +837,10 @@ class DailyLoopExecutor:
         """Reset daily state (call at server reset time)."""
         self._state = DailyLoopState()
         self._commissions = CommissionExecutor()
+        self._expeditions = ExpeditionExecutor()
+        # Clear daily battle pass tasks (keep weekly)
+        daily_tasks = [t for t in self._battle_pass.tasks if t.task_type == "weekly"]
+        self._battle_pass.register_tasks(daily_tasks)
 
     def reset_weekly(self) -> None:
         """Reset weekly state (call on Monday reset)."""
