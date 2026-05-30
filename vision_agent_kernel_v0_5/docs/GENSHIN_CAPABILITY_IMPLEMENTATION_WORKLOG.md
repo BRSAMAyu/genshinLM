@@ -967,3 +967,58 @@
 - 三轮审查全部修复: ✅
 
 ---
+
+### 2026-05-31 — UI 场景完整性收尾
+
+#### Step 1: 天赋升级变体注册 ✅
+- **文件**: `interaction/ui_flows/__init__.py`, `execution/ui_flow_skill_adapter.py`
+- 注册 CHARACTER_TALENT_UPGRADE_SKILL/BURST 到 ALL_FLOWS
+- 添加 semantic aliases (talent_upgrade_skill, talent_upgrade_burst)
+
+#### Step 2: 复合 Full Flow 补全 ✅
+- **文件**: `interaction/ui_flows/__init__.py`, `execution/ui_flow_skill_adapter.py`
+- 独立审查 Agent 发现 8 个覆盖缺口，全部修复：
+  1. CHARACTER_ASCEND_FULL (open→ascend→close)
+  2. CHARACTER_TALENT_UPGRADE_FULL (open→talent→upgrade→close)
+  3. WEAPON_EQUIP_FULL (open→weapon→equip→close)
+  4. WEAPON_ENHANCE_FULL (open→weapon→enhance→close)
+  5. WEAPON_REFINE_FULL (open→weapon→refine→close)
+  6. ARTIFACT_EQUIP_FULL (open→artifact→equip→close)
+  7. ARTIFACT_ENHANCE_FULL (open→artifact→enhance→close)
+  8. WISH_SINGLE_PULL (x1 pull variant)
+  9. WISH_TEN_PULL_FULL (F3→pull→close)
+  10. CRAFTING_SYNTHESIZE_FULL (interact→select→synthesize→close)
+  11. PARTY_CONFIG_SLOT (slot-specific party configuration)
+
+- 修复 ALL_FLOWS 中 WEAPON_REFINE 重复注册
+- 增强 PARTY_QUICK_CONFIG 添加 close_menu 步骤
+- 全部 59 个 flow 注册 + semantic aliases
+
+#### UI 操作场景覆盖总表
+| # | 场景 | 基础 Flow | Full Flow | 状态 |
+|---|------|----------|-----------|------|
+| 1 | 角色升级 | character_level_up | character_level_up_full | ✅ |
+| 2 | 角色突破 | character_ascend | character_ascend_full | ✅ |
+| 3 | 天赋升级 | talent_upgrade + skill + burst | talent_upgrade_full | ✅ |
+| 4 | 武器装备 | weapon_equip | weapon_equip_full | ✅ |
+| 5 | 武器强化 | weapon_enhance | weapon_enhance_full | ✅ |
+| 6 | 武器精炼 | weapon_refine | weapon_refine_full | ✅ |
+| 7 | 圣遗物装备 | artifact_equip | artifact_equip_full | ✅ |
+| 8 | 圣遗物强化 | artifact_enhance | artifact_enhance_full | ✅ |
+| 9 | 队伍配置 | party_quick_config | party_config_slot | ✅ |
+| 10 | 祈愿 | wish_ten_pull + wish_single_pull | wish_ten_pull_full | ✅ |
+| 11 | 商店 | shop_open_paimon_bargains + shop_buy_monthly_fates | (组合式) | ✅ |
+| 12 | 合成 | crafting_bench_interact | crafting_synthesize_full | ✅ |
+| 13 | 锻造 | forging_interact + forging_forge_item | (组合式) | ✅ |
+| 14 | NPC商店 | npc_shop_interact + npc_shop_buy_item | (组合式) | ✅ |
+
+#### 已知限制（需运行时感知层支持）
+- OCR 验证步骤（角色名/等级/材料数量）需要运行时 perception pipeline
+- 圣遗物槽位选择当前硬编码 (0.35, 0.42)，5个槽位参数化需运行时 context 传入
+- 商店/NPC 商店组合流程因参数化需求保持原子式设计
+
+#### 测试结果
+- 31 UIFlow/Adapter tests passed
+- 59 flows registered in ALL_FLOWS
+
+---
