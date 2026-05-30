@@ -289,27 +289,53 @@ class ExplorationScenarioRouter:
         )
 
     def _handle_underwater(self, context: dict[str, Any]) -> ScenarioResult:
-        """Handle Fontaine underwater exploration."""
+        """Handle Fontaine underwater exploration with oxygen management."""
         started = time.perf_counter()
+        config = self._config
 
         # Switch to underwater movement mode
         self._executor.execute_semantic("swim", context={"mode": "underwater"})
 
-        # Navigate to target
-        target = context.get("target", "underwater_point")
-        self._executor.execute_semantic("navigate_to", target=target)
+        # Track oxygen throughout the dive
+        oxygen_ratio = 1.0
+        objects_collected = 0
+        oxygen_refills = 0
+        targets = context.get("objects", [])
 
-        # Collect/interact with underwater objects
-        objects = context.get("objects", [])
-        for obj in objects:
-            self._executor.execute_semantic("interact", target=obj)
-            self._chunked_sleep(1.0)
+        for obj in targets:
+            # Check oxygen before each action — surface if low
+            if oxygen_ratio < config.underwater_oxygen_threshold:
+                self._executor.execute_semantic("surface", context={"reason": "oxygen_low"})
+                self._executor.execute_semantic("dive", context={"reason": "resume_underwater"})
+                oxygen_ratio = 1.0
+                oxygen_refills += 1
 
+            # Navigate to object with depth awareness
+            depth = context.get("depth", 0.0)
+            self._executor.execute_semantic(
+                "navigate_to", target=obj,
+                context={"depth": depth, "underwater": True},
+            )
+
+            # Collect/interact
+            ok = self._executor.execute_semantic("interact", target=obj)
+            if ok:
+                objects_collected += 1
+
+            # Oxygen depletes per action (rough model)
+            oxygen_ratio = max(0.0, oxygen_ratio - 0.15)
+
+        # Final target if no explicit objects
+        if not targets:
+            target = context.get("target", "underwater_point")
+            self._executor.execute_semantic("navigate_to", target=target)
+
+        elapsed = time.perf_counter() - started
         return ScenarioResult(
             scenario="underwater_exploration",
             success=True,
-            duration_sec=time.perf_counter() - started,
-            details=f"objects={len(objects)}",
+            duration_sec=elapsed,
+            details=f"objects={objects_collected} refills={oxygen_refills}",
         )
 
     @staticmethod

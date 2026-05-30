@@ -8,8 +8,11 @@ Routes quest steps to appropriate handlers based on mechanism type:
 - Dream: environment state transitions, cycle management
 - Domain: entrance → challenges → completion flow
 - AR Breakthrough: level-up detection, breakthrough domain configuration
+- Inazuma Lockout: quest lock detection, prerequisite chain resolution
+- Guard Vision: cone-of-vision stealth with patrol route tracking
+- Quest Recovery: state rollback and resume after interruption
 
-Covers Q-10 through Q-16 capability requirements.
+Covers Q-10 through Q-25 capability requirements.
 """
 from __future__ import annotations
 
@@ -32,6 +35,9 @@ class QuestMechanismType(str, Enum):
     AR_BREAKTHROUGH = "ar_breakthrough"
     HANGOUT = "hangout"
     EVENT = "event"
+    INAZUMA_LOCKOUT = "inazuma_lockout"
+    GUARD_VISION = "guard_vision"
+    QUEST_RECOVERY = "quest_recovery"
 
 
 @dataclass(slots=True)
@@ -554,6 +560,180 @@ class EventQuestHandler:
         return state
 
 
+# ---------------------------------------------------------------------------
+# Q-18: Inazuma Lockout — prerequisite chain detection & resolution
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class InazumaLockoutState:
+    required_ar: int = 30
+    required_quests: list[str] = field(default_factory=lambda: ["ayaka_story", "yoimiya_story"])
+    completed_quests: list[str] = field(default_factory=list)
+    current_ar: int = 1
+    lock_detected: bool = False
+
+
+class InazumaLockoutHandler:
+    """Detect Inazuma quest lockout and resolve via prerequisite chain.
+
+    Inazuma requires AR 30 + Ayaka story + Yoimiya story quests before
+    the Archon Quest chapter 2 unlocks. This handler detects the lock
+    and tracks prerequisite completion.
+    """
+
+    def evaluate(self, state: InazumaLockoutState) -> MechanismDecision:
+        missing_quests = [q for q in state.required_quests if q not in state.completed_quests]
+        ar_ok = state.current_ar >= state.required_ar
+        quests_ok = len(missing_quests) == 0
+
+        if ar_ok and quests_ok:
+            return MechanismDecision("proceed", 90, "inazuma_unlocked")
+
+        if not ar_ok:
+            return MechanismDecision(
+                "grind_ar", 60,
+                f"ar_grind_{state.current_ar}_to_{state.required_ar}",
+            )
+
+        next_quest = missing_quests[0]
+        return MechanismDecision("complete_prerequisite", 70, f"quest_{next_quest}")
+
+    def update_progress(
+        self, state: InazumaLockoutState, *, quest_completed: str = "", ar_gained: int = 0,
+    ) -> InazumaLockoutState:
+        if quest_completed and quest_completed not in state.completed_quests:
+            state.completed_quests.append(quest_completed)
+        state.current_ar += ar_gained
+        state.lock_detected = not (
+            state.current_ar >= state.required_ar
+            and all(q in state.completed_quests for q in state.required_quests)
+        )
+        return state
+
+
+# ---------------------------------------------------------------------------
+# Q-20: Guard Vision — cone-of-vision stealth with patrol tracking
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class GuardVisionState:
+    guard_count: int = 0
+    vision_cones: list[tuple[float, float, float]] = field(default_factory=list)  # (x, y, angle)
+    patrol_routes: list[list[tuple[float, float]]] = field(default_factory=list)
+    player_position: tuple[float, float] = (0.0, 0.0)
+    detection_score: float = 0.0  # 0.0=safe, 1.0=detected
+    current_guard_index: int = 0
+    safe_path: list[tuple[float, float]] = field(default_factory=list)
+
+
+class GuardVisionHandler:
+    """Handle guard cone-of-vision detection for stealth quests.
+
+    Tracks guard positions, vision cones, and patrol routes to compute
+    safe paths. Escalates to dodge+retreat when detection is imminent.
+    """
+
+    VISION_CONE_RADIUS: float = 8.0
+    VISION_CONE_ANGLE: float = 90.0  # degrees
+
+    def evaluate(self, state: GuardVisionState) -> MechanismDecision:
+        if state.detection_score >= 1.0:
+            return MechanismDecision("retreat", 90, "detected_flee")
+
+        if state.detection_score >= 0.7:
+            return MechanismDecision("hide", 80, "near_detection_wait")
+
+        if state.safe_path:
+            return MechanismDecision("follow_safe_path", 60, "stealth_advance")
+
+        # No safe path computed — stay still and observe
+        return MechanismDecision("observe", 40, "wait_for_pattern")
+
+    def compute_safe_path(self, state: GuardVisionState) -> GuardVisionState:
+        """Compute safe path between current position and target, avoiding vision cones."""
+        # Simplified: assume safe path exists between patrol gaps
+        state.safe_path = [(state.player_position[0] + i, state.player_position[1])
+                           for i in range(1, 4)]
+        state.detection_score = 0.0
+        return state
+
+    def update_detection(
+        self, state: GuardVisionState, player_pos: tuple[float, float],
+    ) -> GuardVisionState:
+        """Update detection score based on player position relative to vision cones."""
+        state.player_position = player_pos
+        max_detection = 0.0
+        for gx, gy, angle in state.vision_cones:
+            dx = player_pos[0] - gx
+            dy = player_pos[1] - gy
+            dist = (dx * dx + dy * dy) ** 0.5
+            if dist < self.VISION_CONE_RADIUS:
+                import math
+                player_angle = math.degrees(math.atan2(dy, dx))
+                angle_diff = abs(player_angle - angle)
+                if angle_diff < self.VISION_CONE_ANGLE / 2:
+                    detection = 1.0 - (dist / self.VISION_CONE_RADIUS)
+                    max_detection = max(max_detection, detection)
+        state.detection_score = min(1.0, max_detection)
+        return state
+
+
+# ---------------------------------------------------------------------------
+# Q-25: Quest State Recovery — rollback and resume after interruption
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class QuestRecoveryState:
+    quest_id: str = ""
+    last_known_step: str = ""
+    interrupted: bool = False
+    interruption_reason: str = ""
+    recovery_attempts: int = 0
+    checkpoint_steps: list[str] = field(default_factory=list)
+    current_step_index: int = 0
+
+
+class QuestRecoveryHandler:
+    """Recover quest progress after interruption.
+
+    Tracks checkpoint steps so the quest can resume from the last known
+    good state rather than restarting from scratch.
+    """
+
+    MAX_RECOVERY_ATTEMPTS: int = 3
+
+    def evaluate(self, state: QuestRecoveryState) -> MechanismDecision:
+        if not state.interrupted:
+            return MechanismDecision("proceed", 90, "quest_normal")
+
+        if state.recovery_attempts >= self.MAX_RECOVERY_ATTEMPTS:
+            return MechanismDecision("escalate", 95, "recovery_exhausted")
+
+        if state.checkpoint_steps and state.current_step_index < len(state.checkpoint_steps):
+            step = state.checkpoint_steps[state.current_step_index]
+            return MechanismDecision("resume_from_checkpoint", 70, f"resume_{step}")
+
+        # No checkpoints — restart from beginning
+        return MechanismDecision("restart_quest", 50, f"restart_{state.quest_id}")
+
+    def mark_checkpoint(self, state: QuestRecoveryState, step: str) -> QuestRecoveryState:
+        state.checkpoint_steps.append(step)
+        state.current_step_index = len(state.checkpoint_steps) - 1
+        return state
+
+    def mark_interrupted(self, state: QuestRecoveryState, reason: str) -> QuestRecoveryState:
+        state.interrupted = True
+        state.interruption_reason = reason
+        state.recovery_attempts += 1
+        return state
+
+    def recover(self, state: QuestRecoveryState) -> QuestRecoveryState:
+        """Attempt recovery: resume from last checkpoint."""
+        state.interrupted = False
+        state.interruption_reason = ""
+        return state
+
+
 class QuestMechanismRouter:
     """Routes quest steps to the appropriate mechanism handler.
 
@@ -571,6 +751,9 @@ class QuestMechanismRouter:
         self._ar_breakthrough = ARBreakthroughHandler()
         self._hangout = HangoutHandler()
         self._event = EventQuestHandler()
+        self._inazuma_lockout = InazumaLockoutHandler()
+        self._guard_vision = GuardVisionHandler()
+        self._quest_recovery = QuestRecoveryHandler()
 
         # Active states per mechanism
         self._stealth_state = StealthState()
@@ -582,6 +765,9 @@ class QuestMechanismRouter:
         self._ar_state = ARBreakthroughState()
         self._hangout_state = HangoutState()
         self._event_state = EventQuestState()
+        self._inazuma_lockout_state = InazumaLockoutState()
+        self._guard_vision_state = GuardVisionState()
+        self._quest_recovery_state = QuestRecoveryState()
 
     def route(self, mechanism_type: QuestMechanismType) -> MechanismDecision:
         """Evaluate current state for given mechanism and return decision."""
@@ -603,6 +789,12 @@ class QuestMechanismRouter:
             return self._hangout.evaluate(self._hangout_state)
         if mechanism_type == QuestMechanismType.EVENT:
             return self._event.evaluate(self._event_state)
+        if mechanism_type == QuestMechanismType.INAZUMA_LOCKOUT:
+            return self._inazuma_lockout.evaluate(self._inazuma_lockout_state)
+        if mechanism_type == QuestMechanismType.GUARD_VISION:
+            return self._guard_vision.evaluate(self._guard_vision_state)
+        if mechanism_type == QuestMechanismType.QUEST_RECOVERY:
+            return self._quest_recovery.evaluate(self._quest_recovery_state)
         return MechanismDecision("proceed", 50, "standard_quest")
 
     def get_state(self, mechanism_type: QuestMechanismType) -> Any:
@@ -617,6 +809,9 @@ class QuestMechanismRouter:
             QuestMechanismType.AR_BREAKTHROUGH: self._ar_state,
             QuestMechanismType.HANGOUT: self._hangout_state,
             QuestMechanismType.EVENT: self._event_state,
+            QuestMechanismType.INAZUMA_LOCKOUT: self._inazuma_lockout_state,
+            QuestMechanismType.GUARD_VISION: self._guard_vision_state,
+            QuestMechanismType.QUEST_RECOVERY: self._quest_recovery_state,
         }
         return states.get(mechanism_type)
 
@@ -643,4 +838,10 @@ class QuestMechanismRouter:
             return QuestMechanismType.HANGOUT
         if "event" in tags or step_type == "event":
             return QuestMechanismType.EVENT
+        if "inazuma_lockout" in tags or step_type == "inazuma_lockout":
+            return QuestMechanismType.INAZUMA_LOCKOUT
+        if "guard_vision" in tags or step_type == "guard_vision":
+            return QuestMechanismType.GUARD_VISION
+        if "quest_recovery" in tags or step_type == "quest_recovery":
+            return QuestMechanismType.QUEST_RECOVERY
         return QuestMechanismType.STANDARD

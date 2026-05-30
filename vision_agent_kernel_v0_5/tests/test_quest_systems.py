@@ -15,14 +15,20 @@ from planning.quest_mechanism_router import (
     EscortState,
     EventQuestHandler,
     EventQuestState,
+    GuardVisionHandler,
+    GuardVisionState,
     HangoutBranch,
     HangoutHandler,
     HangoutState,
+    InazumaLockoutHandler,
+    InazumaLockoutState,
     InvestigationHandler,
     InvestigationState,
     MechanismDecision,
     QuestMechanismRouter,
     QuestMechanismType,
+    QuestRecoveryHandler,
+    QuestRecoveryState,
     StealthHandler,
     StealthState,
     TimedHandler,
@@ -649,3 +655,194 @@ class TestEventRouterIntegration:
         router = QuestMechanismRouter()
         state = router.get_state(QuestMechanismType.EVENT)
         assert isinstance(state, EventQuestState)
+
+
+# ---------------------------------------------------------------------------
+# InazumaLockoutHandler (Q-18)
+# ---------------------------------------------------------------------------
+
+class TestInazumaLockoutHandler:
+    def test_lockout_when_ar_too_low(self):
+        handler = InazumaLockoutHandler()
+        state = InazumaLockoutState(required_ar=30, current_ar=20, required_quests=["ayaka_story"])
+        state.completed_quests = ["ayaka_story"]
+        decision = handler.evaluate(state)
+        assert decision.action == "grind_ar"
+
+    def test_lockout_when_prereq_missing(self):
+        handler = InazumaLockoutHandler()
+        state = InazumaLockoutState(required_ar=30, current_ar=35, required_quests=["ayaka_story", "yoimiya_story"])
+        state.completed_quests = ["ayaka_story"]
+        decision = handler.evaluate(state)
+        assert decision.action == "complete_prerequisite"
+
+    def test_unlocked_when_all_met(self):
+        handler = InazumaLockoutHandler()
+        state = InazumaLockoutState(required_ar=30, current_ar=35, required_quests=["ayaka_story"])
+        state.completed_quests = ["ayaka_story"]
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+
+    def test_update_progress(self):
+        handler = InazumaLockoutHandler()
+        state = InazumaLockoutState(required_ar=30, current_ar=25, required_quests=["quest_a"])
+        state = handler.update_progress(state, quest_completed="quest_a", ar_gained=5)
+        assert "quest_a" in state.completed_quests
+        assert state.current_ar == 30
+        assert not state.lock_detected
+
+    def test_router_routes_inazuma_lockout(self):
+        router = QuestMechanismRouter()
+        decision = router.route(QuestMechanismType.INAZUMA_LOCKOUT)
+        assert isinstance(decision, MechanismDecision)
+
+    def test_identify_inazuma_lockout(self):
+        router = QuestMechanismRouter()
+        result = router.identify_mechanism({"type": "inazuma_lockout"})
+        assert result == QuestMechanismType.INAZUMA_LOCKOUT
+
+    def test_gets_lockout_state(self):
+        router = QuestMechanismRouter()
+        state = router.get_state(QuestMechanismType.INAZUMA_LOCKOUT)
+        assert isinstance(state, InazumaLockoutState)
+
+
+# ---------------------------------------------------------------------------
+# GuardVisionHandler (Q-20)
+# ---------------------------------------------------------------------------
+
+class TestGuardVisionHandler:
+    def test_safe_when_no_detection(self):
+        handler = GuardVisionHandler()
+        state = GuardVisionState(detection_score=0.0, safe_path=[(1, 0)])
+        decision = handler.evaluate(state)
+        assert decision.action == "follow_safe_path"
+
+    def test_retreat_when_detected(self):
+        handler = GuardVisionHandler()
+        state = GuardVisionState(detection_score=1.0)
+        decision = handler.evaluate(state)
+        assert decision.action == "retreat"
+
+    def test_hide_when_near_detection(self):
+        handler = GuardVisionHandler()
+        state = GuardVisionState(detection_score=0.8, safe_path=[])
+        decision = handler.evaluate(state)
+        assert decision.action == "hide"
+
+    def test_observe_when_no_path(self):
+        handler = GuardVisionHandler()
+        state = GuardVisionState(detection_score=0.0, safe_path=[])
+        decision = handler.evaluate(state)
+        assert decision.action == "observe"
+
+    def test_compute_safe_path(self):
+        handler = GuardVisionHandler()
+        state = GuardVisionState(player_position=(0, 0))
+        state = handler.compute_safe_path(state)
+        assert len(state.safe_path) > 0
+        assert state.detection_score == 0.0
+
+    def test_update_detection_in_cone(self):
+        handler = GuardVisionHandler()
+        # Guard at origin facing right (0 degrees), player at (3,0) — in front
+        state = GuardVisionState(vision_cones=[(0.0, 0.0, 0.0)])
+        state = handler.update_detection(state, (3.0, 0.0))
+        assert state.detection_score > 0.0
+
+    def test_update_detection_outside_cone(self):
+        handler = GuardVisionHandler()
+        state = GuardVisionState(vision_cones=[(50.0, 50.0, 0.0)])
+        state = handler.update_detection(state, (0.0, 0.0))
+        assert state.detection_score == 0.0
+
+    def test_router_routes_guard_vision(self):
+        router = QuestMechanismRouter()
+        decision = router.route(QuestMechanismType.GUARD_VISION)
+        assert isinstance(decision, MechanismDecision)
+
+    def test_identify_guard_vision(self):
+        router = QuestMechanismRouter()
+        result = router.identify_mechanism({"type": "guard_vision"})
+        assert result == QuestMechanismType.GUARD_VISION
+
+
+# ---------------------------------------------------------------------------
+# QuestRecoveryHandler (Q-25)
+# ---------------------------------------------------------------------------
+
+class TestQuestRecoveryHandler:
+    def test_proceed_when_not_interrupted(self):
+        handler = QuestRecoveryHandler()
+        state = QuestRecoveryState(quest_id="test_quest", interrupted=False)
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+
+    def test_resume_from_checkpoint(self):
+        handler = QuestRecoveryHandler()
+        state = QuestRecoveryState(
+            quest_id="test_quest",
+            interrupted=True,
+            checkpoint_steps=["step1", "step2"],
+            current_step_index=1,
+        )
+        decision = handler.evaluate(state)
+        assert decision.action == "resume_from_checkpoint"
+
+    def test_restart_when_no_checkpoints(self):
+        handler = QuestRecoveryHandler()
+        state = QuestRecoveryState(
+            quest_id="test_quest",
+            interrupted=True,
+            checkpoint_steps=[],
+        )
+        decision = handler.evaluate(state)
+        assert decision.action == "restart_quest"
+
+    def test_escalate_after_max_attempts(self):
+        handler = QuestRecoveryHandler()
+        state = QuestRecoveryState(
+            quest_id="test_quest",
+            interrupted=True,
+            recovery_attempts=3,
+            checkpoint_steps=["step1"],
+        )
+        decision = handler.evaluate(state)
+        assert decision.action == "escalate"
+
+    def test_mark_checkpoint(self):
+        handler = QuestRecoveryHandler()
+        state = QuestRecoveryState()
+        state = handler.mark_checkpoint(state, "step1")
+        assert "step1" in state.checkpoint_steps
+        assert state.current_step_index == 0
+
+    def test_mark_interrupted(self):
+        handler = QuestRecoveryHandler()
+        state = QuestRecoveryState()
+        state = handler.mark_interrupted(state, "combat_death")
+        assert state.interrupted
+        assert state.interruption_reason == "combat_death"
+        assert state.recovery_attempts == 1
+
+    def test_recover_clears_interrupted(self):
+        handler = QuestRecoveryHandler()
+        state = QuestRecoveryState(interrupted=True, interruption_reason="test")
+        state = handler.recover(state)
+        assert not state.interrupted
+        assert state.interruption_reason == ""
+
+    def test_router_routes_quest_recovery(self):
+        router = QuestMechanismRouter()
+        decision = router.route(QuestMechanismType.QUEST_RECOVERY)
+        assert isinstance(decision, MechanismDecision)
+
+    def test_identify_quest_recovery(self):
+        router = QuestMechanismRouter()
+        result = router.identify_mechanism({"type": "quest_recovery"})
+        assert result == QuestMechanismType.QUEST_RECOVERY
+
+    def test_gets_recovery_state(self):
+        router = QuestMechanismRouter()
+        state = router.get_state(QuestMechanismType.QUEST_RECOVERY)
+        assert isinstance(state, QuestRecoveryState)
