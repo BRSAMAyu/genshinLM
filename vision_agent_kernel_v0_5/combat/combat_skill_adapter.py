@@ -407,6 +407,9 @@ class CombatSkillAdapter:
             if boss_key == "shouki_no_kami":
                 from combat.boss_combat_handlers import ShoukiNoKamiHandler
                 return ShoukiNoKamiHandler(executor).execute()
+            if boss_key == "narwhal":
+                from combat.boss_combat_handlers import NarwhalHandler
+                return NarwhalHandler(executor).execute()
             return False
         return _handler
 

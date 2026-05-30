@@ -105,22 +105,22 @@ class TestCombatSkillAdapterBossRouting:
     def test_execute_boss_specific_narwhal(self):
         adapter = CombatSkillAdapter(backend=ConsoleInputBackend())
         result = adapter.execute_boss_specific("narwhal")
-        assert isinstance(result, bool)
+        assert result is True
 
     def test_execute_boss_specific_all_devouring_narwhal(self):
         adapter = CombatSkillAdapter(backend=ConsoleInputBackend())
         result = adapter.execute_boss_specific("all_devouring_narwhal")
-        assert isinstance(result, bool)
+        assert result is True
 
     def test_execute_narwhal_combat(self):
         adapter = CombatSkillAdapter(backend=ConsoleInputBackend())
         result = adapter.execute_narwhal_combat()
-        assert isinstance(result, bool)
+        assert result is True
 
     def test_execute_narwhal_combat_custom_timeout(self):
         adapter = CombatSkillAdapter(backend=ConsoleInputBackend())
         result = adapter.execute_narwhal_combat(context={"timeout_sec": 120.0})
-        assert isinstance(result, bool)
+        assert result is True
 
     def test_execute_boss_specific_unknown_boss_returns_false(self):
         adapter = CombatSkillAdapter(backend=ConsoleInputBackend())
