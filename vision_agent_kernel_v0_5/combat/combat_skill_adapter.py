@@ -47,7 +47,6 @@ class CombatSkillAdapter:
         self._config = config or CombatSkillAdapterConfig()
         self._planner = planner or GenshinCombatPlanner()
         self._actuator = LiveCombatActuator(backend=backend)
-        self._active_playbook_id: str | None = None
 
     def execute_combat(
         self,
@@ -66,7 +65,6 @@ class CombatSkillAdapter:
             enemy_id=enemy_id,
             enemy_weaknesses=enemy_weaknesses,
         )
-        self._active_playbook_id = playbook.playbook_id
         log.info(
             "[CombatSkill] playbook=%s rotation=%d steps chain=%s",
             playbook.playbook_id,
@@ -86,10 +84,8 @@ class CombatSkillAdapter:
                 duration_limit_sec=duration,
             )
             if result:
-                self._active_playbook_id = None
                 return True
 
-        self._active_playbook_id = None
         log.warning("[CombatSkill] combat failed after %d attempts", self._config.max_retries + 1)
         return False
 
@@ -106,7 +102,6 @@ class CombatSkillAdapter:
             team_characters=team_characters,
             boss_profile=boss_profile,
         )
-        self._active_playbook_id = playbook.playbook_id
         log.info(
             "[CombatSkill] boss playbook=%s triggers=%d",
             playbook.playbook_id,
@@ -125,10 +120,8 @@ class CombatSkillAdapter:
                 duration_limit_sec=duration_sec,
             )
             if result:
-                self._active_playbook_id = None
                 return True
 
-        self._active_playbook_id = None
         log.warning("[CombatSkill] boss combat failed after %d attempts", self._config.max_retries + 1)
         return False
 
@@ -212,10 +205,26 @@ class CombatSkillAdapter:
             # Evaluate priority triggers — inject interrupt signals
             hp = data["hp_ratio"]
             for trigger in triggers:
-                cond = trigger.condition
-                if "hp" in cond and "<" in cond:
-                    if hp < self._config.hp_threshold_retreat:
+                cond = trigger.condition.lower().replace(" ", "")
+                # Parse structured conditions: "hp<0.2", "stamina<0.3"
+                if cond.startswith("hp") and "<" in cond:
+                    try:
+                        threshold = float(cond.split("<", 1)[1])
+                    except (ValueError, IndexError):
+                        threshold = self._config.hp_threshold_retreat
+                    if hp < threshold:
                         data["signals"]["attack_incoming"] = 1.0
+                        break
+                elif cond.startswith("stamina") and "<" in cond:
+                    stamina_val = data.get("stamina_ratio", 1.0)
+                    if stamina_val not in data:
+                        data["stamina_ratio"] = stamina_val
+                    try:
+                        threshold = float(cond.split("<", 1)[1])
+                    except (ValueError, IndexError):
+                        threshold = 0.2
+                    if stamina_val < threshold:
+                        data["signals"]["stamina_low"] = 1.0
                         break
             return data
         return _stream

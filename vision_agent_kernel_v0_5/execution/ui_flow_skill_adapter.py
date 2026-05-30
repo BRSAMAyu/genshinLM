@@ -98,10 +98,6 @@ class UIFlowSkillAdapter:
         "npc_shop_buy_item": "npc_shop_buy_item",
         "combat_food_revive": "combat_food_revive",
         "statue_element_resonance": "statue_element_resonance",
-        # Long chain composite aliases
-        "run_daily_quick": "domain_enter_and_claim",
-        "run_daily_standard": "domain_enter_and_claim",
-        "run_daily_deep": "domain_enter_and_claim",
     }
 
     def __init__(
@@ -113,11 +109,13 @@ class UIFlowSkillAdapter:
         config: UIFlowSkillAdapterConfig | None = None,
         quest_follower: Any = None,  # QuestMarkerFollower for navigate_walk
         somatic_supervisor: Any = None,  # SomaticStateSupervisor for stamina/HP monitoring
+        skill_registry: Any | None = None,  # SkillRegistry for composite actions
     ) -> None:
         self._bus = state_bus or StateBus()
         self._config = config or UIFlowSkillAdapterConfig()
         self._quest_follower = quest_follower
         self._somatic_supervisor = somatic_supervisor
+        self._skill_registry = skill_registry
         if executor is not None:
             self._executor = executor
             self._worker = input_worker
@@ -195,10 +193,17 @@ class UIFlowSkillAdapter:
         return tuple(sorted(ALL_FLOWS))
 
     def can_handle(self, action: str) -> bool:
+        if self._skill_registry is not None and self._skill_registry.can_handle(action):
+            return True
         return self._resolve_flow_name(action) is not None or action in self._primitive_handlers
 
     def execute_semantic(self, action: str, target: str = "", context: dict[str, Any] | None = None) -> bool:
         context = context or {}
+
+        # Delegate composite actions to SkillRegistry first
+        if self._skill_registry is not None and self._skill_registry.can_handle(action):
+            log.info("[UIFlowSkillAdapter] delegating composite action '%s' to SkillRegistry", action)
+            return self._skill_registry.execute(action, target, context)
 
         # Gap 8 fix: check somatic state before movement actions
         if self._somatic_supervisor is not None and action in (

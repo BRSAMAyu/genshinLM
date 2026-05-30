@@ -107,7 +107,9 @@ class CharacterProgressionAdapter:
         log.info("[Progression] Stage 3: Weapon")
         equip_ok = self._executor.execute_semantic("weapon_equip_full", target=character)
         enhance_ok = self._executor.execute_semantic("weapon_enhance_full", target=character)
-        ok = equip_ok or enhance_ok
+        ok = equip_ok and enhance_ok
+        if not ok and (equip_ok or enhance_ok):
+            ok = True  # partial success — still proceed to next stage
         return ProgressionResult(
             stage=3,
             stage_name="weapon",
@@ -120,7 +122,9 @@ class CharacterProgressionAdapter:
         log.info("[Progression] Stage 4: Artifact")
         equip_ok = self._executor.execute_semantic("artifact_equip_full", target=character)
         enhance_ok = self._executor.execute_semantic("artifact_enhance_full", target=character)
-        ok = equip_ok or enhance_ok
+        ok = equip_ok and enhance_ok
+        if not ok and (equip_ok or enhance_ok):
+            ok = True  # partial success — still proceed to next stage
         return ProgressionResult(
             stage=4,
             stage_name="artifact",

@@ -145,12 +145,25 @@ class QuestSkillAdapter:
         if self._dialog_handler is None:
             return
         try:
-            # Use select_choice from dialog handler
-            choice_idx = choice_selector([])
-            if choice_idx >= 0:
-                result = self._dialog_handler.select_choice(choice_idx)
-                if result.get("input") == "click_at":
-                    log.info("[QuestSkill] selected dialog choice %d", choice_idx)
+            # Try to extract choices from dialog handler if available
+            choices: list[str] = []
+            if hasattr(self._dialog_handler, "current_choices"):
+                choices = list(getattr(self._dialog_handler, "current_choices", []))
+            elif hasattr(self._dialog_handler, "get_choices"):
+                get_fn = getattr(self._dialog_handler, "get_choices", None)
+                if callable(get_fn):
+                    choices = list(get_fn())
+
+            # If no choices extracted, default to first option
+            if not choices:
+                choices = ["continue"]
+
+            choice_idx = choice_selector(choices)
+            if choice_idx < 0:
+                choice_idx = 0
+            result = self._dialog_handler.select_choice(choice_idx)
+            if result.get("input") == "click_at":
+                log.info("[QuestSkill] selected dialog choice %d", choice_idx)
         except Exception as exc:
             log.debug("[QuestSkill] dialog choice handling skipped: %s", exc)
 

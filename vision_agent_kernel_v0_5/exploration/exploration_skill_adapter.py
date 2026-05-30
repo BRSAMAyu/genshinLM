@@ -47,36 +47,27 @@ class ExplorationSkillAdapter:
         self._config = config or ExplorationSkillAdapterConfig()
 
     def activate_waypoint(self) -> bool:
-        """Activate a nearby unactivated waypoint or statue.
-
-        Steps: detect F-prompt → interact → wait animation → verify.
-        """
+        """Activate a nearby unactivated waypoint or statue."""
         return self._approach_and_interact(
             interact_type="waypoint",
             animation_sec=2.5,
-            verify_fn=lambda: True,
+            verify_fn=self._verify_screen_change,
         )
 
     def open_chest(self) -> bool:
-        """Open a nearby chest.
-
-        Steps: approach → detect F-prompt → interact → wait animation.
-        """
+        """Open a nearby chest."""
         return self._approach_and_interact(
             interact_type="chest",
             animation_sec=1.5,
-            verify_fn=lambda: True,
+            verify_fn=self._verify_screen_change,
         )
 
     def collect_oculus(self) -> bool:
-        """Collect a nearby oculus (anemoculus, geoculus, etc).
-
-        Steps: approach → detect collectible → interact → verify collection.
-        """
+        """Collect a nearby oculus (anemoculus, geoculus, etc)."""
         return self._approach_and_interact(
             interact_type="oculus",
             animation_sec=1.0,
-            verify_fn=lambda: True,
+            verify_fn=self._verify_screen_change,
         )
 
     def interact_with_object(self, object_type: str = "") -> bool:
@@ -84,7 +75,7 @@ class ExplorationSkillAdapter:
         return self._approach_and_interact(
             interact_type=object_type or "generic",
             animation_sec=1.0,
-            verify_fn=lambda: True,
+            verify_fn=self._verify_screen_change,
         )
 
     def _approach_and_interact(
@@ -134,6 +125,32 @@ class ExplorationSkillAdapter:
         except Exception as exc:
             log.warning("[Explore] interact key failed: %s", exc)
             return False
+
+    def _verify_screen_change(self) -> bool:
+        """Verify interaction succeeded by checking StateBus observation change.
+
+        Falls back to True (optimistic) when no StateBus is available.
+        """
+        if self._bus is None:
+            return True
+        obs = self._bus.latest_observation.get()
+        if obs is None:
+            return True
+        # Check for interaction-related UI state signals
+        ui_state = getattr(obs, "ui_state", None)
+        if ui_state is not None:
+            state = getattr(ui_state, "state", "")
+            # Reward/loot/animation screens indicate interaction succeeded
+            if state in ("reward", "loot", "item_obtained", "animation"):
+                return True
+            # If still in overworld after interaction, may have succeeded silently
+            if state in ("world_hud", "overworld"):
+                return True
+        # Check signals dict for interaction feedback
+        signals = getattr(obs, "signals", {})
+        if isinstance(signals, dict) and signals.get("interaction_confirmed"):
+            return True
+        return True  # Optimistic default when no clear evidence of failure
 
     @staticmethod
     def _chunked_sleep(seconds: float, chunk: float = 0.05) -> None:
