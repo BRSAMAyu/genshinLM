@@ -229,3 +229,108 @@ class RecoveryStateMachine:
     @property
     def duration_in_phase_sec(self) -> float:
         return time.perf_counter() - self.last_transition_at
+
+
+# ---------------------------------------------------------------------------
+# RecoveryWatchdog: integrates error classification → state machine → recovery
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class RecoveryWatchdog:
+    """Monitor errors and drive recovery through the classification pipeline.
+
+    Pipeline: error code → classify → state machine → recovery orchestrator.
+
+    Usage::
+
+        wd = RecoveryWatchdog(recovery_fn=my_recovery_func)
+        wd.submit_error("CHARACTER_DIED", source="combat")
+        result = wd.tick()  # Drive state machine forward
+    """
+
+    state_machine: RecoveryStateMachine = field(default_factory=RecoveryStateMachine)
+    pending_errors: list[ErrorEvent] = field(default_factory=list)
+    recovery_fn: Any = None  # Callable[[ErrorEvent], bool] or None
+    max_pending: int = 50
+    _total_submitted: int = 0
+    _total_recovered: int = 0
+    _total_escalated: int = 0
+
+    def submit_error(self, code: str, source: str = "", **ctx: float | str | bool) -> ErrorEvent:
+        """Classify and queue an error for recovery processing."""
+        error = classify_error(code, source, **ctx)
+        self.pending_errors.append(error)
+        self._total_submitted += 1
+        if len(self.pending_errors) > self.max_pending:
+            self.pending_errors = self.pending_errors[-self.max_pending // 2:]
+        log.info(
+            "[Watchdog] error queued: code=%s category=%s severity=%s",
+            code, error.category.value, error.severity.name,
+        )
+        return error
+
+    def tick(self) -> dict[str, Any]:
+        """Process pending errors and drive full recovery cycle.
+
+        Returns status dict with phase, pending count, and recovery result.
+        """
+        if not self.pending_errors:
+            return self._status_dict("idle")
+
+        error = self.pending_errors.pop(0)
+        sm = self.state_machine
+
+        # Drive state machine with error → ANOMALY
+        sm.accept_error(error)
+
+        # Fast-path through ANOMALY → DIAGNOSE → PLAN
+        if sm.phase == RecoveryPhase.ANOMALY:
+            sm.transition("diagnosis_complete")
+        if sm.phase == RecoveryPhase.DIAGNOSE:
+            sm.transition("strategy_selected")
+
+        # Execute recovery if in PLAN phase
+        if sm.phase == RecoveryPhase.PLAN:
+            recovered = False
+            if self.recovery_fn is not None:
+                try:
+                    recovered = self.recovery_fn(error)
+                except Exception as exc:
+                    log.warning("[Watchdog] recovery_fn failed: %s", exc)
+
+            sm.transition("recovery_executed")
+            if recovered:
+                sm.transition("verification_success")
+                self._total_recovered += 1
+                return self._status_dict("recovered", error)
+            sm.transition("verification_failed")
+            self._total_escalated += 1
+            return self._status_dict("escalated", error)
+
+        return self._status_dict(sm.phase.value, error)
+
+    @property
+    def is_healthy(self) -> bool:
+        return self.state_machine.phase == RecoveryPhase.NORMAL
+
+    @property
+    def stats(self) -> dict[str, Any]:
+        return {
+            "total_submitted": self._total_submitted,
+            "total_recovered": self._total_recovered,
+            "total_escalated": self._total_escalated,
+            "recovery_rate": (
+                self._total_recovered / self._total_submitted
+                if self._total_submitted > 0 else 1.0
+            ),
+            "pending": len(self.pending_errors),
+            "phase": self.state_machine.phase.value,
+        }
+
+    def _status_dict(self, action: str, error: ErrorEvent | None = None) -> dict[str, Any]:
+        return {
+            "action": action,
+            "phase": self.state_machine.phase.value,
+            "error": error,
+            "escalation_count": self.state_machine.escalation_count,
+        }

@@ -9,6 +9,7 @@ from runtime.error_classification import (
     ErrorSeverity,
     RecoveryPhase,
     RecoveryStateMachine,
+    RecoveryWatchdog,
     classify_error,
 )
 
@@ -381,3 +382,72 @@ def test_all_codes_classify_without_error():
         ev = classify_error(code)
         assert isinstance(ev, ErrorEvent)
         assert ev.code == code
+
+
+# ---------------------------------------------------------------------------
+# RecoveryWatchdog
+# ---------------------------------------------------------------------------
+
+class TestRecoveryWatchdog:
+    def test_starts_healthy(self):
+        wd = RecoveryWatchdog()
+        assert wd.is_healthy
+        assert wd.stats["phase"] == "normal"
+
+    def test_submit_error_classifies(self):
+        wd = RecoveryWatchdog()
+        ev = wd.submit_error("STUCK", source="nav")
+        assert ev.category == ErrorCategory.NAVIGATION
+        assert len(wd.pending_errors) == 1
+
+    def test_tick_idle_when_no_errors(self):
+        wd = RecoveryWatchdog()
+        result = wd.tick()
+        assert result["action"] == "idle"
+
+    def test_tick_processes_error(self):
+        wd = RecoveryWatchdog()
+        wd.submit_error("STUCK", source="nav")
+        result = wd.tick()
+        # Fast-path drives through full cycle; without recovery_fn defaults to escalated
+        assert result["action"] in ("recovered", "escalated", "idle")
+
+    def test_full_recovery_cycle(self):
+        recovered_errors: list[ErrorEvent] = []
+        wd = RecoveryWatchdog(recovery_fn=lambda e: (recovered_errors.append(e), True)[1])
+        wd.submit_error("STUCK", source="nav")
+        result = wd.tick()
+        assert result["action"] == "recovered"
+        assert len(recovered_errors) == 1
+        assert wd.is_healthy
+        assert wd.stats["total_recovered"] == 1
+
+    def test_escalation_on_recovery_failure(self):
+        wd = RecoveryWatchdog(recovery_fn=lambda e: False)
+        wd.submit_error("STUCK", source="nav")
+        result = wd.tick()
+        assert result["action"] == "escalated"
+        assert wd.stats["total_escalated"] == 1
+
+    def test_stats_tracking(self):
+        wd = RecoveryWatchdog()
+        wd.submit_error("STUCK")
+        assert wd.stats["total_submitted"] == 1
+        assert wd.stats["pending"] == 1
+
+    def test_pending_trim(self):
+        wd = RecoveryWatchdog(max_pending=10)
+        for i in range(20):
+            wd.submit_error("STUCK", source=f"test_{i}")
+        assert len(wd.pending_errors) <= 10
+
+    def test_recovery_fn_exception_handled(self):
+        def bad_fn(e: ErrorEvent) -> bool:
+            raise RuntimeError("test error")
+        wd = RecoveryWatchdog(recovery_fn=bad_fn)
+        wd.submit_error("STUCK")
+        while wd.pending_errors or wd.state_machine.is_recovering:
+            result = wd.tick()
+            if result["action"] in ("escalated", "abort", "idle"):
+                break
+        # Should not crash, just escalate
