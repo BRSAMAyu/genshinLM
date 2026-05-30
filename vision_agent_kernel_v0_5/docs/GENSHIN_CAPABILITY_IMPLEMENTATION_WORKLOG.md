@@ -253,3 +253,30 @@
 **测试总计**: 1614 passed, 0 failed
 
 ---
+
+## Phase 9: 任务系统与感知视觉检测 (2026-05-30)
+
+### Round 3 后续数据修正 ✅
+- 突破材料 Tier 修正 (wiki Xiangling 验证):
+  - Lv 40: common_intact=15 → common_damaged=15 (T1)
+  - Lv 50: gem_chunk=6 → gem_fragment=6, common_phosphorescent=12 → common_intact=12 (T2)
+  - Lv 60: common_phosphorescent=18 → common_intact=18 (T2)
+  - Lv 70: gem_gemstone=3 → gem_chunk=6 (correct tier)
+
+### Step 9: 任务机制路由器 ✅
+- **文件**: `planning/quest_mechanism_router.py` — 7 种任务机制处理器
+- **覆盖能力**: Q-10~Q-16 (潜行/护送/限时/调查/梦境/秘境/AR突破)
+- **审查修复**: 非确定性hash→md5, AR突破域数据修正, 隐身计时器→视觉条件
+
+### Step 10: 任务 UI 管理 ✅
+- **文件**: `planning/quest_ui_manager.py` — 任务日志/世界任务/委托/完成检测/NPC占用
+- **覆盖能力**: Q-05~Q-09
+
+### Step 11: 感知视觉检测器 ✅
+- **文件**: `perception/genshin_visual_detectors.py` — 6 类视觉检测器
+- **覆盖能力**: P-10, P-12, P-14, P-15, P-16, P-17
+
+**测试总计**: 1692 passed, 0 failed (78 新测试)
+**总完成率**: 52.2% (143/274)
+
+---
