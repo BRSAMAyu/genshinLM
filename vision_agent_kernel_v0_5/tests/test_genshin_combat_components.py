@@ -199,6 +199,18 @@ class TestReactionShieldCounter:
         table = GenshinReactionTable()
         assert table.get_shield_counter("dendro") == "pyro"
 
+    def test_geo_shield_returns_none(self) -> None:
+        table = GenshinReactionTable()
+        assert table.get_shield_counter("geo") == "none"
+
+    def test_anemo_shield_returns_none(self) -> None:
+        table = GenshinReactionTable()
+        assert table.get_shield_counter("anemo") == "none"
+
+    def test_unknown_shield_returns_unknown(self) -> None:
+        table = GenshinReactionTable()
+        assert table.get_shield_counter("unknown_element") == "unknown"
+
 
 class TestReactionTeamReactions:
     def test_pyro_hydro_team(self) -> None:

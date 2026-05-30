@@ -225,6 +225,20 @@ class TestTeamAdapter:
         recs = adapter.recommend_changes(["pyro", "hydro", "electro", "cryo"], enemy)
         assert len(recs) == 0
 
+    def test_geo_shield_no_add_none_recommendation(self) -> None:
+        adapter = TeamAdapter()
+        enemy = EnemyProfile("boss", element_shield="geo")
+        recs = adapter.recommend_changes(["pyro", "hydro", "electro", "cryo"], enemy)
+        # "none" counter should not produce "Add none" recommendation
+        assert len(recs) == 0
+
+    def test_unknown_shield_element_no_add_unknown_recommendation(self) -> None:
+        adapter = TeamAdapter()
+        enemy = EnemyProfile("boss", element_shield="unknown_element")
+        recs = adapter.recommend_changes(["pyro", "hydro", "electro", "cryo"], enemy)
+        # "unknown" counter should not produce recommendation
+        assert len(recs) == 0
+
     def test_flying_phase_recommends_bow(self) -> None:
         adapter = TeamAdapter()
         enemy = EnemyProfile("flying_enemy", has_flying_phase=True)

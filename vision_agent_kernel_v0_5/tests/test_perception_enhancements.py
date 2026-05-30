@@ -89,6 +89,13 @@ class TestAoEGroundDetector:
         assert result.aoe_type == AoEType.ELEMENTAL_ZONE
         assert result.element == "electro"
 
+    def test_pyro_elemental_aoe(self) -> None:
+        det = AoEGroundDetector()
+        result = det.detect_aoe({"hue": 15, "intensity": 0.7})
+        # hue 15 is at boundary: ORANGE_CIRCLE wins (danger circles take priority)
+        assert result is not None
+        assert result.aoe_type == AoEType.ORANGE_CIRCLE
+
     def test_low_intensity_none(self) -> None:
         det = AoEGroundDetector()
         assert det.detect_aoe({"hue": 5, "intensity": 0.1}) is None
@@ -155,6 +162,7 @@ class TestNumericValueReader:
         result = reader.parse_numeric("1,234")
         assert result is not None
         assert result.value == 1234.0
+        assert result.raw_text == "1,234"  # preserves original formatting
 
     def test_parse_wan(self) -> None:
         reader = NumericValueReader()

@@ -332,7 +332,7 @@ class TeamAdapter:
             try:
                 table = GenshinReactionTable()
                 counter = table.get_shield_counter(enemy.element_shield)
-                if counter not in current_elements:
+                if counter not in ("none", "unknown") and counter not in current_elements:
                     recommendations.append(f"Add {counter} for {enemy.element_shield} shield")
             except (KeyError, ValueError):
                 pass
