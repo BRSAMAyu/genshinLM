@@ -13,6 +13,11 @@ from planning.quest_mechanism_router import (
     DomainQuestState,
     EscortHandler,
     EscortState,
+    EventQuestHandler,
+    EventQuestState,
+    HangoutBranch,
+    HangoutHandler,
+    HangoutState,
     InvestigationHandler,
     InvestigationState,
     MechanismDecision,
@@ -433,3 +438,214 @@ class TestQuestUIManager:
         mgr = QuestUIManager()
         action = mgr.get_next_action(25)
         assert action["action"] == "explore"
+
+
+# ===================================================================
+# Hangout Event tests
+# ===================================================================
+
+class TestHangoutHandler:
+    def test_inactive_returns_wait(self):
+        handler = HangoutHandler()
+        state = HangoutState(is_active=False)
+        decision = handler.evaluate(state)
+        assert decision.action == "wait"
+
+    def test_all_endings_unlocked(self):
+        handler = HangoutHandler()
+        state = HangoutState(
+            is_active=True,
+            endings_unlocked=["ending_1", "ending_2", "ending_3", "ending_4", "ending_5"],
+            endings_total=5,
+        )
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+        assert "all_endings" in decision.reason
+
+    def test_branch_selection_targets_unexplored(self):
+        handler = HangoutHandler()
+        state = HangoutState(
+            is_active=True,
+            endings_unlocked=["ending_1"],
+            endings_total=3,
+            current_branch_options=[
+                HangoutBranch("b1", "Option A", leads_to_ending="ending_1"),
+                HangoutBranch("b2", "Option B", leads_to_ending="ending_2"),
+                HangoutBranch("b3", "Option C", leads_to_ending="ending_3"),
+            ],
+        )
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+        assert "b2" in decision.reason  # First unexplored
+
+    def test_all_explored_picks_first(self):
+        handler = HangoutHandler()
+        state = HangoutState(
+            is_active=True,
+            endings_unlocked=["ending_1", "ending_2"],
+            endings_total=3,  # Not all unlocked yet
+            current_branch_options=[
+                HangoutBranch("b1", "Option A", leads_to_ending="ending_1"),
+                HangoutBranch("b2", "Option B", leads_to_ending="ending_2"),
+            ],
+        )
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+        assert "default" in decision.reason
+
+    def test_record_ending(self):
+        handler = HangoutHandler()
+        state = HangoutState(is_active=True)
+        state = handler.record_ending(state, "ending_1")
+        assert "ending_1" in state.endings_unlocked
+        # No duplicate
+        state = handler.record_ending(state, "ending_1")
+        assert state.endings_unlocked.count("ending_1") == 1
+
+    def test_set_branch_options(self):
+        handler = HangoutHandler()
+        state = HangoutState(is_active=True)
+        branches = [HangoutBranch("b1", "Go left"), HangoutBranch("b2", "Go right")]
+        state = handler.set_branch_options(state, branches)
+        assert len(state.current_branch_options) == 2
+
+    def test_heart_event_checkpoint(self):
+        handler = HangoutHandler()
+        state = HangoutState(is_active=True, affection_checkpoint_met=True)
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+        assert "heart" in decision.reason
+
+    def test_no_branch_advances_dialog(self):
+        handler = HangoutHandler()
+        state = HangoutState(is_active=True)
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+        assert "dialog" in decision.reason
+
+
+class TestHangoutRouterIntegration:
+    def test_router_routes_hangout(self):
+        router = QuestMechanismRouter()
+        decision = router.route(QuestMechanismType.HANGOUT)
+        assert decision.action == "wait"  # Default inactive
+
+    def test_identify_hangout_from_tags(self):
+        router = QuestMechanismRouter()
+        result = router.identify_mechanism({"tags": ["hangout"]})
+        assert result == QuestMechanismType.HANGOUT
+
+    def test_identify_hangout_from_type(self):
+        router = QuestMechanismRouter()
+        result = router.identify_mechanism({"type": "hangout"})
+        assert result == QuestMechanismType.HANGOUT
+
+
+# ===================================================================
+# Event Quest tests
+# ===================================================================
+
+class TestEventQuestHandler:
+    def test_inactive_returns_wait(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(is_active=False)
+        decision = handler.evaluate(state)
+        assert decision.action == "wait"
+
+    def test_expired_event(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(is_active=True, days_remaining=0)
+        decision = handler.evaluate(state)
+        assert "expired" in decision.reason
+
+    def test_intro_phase_drives_dialog(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(is_active=True, phase="intro")
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+        assert decision.params.get("drive_dialog") is True
+
+    def test_main_phase_plays_mini_game(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(
+            is_active=True, phase="main",
+            currency_collected=200, currency_target=1000,
+        )
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+        assert "mini_game" in decision.reason
+
+    def test_currency_target_met_advances(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(
+            is_active=True, phase="main",
+            currency_collected=1000, currency_target=1000,
+        )
+        decision = handler.evaluate(state)
+        assert "target_met" in decision.reason
+
+    def test_challenge_phase_fights(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(is_active=True, phase="challenge")
+        decision = handler.evaluate(state)
+        assert decision.action == "fight"
+
+    def test_finale_phase_drives_dialog(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(is_active=True, phase="finale")
+        decision = handler.evaluate(state)
+        assert decision.action == "proceed"
+        assert decision.params.get("drive_dialog") is True
+
+    def test_update_progress_currency(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(is_active=True, phase="main")
+        state = handler.update_progress(state, currency_gained=100)
+        assert state.currency_collected == 100
+
+    def test_update_progress_mini_game(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(is_active=True, phase="main")
+        state = handler.update_progress(state, mini_game_won=True)
+        assert state.mini_games_completed == 1
+
+    def test_update_progress_phase_transition(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(is_active=True, phase="intro")
+        state = handler.update_progress(state, phase_complete=True)
+        assert state.phase == "main"
+
+    def test_phase_transitions_complete(self):
+        handler = EventQuestHandler()
+        state = EventQuestState(is_active=True, phase="main")
+        state = handler.update_progress(state, phase_complete=True)
+        assert state.phase == "challenge"
+        state = handler.update_progress(state, phase_complete=True)
+        assert state.phase == "finale"
+
+
+class TestEventRouterIntegration:
+    def test_router_routes_event(self):
+        router = QuestMechanismRouter()
+        decision = router.route(QuestMechanismType.EVENT)
+        assert decision.action == "wait"  # Default inactive
+
+    def test_identify_event_from_tags(self):
+        router = QuestMechanismRouter()
+        result = router.identify_mechanism({"tags": ["event"]})
+        assert result == QuestMechanismType.EVENT
+
+    def test_identify_event_from_type(self):
+        router = QuestMechanismRouter()
+        result = router.identify_mechanism({"type": "event"})
+        assert result == QuestMechanismType.EVENT
+
+    def test_router_gets_hangout_state(self):
+        router = QuestMechanismRouter()
+        state = router.get_state(QuestMechanismType.HANGOUT)
+        assert isinstance(state, HangoutState)
+
+    def test_router_gets_event_state(self):
+        router = QuestMechanismRouter()
+        state = router.get_state(QuestMechanismType.EVENT)
+        assert isinstance(state, EventQuestState)

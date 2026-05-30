@@ -30,6 +30,8 @@ class QuestMechanismType(str, Enum):
     DREAM = "dream"
     DOMAIN = "domain"
     AR_BREAKTHROUGH = "ar_breakthrough"
+    HANGOUT = "hangout"
+    EVENT = "event"
 
 
 @dataclass(slots=True)
@@ -397,6 +399,161 @@ class ARBreakthroughHandler:
         return ARBreakthroughState(is_active=False)
 
 
+# ---------------------------------------------------------------------------
+# Hangout Event (邀约事件)
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class HangoutBranch:
+    """A branch in a hangout event dialog tree."""
+    branch_id: str
+    choice_text: str
+    leads_to_ending: str = ""       # Empty = continues to more dialog
+    is_heart_event: bool = False     # Special affection checkpoint
+
+
+@dataclass(slots=True)
+class HangoutState:
+    """Current hangout event state."""
+    character_name: str = ""
+    current_node: str = ""
+    endings_unlocked: list[str] = field(default_factory=list)
+    endings_total: int = 5          # Most hangouts have 5-6 endings
+    current_branch_options: list[HangoutBranch] = field(default_factory=list)
+    affection_checkpoint_met: bool = False
+    is_active: bool = False
+
+
+class HangoutHandler:
+    """Handles hangout event branch selection and ending tracking.
+
+    Hangout events are branching dialog sequences where each choice can lead
+    to different endings. The handler tracks unlocked endings and helps
+    select the correct dialog choices to reach desired endings.
+    """
+
+    def evaluate(self, state: HangoutState) -> MechanismDecision:
+        if not state.is_active:
+            return MechanismDecision("wait", 50, "hangout_not_active")
+
+        # If all endings unlocked, no need to continue
+        if len(state.endings_unlocked) >= state.endings_total:
+            return MechanismDecision("proceed", 0, "all_endings_unlocked")
+
+        # If at a branch point, select the choice leading to an unexplored ending
+        if state.current_branch_options:
+            unexplored = [
+                b for b in state.current_branch_options
+                if b.leads_to_ending and b.leads_to_ending not in state.endings_unlocked
+            ]
+            if unexplored:
+                target_branch = unexplored[0]
+                return MechanismDecision(
+                    "proceed", 0,
+                    f"select_branch_{target_branch.branch_id}",
+                    params={"choice_text": target_branch.choice_text},
+                )
+            # All explored — pick first to continue dialog
+            return MechanismDecision(
+                "proceed", 10, "continue_dialog_default",
+                params={"choice_text": state.current_branch_options[0].choice_text},
+            )
+
+        # Heart event (affection checkpoint) — must respond correctly
+        if state.affection_checkpoint_met:
+            return MechanismDecision(
+                "proceed", 5, "heart_event_respond",
+                params={"select_positive": True},
+            )
+
+        return MechanismDecision("proceed", 20, "advance_hangout_dialog")
+
+    def record_ending(self, state: HangoutState, ending_id: str) -> HangoutState:
+        if ending_id and ending_id not in state.endings_unlocked:
+            state.endings_unlocked.append(ending_id)
+        return state
+
+    def set_branch_options(
+        self, state: HangoutState, options: list[HangoutBranch],
+    ) -> HangoutState:
+        state.current_branch_options = options
+        return state
+
+
+# ---------------------------------------------------------------------------
+# Limited Event Quest (限时活动)
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class EventQuestState:
+    """Current event quest state."""
+    event_id: str = ""
+    event_name: str = ""
+    phase: str = "intro"         # intro, main, challenge, finale
+    currency_collected: int = 0
+    currency_target: int = 1000
+    mini_games_completed: int = 0
+    mini_games_total: int = 0
+    is_time_limited: bool = True
+    days_remaining: int = 14
+    is_active: bool = False
+
+
+class EventQuestHandler:
+    """Handles limited-time event quests with mini-games and currency.
+
+    Events typically have:
+    - Intro quests (dialog + navigation)
+    - Main event currency collection (mini-games)
+    - Challenge modes (harder versions)
+    - Finale quest (story conclusion)
+    """
+
+    def evaluate(self, state: EventQuestState) -> MechanismDecision:
+        if not state.is_active:
+            return MechanismDecision("wait", 50, "event_not_active")
+
+        if state.days_remaining <= 0:
+            return MechanismDecision("proceed", 0, "event_expired")
+
+        if state.phase == "intro":
+            return MechanismDecision("proceed", 10, "event_intro",
+                                     params={"drive_dialog": True})
+
+        if state.phase == "main":
+            if state.currency_collected >= state.currency_target:
+                return MechanismDecision("proceed", 5, "currency_target_met")
+            return MechanismDecision("proceed", 10, "play_mini_game",
+                                     params={"target_currency": state.currency_target - state.currency_collected})
+
+        if state.phase == "challenge":
+            return MechanismDecision("fight", 5, "event_challenge",
+                                     params={"difficulty": "hard"})
+
+        if state.phase == "finale":
+            return MechanismDecision("proceed", 0, "event_finale",
+                                     params={"drive_dialog": True})
+
+        return MechanismDecision("proceed", 20, "event_default")
+
+    def update_progress(
+        self,
+        state: EventQuestState,
+        currency_gained: int = 0,
+        mini_game_won: bool = False,
+        phase_complete: bool = False,
+    ) -> EventQuestState:
+        state.currency_collected += currency_gained
+        if mini_game_won:
+            state.mini_games_completed += 1
+        if phase_complete:
+            phase_order = ["intro", "main", "challenge", "finale"]
+            idx = phase_order.index(state.phase) if state.phase in phase_order else -1
+            if idx < len(phase_order) - 1:
+                state.phase = phase_order[idx + 1]
+        return state
+
+
 class QuestMechanismRouter:
     """Routes quest steps to the appropriate mechanism handler.
 
@@ -412,6 +569,8 @@ class QuestMechanismRouter:
         self._dream = DreamHandler()
         self._domain = DomainQuestHandler()
         self._ar_breakthrough = ARBreakthroughHandler()
+        self._hangout = HangoutHandler()
+        self._event = EventQuestHandler()
 
         # Active states per mechanism
         self._stealth_state = StealthState()
@@ -421,6 +580,8 @@ class QuestMechanismRouter:
         self._dream_state = DreamState()
         self._domain_state = DomainQuestState()
         self._ar_state = ARBreakthroughState()
+        self._hangout_state = HangoutState()
+        self._event_state = EventQuestState()
 
     def route(self, mechanism_type: QuestMechanismType) -> MechanismDecision:
         """Evaluate current state for given mechanism and return decision."""
@@ -438,6 +599,10 @@ class QuestMechanismRouter:
             return self._domain.evaluate(self._domain_state)
         if mechanism_type == QuestMechanismType.AR_BREAKTHROUGH:
             return self._ar_breakthrough.evaluate(self._ar_state)
+        if mechanism_type == QuestMechanismType.HANGOUT:
+            return self._hangout.evaluate(self._hangout_state)
+        if mechanism_type == QuestMechanismType.EVENT:
+            return self._event.evaluate(self._event_state)
         return MechanismDecision("proceed", 50, "standard_quest")
 
     def get_state(self, mechanism_type: QuestMechanismType) -> Any:
@@ -450,6 +615,8 @@ class QuestMechanismRouter:
             QuestMechanismType.DREAM: self._dream_state,
             QuestMechanismType.DOMAIN: self._domain_state,
             QuestMechanismType.AR_BREAKTHROUGH: self._ar_state,
+            QuestMechanismType.HANGOUT: self._hangout_state,
+            QuestMechanismType.EVENT: self._event_state,
         }
         return states.get(mechanism_type)
 
@@ -472,4 +639,8 @@ class QuestMechanismRouter:
             return QuestMechanismType.DOMAIN
         if "ar_breakthrough" in tags or step_type == "ar_breakthrough":
             return QuestMechanismType.AR_BREAKTHROUGH
+        if "hangout" in tags or step_type == "hangout":
+            return QuestMechanismType.HANGOUT
+        if "event" in tags or step_type == "event":
+            return QuestMechanismType.EVENT
         return QuestMechanismType.STANDARD

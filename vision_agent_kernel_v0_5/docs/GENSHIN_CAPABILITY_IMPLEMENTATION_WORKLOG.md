@@ -1203,3 +1203,59 @@
 - **Commits**: 3 commits pushed to codex/pre-realworld-closure
 
 ---
+
+### Session 3: Environmental + Boss Combat + Quest Mechanisms (2026-05-31)
+
+**Combat Scenarios Completed: #4-8 (boss handlers), #12-13 (environmental handlers)**
+
+#### 3a. Environmental Combat Handlers
+- **File**: `combat/environmental_combat_handlers.py` (new, ~270 lines)
+- **DragonspineSheerColdHandler** (#12): 严寒战斗
+  - Sheer cold gauge tracking (SAFE/WARNING/DANGER/CRITICAL thresholds)
+  - Warmth source navigation (bonfires, statues, scarlet quartz, warming seelie)
+  - Fire character skill for self-warming, warming bottle fallback
+  - Combat-temperature priority: critical cold = evacuate, danger = warm+fight, safe = focus combat
+  - Blizzard multiplier increases cold accumulation rate
+  - Ice enemy priority targeting to reduce cold from elemental attacks
+- **InazumaThunderstormHandler** (#13): 雷暴战斗
+  - Lightning strike prediction based on storm intensity (clear/active/intense/superstorm)
+  - Lightning dodge with priority over combat actions
+  - Electro-charged management: wet + electro = periodic damage
+  - Pyro character skill for wet status removal
+  - Electro-ranged enemy priority targeting
+
+#### 3b. Boss Combat Handlers
+- **File**: `combat/boss_combat_handlers.py` (new, ~340 lines)
+- **DvalinHandler** (#4): 3-phase aerial shooting → platform melee → final burst
+- **ChildeHandler** (#5): 3-phase hydro → electro → dual element with shield break
+- **SignoraHandler** (#6): Dual-environment cryo/pyro with temperature gauge management
+  - Collect flame hearts (P1) / frost seeds (P2) to manage temperature
+  - Device destruction tracking (Signora destroys temperature devices)
+- **RaidenShogunHandler** (#7): High-frequency dodge + burst iframe save for Musou
+- **ShoukiNoKamiHandler** (#8): Energy ball collection + construct destruction + tower defense
+
+#### 3c. CombatSkillAdapter Integration
+- **Modified**: `combat/combat_skill_adapter.py`
+  - Added `execute_environmental_combat(environment_type, context)` method
+  - Added `execute_boss_specific(boss_id, context)` method
+  - Lazy boss handler loading with name aliases (dvalin/stormterror_dvalin, childe/tartaglia, etc.)
+
+#### 3d. Quest Mechanism Extensions
+- **Modified**: `planning/quest_mechanism_router.py`
+  - Added `HANGOUT` and `EVENT` mechanism types
+  - **HangoutHandler**: Branch dialog selection, ending tracking (5-6 endings per hangout)
+    - Targets unexplored endings via branch selection
+    - Heart event (affection checkpoint) handling
+  - **EventQuestHandler**: Limited-time event with 4-phase lifecycle (intro→main→challenge→finale)
+    - Currency collection via mini-games
+    - Challenge mode difficulty handling
+    - Phase transitions with completion tracking
+
+#### Session Summary
+- **New modules**: 2 files (environmental handlers + boss handlers)
+- **Modified files**: 3 (combat_skill_adapter, quest_mechanism_router, test_quest_systems)
+- **New tests**: 68 tests (41 environmental/boss + 27 hangout/event)
+- **Total test count**: 2575 passed (from 2507), 1 known flaky
+- **Commits**: 2 commits pushed to codex/pre-realworld-closure
+
+---
