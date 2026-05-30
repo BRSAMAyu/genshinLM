@@ -317,6 +317,15 @@ class SpiralAbyssTeamBuilder:
 class SpiralAbyssRoomAnalyzer:
     """Analyzes Abyss chamber enemies and identifies weaknesses (C-26)."""
 
+    def __init__(self) -> None:
+        self._reaction_table: GenshinReactionTable | None = None
+
+    def _get_table(self) -> GenshinReactionTable:
+        if self._reaction_table is None:
+            from combat.genshin_element_reactions import GenshinReactionTable
+            self._reaction_table = GenshinReactionTable()
+        return self._reaction_table
+
     def analyze_room(self, room: AbyssRoom) -> dict[str, str]:
         """Analyze a room's enemy composition and return strategy recommendations."""
         recommendations: dict[str, str] = {}
@@ -336,9 +345,8 @@ class SpiralAbyssRoomAnalyzer:
 
     def _get_counter_elements(self, shields: list[str]) -> list[str]:
         """Get counter elements for shield types."""
-        from combat.genshin_element_reactions import GenshinReactionTable
         counters: list[str] = []
-        table = GenshinReactionTable()
+        table = self._get_table()
         for shield in shields:
             try:
                 counter = table.get_shield_counter(shield)
@@ -377,7 +385,7 @@ class AbyssFloorState:
     @property
     def current_chamber(self) -> AbyssChamber | None:
         for c in self.chambers:
-            if not c.is_complete:
+            if c.status in (ChamberStatus.PENDING, ChamberStatus.IN_PROGRESS):
                 return c
         return None
 
@@ -414,10 +422,18 @@ class SpiralAbyssRunner:
 
         team1, team2 = teams
 
-        # Analyze all rooms
+        # Analyze all rooms and store recommendations
         for chamber in chambers:
-            self._room_analyzer.analyze_room(chamber.first_half)
-            self._room_analyzer.analyze_room(chamber.second_half)
+            rec1 = self._room_analyzer.analyze_room(chamber.first_half)
+            rec2 = self._room_analyzer.analyze_room(chamber.second_half)
+            if rec1.get("shield_counters"):
+                team1.recommended_elements.extend(
+                    e.strip() for e in rec1["shield_counters"].split(",")
+                )
+            if rec2.get("shield_counters"):
+                team2.recommended_elements.extend(
+                    e.strip() for e in rec2["shield_counters"].split(",")
+                )
 
         # Select blessing
         blessing = None
@@ -438,6 +454,9 @@ class SpiralAbyssRunner:
         current = state.current_chamber
         if current is None:
             return ChamberStatus.COMPLETED
+
+        if current.status == ChamberStatus.FAILED:
+            return ChamberStatus.FAILED
 
         current.status = ChamberStatus.COMPLETED
         current.stars_earned = min(stars, 3)
