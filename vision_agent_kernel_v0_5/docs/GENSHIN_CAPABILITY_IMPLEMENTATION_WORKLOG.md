@@ -1038,4 +1038,16 @@
 - Core approach-interact-verify loop with F-key interaction
 - 5 tests passed
 
+#### QuestSkillAdapter
+- **Files**: `planning/quest_skill_adapter.py`
+- Methods: drive_dialog, skip_cutscene, follow_quest_marker, advance_quest, check_prerequisites
+- Integrates with GenshinDialogHandler, QuestStateMachine, StateBus
+- 8 tests passed
+
+#### Session totals
+- 2243 tests passed (22 new), 1 known failure (mouse path duration)
+- 7 commits pushed
+- New modules: CombatSkillAdapter, ExplorationSkillAdapter, QuestSkillAdapter
+- UI flows: 48 → 59 registered flows
+
 ---
