@@ -105,7 +105,7 @@
 | I-10 | 视觉动作块 | 分块执行 + 视觉触发等待 + 中断检查 | ✅ 已有 (VisualActionBlock) |
 | I-11 | 传送序列 | M → 地图 → 点击传送点 → 确认 → 等待加载 | ✅ 已有 (teleport_sequence.py) |
 | I-12 | 加载等待 | 检测加载画面并等待直到消失 | ✅ 已有 (loading_waiter.py) |
-| I-13 | UI 操作序列 | 预定义的多步 UI 操作（如打开角色菜单→升级→确认） | ⚠️ 需要大量模板 |
+| I-13 | UI 操作序列 | 预定义的多步 UI 操作（如打开角色菜单→升级→确认） | ✅ 已有 (ui_flows 36 个预定义流程 + ui_flow_engine UIFlowExecutor) |
 | I-14 | 条件分支执行 | 根据视觉状态决定下一步操作 | ✅ 已有 (branch_on_visual_state) |
 | I-15 | 精确鼠标拖拽 | 地图拖拽、物品拖拽（队伍配置、圣遗物装备） | ✅ 已有 (advanced_perception.py InputPrimitiveBuilder) |
 | I-16 | 滚轮操作 | 地图缩放、列表滚动 | ✅ 已有 (advanced_perception.py ScrollOperation) |
@@ -155,11 +155,11 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| U-01 | 派蒙菜单 (Esc) | 打开主菜单，导航到各子系统 | ⚠️ 需模板 |
-| U-02 | 角色菜单 (C) | 属性/武器/圣遗物/天赋/命座 标签切换 | ⚠️ 需模板 |
-| U-03 | 背包 (B) | 武器/圣遗物/角色培养/食物/材料/小工具/任务 标签 | ⚠️ 需模板 |
+| U-01 | 派蒙菜单 (Esc) | 打开主菜单，导航到各子系统 | ✅ 已有 (ui_flow_engine open_menu + menu_flows settings) |
+| U-02 | 角色菜单 (C) | 属性/武器/圣遗物/天赋/命座 标签切换 | ✅ 已有 (ui_flows OPEN_CHARACTER_MENU + click_char_tab) |
+| U-03 | 背包 (B) | 武器/圣遗物/角色培养/食物/材料/小工具/任务 标签 | ✅ 已有 (ui_flows OPEN_BACKPACK + ui_primitives tab_switch) |
 | U-04 | 地图 (M) | 地图缩放、传送点选择、区域切换 | ✅ 已有 |
-| U-05 | 任务菜单 (J) | 魔神/传说/世界/委托/活动 分类浏览 | ⚠️ 需模板 |
+| U-05 | 任务菜单 (J) | 魔神/传说/世界/委托/活动 分类浏览 | ✅ 已有 (ui_flows OPEN_QUEST_MENU + quest_ui_manager.py QuestLogManager) |
 | U-06 | 队伍配置 (L) | 角色拖放排列、队伍保存/切换 | ✅ 已有 (menu_flows.py build_party_config_flow + ui_primitives drag_drop_party_slot) |
 | U-07 | 祈愿 (F3) | 卡池选择、十连/单抽、购买纠缠之缘 | ✅ 已有 (menu_flows.py build_wish_open/ten_pull/select_banner) |
 | U-08 | 冒险之证 (F1) | 章节/敌人/秘境/收藏 追踪 | ✅ 已有 (menu_flows.py build_handbook_open/tab_flow/track_enemy) |
@@ -197,18 +197,18 @@
 | U-30 | 队伍配置流程 | Esc/L → 拖放角色 → 保存队伍 | ✅ 已有 (ui_flows PARTY_QUICK_CONFIG + ui_primitives drag_drop_party_slot) |
 | U-31 | 抽卡流程 | Esc → F3 → 选卡池 → 十连/单抽 → 观看动画 → 查看结果 | ✅ 已有 (ui_flows WISH_TEN_PULL) |
 | U-32 | 合成台操作 | 走到合成台 → F → 选择配方 → 调整数量 → 制作 | ✅ 已有 (ui_flows CRAFTING_BENCH_INTERACT + ui_primitives quantity_adjust) |
-| U-33 | 锻造操作 | 走到铁匠 → F → 选择武器/矿 → 锻造 | ⚠️ 需模板 (交互原语已有，需铁匠UI流程) |
+| U-33 | 锻造操作 | 走到铁匠 → F → 选择武器/矿 → 锻造 | ✅ 已有 (ui_flows FORGING_INTERACT + FORGING_FORGE_ITEM) |
 | U-34 | 烹饪操作 | 走到烹饪台 → F → 选择食谱 → 手动/自动烹饪 | ✅ 已有 (ui_flows COOKING_INTERACT + COOKING_AUTO_COOK) |
-| U-35 | 商店购买 | 走到NPC → F → 浏览商品 → 选择数量 → 购买 | ⚠️ 部分有 (ui_primitives quantity_adjust 已有，需NPC商店流程) |
+| U-35 | 商店购买 | 走到NPC → F → 浏览商品 → 选择数量 → 购买 | ✅ 已有 (ui_flows NPC_SHOP_INTERACT + NPC_SHOP_BUY_ITEM + ui_primitives quantity_adjust) |
 | U-36 | 派蒙商店购买 | Esc → 商店 → 派蒙的议价 → 星辉/星尘兑换 | ✅ 已有 (ui_flows SHOP_OPEN_PAIMON_BARGAINS + SHOP_BUY_MONTHLY_FATES) |
 | U-37 | 冒险之证追踪 | Esc → F1 → 选择目标 → 追踪 | ✅ 已有 (ui_flows HANDBOOK_TRACK_ENEMY) |
 | U-38 | 秘境进入/退出 | 传送到秘境 → F → 组队选择 → 开始 → 完成 → 领奖/退出 | ✅ 已有 (ui_flows DOMAIN_ENTER_AND_CLAIM) |
 | U-39 | 密境领奖 | 秘境完成后消耗树脂领取奖励 | ✅ 已有 (ui_flows DOMAIN_ENTER_AND_CLAIM 含领奖步骤) |
 | U-40 | 七天神像供奉 | 走到神像 → F → 供奉 → 选择神瞳数量 → 确认 | ✅ 已有 (ui_flows STATUE_OFFER_OCULI) |
 | U-41 | 食物使用 | Esc → B → 食物 → 选择食物 → 使用 → 选目标角色 | ✅ 已有 (ui_flows FOOD_USE_FROM_BACKPACK) |
-| U-42 | 快捷食物使用 | 战斗中通过食物菜单快速使用复活/治疗食物 | ⚠️ 需集成 (combat_survival.py CombatFoodState 已有逻辑) |
+| U-42 | 快捷食物使用 | 战斗中通过食物菜单快速使用复活/治疗食物 | ✅ 已有 (ui_flows COMBAT_FOOD_REVIVE + combat_survival.py CombatFoodState) |
 | U-43 | 时间调整 | Esc → 时间 → 调整时间 → 确认（部分任务需要） | ✅ 已有 (ui_flows TIME_ADJUST) |
-| U-44 | 元素转换 | 走到七天神像 → F → 与 [某元素] 共鸣 | ⚠️ 需模板 (statue_interaction.py 已有基础) |
+| U-44 | 元素转换 | 走到七天神像 → F → 与 [某元素] 共鸣 | ✅ 已有 (ui_flows STATUE_ELEMENT_RESONANCE + statue_interaction.py) |
 
 ---
 
@@ -335,8 +335,8 @@
 | R-01 | 升级材料需求计算 | 计算从当前等级到目标等级所需的经验书和摩拉 | ✅ 已有 (genshin_character_progression.py + character_build_planner.py) |
 | R-02 | 突破材料需求计算 | 计算突破所需的全部材料清单 | ✅ 已有 (total_ascension_mats_to_level) |
 | R-03 | 材料获取路径规划 | 规划获取缺失材料的最优路径（Boss/秘境/采集） | ✅ 已有 (character_build_planner.generate_acquisition_plan) |
-| R-04 | 自动角色升级 | 执行完整的角色升级 UI 操作流程 | ⚠️ UI流已定义 (CHARACTER_LEVEL_UP) |
-| R-05 | 自动角色突破 | 执行完整的角色突破 UI 操作流程 | ⚠️ UI流已定义 (CHARACTER_ASCEND) |
+| R-04 | 自动角色升级 | 执行完整的角色升级 UI 操作流程 | ✅ 已有 (ui_flows CHARACTER_LEVEL_UP) |
+| R-05 | 自动角色突破 | 执行完整的角色突破 UI 操作流程 | ✅ 已有 (ui_flows CHARACTER_ASCEND) |
 | R-06 | 养成优先级排序 | 根据队伍需求排列角色养成优先级 | ✅ 已有 (CharacterBuildPlanner.prioritize_characters) |
 
 ### 8.2 天赋升级
@@ -346,7 +346,7 @@
 | R-07 | 天赋书日程管理 | 知道今天是哪些天赋书可刷的日子 | ✅ 已有 (TALENT_BOOK_SCHEDULE + books_available_today) |
 | R-08 | 天赋升级优先级 | 知道每个角色的哪个天赋优先升（通常是 Q > E > 平A） | ✅ 已有 (BUILD_INVESTMENT_PRIORITY + talent_targets) |
 | R-09 | 天赋材料需求计算 | 计算天赋升级所需的书本/Boss材料/敌人掉落 | ✅ 已有 (get_talent_cost + _add_talent_needs) |
-| R-10 | 自动天赋升级 | 执行完整的天赋升级 UI 操作流程 | ⚠️ UI流已定义 (CHARACTER_TALENT_UPGRADE) |
+| R-10 | 自动天赋升级 | 执行完整的天赋升级 UI 操作流程 | ✅ 已有 (ui_flows CHARACTER_TALENT_UPGRADE) |
 | R-11 | 周本材料转换 | 使用梦之溶剂转换周本材料为所需类型 | ✅ 已有 (knowledge module DreamSolvent转换) |
 
 ### 8.3 武器管理
@@ -354,11 +354,11 @@
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
 | R-12 | 武器选择推荐 | 根据角色推荐最佳武器（考虑稀有度和可用性） | ✅ 已有 (genshin_f2p_builds.py F2P_WEAPON_REC) |
-| R-13 | 武器升级 | 执行武器强化 UI 操作流程 | ⚠️ UI流已定义 (WEAPON_ENHANCE) |
-| R-14 | 武器突破 | 执行武器突破 UI 操作流程 | ⚠️ UI流已定义 (WEAPON_EQUIP) |
+| R-13 | 武器升级 | 执行武器强化 UI 操作流程 | ✅ 已有 (ui_flows WEAPON_ENHANCE) |
+| R-14 | 武器突破 | 执行武器突破 UI 操作流程 | ✅ 已有 (ui_flows WEAPON_EQUIP) |
 | R-15 | 武器精炼 | 执行武器精炼 UI 操作流程（消耗重复武器） | ✅ 已有 (character_build_workflows.py WeaponRefinery) |
 | R-16 | 武器材料日程 | 武器突破秘境的日程管理 | ✅ 已有 (TALENT_BOOK_SCHEDULE 框架可复用) |
-| R-17 | 锻造武器 | 在铁匠处锻造武器/强化矿 | ⚠️ UI流已定义 (CRAFTING_BENCH_INTERACT) |
+| R-17 | 锻造武器 | 在铁匠处锻造武器/强化矿 | ✅ 已有 (ui_flows FORGING_INTERACT + FORGING_FORGE_ITEM) |
 
 ### 8.4 圣遗物管理
 
@@ -367,11 +367,11 @@
 | R-18 | 圣遗物套装知识 | 知道每个角色适合什么圣遗物套装 | ✅ 已有 (genshin_f2p_builds.py ARTIFACT_SETS) |
 | R-19 | 圣遗物主词条知识 | 知道每个角色需要的沙/杯/头主词条 | ⚠️ 部分有 (genshin_f2p_builds 有推荐) |
 | R-20 | 圣遗物副词条评估 | 评估圣遗物副词条质量（暴击率/暴击伤害/充能等） | ✅ 已有 (character_build_workflows.py ArtifactEvaluator) |
-| R-21 | 圣遗物自动装备 | 为角色快速装备最佳可用圣遗物 | ⚠️ UI流已定义 (ARTIFACT_EQUIP) |
-| R-22 | 圣遗物自动强化 | 选择有价值圣遗物并强化到目标等级 | ⚠️ UI流已定义 (ARTIFACT_ENHANCE) |
+| R-21 | 圣遗物自动装备 | 为角色快速装备最佳可用圣遗物 | ✅ 已有 (ui_flows ARTIFACT_EQUIP) |
+| R-22 | 圣遗物自动强化 | 选择有价值圣遗物并强化到目标等级 | ✅ 已有 (ui_flows ARTIFACT_ENHANCE) |
 | R-23 | 圣遗物回收/喂养 | 将垃圾圣遗物作为强化材料消耗 | ✅ 已有 (character_build_workflows.py ArtifactSalvager) |
 | R-24 | 圣遗物合成台 | 使用神秘供奉转化 3 个五星圣遗物为目标套装 | ✅ 已有 (character_build_workflows.py ArtifactTransmuter) |
-| R-25 | 圣遗物域刷取 | 自动刷取指定圣遗物秘境 | ⚠️ UI流已定义 (DOMAIN_ENTER_AND_CLAIM) |
+| R-25 | 圣遗物域刷取 | 自动刷取指定圣遗物秘境 | ✅ 已有 (ui_flows DOMAIN_ENTER_AND_CLAIM) |
 
 ### 8.5 队伍构建
 
@@ -457,7 +457,7 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| M-11 | 食物烹饪 | 在烹饪台制作食物 | ⚠️ UI流已定义 (COOKING_AUTO_COOK) |
+| M-11 | 食物烹饪 | 在烹饪台制作食物 | ✅ 已有 (ui_flows COOKING_INTERACT + COOKING_AUTO_COOK) |
 | M-12 | 食物库存管理 | 跟踪食物库存，确保关键食物充足（复活/治疗/增益） | ✅ 已有 (resource_manager.py FoodStock) |
 | M-13 | 战斗前食物准备 | 在困难战斗前使用增益食物（ATK/暴击/防御） | ✅ 已有 (combat_survival.py pre_boss_atk_buff) |
 
@@ -477,11 +477,11 @@
 |---|------|------|------|
 | W-01 | 保底计数器 | 跟踪当前卡池的抽卡数和保底状态 | ✅ 已有 (wish_shop_system.py PityCounter) |
 | W-02 | 卡池分析 | 分析当前卡池角色/武器的价值 | ✅ 已有 (wish_shop_system.py WishStrategy) |
-| W-03 | 抽卡执行 | 自动执行抽卡 UI 操作 | ⚠️ UI流已定义 (WISH_TEN_PULL) |
+| W-03 | 抽卡执行 | 自动执行抽卡 UI 操作 | ✅ 已有 (ui_flows WISH_TEN_PULL + menu_flows wish flows) |
 | W-04 | 抽卡结果处理 | 识别抽卡结果，更新库存 | ⚠️ 部分有 (wish_shop_system 结果追踪) |
 | W-05 | 派蒙商店月购 | 每月购买纠缠之缘（5 个，750 星尘）和相遇之缘（5 个，375 星尘） | ✅ 已有 (wish_shop_system.py monthly_shop_plan) |
 | W-06 | 星辉角色购买 | 用星辉购买轮换 4 星角色（每月 2 个，各 34 星辉） | ✅ 已有 (wish_shop_system.py starglitter_exchange) |
-| W-07 | 纪念品商店购买 | 用元素之印购买角色突破材料和武器蓝图 | ⚠️ UI流已定义 (SHOP_OPEN_PAIMON_BARGAINS) |
+| W-07 | 纪念品商店购买 | 用元素之印购买角色突破材料和武器蓝图 | ✅ 已有 (ui_flows SHOP_OPEN_PAIMON_BARGAINS + NPC_SHOP_BUY_ITEM) |
 | W-08 | 抽卡策略决策 | 决定是否抽当前卡池还是攒原石等未来卡池 | ✅ 已有 (wish_shop_system.py F2P wish strategy) |
 
 ---
@@ -697,21 +697,21 @@ Prologue Act I (AR 1) — 蒙德教程
 | 感知层 (Perception) | 30 | 22 | 5 | 3 |
 | 输入执行 (Input) | 16 | 16 | 0 | 0 |
 | 导航移动 (Navigation) | 18 | 18 | 0 | 0 |
-| UI 菜单 (UI) | 44 | 38 | 6 | 0 |
+| UI 菜单 (UI) | 44 | 44 | 0 | 0 |
 | 对话系统 (Dialog) | 9 | 5 | 4 | 0 |
 | 任务系统 (Quest) | 16 | 16 | 0 | 0 |
 | 战斗智能 (Combat) | 34 | 34 | 0 | 0 |
-| 角色养成 (Progression) | 30 | 19 | 7 | 4 |
+| 角色养成 (Progression) | 30 | 28 | 2 | 0 |
 | 探索收集 (Exploration) | 22 | 22 | 0 | 0 |
 | 资源管理 (Resource) | 16 | 16 | 0 | 0 |
-| 抽卡商店 (Wish/Shop) | 8 | 5 | 2 | 1 |
+| 抽卡商店 (Wish/Shop) | 8 | 8 | 0 | 0 |
 | 日常循环 (Daily) | 7 | 7 | 0 | 0 |
 | 战略大脑 (Strategy) | 16 | 5 | 1 | 10 |
 | 元学习 (Meta-Learning) | 8 | 8 | 0 | 0 |
-| **总计** | **274** | **231** | **25** | **18** |
+| **总计** | **274** | **249** | **12** | **13** |
 
-**完成率：84.3%（231/274）| 部分完成：9.1%（25/274）| 需新建：6.6%（18/274）**
+**完成率：90.9%（249/274）| 部分完成：4.4%（12/274）| 需新建：4.7%（13/274）**
 
 ---
 
-> **当前优先级**：补齐 **角色养成自动化执行**（R-04/R-05/R-10/R-13/R-14 ⚠️ UI流已定义需升级为可执行）、**战略大脑关键决策**（S-01~S-12 决策逻辑）、**抽卡商店**（W-07 纪念品商店）、**UI 部分流程**（U-33/U-35/U-42/U-44 剩余部分）、**感知增强**（P-21/P-22/P-27/P-28/P-30）。
+> **当前优先级**：补齐 **战略大脑关键决策逻辑**（S-01~S-12 中未实现的决策规则）、**感知增强**（P-09/P-11/P-18/P-21/P-22/P-27/P-28/P-30）、**对话增强**（D-03~D-08）。

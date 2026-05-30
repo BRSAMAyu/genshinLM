@@ -450,6 +450,97 @@ STATUE_OFFER_OCULI = UIFlow(
 )
 
 # ===================================================================
+# Forging flow (U-33)
+# ===================================================================
+
+FORGING_INTERACT = UIFlow(
+    name="forging_interact",
+    description="Interact with blacksmith forge (walk to blacksmith → F)",
+    steps=(
+        press("f", reason="interact_blacksmith"),
+        delay(800),
+    ),
+)
+
+FORGING_FORGE_ITEM = UIFlow(
+    name="forging_forge_item",
+    description="Forge an item at the blacksmith (first item in list)",
+    steps=(
+        # Select first forging recipe
+        click(nx=0.25, ny=0.35, reason="select_forge_recipe", delay_ms=300),
+        # Click forge button
+        click(nx=0.65, ny=0.85, reason="click_forge", delay_ms=500),
+        confirm(reason="confirm_forge"),
+        delay(1000),
+    ),
+)
+
+# ===================================================================
+# NPC shop purchase flow (U-35)
+# ===================================================================
+
+NPC_SHOP_INTERACT = UIFlow(
+    name="npc_shop_interact",
+    description="Interact with NPC shop (walk to NPC → F)",
+    steps=(
+        press("f", reason="interact_npc_shop"),
+        delay(800),
+    ),
+)
+
+NPC_SHOP_BUY_ITEM = UIFlow(
+    name="npc_shop_buy_item",
+    description="Buy an item from NPC shop (first item, quantity 1)",
+    steps=(
+        # Select first item in shop list
+        click(nx=0.30, ny=0.35, reason="select_shop_item", delay_ms=300),
+        # Click buy button
+        click(nx=0.65, ny=0.85, reason="click_buy", delay_ms=300),
+        confirm(reason="confirm_purchase"),
+        delay(500),
+    ),
+)
+
+# ===================================================================
+# Quick food usage in combat (U-42)
+# ===================================================================
+
+COMBAT_FOOD_REVIVE = UIFlow(
+    name="combat_food_revive",
+    description="Quick-use revive food from food menu during combat",
+    steps=(
+        # Open food quick-menu (press food key or navigate)
+        press("escape", reason="open_menu_for_food"),
+        delay(300),
+        click_menu_button("backpack", delay_ms=500),
+        click(nx=0.25, ny=0.08, reason="food_tab", delay_ms=300),
+        # Select revive food (first item)
+        click(nx=0.30, ny=0.30, reason="select_revive_food", delay_ms=300),
+        click(nx=0.65, ny=0.85, reason="use_revive_food", delay_ms=300),
+        # Select downed character
+        click(nx=0.50, ny=0.50, reason="select_downed_character", delay_ms=300),
+    ),
+)
+
+# ===================================================================
+# Element resonance at Statue (U-44)
+# ===================================================================
+
+STATUE_ELEMENT_RESONANCE = UIFlow(
+    name="statue_element_resonance",
+    description="Change Traveler element at Statue of the Seven",
+    steps=(
+        press("f", reason="interact_statue"),
+        delay(800),
+        # Click "Resonate with [Element]" option
+        click(nx=0.50, ny=0.60, reason="resonate_with_element", delay_ms=500),
+        confirm(reason="confirm_resonance"),
+        delay(1000),
+        press("escape", reason="close_statue_menu"),
+    ),
+)
+
+# ===================================================================
 # Exported flow registry for lookup by name
 # ===================================================================
 
@@ -485,6 +576,12 @@ ALL_FLOWS: dict[str, UIFlow] = {
         TIME_ADJUST,
         FOOD_USE_FROM_BACKPACK,
         STATUE_OFFER_OCULI,
+        FORGING_INTERACT,
+        FORGING_FORGE_ITEM,
+        NPC_SHOP_INTERACT,
+        NPC_SHOP_BUY_ITEM,
+        COMBAT_FOOD_REVIVE,
+        STATUE_ELEMENT_RESONANCE,
     ]
 }
 
