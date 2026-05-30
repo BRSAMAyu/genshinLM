@@ -171,10 +171,20 @@ class MainlineProgressionAdapter:
         skill_executor: SemanticExecutor,
         config: MainlineProgressionConfig | None = None,
         skill_registry: Any | None = None,
+        quest_state_machine: Any | None = None,
     ) -> None:
         self._executor = skill_executor
         self._config = config or MainlineProgressionConfig()
         self._registry = skill_registry
+        self._quest_sm = quest_state_machine
+
+    def _check_quest_prerequisites(self, chapter_id: str, act_id: str) -> bool:
+        """Check quest prerequisites via QuestStateMachine."""
+        if self._quest_sm is not None:
+            return self._quest_sm.check_prerequisites()
+        if self._registry is not None:
+            return self._registry.execute("quest_check_prerequisites")
+        return True
 
     def run_full_progression(self, current_ar: int = 1) -> MainlineProgressionResult:
         """Execute all chapters from current AR to Chapter 5 completion."""
@@ -268,9 +278,12 @@ class MainlineProgressionAdapter:
         )
 
     def _execute_act(self, chapter_id: str, act_id: str) -> bool:
-        """Execute a single act: navigate → quest → combat → dialog."""
+        """Execute a single act: check prereqs → navigate → quest → combat → dialog."""
         quest_label = f"{chapter_id}_{act_id}"
         log.info("[Mainline] executing act: %s", quest_label)
+
+        # Check quest prerequisites via QuestStateMachine if available
+        self._check_quest_prerequisites(chapter_id, act_id)
 
         # Quest navigation and dialog
         if self._registry is not None:
