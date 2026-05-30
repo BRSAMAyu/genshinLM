@@ -525,5 +525,5 @@ RESIN_COSTS: dict[str, int] = {
     "artifact_domain": 20,
 }
 
-RESIN_MAX = 160
-RESIN_RECOVERY_MINUTES = 8  # 1 resin per 8 minutes
+RESIN_MAX = 200  # Increased from 160 to 200 in v5.0
+RESIN_RECOVERY_MINUTES = 8  # 1 resin per 8 minutes (unchanged in 5.0)

@@ -6,7 +6,6 @@ and strategic priorities. Covers M-01 through M-05, M-06, M-11 through M-13.
 from __future__ import annotations
 
 import logging
-import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -25,19 +24,6 @@ log = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 # Enums
 # ---------------------------------------------------------------------------
-
-class ResourceType(Enum):
-    MORa = "mora"
-    PRIMOGEM = "primogem"
-    RESIN = "resin"
-    STARDUST = "stardust"
-    STARGLITTER = "starglitter"
-    EXP_BOOK = "exp_book"
-    FOOD = "food"
-    MATERIAL = "material"
-    WEAPON = "weapon"
-    ARTIFACT = "artifact"
-
 
 class ResinPriority(Enum):
     WEEKLY_BOSS = 0      # 30 resin, best ROI

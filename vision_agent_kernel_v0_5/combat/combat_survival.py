@@ -193,6 +193,15 @@ COMBAT_FOODS: dict[str, CombatFood] = {
     "tianshu_meat": CombatFood("Tianshu Meat", CombatFoodType.ATK_BUFF, 0.25, 300.0),
 }
 
+FOOD_TYPE_COOLDOWNS: dict[CombatFoodType, float] = {
+    CombatFoodType.HEAL_INSTANT: 0.0,
+    CombatFoodType.HEAL_OVER_TIME: 0.0,
+    CombatFoodType.REVIVE: 0.0,
+    CombatFoodType.ATK_BUFF: 300.0,
+    CombatFoodType.CRIT_BUFF: 300.0,
+    CombatFoodType.DEF_BUFF: 300.0,
+}
+
 
 @dataclass(slots=True)
 class CombatFoodState:
@@ -200,18 +209,6 @@ class CombatFoodState:
     available_foods: dict[str, int] = field(default_factory=dict)  # food_name -> count
     active_buffs: dict[str, float] = field(default_factory=dict)   # buff_type -> expiry_time
     cooldowns: dict[str, float] = field(default_factory=dict)      # food_type -> expiry_time
-
-    FOOD_TYPE_COOLDOWNS: dict[CombatFoodType, float] = field(
-        default_factory=lambda: {
-            CombatFoodType.HEAL_INSTANT: 0.0,
-            CombatFoodType.HEAL_OVER_TIME: 0.0,
-            CombatFoodType.REVIVE: 0.0,
-            CombatFoodType.ATK_BUFF: 300.0,
-            CombatFoodType.CRIT_BUFF: 300.0,
-            CombatFoodType.DEF_BUFF: 300.0,
-        },
-        init=False,
-    )
 
     def can_use(self, food_name: str, now: float) -> bool:
         food = COMBAT_FOODS.get(food_name)
@@ -228,7 +225,7 @@ class CombatFoodState:
             return False
         food = COMBAT_FOODS[food_name]
         self.available_foods[food_name] = self.available_foods.get(food_name, 0) - 1
-        cd = self.FOOD_TYPE_COOLDOWNS.get(food.food_type, 0.0)
+        cd = FOOD_TYPE_COOLDOWNS.get(food.food_type, 0.0)
         if cd > 0:
             self.cooldowns[food.food_type.value] = now + cd
         if food.duration_sec > 0:
@@ -297,6 +294,7 @@ class CombatSurvivalEngine:
         # P1: Active character near death
         if active_hp < 0.15 and danger_level > 0.5:
             if self._can_dash(now, stamina_ratio):
+                self._consume_dash(now)
                 return CombatSurvivalDecision("dash", 0, f"low_hp_{active_hp:.0%}")
             # Try burst iframe
             if self._burst_available[active_slot]:
@@ -324,6 +322,7 @@ class CombatSurvivalEngine:
 
         # P4: High danger -> dash
         if danger_level > 0.7 and self._can_dash(now, stamina_ratio):
+            self._consume_dash(now)
             return CombatSurvivalDecision("dash", 8, "avoid_danger")
 
         # P5: Pre-boss food buffs
@@ -338,10 +337,10 @@ class CombatSurvivalEngine:
             self._burst_available[slot] = available
 
     def _can_dash(self, now: float, stamina_ratio: float) -> bool:
-        if now >= self._dash_cooldown and stamina_ratio > 0.2:
-            self._dash_cooldown = now + 0.6  # dash animation cooldown
-            return True
-        return False
+        return now >= self._dash_cooldown and stamina_ratio > 0.2
+
+    def _consume_dash(self, now: float) -> None:
+        self._dash_cooldown = now + 0.6
 
     def _find_healthiest_slot(self, hp_ratios: tuple[float, ...], exclude: int) -> int | None:
         best: int | None = None

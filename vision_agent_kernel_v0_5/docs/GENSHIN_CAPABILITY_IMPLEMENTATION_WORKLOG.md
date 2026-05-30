@@ -136,4 +136,80 @@
 
 **测试总计**: 1552 passed, 0 failed (全项目无回归)
 
+#### Step 7: 元学习引擎 ✅
+- **文件**: `planning/meta_learning.py` — 战斗经验记录、敌人档案、跨Boss知识迁移、策略迭代
+- **覆盖能力**: L-01 至 L-08
+
+#### Step 8: 抽卡/商店系统 ✅
+- **文件**: `planning/wish_shop_system.py` — 保底计数器、F2P抽卡策略、月度商店购买
+- **覆盖能力**: W-01 至 W-08
+
+**测试总计**: 1609 passed, 0 failed
+
+---
+
+## 已实现能力总结
+
+### Phase 1: UI 操作基础设施 ✅
+- UI 操作原语（13种 step type）
+- 30 个预定义 UI 流程
+- 战略决策引擎
+
+### Phase 2: 角色养成自动化 ✅
+- F2P 角色配装知识库（10角色）
+- 升级/突破/天赋完整数据表
+- 材料缺口分析 + 获取规划
+- 树脂/摩拉/原石/食物统一管理
+- Boss 策略库（6个主要Boss）
+
+### Phase 3: 探索引擎 ✅
+- 区域探索系统
+- 传送点扫荡规划
+- 神瞳供奉计算
+- 区域推进管理
+
+### Phase 4: 战斗增强 ✅
+- 元素盾破坏表
+- Boss 机制学习系统
+- 战斗食物系统
+- 生存决策引擎
+
+### Phase 5: 任务与对话 ✅
+- 任务机制路由器
+- 对话策略系统
+- NPC 交互模式
+- AR 突破域配置
+
+### Phase 6: 元学习与抽卡 ✅
+- 战斗经验记录与敌人档案
+- 跨Boss知识迁移
+- 保底计数器与F2P抽卡策略
+- 月度商店自动化
+
+---
+
+## 审计与修复
+
+### Round 1: 三Agent审计 ✅
+- **Agent A (Architecture)**: 3 CRITICAL + 5 IMPORTANT
+- **Agent B (Data Correctness)**: 3 CRITICAL + 6 IMPORTANT
+- **Agent C (Test Coverage)**: 3 CRITICAL + 5 IMPORTANT
+
+#### 修复清单：
+1. ✅ `_step_scroll_up`/`_step_scroll_down` 中 `time.sleep` → `self._sleep`（中断安全）
+2. ✅ `FOOD_TYPE_COOLDOWNS` 从实例字段提升为模块级常量
+3. ✅ `_can_dash` 拆分为纯谓词 + `_consume_dash`（消除副作用）
+4. ✅ `_deduplicate_tasks` 树脂费用从累加改为 `max()`（避免重复计费）
+5. ✅ `daily_loop_scheduler` 本地 `TALENT_BOOK_SCHEDULE` 改为从知识模块导入
+6. ✅ 删除 `ResourceType` 死代码和未使用的 `import time`
+7. ✅ RESIN_MAX 确认为 200（v5.0+）
+8. ✅ 探索引擎 `any()` → `all()`（前置条件逻辑修复）
+9. ✅ 探索引擎删除不可达的双 `continue`
+
+**测试总计**: 1609 passed, 0 failed
+
+---
+
+## 待审查：Round 2（三Agent）
+
 ---

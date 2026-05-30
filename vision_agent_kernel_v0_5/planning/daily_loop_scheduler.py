@@ -16,6 +16,8 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
+from knowledge.genshin_character_progression import TALENT_BOOK_SCHEDULE as _KNOWLEDGE_TALENT_SCHEDULE
+
 log = logging.getLogger(__name__)
 
 
@@ -114,20 +116,26 @@ def determine_phase(ar: int) -> GamePhase:
 
 
 # ---------------------------------------------------------------------------
-# Domain schedule (talent books by day)
+# Domain schedule (derived from canonical knowledge module)
 # ---------------------------------------------------------------------------
 
-TALENT_BOOK_SCHEDULE: dict[int, dict[int, list[str]]] = {
-    # day_of_week (0=Mon): {region_id: [book_names]}
-    0: {1: ["freedom"], 2: ["prosperity"]},          # Mon
-    1: {1: ["resistance"], 2: ["diligence"]},         # Tue
-    2: {1: ["ballad"], 2: ["gold"]},                   # Wed
-    3: {1: ["freedom"], 2: ["prosperity"]},            # Thu
-    4: {1: ["resistance"], 2: ["diligence"]},          # Fri
-    5: {1: ["ballad"], 2: ["gold"]},                   # Sat
-    6: {1: ["freedom", "resistance", "ballad"],
-        2: ["prosperity", "diligence", "gold"]},       # Sun: all
-}
+# Convert knowledge module format to local format with region grouping
+def _build_local_schedule() -> dict[int, dict[int, list[str]]]:
+    schedule: dict[int, dict[int, list[str]]] = {}
+    for day, books in _KNOWLEDGE_TALENT_SCHEDULE.items():
+        region_map: dict[int, list[str]] = {}
+        for book in books:
+            book_lower = book.lower()
+            # Mondstadt books (region 1)
+            if book_lower in ("freedom", "resistance", "ballad"):
+                region_map.setdefault(1, []).append(book_lower)
+            # Liyue books (region 2)
+            elif book_lower in ("prosperity", "diligence", "gold"):
+                region_map.setdefault(2, []).append(book_lower)
+        schedule[day] = region_map
+    return schedule
+
+TALENT_BOOK_SCHEDULE: dict[int, dict[int, list[str]]] = _build_local_schedule()
 
 
 # ---------------------------------------------------------------------------

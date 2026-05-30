@@ -453,10 +453,11 @@ class CharacterBuildPlanner:
             key = f"{task.task_type}:{task.target}"
             if key in seen:
                 existing = seen[key]
-                # Merge materials
+                # Merge materials without double-counting resin (one domain run yields both)
                 for mat_id, count in task.materials_gained.items():
                     existing.materials_gained[mat_id] = existing.materials_gained.get(mat_id, 0) + count
-                existing.resin_cost += task.resin_cost
+                # Keep the higher resin cost (accounts for more runs needed)
+                existing.resin_cost = max(existing.resin_cost, task.resin_cost)
             else:
                 seen[key] = AcquisitionTask(
                     task.task_type, task.target, task.resin_cost,

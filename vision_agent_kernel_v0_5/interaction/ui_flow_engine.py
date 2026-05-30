@@ -324,7 +324,7 @@ class UIFlowExecutor:
         for _ in range(abs(step.delta)):
             self._check_interrupt()
             backend.mouse_scroll(delta=-1 if step.delta < 0 else 1, reason=step.reason or "ui_flow:scroll")
-            time.sleep(0.05)
+            self._sleep(0.05)
 
     def _step_confirm(self, step: UIStep) -> None:
         backend = self._worker.backend
@@ -350,7 +350,7 @@ class UIFlowExecutor:
         for _ in range(n):
             self._check_interrupt()
             backend.mouse_scroll(delta=-1, reason=step.reason or "ui_flow:scroll_up")
-            time.sleep(0.05)
+            self._sleep(0.05)
 
     def _step_scroll_down(self, step: UIStep) -> None:
         backend = self._worker.backend
@@ -358,7 +358,7 @@ class UIFlowExecutor:
         for _ in range(n):
             self._check_interrupt()
             backend.mouse_scroll(delta=1, reason=step.reason or "ui_flow:scroll_down")
-            time.sleep(0.05)
+            self._sleep(0.05)
 
     def _step_open_menu(self, step: UIStep) -> None:
         self._step_press_key(UIStep(type=STEP_PRESS_KEY, key="escape", reason="open_paimon_menu"))

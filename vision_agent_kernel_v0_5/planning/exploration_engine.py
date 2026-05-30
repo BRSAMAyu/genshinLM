@@ -370,8 +370,7 @@ class ExplorationEngine:
                 continue
             # Check prerequisites (all must be met)
             if target.requires and not all(pre in self._completed for pre in target.requires):
-                continue  # prerequisites not fully met
-                continue  # no prereqs met, skip
+                continue
             # Boost priority for preferred objective
             if prioritize and target.objective == prioritize:
                 candidates.append(ExplorationTarget(
