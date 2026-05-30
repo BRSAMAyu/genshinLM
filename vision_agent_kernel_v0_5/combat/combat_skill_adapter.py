@@ -298,6 +298,15 @@ class CombatSkillAdapter:
         result = strategy.execute(shield_type=ctx.get("shield_type", "wood"))
         return result.success
 
+    def execute_abyss_mage(self, context: dict[str, Any] | None = None) -> bool:
+        """Handle Abyss Mage with elemental shield counter-strategy."""
+        from combat.combat_rotation_runners import AbyssMageHandler
+        ctx = context or {}
+        executor = _CombatExecutorBridge(self)
+        handler = AbyssMageHandler(executor=executor)
+        result = handler.execute(mage_element=ctx.get("mage_element", "cryo"))
+        return result.success
+
     # ------------------------------------------------------------------
     # Special boss handlers (Narwhal)
     # ------------------------------------------------------------------

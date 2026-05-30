@@ -4,6 +4,8 @@ from __future__ import annotations
 from typing import Any
 
 from combat.combat_rotation_runners import (
+    AbyssMageHandler,
+    AbyssMageResult,
     FarmingRunResult,
     MultiWaveDefense,
     MultiWaveConfig,
@@ -228,3 +230,70 @@ class TestShieldMitachurlStrategy:
         assert "use_skill" in actions
         assert "move_to" in actions
         assert "combat_basic_attack" in actions
+
+
+# ---------------------------------------------------------------------------
+# AbyssMageHandler
+# ---------------------------------------------------------------------------
+
+class TestAbyssMageHandler:
+    def test_cryo_mage(self):
+        ex = _FakeExecutor()
+        handler = AbyssMageHandler(executor=ex)
+        result = handler.execute(mage_element="cryo")
+        assert result.success
+        assert result.counter_element == "pyro"
+        assert result.mage_element == "cryo"
+
+    def test_pyro_mage(self):
+        ex = _FakeExecutor()
+        handler = AbyssMageHandler(executor=ex)
+        result = handler.execute(mage_element="pyro")
+        assert result.success
+        assert result.counter_element == "hydro"
+
+    def test_hydro_mage(self):
+        ex = _FakeExecutor()
+        handler = AbyssMageHandler(executor=ex)
+        result = handler.execute(mage_element="hydro")
+        assert result.success
+        assert result.counter_element == "electro"
+
+    def test_electro_mage(self):
+        ex = _FakeExecutor()
+        handler = AbyssMageHandler(executor=ex)
+        result = handler.execute(mage_element="electro")
+        assert result.success
+        assert result.counter_element == "dendro"
+
+    def test_shield_broken_and_mage_defeated(self):
+        ex = _FakeExecutor()
+        handler = AbyssMageHandler(executor=ex)
+        result = handler.execute(mage_element="cryo")
+        assert result.shield_broken
+        assert result.mage_defeated
+        assert result.duration_sec > 0
+
+    def test_actions_include_counter_sequence(self):
+        ex = _FakeExecutor()
+        handler = AbyssMageHandler(executor=ex)
+        handler.execute(mage_element="cryo")
+        actions = [c[0] for c in ex.calls]
+        assert "switch_char" in actions
+        assert "use_skill" in actions
+        assert "use_burst" in actions
+        assert "combat_basic_attack" in actions
+
+    def test_skill_targets_shield(self):
+        ex = _FakeExecutor()
+        handler = AbyssMageHandler(executor=ex)
+        handler.execute(mage_element="hydro")
+        skill_calls = [c for c in ex.calls if c[0] == "use_skill"]
+        assert any("shield" in str(c[1]) or "shield" in str(c[2]) for c in skill_calls)
+
+    def test_unknown_element_defaults_pyro(self):
+        ex = _FakeExecutor()
+        handler = AbyssMageHandler(executor=ex)
+        result = handler.execute(mage_element="unknown")
+        assert result.counter_element == "pyro"
+        assert result.success

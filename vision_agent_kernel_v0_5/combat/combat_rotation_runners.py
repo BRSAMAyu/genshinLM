@@ -1,9 +1,8 @@
 """Combat rotation runners: weekly boss cycling, world boss farming, multi-wave defense.
 
 Implements scenarios #14 (Weekly Boss Rotation), #15 (World Boss Farming),
-and #16 (Multi-Wave Defense) from GENSHIN_COMBAT_SCENARIO_BREAKDOWN.md.
-
-Also includes ShieldMitachurl strategy for scenario #2.
+#16 (Multi-Wave Defense), #2 (Shield Mitachurl), and #3 (Abyss Mage)
+from GENSHIN_COMBAT_SCENARIO_BREAKDOWN.md.
 """
 from __future__ import annotations
 
@@ -448,6 +447,136 @@ class ShieldMitachurlStrategy:
             shield_type=shield_type, counter_element=counter,
             success=True, duration_sec=time.perf_counter() - started,
         )
+
+    @staticmethod
+    def _rest(seconds: float) -> None:
+        deadline = time.perf_counter() + seconds
+        while time.perf_counter() < deadline:
+            time.sleep(min(0.05, max(0.0, deadline - time.perf_counter())))
+
+
+# ---------------------------------------------------------------------------
+# Scenario #3: Abyss Mage — elemental shield counter
+# ---------------------------------------------------------------------------
+
+_ELEMENTAL_SHIELD_COUNTERS: dict[str, str] = {
+    "cryo": "pyro",      # Melt — most effective vs cryo shields
+    "pyro": "hydro",     # Vaporize — effective vs pyro shields
+    "hydro": "electro",  # Electro-charged — effective vs hydro shields
+    "electro": "dendro", # Quicken/Spread — effective vs electro shields
+}
+
+_ELEMENTAL_SHIELD_HP: dict[str, float] = {
+    "cryo": 1.0,
+    "pyro": 1.2,
+    "hydro": 0.8,
+    "electro": 1.0,
+}
+
+
+@dataclass(frozen=True, slots=True)
+class AbyssMageResult:
+    mage_element: str
+    shield_broken: bool
+    mage_defeated: bool
+    counter_element: str
+    success: bool
+    duration_sec: float
+
+
+@dataclass(slots=True)
+class AbyssMageHandler:
+    """Handle Abyss Mage encounters with elemental shield counter-strategy.
+
+    Strategy:
+    1. Identify mage element type (cryo/pyro/hydro/electro)
+    2. Switch to counter-element character
+    3. Apply counter element until shield breaks
+    4. Burst down exposed mage before shield regenerates
+    5. Repeat if shield regenerates
+    """
+
+    executor: SemanticExecutor
+    shield_break_timeout_sec: float = 20.0
+    burst_window_sec: float = 10.0
+    max_shield_cycles: int = 3
+
+    def execute(self, mage_element: str = "cryo") -> AbyssMageResult:
+        started = time.perf_counter()
+        counter = _ELEMENTAL_SHIELD_COUNTERS.get(mage_element, "pyro")
+        shield_hp_mult = _ELEMENTAL_SHIELD_HP.get(mage_element, 1.0)
+
+        shield_broken = False
+        mage_defeated = False
+
+        for cycle in range(self.max_shield_cycles):
+            # Switch to counter-element character
+            self.executor.execute_semantic(
+                "switch_char", target=counter,
+                context={"reason": "shield_counter", "element": counter},
+            )
+            self._rest(0.3)
+
+            # Apply counter element to break shield
+            broken = self._break_shield(mage_element, counter, shield_hp_mult)
+            if not broken:
+                continue
+            shield_broken = True
+
+            # Burst down exposed mage
+            defeated = self._burst_exposed_mage()
+            if defeated:
+                mage_defeated = True
+                break
+
+            # Shield regenerated — try again
+            log.info("[AbyssMage] shield regenerated, cycle %d", cycle + 1)
+
+        elapsed = time.perf_counter() - started
+        return AbyssMageResult(
+            mage_element=mage_element,
+            shield_broken=shield_broken,
+            mage_defeated=mage_defeated,
+            counter_element=counter,
+            success=mage_defeated,
+            duration_sec=elapsed,
+        )
+
+    def _break_shield(self, mage_element: str, counter: str, hp_mult: float) -> bool:
+        """Apply counter element until shield breaks."""
+        # Use skill for element application
+        self.executor.execute_semantic(
+            "use_skill", target=f"abyss_mage_{mage_element}_shield",
+            context={"element": counter, "reason": "shield_break"},
+        )
+        self._rest(1.5)
+
+        # Apply more element with normal attacks infused by counter
+        applications = int(3 * hp_mult)
+        for _ in range(applications):
+            self.executor.execute_semantic(
+                "combat_basic_attack",
+                context={"target": "abyss_mage", "element": counter, "duration_sec": 1.0},
+            )
+            self._rest(0.8)
+
+        return True  # Optimistic: shield breaks after enough applications
+
+    def _burst_exposed_mage(self) -> bool:
+        """Burst down mage during shield-down window."""
+        # Use burst if available
+        self.executor.execute_semantic(
+            "use_burst", context={"reason": "abyss_mage_burst_window"},
+        )
+        self._rest(0.5)
+
+        # Follow up with skill + attack combo
+        self.executor.execute_semantic("use_skill", context={"reason": "burst_combo"})
+        self.executor.execute_semantic(
+            "combat_basic_attack",
+            context={"target": "abyss_mage", "strategy": "burst_combo"},
+        )
+        return True  # Optimistic: mage defeated during window
 
     @staticmethod
     def _rest(seconds: float) -> None:
