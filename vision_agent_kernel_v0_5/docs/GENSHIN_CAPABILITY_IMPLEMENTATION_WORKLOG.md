@@ -1333,3 +1333,66 @@
 - **Commits**: 4 commits pushed to codex/pre-realworld-closure
 
 ---
+
+### 2026-05-31 — Session 5: Scenario Completion + Architecture Dimensions
+
+#### 5a. Combat Scenario #3: Abyss Mage Elemental Shield Handler
+- **File**: `combat/combat_rotation_runners.py` (modified)
+  - Added `AbyssMageHandler`: elemental shield counter-strategy
+  - `_ELEMENTAL_SHIELD_COUNTERS` dict: cryo→pyro, pyro→hydro, hydro→electro, electro→dendro
+  - `_ELEMENTAL_SHIELD_HP` multipliers for shield thickness variation
+  - 3-cycle shield break + burst window loop
+- **Modified**: `combat/combat_skill_adapter.py` — added `execute_abyss_mage()`
+- **Modified**: `planning/skill_registry.py` — added `combat_abyss_mage` composite route
+- **Tests**: 8 tests in `tests/test_combat_rotation_runners.py`
+  - All 4 element types, shield break + mage defeat, counter sequence, unknown element
+
+#### 5b. Quest Scenarios Q-18, Q-20, Q-25
+- **Modified**: `planning/quest_mechanism_router.py`
+  - **InazumaLockoutHandler** (Q-18): AR prerequisite + quest chain lockout detection
+    - Tracks required_ar, required_quests, completed_quests
+    - Returns grind_ar / complete_prerequisite / proceed decisions
+  - **GuardVisionHandler** (Q-20): Cone-of-vision stealth with patrol tracking
+    - Vision cone radius/angle computation, detection score calculation
+    - Safe path computation between patrol gaps
+    - observe → follow_safe_path → hide → retreat escalation
+  - **QuestRecoveryHandler** (Q-25): Checkpoint-based quest state recovery
+    - Track checkpoint_steps, current_step_index
+    - Resume from checkpoint / restart quest / escalate after max attempts
+  - 3 new QuestMechanismType enums: INAZUMA_LOCKOUT, GUARD_VISION, QUEST_RECOVERY
+  - Full router integration: route(), get_state(), identify_mechanism()
+- **Tests**: 27 tests in `tests/test_quest_systems.py` (6 lockout + 10 guard vision + 11 recovery)
+
+#### 5c. Exploration Scenario #11: Underwater Oxygen Management
+- **Modified**: `exploration/exploration_scenario_router.py`
+  - `_handle_underwater()` now tracks oxygen_ratio with 0.15 depletion per action
+  - Auto-surfaces when oxygen drops below threshold (configurable, default 0.2)
+  - Surface → refill → dive cycle with depth-aware navigation
+  - Tracks objects_collected and oxygen_refills in result
+
+#### 5d. Architecture Dimension #4: RecoveryWatchdog
+- **Modified**: `runtime/error_classification.py`
+  - Added `RecoveryWatchdog`: integrates error classification → state machine → recovery
+  - `submit_error(code, source)`: classifies and queues error
+  - `tick()`: drives full recovery cycle in one call (ANOMALY→DIAGNOSE→PLAN→execute→verify)
+  - Accepts `recovery_fn` callback for pluggable recovery strategy
+  - Stats tracking: total_submitted, total_recovered, total_escalated, recovery_rate
+  - Pending error queue with auto-trim at max_pending
+- **Tests**: 8 tests in `tests/test_error_classification.py`
+
+#### 5e. Architecture Dimension #5: Session Persistence Wiring
+- **Modified**: `execution/crash_recovery.py`
+  - `SessionStateManager` now accepts optional `CheckpointStore` for disk persistence
+  - `save_checkpoint()` persists to CheckpointStore when available
+  - Bridge between execution-layer CrashCheckpoint and runtime-layer Checkpoint
+- **Tests**: 8 tests in `tests/test_crash_recovery.py`
+  - Including integration test verifying JSON checkpoint files written to disk
+
+#### Session 5 Totals
+- **Modified files**: 6 (combat_rotation_runners, quest_mechanism_router, exploration_scenario_router, error_classification, crash_recovery, skill_registry)
+- **New test files**: 1 (test_crash_recovery.py)
+- **New tests**: 51 tests (8 abyss mage + 27 quest + 8 watchdog + 8 crash recovery)
+- **Total test count**: ~2682 passed (from 2631), 1 known flaky
+- **Commits**: 5 commits pushed to codex/pre-realworld-closure
+
+---
