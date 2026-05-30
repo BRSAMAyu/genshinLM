@@ -298,6 +298,102 @@ class CombatSkillAdapter:
         result = strategy.execute(shield_type=ctx.get("shield_type", "wood"))
         return result.success
 
+    # ------------------------------------------------------------------
+    # Environmental combat handlers (#12, #13)
+    # ------------------------------------------------------------------
+
+    def execute_environmental_combat(
+        self,
+        environment_type: str,
+        context: dict[str, Any] | None = None,
+    ) -> bool:
+        """Execute environment-specific combat (Dragonspine/Inazuma)."""
+        ctx = context or {}
+        executor = _CombatExecutorBridge(self)
+        if environment_type == "dragonspine":
+            from combat.environmental_combat_handlers import DragonspineSheerColdHandler
+            handler = DragonspineSheerColdHandler(executor=executor)
+            result = handler.execute(
+                initial_gauge=ctx.get("initial_gauge", 0.0),
+                is_blizzard=ctx.get("is_blizzard", False),
+                enemy_count=ctx.get("enemy_count", 3),
+                has_fire_character=ctx.get("has_fire_character", True),
+                has_warming_bottle=ctx.get("has_warming_bottle", False),
+            )
+            return result.success
+        if environment_type == "inazuma_storm":
+            from combat.environmental_combat_handlers import (
+                InazumaThunderstormHandler,
+                ThunderstormLevel,
+            )
+            handler = InazumaThunderstormHandler(executor=executor)
+            result = handler.execute(
+                storm_intensity=ThunderstormLevel(ctx.get("storm_intensity", "active")),
+                enemy_count=ctx.get("enemy_count", 3),
+                is_raining=ctx.get("is_raining", True),
+                has_cryo_character=ctx.get("has_cryo_character", True),
+                has_pyro_character=ctx.get("has_pyro_character", True),
+            )
+            return result.success
+        log.warning("[CombatSkill] unknown environment type: %s", environment_type)
+        return False
+
+    # ------------------------------------------------------------------
+    # Boss-specific combat handlers (#4-8)
+    # ------------------------------------------------------------------
+
+    def execute_boss_specific(
+        self,
+        boss_id: str,
+        context: dict[str, Any] | None = None,
+    ) -> bool:
+        """Execute boss-specific handler for known weekly bosses."""
+        executor = _CombatExecutorBridge(self)
+        handlers = self._get_boss_handlers(executor)
+        handler = handlers.get(boss_id)
+        if handler is None:
+            log.warning("[CombatSkill] no specific handler for boss: %s", boss_id)
+            return False
+        result = handler()
+        if isinstance(result, bool):
+            return result
+        return result.success
+
+    def _get_boss_handlers(self, executor: _CombatExecutorBridge) -> dict[str, Any]:
+        """Lazy-load boss handler functions keyed by boss_id."""
+        return {
+            "dvalin": self._make_boss_handler("dvalin", executor),
+            "stormterror_dvalin": self._make_boss_handler("dvalin", executor),
+            "childe": self._make_boss_handler("childe", executor),
+            "tartaglia": self._make_boss_handler("childe", executor),
+            "signora": self._make_boss_handler("signora", executor),
+            "la_signora": self._make_boss_handler("signora", executor),
+            "raiden_shogun": self._make_boss_handler("raiden_shogun", executor),
+            "shouki_no_kami": self._make_boss_handler("shouki_no_kami", executor),
+            "scaramouche": self._make_boss_handler("shouki_no_kami", executor),
+        }
+
+    def _make_boss_handler(self, boss_key: str, executor: _CombatExecutorBridge) -> Any:
+        """Create a lazy boss handler callable."""
+        def _handler() -> Any:
+            if boss_key == "dvalin":
+                from combat.boss_combat_handlers import DvalinHandler
+                return DvalinHandler(executor).execute()
+            if boss_key == "childe":
+                from combat.boss_combat_handlers import ChildeHandler
+                return ChildeHandler(executor).execute()
+            if boss_key == "signora":
+                from combat.boss_combat_handlers import SignoraHandler
+                return SignoraHandler(executor).execute()
+            if boss_key == "raiden_shogun":
+                from combat.boss_combat_handlers import RaidenShogunHandler
+                return RaidenShogunHandler(executor).execute()
+            if boss_key == "shouki_no_kami":
+                from combat.boss_combat_handlers import ShoukiNoKamiHandler
+                return ShoukiNoKamiHandler(executor).execute()
+            return False
+        return _handler
+
 
 class _CombatExecutorBridge:
     """Bridge CombatSkillAdapter to SemanticExecutor protocol for rotation runners."""
