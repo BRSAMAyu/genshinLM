@@ -130,8 +130,9 @@ CHARACTER_LEVEL_UP = UIFlow(
     description="Level up the currently selected character (must be on character screen). "
                 "Steps: wait menu load → click upgrade → confirm materials → wait animation → OCR verify level",
     steps=(
-        # Step 1: Wait a moment for character menu to settle (animation)
-        delay(400),
+        # Step 1: Verify we're on character detail screen
+        wait_state("full_menu", timeout_ms=3000),
+        delay(300),
         # Step 2: Click the upgrade/ascend button
         click(nx=0.85, ny=0.85, reason="click_level_up_button", delay_ms=500),
         # Step 3: Confirm auto-filled materials

@@ -401,13 +401,16 @@ class UIFlowExecutor:
         deadline = self._tb.now() + step.timeout_ms / 1000.0
         while self._tb.now() < deadline:
             self._check_interrupt()
-            state = self._current_screen_state()
+            obs = self._bus.latest_observation.get()
+            # No observation at all (test/mock environment) → skip wait
+            if obs is None:
+                log.debug("[UIFlow] no observation, skipping wait_state for %s", step.target_state)
+                return
+            state = "unknown"
+            if obs.ui_state is not None:
+                state = obs.ui_state.state
             if state == step.target_state:
                 return
-            # Treat "unknown" as transient — keep polling without counting down
-            if state == "unknown":
-                self._sleep(min(self._chunk, 0.5))
-                continue
             remaining = max(0.0, deadline - self._tb.now())
             self._sleep(min(self._chunk, remaining))
         raise UIFlowTimeout(f"timeout waiting for state {step.target_state!r}")
