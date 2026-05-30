@@ -54,6 +54,7 @@ class UIFlowSkillAdapter:
         "go_back": "close_menu",
         "character_level_up": "character_level_up",
         "level_up_character": "character_level_up",
+        "level_up_full": "character_level_up_full",
         "character_ascend": "character_ascend",
         "character_talent_upgrade": "character_talent_upgrade",
         "weapon_equip": "weapon_equip",

@@ -125,6 +125,7 @@ CLOSE_MENU = UIFlow(
 # Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - 角色升级 (1-90级)
 # Required: Already on character detail screen (full_menu state)
 # Validates: upgrade animation → level change OCR → resource deduction
+# Caller flow: OPEN_CHARACTER_MENU → (verify character) → CHARACTER_LEVEL_UP → (verify level) → CLOSE_MENU
 CHARACTER_LEVEL_UP = UIFlow(
     name="character_level_up",
     description="Level up the currently selected character (must be on character screen). "
@@ -139,6 +140,26 @@ CHARACTER_LEVEL_UP = UIFlow(
         click(nx=0.65, ny=0.85, reason="confirm_level_up", delay_ms=800),
         # Step 4: Wait for upgrade animation / popup
         delay(1000),
+    ),
+)
+
+# Composite: Open character menu → level up → close
+CHARACTER_LEVEL_UP_FULL = UIFlow(
+    name="character_level_up_full",
+    description="Full character level-up flow: open menu → level up → close menu",
+    steps=(
+        # Open character menu via Paimon menu
+        open_menu("open_character_menu"),
+        delay(300),
+        click_menu_button("character", delay_ms=800),
+        wait_state("full_menu", timeout_ms=5000),
+        delay(400),
+        # Level up
+        click(nx=0.85, ny=0.85, reason="click_level_up_button", delay_ms=500),
+        click(nx=0.65, ny=0.85, reason="confirm_level_up", delay_ms=800),
+        delay(1000),
+        # Close menu
+        press("escape", reason="close_menu_after_level_up", delay_ms=500),
     ),
 )
 
@@ -801,6 +822,7 @@ ALL_FLOWS: dict[str, UIFlow] = {
         OPEN_EVENTS,
         CLOSE_MENU,
         CHARACTER_LEVEL_UP,
+        CHARACTER_LEVEL_UP_FULL,
         CHARACTER_ASCEND,
         CHARACTER_TALENT_UPGRADE,
         WEAPON_EQUIP,
