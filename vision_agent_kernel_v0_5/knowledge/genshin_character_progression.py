@@ -43,13 +43,13 @@ MORA_PER_EXP: dict[str, int] = {
 # Total EXP needed from level 1 to each target level (cumulative)
 # These are the standard values for all characters.
 _LEVEL_EXP_TABLE: dict[int, int] = {
-    20: 13_395,
-    40: 68_435,
-    50: 144_825,
-    60: 363_220,
-    70: 580_635,
-    80: 1_225_715,
-    90: 1_677_405,
+    20: 120_175,
+    40: 698_500,
+    50: 1_277_600,
+    60: 2_131_725,
+    70: 3_327_650,
+    80: 4_939_525,
+    90: 8_362_650,
 }
 
 
@@ -133,27 +133,27 @@ DEFAULT_DROP_FAMILY = "hilichurl_mask"
 # Ascension costs: keyed by ascension_level (the level cap after ascending)
 # These are the same for ALL characters regardless of element.
 _ASCENSION_COSTS: dict[int, AscensionMats] = {
-    20: AscensionMats(20, 2000,
+    20: AscensionMats(20, 20000,
                       gem_sliver=1, gem_fragment=0, gem_chunk=0, gem_gemstone=0,
                       local_specialty=3, common_damaged=3, common_intact=0, common_phosphorescent=0,
                       boss_material=0),
-    40: AscensionMats(40, 20000,
+    40: AscensionMats(40, 40000,
                       gem_sliver=0, gem_fragment=3, gem_chunk=0, gem_gemstone=0,
                       local_specialty=10, common_damaged=0, common_intact=15, common_phosphorescent=0,
                       boss_material=2),
-    50: AscensionMats(50, 20000,
+    50: AscensionMats(50, 60000,
                       gem_sliver=0, gem_fragment=0, gem_chunk=6, gem_gemstone=0,
                       local_specialty=20, common_damaged=0, common_intact=0, common_phosphorescent=12,
                       boss_material=4),
-    60: AscensionMats(60, 30000,
+    60: AscensionMats(60, 80000,
                       gem_sliver=0, gem_fragment=0, gem_chunk=3, gem_gemstone=0,
                       local_specialty=30, common_damaged=0, common_intact=0, common_phosphorescent=18,
                       boss_material=8),
-    70: AscensionMats(70, 40000,
+    70: AscensionMats(70, 100000,
                       gem_sliver=0, gem_fragment=0, gem_chunk=0, gem_gemstone=3,
                       local_specialty=45, common_damaged=0, common_intact=0, common_phosphorescent=12,
                       boss_material=12),
-    80: AscensionMats(80, 60000,
+    80: AscensionMats(80, 120000,
                       gem_sliver=0, gem_fragment=0, gem_chunk=0, gem_gemstone=6,
                       local_specialty=60, common_damaged=0, common_intact=0, common_phosphorescent=24,
                       boss_material=20),
@@ -224,21 +224,21 @@ _TALENT_COSTS: dict[int, TalentCost] = {
     1:  TalentCost(1,  12500,   book_teachings=3, book_guide=0, book_philosophies=0,
                    common_t1=6, common_t2=0, common_t3=0, boss_material=0),
     2:  TalentCost(2,  17500,   book_teachings=2, book_guide=0, book_philosophies=0,
-                   common_t1=3, common_t2=0, common_t3=0, boss_material=0),
-    3:  TalentCost(3,  25000,   book_teachings=0, book_guide=2, book_philosophies=0,
                    common_t1=0, common_t2=3, common_t3=0, boss_material=0),
-    4:  TalentCost(4,  30000,   book_teachings=0, book_guide=4, book_philosophies=0,
+    3:  TalentCost(3,  25000,   book_teachings=0, book_guide=4, book_philosophies=0,
                    common_t1=0, common_t2=4, common_t3=0, boss_material=0),
-    5:  TalentCost(5,  37500,   book_teachings=0, book_guide=6, book_philosophies=0,
+    4:  TalentCost(4,  30000,   book_teachings=0, book_guide=6, book_philosophies=0,
                    common_t1=0, common_t2=6, common_t3=0, boss_material=0),
-    6:  TalentCost(6,  120000,  book_teachings=0, book_guide=0, book_philosophies=3,
-                   common_t1=0, common_t2=0, common_t3=3, boss_material=0),
-    7:  TalentCost(7,  260000,  book_teachings=0, book_guide=0, book_philosophies=4,
-                   common_t1=0, common_t2=0, common_t3=4, boss_material=1),
-    8:  TalentCost(8,  450000,  book_teachings=0, book_guide=0, book_philosophies=6,
+    5:  TalentCost(5,  37500,   book_teachings=0, book_guide=9, book_philosophies=0,
+                   common_t1=0, common_t2=9, common_t3=0, boss_material=0),
+    6:  TalentCost(6,  120000,  book_teachings=0, book_guide=0, book_philosophies=4,
+                   common_t1=0, common_t2=0, common_t3=4, boss_material=0),
+    7:  TalentCost(7,  260000,  book_teachings=0, book_guide=0, book_philosophies=6,
                    common_t1=0, common_t2=0, common_t3=6, boss_material=1),
-    9:  TalentCost(9,  700000,  book_teachings=0, book_guide=0, book_philosophies=9,
-                   common_t1=0, common_t2=0, common_t3=9, boss_material=2, crown=True),
+    8:  TalentCost(8,  450000,  book_teachings=0, book_guide=0, book_philosophies=9,
+                   common_t1=0, common_t2=0, common_t3=9, boss_material=2),
+    9:  TalentCost(9,  700000,  book_teachings=0, book_guide=0, book_philosophies=12,
+                   common_t1=0, common_t2=0, common_t3=12, boss_material=2, crown=True),
 }
 
 
@@ -256,9 +256,9 @@ class TalentBookDomain(Enum):
     FORSAKEN_RIFT = "Forsaken Rift"           # Mondstadt: Freedom, Resistance, Ballad
     TAISHAN_MANSION = "Taishan Mansion"       # Liyue: Diligence, Gold, Prosperity
     VIOLET_COURT = "Violet Court"             # Inazuma: Transience, Elegance, Light
-    STEEPLE_OF_SIGNIFICANCE = "Steeple of Significance"  # Sumeru: Admonition, Ingenuity, Praxis
-    PALE_FORGOTTEN = "Pale Forgotten Flower"  # Fontaine: Equity, Justice, Order
-    BLAZING_URSA = "Blazing Ursa Major"       # Natlan: kindling
+    STEEPLE_OF_SIGNIFICANCE = "Steeple of Ignorance"      # Sumeru: Admonition, Ingenuity, Praxis
+    PALE_FORGOTTEN = "Pale Forgotten Glory"                # Fontaine: Equity, Justice, Order
+    BLAZING_URSA = "Blazing Ruins"                          # Natlan: Contention, Kindling, Conflict
 
 
 # Talent book to domain mapping
@@ -278,16 +278,19 @@ TALENT_BOOK_DOMAINS: dict[str, TalentBookDomain] = {
     "Equity":     TalentBookDomain.PALE_FORGOTTEN,
     "Justice":    TalentBookDomain.PALE_FORGOTTEN,
     "Order":      TalentBookDomain.PALE_FORGOTTEN,
+    "Contention": TalentBookDomain.BLAZING_URSA,
+    "Kindling":   TalentBookDomain.BLAZING_URSA,
+    "Conflict":   TalentBookDomain.BLAZING_URSA,
 }
 
 # Daily rotation: day_of_week (0=Mon, 6=Sun) -> set of available books
 TALENT_BOOK_SCHEDULE: dict[int, tuple[str, ...]] = {
-    0: ("Freedom", "Prosperity", "Transience", "Admonition", "Equity"),       # Monday
-    1: ("Resistance", "Diligence", "Elegance", "Ingenuity", "Justice"),       # Tuesday
-    2: ("Ballad", "Gold", "Light", "Praxis", "Order"),                        # Wednesday
-    3: ("Freedom", "Prosperity", "Transience", "Admonition", "Equity"),       # Thursday
-    4: ("Resistance", "Diligence", "Elegance", "Ingenuity", "Justice"),       # Friday
-    5: ("Ballad", "Gold", "Light", "Praxis", "Order"),                        # Saturday
+    0: ("Freedom", "Prosperity", "Transience", "Admonition", "Equity", "Contention"),     # Monday
+    1: ("Resistance", "Diligence", "Elegance", "Ingenuity", "Justice", "Kindling"),       # Tuesday
+    2: ("Ballad", "Gold", "Light", "Praxis", "Order", "Conflict"),                        # Wednesday
+    3: ("Freedom", "Prosperity", "Transience", "Admonition", "Equity", "Contention"),     # Thursday
+    4: ("Resistance", "Diligence", "Elegance", "Ingenuity", "Justice", "Kindling"),       # Friday
+    5: ("Ballad", "Gold", "Light", "Praxis", "Order", "Conflict"),                        # Saturday
     6: (),  # Sunday: all books available
 }
 

@@ -371,9 +371,10 @@ class UIFlowExecutor:
         rect = backend.client_rect()
         sx = int(rect.left + step.nx * rect.width)
         sy = int(rect.top + step.ny * rect.height)
-        # Move cursor to position first, then hold-click at that position
+        # Architectural note: uses backend._user32 directly because the backend
+        # has no public move_cursor API.  A future refactor should add one.
         backend._user32.SetCursorPos(sx, sy)
-        time.sleep(0.02)
+        self._sleep(0.02)
         duration = step.hold_ms / 1000.0 if step.hold_ms > 0 else 0.5
         backend.hold_click(duration_sec=duration, reason=step.reason or "ui_flow:hold_click")
 

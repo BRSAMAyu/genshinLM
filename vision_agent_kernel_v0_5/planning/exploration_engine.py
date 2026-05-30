@@ -92,11 +92,11 @@ REGION_OCULI: dict[Region, OculiType] = {
 # Oculi total counts per region
 OCULI_TOTALS: dict[OculiType, int] = {
     OculiType.ANEMOCULUS: 66,
-    OculiType.GEOCULUS: 133,
+    OculiType.GEOCULUS: 131,
     OculiType.ELECTROCULUS: 181,
     OculiType.DENDROCULUS: 271,
-    OculiType.HYDROCULUS: 260,
-    OculiType.PYROCULUS: 216,
+    OculiType.HYDROCULUS: 271,
+    OculiType.PYROCULUS: 222,
 }
 
 # Statue offering levels (how many oculi per level)
@@ -223,13 +223,38 @@ class ExplorationEngine:
     def get_progress(self, region: Region) -> RegionProgress:
         return self._progress.get(region, RegionProgress(region=region))
 
-    def update_progress(self, region: Region, **kwargs: Any) -> None:
+    def update_progress(
+        self,
+        region: Region,
+        *,
+        waypoints_total: int | None = None,
+        waypoints_unlocked: int | None = None,
+        chests_total: int | None = None,
+        chests_opened: int | None = None,
+        oculi_total: int | None = None,
+        oculi_collected: int | None = None,
+        exploration_pct: float | None = None,
+        unlocked: bool | None = None,
+    ) -> None:
         progress = self._progress.get(region)
         if progress is None:
             return
-        for key, value in kwargs.items():
-            if hasattr(progress, key):
-                setattr(progress, key, value)
+        if waypoints_total is not None:
+            progress.waypoints_total = waypoints_total
+        if waypoints_unlocked is not None:
+            progress.waypoints_unlocked = waypoints_unlocked
+        if chests_total is not None:
+            progress.chests_total = chests_total
+        if chests_opened is not None:
+            progress.chests_opened = chests_opened
+        if oculi_total is not None:
+            progress.oculi_total = oculi_total
+        if oculi_collected is not None:
+            progress.oculi_collected = oculi_collected
+        if exploration_pct is not None:
+            progress.exploration_pct = exploration_pct
+        if unlocked is not None:
+            progress.unlocked = unlocked
 
     def mark_completed(self, target_id: str) -> None:
         self._completed.add(target_id)

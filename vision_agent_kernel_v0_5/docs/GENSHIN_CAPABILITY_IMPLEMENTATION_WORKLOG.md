@@ -212,4 +212,32 @@
 
 ## 待审查：Round 2（三Agent）
 
+### Round 2: 三Agent审计 ✅
+- **Agent A (Architecture)**: 3 CRITICAL + 11 IMPORTANT + 9 MINOR
+- **Agent B (Data Correctness)**: 5 CRITICAL + 7 IMPORTANT + 7 MINOR
+- **Agent C (Test Coverage)**: 5 CRITICAL + 11 IMPORTANT + 9 MINOR
+
+#### 修复清单：
+1. ✅ EXP 到等级表完全修正（120175/698500/1277600/2131725/3327650/4939525/8362650）
+2. ✅ 突破摩拉成本修正（20000/40000/60000/80000/100000/120000）
+3. ✅ 天赋材料数量修正（Guide 4/6/9, Philosophies 4/6/9/12）
+4. ✅ 神瞳数量修正（Geoculus 131, Hydroculus 271, Pyroculus 222）
+5. ✅ 纠缠之缘星尘价格修正（150→75）
+6. ✅ 须弥/枫丹/纳塔领域名称修正
+7. ✅ 纳塔天赋书添加到 TALENT_BOOK_DOMAINS 和 SCHEDULE
+8. ✅ `resin_max` 默认值从 160 修正为 200
+9. ✅ `_build_local_schedule` 支持全部5个区域的天赋书
+10. ✅ 移除 `combat_survival.py` 未使用的 `import time`
+11. ✅ `update_progress` 从 **kwargs 改为显式类型化参数
+12. ✅ `CombatSurvivalEngine` 文档字符串更正
+13. ✅ 无界列表增长限制（MetaLearning 200条, PityCounter 200条, BossMechanismLearner 50条）
+14. ✅ 雷电盾反增加 Dendro
+15. ✅ 5个 Round 1 回归测试（_can_dash纯谓词, _consume_dash, 冷却, 空队伍）
+
+**测试总计**: 1614 passed, 0 failed
+
+---
+
+## 待审查：Round 3（三Agent）
+
 ---

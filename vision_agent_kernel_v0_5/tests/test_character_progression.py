@@ -45,8 +45,8 @@ class TestExpBooks:
 
     def test_exp_to_level(self) -> None:
         assert exp_to_level(1) == 0
-        assert exp_to_level(20) == 13_395
-        assert exp_to_level(90) == 1_677_405
+        assert exp_to_level(20) == 120_175
+        assert exp_to_level(90) == 8_362_650
 
     def test_exp_to_level_clamps(self) -> None:
         assert exp_to_level(0) == 0
@@ -57,7 +57,7 @@ class TestAscensionMats:
     def test_level_20_cost(self) -> None:
         cost = get_ascension_cost(20)
         assert cost is not None
-        assert cost.mora == 2000
+        assert cost.mora == 20000
         assert cost.gem_sliver == 1
         assert cost.boss_material == 0
 
@@ -66,7 +66,7 @@ class TestAscensionMats:
         assert cost is not None
         assert cost.gem_gemstone == 6
         assert cost.boss_material == 20
-        assert cost.mora == 60000
+        assert cost.mora == 120000
 
     def test_invalid_level_returns_none(self) -> None:
         assert get_ascension_cost(30) is None
@@ -75,13 +75,13 @@ class TestAscensionMats:
     def test_total_mats_to_level_40(self) -> None:
         mats = total_ascension_mats_to_level(40, "Pyro")
         # Only ascension at 20 needed to reach level 40 (20 ascension unlocks 21-40)
-        assert mats["mora"] == 2000
+        assert mats["mora"] == 20_000
         assert "Agnidus Agate Sliver" in mats
 
     def test_total_mats_to_level_60(self) -> None:
         mats = total_ascension_mats_to_level(60, "Pyro")
         # Ascensions at 20 + 40 + 50 needed
-        assert mats["mora"] == 42000  # 2000 + 20000 + 20000
+        assert mats["mora"] == 120_000  # 20000 + 40000 + 60000
         assert "Everflame Seed" in mats
 
     def test_total_mats_all_elements(self) -> None:

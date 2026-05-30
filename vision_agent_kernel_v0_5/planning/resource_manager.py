@@ -342,7 +342,7 @@ class MonthlyPurchase:
 
 
 MONTHLY_SHOP_PURCHASES: tuple[MonthlyPurchase, ...] = (
-    MonthlyPurchase("intertwined_fate_dust", "Intertwined Fate", "stardust", 150, 5, 0),
+    MonthlyPurchase("intertwined_fate_dust", "Intertwined Fate", "stardust", 75, 5, 0),
     MonthlyPurchase("acquaint_fate_dust", "Acquaint Fate", "stardust", 75, 5, 1),
     MonthlyPurchase("intertwined_fate_glitter", "Intertwined Fate", "starglitter", 5, 2, 2),
 )

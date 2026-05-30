@@ -65,6 +65,8 @@ class PityCounter:
     def record_pull(self, rarity: WishRarity) -> None:
         self.total_pulls += 1
         self.history.append(rarity)
+        if len(self.history) > 200:
+            self.history = self.history[-200:]
         if rarity == WishRarity.FIVE_STAR:
             self.pulls_since_5star = 0
             # 50/50 or guaranteed
@@ -165,19 +167,19 @@ class WishDecisionEngine:
         """Generate monthly Paimon's Bargains purchase plan."""
         purchases: list[dict[str, Any]] = []
 
-        # Intertwined Fates from stardust (150 each, 5 available)
-        affordable_intertwined = min(5, self.stardust // 150)
+        # Intertwined Fates from stardust (75 each, 5 available)
+        affordable_intertwined = min(5, self.stardust // 75)
         if affordable_intertwined > 0:
             purchases.append({
                 "item": "Intertwined Fate",
                 "count": affordable_intertwined,
                 "currency": "stardust",
-                "cost": affordable_intertwined * 150,
+                "cost": affordable_intertwined * 75,
                 "priority": 0,
             })
 
         # Acquaint Fates from stardust (75 each, 5 available)
-        remaining_stardust = self.stardust - affordable_intertwined * 150
+        remaining_stardust = self.stardust - affordable_intertwined * 75
         affordable_acquaint = min(5, remaining_stardust // 75)
         if affordable_acquaint > 0:
             purchases.append({

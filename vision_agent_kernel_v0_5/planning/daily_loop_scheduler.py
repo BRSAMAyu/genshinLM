@@ -66,8 +66,8 @@ class GameStateSnapshot:
     main_dps_weapon_level: int = 1
     team_count: int = 1               # Number of built characters (level 60+)
     # Resources
-    resin_current: int = 160
-    resin_max: int = 160
+    resin_current: int = 200
+    resin_max: int = 200
     mora_millions: float = 0.0
     fragile_resin_count: int = 0
     # Time
@@ -132,6 +132,15 @@ def _build_local_schedule() -> dict[int, dict[int, list[str]]]:
             # Liyue books (region 2)
             elif book_lower in ("prosperity", "diligence", "gold"):
                 region_map.setdefault(2, []).append(book_lower)
+            # Inazuma books (region 3)
+            elif book_lower in ("transience", "elegance", "light"):
+                region_map.setdefault(3, []).append(book_lower)
+            # Sumeru books (region 4)
+            elif book_lower in ("admonition", "ingenuity", "praxis"):
+                region_map.setdefault(4, []).append(book_lower)
+            # Fontaine books (region 5)
+            elif book_lower in ("equity", "justice", "order"):
+                region_map.setdefault(5, []).append(book_lower)
         schedule[day] = region_map
     return schedule
 

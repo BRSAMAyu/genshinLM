@@ -91,10 +91,13 @@ class MetaLearningEngine:
         self._records: list[FightRecord] = []
         self._profiles: dict[str, EnemyProfile] = {}
         self._strategy_history: list[StrategyAdjustment] = []
+        self._max_records = 200
 
     def record_fight(self, record: FightRecord) -> None:
         """Record a fight outcome and update enemy profiles."""
         self._records.append(record)
+        if len(self._records) > self._max_records:
+            self._records = self._records[-self._max_records:]
         profile = self._profiles.setdefault(record.enemy_name, EnemyProfile(record.enemy_name))
         profile.total_encounters += 1
 
@@ -177,6 +180,8 @@ class MetaLearningEngine:
 
         adjustments.sort(key=lambda a: a.priority)
         self._strategy_history.extend(adjustments)
+        if len(self._strategy_history) > 100:
+            self._strategy_history = self._strategy_history[-100:]
         return adjustments
 
     def get_cross_boss_knowledge(self, enemy_name: str) -> dict[str, Any]:

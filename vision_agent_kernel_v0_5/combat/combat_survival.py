@@ -7,7 +7,6 @@ C-22, C-32, C-33, C-34.
 from __future__ import annotations
 
 import logging
-import time
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -34,7 +33,7 @@ class ShieldElement(Enum):
 SHIELD_COUNTERS: dict[ShieldElement, tuple[str, ...]] = {
     ShieldElement.PYRO:      ("Hydro",),               # Vaporize breaks fastest
     ShieldElement.HYDRO:     ("Electro", "Cryo"),       # Electro-Charged / Freeze
-    ShieldElement.ELECTRO:   ("Pyro", "Cryo"),          # Overloaded / Superconduct
+    ShieldElement.ELECTRO:   ("Pyro", "Cryo", "Dendro"),  # Overloaded / Superconduct / Catalyze
     ShieldElement.CRYO:      ("Pyro",),                 # Melt
     ShieldElement.GEO:       ("Claymore", "Plunge"),    # Physical break
     ShieldElement.ANEMO:     (),                        # Swirl-spreads, no direct counter
@@ -250,13 +249,12 @@ class CombatSurvivalDecision:
 
 
 class CombatSurvivalEngine:
-    """Makes real-time survival decisions during combat.
+    """Pure decision function for real-time combat survival.
 
-    Integrates with:
-    - danger_detector for incoming damage signals
-    - reflex_evasion for dodge execution
-    - food_manager for food usage
-    - character_switch_manager for character switching
+    Receives current combat state via parameters and returns the best survival
+    action.  Does NOT directly integrate with StateBus, InputWorker, or other
+    components — the caller (orchestration layer adapter) is responsible for
+    feeding live state and executing the returned decisions.
     """
 
     def __init__(self) -> None:
@@ -382,6 +380,8 @@ class BossMechanismLearner:
             record.deaths += 1
             if death_phase is not None:
                 record.failed_phases.append(death_phase)
+                if len(record.failed_phases) > 50:
+                    record.failed_phases = record.failed_phases[-50:]
 
     def get_record(self, boss_name: str) -> BossFightRecord | None:
         return self._records.get(boss_name)

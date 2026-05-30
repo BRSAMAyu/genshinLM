@@ -202,3 +202,46 @@ class TestBossMechanismLearner:
         assert learner.get_record("unknown_boss") is None
         assert learner.get_failure_diagnosis("unknown_boss") == "no_data"
         assert not learner.should_retreat("unknown_boss")
+
+
+class TestRound1Fixes:
+    """Regression tests for Round 1 audit fixes."""
+
+    def test_can_dash_is_pure_predicate(self) -> None:
+        """_can_dash should not mutate state — it's a pure predicate."""
+        engine = CombatSurvivalEngine()
+        cd_before = engine._dash_cooldown
+        assert engine._can_dash(0.0, 1.0)
+        # Cooldown should NOT have changed (pure read)
+        assert engine._dash_cooldown == cd_before
+
+    def test_consume_dash_sets_cooldown(self) -> None:
+        engine = CombatSurvivalEngine()
+        engine._consume_dash(1.0)
+        assert engine._dash_cooldown == pytest.approx(1.6, abs=0.01)
+
+    def test_dash_decision_advances_cooldown(self) -> None:
+        """When evaluate returns a dash decision, cooldown should be consumed."""
+        engine = CombatSurvivalEngine()
+        engine.food_state.available_foods = {"sweet_madame": 5}
+        decision = engine.evaluate((0.1, 0.8, 0.9, 0.7), 0, 0.8, 0.0)
+        assert decision is not None and decision.action == "dash"
+        # Cooldown should now be set (not 0.0)
+        assert engine._dash_cooldown > 0.0
+
+    def test_double_dash_respects_cooldown(self) -> None:
+        """Second dash attempt within cooldown should not dash."""
+        engine = CombatSurvivalEngine()
+        engine.food_state.available_foods = {"mondstadt_hash_brown": 3}
+        d1 = engine.evaluate((0.1, 0.8, 0.9, 0.7), 0, 0.8, 0.0)
+        assert d1 is not None and d1.action == "dash"
+        # Second call at same time — should NOT dash
+        d2 = engine.evaluate((0.1, 0.8, 0.9, 0.7), 0, 0.8, 0.0)
+        if d2 is not None:
+            assert d2.action != "dash"
+
+    def test_empty_party_no_false_retreat(self) -> None:
+        """Empty party hp_ratios=() should NOT trigger 'all_dead' retreat."""
+        engine = CombatSurvivalEngine()
+        decision = engine.evaluate((), 0, 0.5, 0.0)
+        assert decision is None or decision.action != "retreat"
