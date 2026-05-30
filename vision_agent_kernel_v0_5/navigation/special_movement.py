@@ -131,6 +131,21 @@ class MovementDecision:
     reason: str = ""
 
 
+def _direction_to_keys(direction: tuple[float, float]) -> tuple[str, ...]:
+    """Convert a (dx, dy) direction vector to WASD keys."""
+    dx, dy = direction
+    keys: list[str] = []
+    if dy < -0.3:
+        keys.append("w")
+    elif dy > 0.3:
+        keys.append("s")
+    if dx < -0.3:
+        keys.append("a")
+    elif dx > 0.3:
+        keys.append("d")
+    return tuple(keys) if keys else ("w",)
+
+
 class ClimbingController:
     """Controls climbing movement with stamina management (N-07).
 
@@ -159,6 +174,7 @@ class ClimbingController:
 
         if at_top:
             self._state.is_climbing = False
+            self._state.is_exhausted = False
             return MovementDecision("move", keys=("w",), duration_ms=100,
                                     reason="reached_top")
 
@@ -167,8 +183,12 @@ class ClimbingController:
             return MovementDecision("recover", keys=(), duration_ms=2000,
                                     reason=f"stamina_low_{stamina_ratio:.0%}")
 
-        if self._state.is_exhausted and stamina_ratio > 0.6:
-            self._state.is_exhausted = False
+        if self._state.is_exhausted:
+            if stamina_ratio > 0.6:
+                self._state.is_exhausted = False
+            else:
+                return MovementDecision("recover", keys=(), duration_ms=2000,
+                                        reason=f"recovering_{stamina_ratio:.0%}")
 
         if not wall_ahead:
             return MovementDecision("move", keys=("w",), duration_ms=200,
@@ -202,7 +222,7 @@ class SwimmingController:
         self._state.is_swimming = True
         self._state.is_diving = False
         self._state.direction = direction
-        return MovementDecision("swim", keys=self._direction_to_keys(direction),
+        return MovementDecision("swim", keys=_direction_to_keys(direction),
                                 duration_ms=200, reason="start_swimming")
 
     def start_diving(self) -> MovementDecision:
@@ -238,21 +258,8 @@ class SwimmingController:
         self._state.is_swimming = not is_underwater
         self._state.is_diving = is_underwater
 
-        return MovementDecision(action, keys=self._direction_to_keys(target_direction),
+        return MovementDecision(action, keys=_direction_to_keys(target_direction),
                                 duration_ms=200, reason=f"{action}_towards_target")
-
-    def _direction_to_keys(self, direction: tuple[float, float]) -> tuple[str, ...]:
-        dx, dy = direction
-        keys: list[str] = []
-        if dy < -0.3:
-            keys.append("w")
-        elif dy > 0.3:
-            keys.append("s")
-        if dx < -0.3:
-            keys.append("a")
-        elif dx > 0.3:
-            keys.append("d")
-        return tuple(keys) if keys else ("w",)
 
 
 class GlidingController:
@@ -294,7 +301,7 @@ class GlidingController:
             return self.land()
 
         return MovementDecision("glide",
-                                keys=SwimmingController()._direction_to_keys(target_direction),
+                                keys=_direction_to_keys(target_direction),
                                 duration_ms=200, reason="gliding_towards_target")
 
 
@@ -458,6 +465,9 @@ _HAZARD_SHELTERS: dict[EnvironmentHazardType, list[str]] = {
     EnvironmentHazardType.PHLOGISTON: [
         "phlogiston_fountain", "statue_of_seven", "tribal_bonfire",
     ],
+    EnvironmentHazardType.DARKNESS: [
+        "ruin_brazier", "lumenstone_charge", "statue_of_seven",
+    ],
 }
 
 
@@ -475,6 +485,10 @@ class EnvironmentHazardAvoidance:
     @property
     def current_hazard(self) -> EnvironmentHazardType:
         return self._current_hazard
+
+    @property
+    def hazard_level(self) -> float:
+        return self._hazard_level
 
     def update(self, gauge_type: str, hazard_level: float) -> MovementDecision:
         """Update hazard state from perception EnvironmentGauge."""
@@ -543,10 +557,10 @@ class SpecialMovementController:
         """Evaluate current movement state and return action decision."""
         # Priority: environmental hazard overrides everything
         if self.hazard_avoidance.current_hazard != EnvironmentHazardType.NONE:
-            if self.hazard_avoidance._hazard_level > 0.6:
+            if self.hazard_avoidance.hazard_level > 0.6:
                 return self.hazard_avoidance.update(
                     self.hazard_avoidance.current_hazard.value,
-                    self.hazard_avoidance._hazard_level,
+                    self.hazard_avoidance.hazard_level,
                 )
 
         if mode == MovementMode.CLIMBING:

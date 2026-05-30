@@ -23,6 +23,7 @@ from navigation.special_movement import (
     UndergroundState,
     VehicleController,
     VehicleState,
+    _direction_to_keys,
 )
 
 
@@ -85,6 +86,16 @@ class TestClimbingController:
         assert ctrl.state.is_exhausted
         ctrl.update(stamina_ratio=0.7, is_visible=True, wall_ahead=True, at_top=False)
         assert not ctrl.state.is_exhausted
+
+    def test_exhausted_stays_in_recovery_until_60_percent(self) -> None:
+        ctrl = ClimbingController()
+        ctrl.start_climbing()
+        ctrl.update(stamina_ratio=0.1, is_visible=True, wall_ahead=True, at_top=False)
+        assert ctrl.state.is_exhausted
+        # At 0.4 stamina, can_spend is True (above 0.25 reserve) but still exhausted
+        dec = ctrl.update(stamina_ratio=0.4, is_visible=True, wall_ahead=True, at_top=False)
+        assert dec.action == "recover"
+        assert ctrl.state.is_exhausted
 
     def test_no_wall_advance(self) -> None:
         ctrl = ClimbingController()
@@ -153,15 +164,13 @@ class TestSwimmingController:
         assert dec.action == "dive"
 
     def test_direction_to_keys(self) -> None:
-        ctrl = SwimmingController()
-        assert "w" in ctrl._direction_to_keys((0.0, -1.0))
-        assert "s" in ctrl._direction_to_keys((0.0, 1.0))
-        assert "a" in ctrl._direction_to_keys((-1.0, 0.0))
-        assert "d" in ctrl._direction_to_keys((1.0, 0.0))
+        assert "w" in _direction_to_keys((0.0, -1.0))
+        assert "s" in _direction_to_keys((0.0, 1.0))
+        assert "a" in _direction_to_keys((-1.0, 0.0))
+        assert "d" in _direction_to_keys((1.0, 0.0))
 
     def test_direction_to_keys_default_forward(self) -> None:
-        ctrl = SwimmingController()
-        keys = ctrl._direction_to_keys((0.0, 0.0))
+        keys = _direction_to_keys((0.0, 0.0))
         assert keys == ("w",)
 
 
