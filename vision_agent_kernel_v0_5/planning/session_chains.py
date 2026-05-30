@@ -243,7 +243,7 @@ class ProgressionSessionResult:
     material_farmed: bool = False
     duration_sec: float = 0.0
     steps_completed: int = 0
-    steps_total: int = 8
+    steps_total: int = 9
     recovery_events: int = 0
 
 
@@ -274,7 +274,7 @@ class CharacterProgressionSession:
         result = ProgressionSessionResult(
             success=False,
             character=character,
-            steps_total=8,
+            steps_total=9,
         )
 
         steps = [
@@ -286,6 +286,7 @@ class CharacterProgressionSession:
             ("weapon", self._step_weapon),
             ("artifact", self._step_artifact),
             ("talent", self._step_talent),
+            ("team", self._step_team),
         ]
 
         for step_name, step_fn in steps:
@@ -377,6 +378,13 @@ class CharacterProgressionSession:
         result.talent_done = ok
         return ok
 
+    def _step_team(self, result: ProgressionSessionResult, char: str) -> bool:
+        ok = self._executor.execute_semantic(
+            "character_progression_team", target=char,
+        )
+        result.team_done = ok
+        return ok
+
 
 _PROGRESSION_RECOVERY_CATEGORY: dict[str, str] = {
     "check_status": "ui",
@@ -387,6 +395,7 @@ _PROGRESSION_RECOVERY_CATEGORY: dict[str, str] = {
     "weapon": "resource",
     "artifact": "resource",
     "talent": "resource",
+    "team": "resource",
 }
 
 

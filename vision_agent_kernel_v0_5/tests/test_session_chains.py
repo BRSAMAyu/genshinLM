@@ -106,6 +106,7 @@ class TestCharacterProgressionSession:
         assert result.weapon_done
         assert result.artifact_done
         assert result.talent_done
+        assert result.team_done
         assert result.material_farmed
 
     def test_material_farming_step(self):
@@ -120,7 +121,7 @@ class TestCharacterProgressionSession:
         session = CharacterProgressionSession(executor=ex)
         session.run(character="zhongli")
         prog_calls = [c for c in ex.calls if c[0].startswith("character_progression")]
-        assert len(prog_calls) >= 5  # level, ascend, weapon, artifact, talent
+        assert len(prog_calls) >= 6  # level, ascend, weapon, artifact, talent, team
 
     def test_timeout_limits_session(self):
         ex = _FakeExecutor()
