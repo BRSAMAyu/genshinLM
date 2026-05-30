@@ -129,14 +129,14 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| N-07 | 攀爬控制 | 在可攀爬表面移动，管理体力消耗 | ❌ 缺失 |
-| N-08 | 游泳控制 | 水面游泳、潜水（枫丹水下区域） | ❌ 缺失 |
-| N-09 | 滑翔控制 | 从高处起飞、控制滑翔方向 | ❌ 缺失 |
-| N-10 | 冲刺管理 | 管理冲刺体力消耗，避免耗尽导致坠落/溺水 | ❌ 缺失 |
-| N-11 | 元素视野使用 | 按住鼠标中键开启元素视野寻找隐藏物体 | ⚠️ 需集成 |
-| N-12 | 载具/变身使用 | 纳塔的 Saurian 附身、四叶印飞行等区域特殊移动 | ❌ 缺失 |
-| N-13 | 地下区域导航 | 多层地图切换、洞穴网络寻路 | ❌ 缺失 |
-| N-14 | 环境危害回避 | 龙脊严寒、稻妻雷暴等环境伤害的管理 | ❌ 缺失 |
+| N-07 | 攀爬控制 | 在可攀爬表面移动，管理体力消耗 | ✅ 已有 (special_movement.py ClimbingController) |
+| N-08 | 游泳控制 | 水面游泳、潜水（枫丹水下区域） | ✅ 已有 (special_movement.py SwimmingController) |
+| N-09 | 滑翔控制 | 从高处起飞、控制滑翔方向 | ✅ 已有 (special_movement.py GlidingController) |
+| N-10 | 冲刺管理 | 管理冲刺体力消耗，避免耗尽导致坠落/溺水 | ✅ 已有 (special_movement.py SprintManager) |
+| N-11 | 元素视野使用 | 按住鼠标中键开启元素视野寻找隐藏物体 | ✅ 已有 (special_movement.py ElementalSightController) |
+| N-12 | 载具/变身使用 | 纳塔的 Saurian 附身、四叶印飞行等区域特殊移动 | ✅ 已有 (special_movement.py VehicleController) |
+| N-13 | 地下区域导航 | 多层地图切换、洞穴网络寻路 | ✅ 已有 (special_movement.py UndergroundNavigator) |
+| N-14 | 环境危害回避 | 龙脊严寒、稻妻雷暴等环境伤害的管理 | ✅ 已有 (special_movement.py EnvironmentHazardAvoidance) |
 
 ### 3.3 路径规划
 
@@ -172,43 +172,43 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| U-13 | 标签切换 | 在菜单内不同标签间切换（点击标签按钮） | ❌ 缺失 |
-| U-14 | 列表滚动 | 在长列表中滚动到目标项 | ❌ 缺失 |
-| U-15 | 确认/取消弹窗 | 处理确认弹窗（点击确认/取消按钮） | ⚠️ 部分有 |
-| U-16 | 数量选择 | 在数量选择弹窗中调整数字（升级材料、商店购买） | ❌ 缺失 |
-| U-17 | 下拉菜单选择 | 选择下拉选项（角色筛选、排序方式等） | ❌ 缺失 |
-| U-18 | 拖放操作 | 拖放角色到队伍槽位 | ❌ 缺失 |
-| U-19 | 地图缩放/平移 | 鼠标滚轮缩放、拖拽平移地图 | ❌ 缺失 |
-| U-20 | 自动识别当前 UI 页面 | VLM/分类器判断当前处于哪个菜单页面 | ⚠️ 部分有 |
-| U-21 | 选项卡切换 | 冒险之证的 6 个选项卡切换 | ❌ 缺失 |
-| U-22 | 搜索/筛选 | 在武器/圣遗物列表中使用筛选功能 | ❌ 缺失 |
+| U-13 | 标签切换 | 在菜单内不同标签间切换（点击标签按钮） | ✅ 已有 (ui_primitives.py tab_switch) |
+| U-14 | 列表滚动 | 在长列表中滚动到目标项 | ✅ 已有 (ui_primitives.py list_scroll_to) |
+| U-15 | 确认/取消弹窗 | 处理确认弹窗（点击确认/取消按钮） | ✅ 已有 (ui_primitives.py confirm_popup/cancel_popup) |
+| U-16 | 数量选择 | 在数量选择弹窗中调整数字（升级材料、商店购买） | ✅ 已有 (ui_primitives.py quantity_adjust) |
+| U-17 | 下拉菜单选择 | 选择下拉选项（角色筛选、排序方式等） | ✅ 已有 (ui_primitives.py dropdown_select) |
+| U-18 | 拖放操作 | 拖放角色到队伍槽位 | ✅ 已有 (ui_primitives.py drag_drop_party_slot) |
+| U-19 | 地图缩放/平移 | 鼠标滚轮缩放、拖拽平移地图 | ✅ 已有 (ui_primitives.py map_zoom/map_pan) |
+| U-20 | 自动识别当前 UI 页面 | VLM/分类器判断当前处于哪个菜单页面 | ✅ 已有 (ui_primitives.py PageIdentifier) |
+| U-21 | 选项卡切换 | 冒险之证的 6 个选项卡切换 | ✅ 已有 (ui_primitives.py handbook_tab) |
+| U-22 | 搜索/筛选 | 在武器/圣遗物列表中使用筛选功能 | ✅ 已有 (ui_primitives.py filter_open/filter_option) |
 
 ### 4.3 关键 UI 操作流程（需实现的宏）
 
 | # | 流程名 | 步骤概要 | 状态 |
 |---|--------|---------|------|
-| U-23 | 角色升级流程 | Esc → C → 选角色 → 属性 → 升级 → 选材料 → 确认 | ❌ 缺失 |
-| U-24 | 角色突破流程 | Esc → C → 选角色 → 属性 → 突破 → 确认材料 → 突破 | ❌ 缺失 |
-| U-25 | 天赋升级流程 | Esc → C → 选角色 → 天赋 → 选天赋 → 升级 → 确认 | ❌ 缺失 |
-| U-26 | 武器装备流程 | Esc → C → 选角色 → 武器 → 换装 → 选择武器 → 装备 | ❌ 缺失 |
-| U-27 | 武器强化流程 | Esc → B → 武器 → 选武器 → 详情 → 强化 → 选材料 → 确认 | ❌ 缺失 |
-| U-28 | 圣遗物装备流程 | Esc → C → 选角色 → 圣遗物 → 空槽 → 选择 → 装备 | ❌ 缺失 |
-| U-29 | 圣遗物强化流程 | Esc → C → 选角色 → 圣遗物 → 选圣遗物 → 强化 → 选材料 → 确认 | ❌ 缺失 |
-| U-30 | 队伍配置流程 | Esc/L → 拖放角色 → 保存队伍 | ❌ 缺失 |
-| U-31 | 抽卡流程 | Esc → F3 → 选卡池 → 十连/单抽 → 观看动画 → 查看结果 | ❌ 缺失 |
-| U-32 | 合成台操作 | 走到合成台 → F → 选择配方 → 调整数量 → 制作 | ❌ 缺失 |
-| U-33 | 锻造操作 | 走到铁匠 → F → 选择武器/矿 → 锻造 | ❌ 缺失 |
-| U-34 | 烹饪操作 | 走到烹饪台 → F → 选择食谱 → 手动/自动烹饪 | ❌ 缺失 |
-| U-35 | 商店购买 | 走到NPC → F → 浏览商品 → 选择数量 → 购买 | ❌ 缺失 |
-| U-36 | 派蒙商店购买 | Esc → 商店 → 派蒙的议价 → 星辉/星尘兑换 | ❌ 缺失 |
-| U-37 | 冒险之证追踪 | Esc → F1 → 选择目标 → 追踪 | ❌ 缺失 |
-| U-38 | 秘境进入/退出 | 传送到秘境 → F → 组队选择 → 开始 → 完成 → 领奖/退出 | ⚠️ 部分有 |
-| U-39 | 密境领奖 | 秘境完成后消耗树脂领取奖励 | ❌ 缺失 |
-| U-40 | 七天神像供奉 | 走到神像 → F → 供奉 → 选择神瞳数量 → 确认 | ❌ 缺失 |
-| U-41 | 食物使用 | Esc → B → 食物 → 选择食物 → 使用 → 选目标角色 | ❌ 缺失 |
-| U-42 | 快捷食物使用 | 战斗中通过食物菜单快速使用复活/治疗食物 | ❌ 缺失 |
-| U-43 | 时间调整 | Esc → 时间 → 调整时间 → 确认（部分任务需要） | ❌ 缺失 |
-| U-44 | 元素转换 | 走到七天神像 → F → 与 [某元素] 共鸣 | ❌ 缺失 |
+| U-23 | 角色升级流程 | Esc → C → 选角色 → 属性 → 升级 → 选材料 → 确认 | ✅ 已有 (ui_flows CHARACTER_LEVEL_UP) |
+| U-24 | 角色突破流程 | Esc → C → 选角色 → 属性 → 突破 → 确认材料 → 突破 | ✅ 已有 (ui_flows CHARACTER_ASCEND) |
+| U-25 | 天赋升级流程 | Esc → C → 选角色 → 天赋 → 选天赋 → 升级 → 确认 | ✅ 已有 (ui_flows CHARACTER_TALENT_UPGRADE) |
+| U-26 | 武器装备流程 | Esc → C → 选角色 → 武器 → 换装 → 选择武器 → 装备 | ✅ 已有 (ui_flows WEAPON_EQUIP) |
+| U-27 | 武器强化流程 | Esc → B → 武器 → 选武器 → 详情 → 强化 → 选材料 → 确认 | ✅ 已有 (ui_flows WEAPON_ENHANCE) |
+| U-28 | 圣遗物装备流程 | Esc → C → 选角色 → 圣遗物 → 空槽 → 选择 → 装备 | ✅ 已有 (ui_flows ARTIFACT_EQUIP) |
+| U-29 | 圣遗物强化流程 | Esc → C → 选角色 → 圣遗物 → 选圣遗物 → 强化 → 选材料 → 确认 | ✅ 已有 (ui_flows ARTIFACT_ENHANCE) |
+| U-30 | 队伍配置流程 | Esc/L → 拖放角色 → 保存队伍 | ✅ 已有 (ui_flows PARTY_QUICK_CONFIG + ui_primitives drag_drop_party_slot) |
+| U-31 | 抽卡流程 | Esc → F3 → 选卡池 → 十连/单抽 → 观看动画 → 查看结果 | ✅ 已有 (ui_flows WISH_TEN_PULL) |
+| U-32 | 合成台操作 | 走到合成台 → F → 选择配方 → 调整数量 → 制作 | ✅ 已有 (ui_flows CRAFTING_BENCH_INTERACT + ui_primitives quantity_adjust) |
+| U-33 | 锻造操作 | 走到铁匠 → F → 选择武器/矿 → 锻造 | ⚠️ 需模板 (交互原语已有，需铁匠UI流程) |
+| U-34 | 烹饪操作 | 走到烹饪台 → F → 选择食谱 → 手动/自动烹饪 | ✅ 已有 (ui_flows COOKING_INTERACT + COOKING_AUTO_COOK) |
+| U-35 | 商店购买 | 走到NPC → F → 浏览商品 → 选择数量 → 购买 | ⚠️ 部分有 (ui_primitives quantity_adjust 已有，需NPC商店流程) |
+| U-36 | 派蒙商店购买 | Esc → 商店 → 派蒙的议价 → 星辉/星尘兑换 | ✅ 已有 (ui_flows SHOP_OPEN_PAIMON_BARGAINS + SHOP_BUY_MONTHLY_FATES) |
+| U-37 | 冒险之证追踪 | Esc → F1 → 选择目标 → 追踪 | ✅ 已有 (ui_flows HANDBOOK_TRACK_ENEMY) |
+| U-38 | 秘境进入/退出 | 传送到秘境 → F → 组队选择 → 开始 → 完成 → 领奖/退出 | ✅ 已有 (ui_flows DOMAIN_ENTER_AND_CLAIM) |
+| U-39 | 密境领奖 | 秘境完成后消耗树脂领取奖励 | ✅ 已有 (ui_flows DOMAIN_ENTER_AND_CLAIM 含领奖步骤) |
+| U-40 | 七天神像供奉 | 走到神像 → F → 供奉 → 选择神瞳数量 → 确认 | ✅ 已有 (ui_flows STATUE_OFFER_OCULI) |
+| U-41 | 食物使用 | Esc → B → 食物 → 选择食物 → 使用 → 选目标角色 | ✅ 已有 (ui_flows FOOD_USE_FROM_BACKPACK) |
+| U-42 | 快捷食物使用 | 战斗中通过食物菜单快速使用复活/治疗食物 | ⚠️ 需集成 (combat_survival.py CombatFoodState 已有逻辑) |
+| U-43 | 时间调整 | Esc → 时间 → 调整时间 → 确认（部分任务需要） | ✅ 已有 (ui_flows TIME_ADJUST) |
+| U-44 | 元素转换 | 走到七天神像 → F → 与 [某元素] 共鸣 | ⚠️ 需模板 (statue_interaction.py 已有基础) |
 
 ---
 
@@ -490,13 +490,13 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| DL-01 | 每日委托完成 | 完成 4 个每日委托 + 凯瑟琳领奖 | ❌ 缺失 |
-| DL-02 | 树脂消耗循环 | 根据日程表和优先级消耗树脂 | ❌ 缺失 |
-| DL-03 | 周本 Boss 挑战 | 每周完成 3 个折扣周本 | ❌ 缺失 |
-| DL-04 | 派遣收集 | 每天重置派遣任务 | ❌ 缺失 |
-| DL-05 | 纪行任务完成 | 完成每日/每周纪行任务 | ❌ 缺失 |
-| DL-06 | 限时活动参与 | 参与当前版本的限时活动 | ❌ 缺失 |
-| DL-07 | 日常循环调度器 | 统一调度所有日常任务的执行顺序 | ❌ 缺失 |
+| DL-01 | 每日委托完成 | 完成 4 个每日委托 + 凯瑟琳领奖 | ✅ 已有 (daily_loop_executor.py CommissionExecutor) |
+| DL-02 | 树脂消耗循环 | 根据日程表和优先级消耗树脂 | ✅ 已有 (daily_loop_executor.py ResinSpendingExecutor) |
+| DL-03 | 周本 Boss 挑战 | 每周完成 3 个折扣周本 | ✅ 已有 (daily_loop_executor.py WeeklyBossExecutor) |
+| DL-04 | 派遣收集 | 每天重置派遣任务 | ✅ 已有 (daily_loop_executor.py ExpeditionExecutor) |
+| DL-05 | 纪行任务完成 | 完成每日/每周纪行任务 | ✅ 已有 (daily_loop_executor.py BattlePassExecutor) |
+| DL-06 | 限时活动参与 | 参与当前版本的限时活动 | ✅ 已有 (daily_loop_executor.py EventExecutor) |
+| DL-07 | 日常循环调度器 | 统一调度所有日常任务的执行顺序 | ✅ 已有 (daily_loop_executor.py DailyLoopExecutor) |
 
 ---
 

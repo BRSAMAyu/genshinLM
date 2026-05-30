@@ -280,3 +280,52 @@
 **总完成率**: 52.2% (143/274)
 
 ---
+
+## Phase 10: 导航特殊移动 + 日常循环 + UI原子操作 (2026-05-30 续)
+
+### Step 12: 导航特殊移动 ✅
+- **文件**: `navigation/special_movement.py` — 8 类特殊移动控制器
+  - ClimbingController (N-07): 攀爬体力管理、方向控制、体力恢复
+  - SwimmingController (N-08): 水面游泳、枫丹潜水、岸边检测
+  - GlidingController (N-09): 起飞、方向控制、自动降落
+  - SprintManager (N-10): 冲刺体力预算、战斗感知、恢复管理
+  - ElementalSightController (N-11): 元素视野开关、物体扫描
+  - VehicleController (N-12): Saurian/Waverider/四叶印载具
+  - UndergroundNavigator (N-13): 多层洞穴导航、光源管理
+  - EnvironmentHazardAvoidance (N-14): 严寒/雷暴/燃素/黑暗回避
+  - SpecialMovementController: 统一门面控制器
+- **覆盖能力**: N-07~N-14
+- **审查修复**: 提取共享 _direction_to_keys, 修复攀爬力竭逻辑, 公开 hazard_level, 添加 DARKNESS 避难所
+- **测试**: `tests/test_special_movement.py` — 65 个测试
+
+### Step 13: 日常循环执行器 ✅
+- **文件**: `execution/daily_loop_executor.py` — 完整日常循环系统
+  - CommissionExecutor (DL-01): 4 委托 + 凯瑟琳领奖
+  - ResinSpendingExecutor (DL-02): 树脂消耗规划（按 AR 分配）
+  - WeeklyBossExecutor (DL-03): 3 折扣周本管理
+  - ExpeditionExecutor (DL-04): AR 感知的派遣管理
+  - BattlePassExecutor (DL-05): 纪行任务追踪
+  - EventExecutor (DL-06): 限时活动管理（按 end_date 排序）
+  - DailyLoopExecutor (DL-07): 统一调度器（优先级排序）
+- **覆盖能力**: DL-01~DL-07
+- **审查修复**: 事件排序改用 end_date, 完整 daily reset, AR 感知远征槽位, 移除死枚举
+- **测试**: `tests/test_daily_loop_executor.py` — 53 个测试
+
+### Step 14: UI 操作原子能力 ✅
+- **文件**: `interaction/ui_primitives.py` — 10 类 UI 原子操作
+  - tab_switch (U-13): 标签切换
+  - list_scroll_to/list_click_item (U-14): 列表滚动
+  - confirm_popup/cancel_popup (U-15): 确认/取消弹窗
+  - quantity_adjust (U-16): 数量选择
+  - dropdown_select (U-17): 下拉菜单
+  - drag_drop_party_slot (U-18): 拖放操作
+  - map_zoom/map_pan (U-19): 地图缩放平移
+  - PageIdentifier (U-20): 页面识别 + 返回主世界
+  - handbook_tab (U-21): 冒险之证标签
+  - filter_open/filter_option/filter_confirm (U-22): 搜索/筛选
+- **覆盖能力**: U-13~U-22
+- **测试**: `tests/test_ui_primitives.py` — 43 个测试
+
+**测试总计**: 1853 passed, 0 failed (161 新测试)
+
+---
