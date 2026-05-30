@@ -185,6 +185,25 @@ CHARACTER_ASCEND = UIFlow(
     ),
 )
 
+# Composite: Open character menu → ascend → close
+CHARACTER_ASCEND_FULL = UIFlow(
+    name="character_ascend_full",
+    description="Full character ascension flow: open menu → ascend → close menu",
+    steps=(
+        open_menu("open_character_menu"),
+        delay(300),
+        click_menu_button("character", delay_ms=800),
+        wait_state("full_menu", timeout_ms=5000),
+        delay(400),
+        click(nx=0.85, ny=0.85, reason="click_ascend_button", delay_ms=500),
+        click(nx=0.65, ny=0.85, reason="confirm_ascend", delay_ms=1200),
+        wait_loading(timeout_ms=5000),
+        wait_not_loading(timeout_ms=8000),
+        delay(500),
+        press("escape", reason="close_menu_after_ascend", delay_ms=500),
+    ),
+)
+
 CHARACTER_TALENT_UPGRADE = UIFlow(
     name="character_talent_upgrade",
     description="Upgrade the Normal Attack talent for the currently selected character. "
@@ -229,6 +248,25 @@ CHARACTER_TALENT_UPGRADE_BURST = UIFlow(
         click(nx=0.85, ny=0.85, reason="click_upgrade_talent", delay_ms=300),
         click(nx=0.65, ny=0.85, reason="confirm_talent_upgrade", delay_ms=800),
         delay(500),
+    ),
+)
+
+# Composite: Open menu → upgrade normal attack talent → close
+CHARACTER_TALENT_UPGRADE_FULL = UIFlow(
+    name="character_talent_upgrade_full",
+    description="Full talent upgrade flow: open menu → talents tab → upgrade normal attack → close",
+    steps=(
+        open_menu("open_character_menu"),
+        delay(300),
+        click_menu_button("character", delay_ms=800),
+        wait_state("full_menu", timeout_ms=5000),
+        delay(400),
+        click_char_tab("talents", delay_ms=600),
+        click(nx=0.35, ny=0.50, reason="select_talent_normal_attack", delay_ms=400),
+        click(nx=0.85, ny=0.85, reason="click_upgrade_talent", delay_ms=300),
+        click(nx=0.65, ny=0.85, reason="confirm_talent_upgrade", delay_ms=800),
+        delay(500),
+        press("escape", reason="close_menu_after_talent_upgrade", delay_ms=500),
     ),
 )
 
@@ -285,6 +323,43 @@ WEAPON_REFINE = UIFlow(
     ),
 )
 
+# Composite: Open menu → equip weapon → close
+WEAPON_EQUIP_FULL = UIFlow(
+    name="weapon_equip_full",
+    description="Full weapon equip flow: open menu → weapon tab → equip → close",
+    steps=(
+        open_menu("open_character_menu"),
+        delay(300),
+        click_menu_button("character", delay_ms=800),
+        wait_state("full_menu", timeout_ms=5000),
+        delay(400),
+        click_char_tab("weapon", delay_ms=600),
+        click(nx=0.85, ny=0.50, reason="click_weapon_slot", delay_ms=500),
+        click(nx=0.50, ny=0.35, reason="select_weapon", delay_ms=400),
+        click(nx=0.65, ny=0.85, reason="equip_weapon", delay_ms=600),
+        press("escape", reason="close_menu_after_weapon_equip", delay_ms=500),
+    ),
+)
+
+# Composite: Open menu → enhance weapon → close
+WEAPON_ENHANCE_FULL = UIFlow(
+    name="weapon_enhance_full",
+    description="Full weapon enhance flow: open menu → weapon tab → enhance → close",
+    steps=(
+        open_menu("open_character_menu"),
+        delay(300),
+        click_menu_button("character", delay_ms=800),
+        wait_state("full_menu", timeout_ms=5000),
+        delay(400),
+        click_char_tab("weapon", delay_ms=600),
+        click(nx=0.85, ny=0.70, reason="click_enhance_button", delay_ms=500),
+        click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=400),
+        click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=800),
+        delay(500),
+        press("escape", reason="close_menu_after_weapon_enhance", delay_ms=500),
+    ),
+)
+
 # ===================================================================
 # Artifact flows
 # Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - 圣遗物装备/强化/合成
@@ -321,6 +396,44 @@ ARTIFACT_ENHANCE = UIFlow(
         click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=400),
         click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=1000),
         delay(500),
+    ),
+)
+
+# Composite: Open menu → equip artifact → close
+ARTIFACT_EQUIP_FULL = UIFlow(
+    name="artifact_equip_full",
+    description="Full artifact equip flow: open menu → artifacts tab → equip → close",
+    steps=(
+        open_menu("open_character_menu"),
+        delay(300),
+        click_menu_button("character", delay_ms=800),
+        wait_state("full_menu", timeout_ms=5000),
+        delay(400),
+        click_char_tab("artifacts", delay_ms=600),
+        click(nx=0.35, ny=0.42, reason="click_artifact_slot", delay_ms=500),
+        click(nx=0.50, ny=0.35, reason="select_artifact", delay_ms=400),
+        click(nx=0.65, ny=0.85, reason="equip_artifact", delay_ms=600),
+        press("escape", reason="close_menu_after_artifact_equip", delay_ms=500),
+    ),
+)
+
+# Composite: Open menu → enhance artifact → close
+ARTIFACT_ENHANCE_FULL = UIFlow(
+    name="artifact_enhance_full",
+    description="Full artifact enhance flow: open menu → artifacts tab → enhance → close",
+    steps=(
+        open_menu("open_character_menu"),
+        delay(300),
+        click_menu_button("character", delay_ms=800),
+        wait_state("full_menu", timeout_ms=5000),
+        delay(400),
+        click_char_tab("artifacts", delay_ms=600),
+        click(nx=0.35, ny=0.42, reason="click_artifact_to_enhance", delay_ms=400),
+        click(nx=0.85, ny=0.70, reason="click_enhance_button", delay_ms=500),
+        click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=400),
+        click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=1000),
+        delay(500),
+        press("escape", reason="close_menu_after_artifact_enhance", delay_ms=500),
     ),
 )
 
@@ -850,13 +963,20 @@ ALL_FLOWS: dict[str, UIFlow] = {
         CHARACTER_LEVEL_UP,
         CHARACTER_LEVEL_UP_FULL,
         CHARACTER_ASCEND,
+        CHARACTER_ASCEND_FULL,
         CHARACTER_TALENT_UPGRADE,
         CHARACTER_TALENT_UPGRADE_SKILL,
         CHARACTER_TALENT_UPGRADE_BURST,
+        CHARACTER_TALENT_UPGRADE_FULL,
         WEAPON_EQUIP,
+        WEAPON_EQUIP_FULL,
         WEAPON_ENHANCE,
+        WEAPON_ENHANCE_FULL,
+        WEAPON_REFINE,
         ARTIFACT_EQUIP,
+        ARTIFACT_EQUIP_FULL,
         ARTIFACT_ENHANCE,
+        ARTIFACT_ENHANCE_FULL,
         PARTY_QUICK_CONFIG,
         TELEPORT_FLOW,
         DOMAIN_ENTER_AND_CLAIM,
