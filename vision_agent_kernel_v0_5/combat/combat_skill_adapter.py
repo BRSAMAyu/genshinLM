@@ -253,3 +253,72 @@ class CombatSkillAdapter:
         except Exception as exc:
             log.debug("[CombatSkill] BossMechanicRouter unavailable: %s", exc)
         return self._boss_router
+
+    # ------------------------------------------------------------------
+    # Combat rotation methods (weekly boss, world boss, multi-wave, shield)
+    # ------------------------------------------------------------------
+
+    def execute_weekly_rotation(self, context: dict[str, Any] | None = None) -> bool:
+        """Cycle through weekly bosses with discount tracking."""
+        from combat.combat_rotation_runners import WeeklyBossRotation
+        # Build a lightweight executor that delegates to self
+        executor = _CombatExecutorBridge(self)
+        rotation = WeeklyBossRotation(executor=executor)
+        targets = (context or {}).get("target_bosses")
+        results = rotation.run_rotation(target_bosses=targets)
+        return any(r.success for r in results)
+
+    def execute_world_boss_farming(self, context: dict[str, Any] | None = None) -> bool:
+        """Continuous world boss farming loop."""
+        from combat.combat_rotation_runners import WorldBossFarming
+        ctx = context or {}
+        executor = _CombatExecutorBridge(self)
+        farm = WorldBossFarming(executor=executor)
+        results = farm.run(
+            target_boss=ctx.get("boss_id", "hypostasis_pyro"),
+            available_resin=ctx.get("resin", 160),
+        )
+        return any(r.success for r in results)
+
+    def execute_multi_wave(self, context: dict[str, Any] | None = None) -> bool:
+        """Multi-wave defense encounter."""
+        from combat.combat_rotation_runners import MultiWaveDefense
+        ctx = context or {}
+        executor = _CombatExecutorBridge(self)
+        defense = MultiWaveDefense(executor=executor)
+        results = defense.run(total_waves=ctx.get("waves", 5))
+        return all(r.success for r in results)
+
+    def execute_shield_break(self, context: dict[str, Any] | None = None) -> bool:
+        """Handle shield-bearing enemies like Mitachurls."""
+        from combat.combat_rotation_runners import ShieldMitachurlStrategy
+        ctx = context or {}
+        executor = _CombatExecutorBridge(self)
+        strategy = ShieldMitachurlStrategy(executor=executor)
+        result = strategy.execute(shield_type=ctx.get("shield_type", "wood"))
+        return result.success
+
+
+class _CombatExecutorBridge:
+    """Bridge CombatSkillAdapter to SemanticExecutor protocol for rotation runners."""
+
+    def __init__(self, adapter: CombatSkillAdapter) -> None:
+        self._adapter = adapter
+
+    def execute_semantic(
+        self, action: str, target: str = "", context: dict[str, Any] | None = None,
+    ) -> bool:
+        if action == "combat_boss":
+            return self._adapter.execute_boss_combat(
+                team_elements=["pyro", "hydro", "cryo", "anemo"],
+                team_characters=["amber", "kaeya", "lisa", "traveler"],
+                boss_id=target or (context or {}).get("boss_id", ""),
+                duration_sec=(context or {}).get("timeout_sec", 180.0),
+            )
+        if action == "combat_basic_attack":
+            return self._adapter.execute_basic_attack(
+                duration_sec=(context or {}).get("timeout_sec", 10.0),
+            )
+        # For teleport/navigate/interact — log and return True (mock)
+        log.debug("[CombatBridge] %s target=%s", action, target)
+        return True
