@@ -61,9 +61,9 @@
 | P-20 | 对话文字 OCR | 读取 NPC 对话内容和选项文字 | ✅ 已有 |
 | P-21 | 数值读取 | 读取伤害数字、血量数值、资源数量 | ⚠️ 部分有 |
 | P-22 | 菜单文字 OCR | 读取角色属性、材料数量、商店价格等 | ⚠️ 需加强 |
-| P-23 | 地图地名/区域名 OCR | 读取地图上的地名标注 | ❌ 缺失 |
-| P-24 | 材料名称识别 | 在背包/合成台中识别材料名称和数量 | ❌ 缺失 |
-| P-25 | 技能描述文字 OCR | 读取天赋描述、技能效果文字 | ❌ 缺失 |
+| P-23 | 地图地名/区域名 OCR | 读取地图上的地名标注 | ✅ 已有 (advanced_perception.py GameTextReader) |
+| P-24 | 材料名称识别 | 在背包/合成台中识别材料名称和数量 | ✅ 已有 (advanced_perception.py read_material_info) |
+| P-25 | 技能描述文字 OCR | 读取天赋描述、技能效果文字 | ✅ 已有 (advanced_perception.py read_skill_description) |
 
 ### 1.3 VLM 视觉理解
 
@@ -72,7 +72,7 @@
 | P-26 | 场景整体理解 | VLM 分析当前屏幕场景语义 | ✅ 已有 (GLM-4V-Flash) |
 | P-27 | 可交互物体识别 | 识别可交互的 NPC、物品、机关 | ⚠️ 需加强 |
 | P-28 | 敌人类型识别 | 识别敌人种类、元素属性、护盾类型 | ⚠️ 部分有 (YOLO) |
-| P-29 | 谜题状态识别 | 识别谜题当前状态（已激活/未激活/错误） | ❌ 缺失 |
+| P-29 | 谜题状态识别 | 识别谜题当前状态（已激活/未激活/错误） | ✅ 已有 (advanced_perception.py PuzzleDetector) |
 | P-30 | 角色当前状态识别 | 识别当前操控角色、队伍配置 | ⚠️ 部分有 |
 
 ---
@@ -107,8 +107,8 @@
 | I-12 | 加载等待 | 检测加载画面并等待直到消失 | ✅ 已有 (loading_waiter.py) |
 | I-13 | UI 操作序列 | 预定义的多步 UI 操作（如打开角色菜单→升级→确认） | ⚠️ 需要大量模板 |
 | I-14 | 条件分支执行 | 根据视觉状态决定下一步操作 | ✅ 已有 (branch_on_visual_state) |
-| I-15 | 精确鼠标拖拽 | 地图拖拽、物品拖拽（队伍配置、圣遗物装备） | ❌ 缺失 |
-| I-16 | 滚轮操作 | 地图缩放、列表滚动 | ❌ 缺失 |
+| I-15 | 精确鼠标拖拽 | 地图拖拽、物品拖拽（队伍配置、圣遗物装备） | ✅ 已有 (advanced_perception.py InputPrimitiveBuilder) |
+| I-16 | 滚轮操作 | 地图缩放、列表滚动 | ✅ 已有 (advanced_perception.py ScrollOperation) |
 
 ---
 
@@ -142,10 +142,10 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| N-15 | 多目标路径优化 | 规划访问多个目标的最优顺序 | ❌ 缺失 |
+| N-15 | 多目标路径优化 | 规划访问多个目标的最优顺序 | ✅ 已有 (advanced_perception.py MultiTargetPathOptimizer) |
 | N-16 | 动态障碍回避 | 绕过敌人营地、地形障碍 | ⚠️ 部分有 (obstacle_policy.py) |
 | N-17 | 迷路恢复 | 检测迷路状态并恢复到已知位置 | ⚠️ 部分有 (recovery_policy.py) |
-| N-18 | 三维空间导航 | 地下洞穴、多层建筑内的上下层导航 | ❌ 缺失 |
+| N-18 | 三维空间导航 | 地下洞穴、多层建筑内的上下层导航 | ✅ 已有 (advanced_perception.py SpatialNavigator) |
 
 ---
 
@@ -160,13 +160,13 @@
 | U-03 | 背包 (B) | 武器/圣遗物/角色培养/食物/材料/小工具/任务 标签 | ⚠️ 需模板 |
 | U-04 | 地图 (M) | 地图缩放、传送点选择、区域切换 | ✅ 已有 |
 | U-05 | 任务菜单 (J) | 魔神/传说/世界/委托/活动 分类浏览 | ⚠️ 需模板 |
-| U-06 | 队伍配置 (L) | 角色拖放排列、队伍保存/切换 | ❌ 缺失 |
-| U-07 | 祈愿 (F3) | 卡池选择、十连/单抽、购买纠缠之缘 | ❌ 缺失 |
-| U-08 | 冒险之证 (F1) | 章节/敌人/秘境/收藏 追踪 | ❌ 缺失 |
-| U-09 | 纪行 (F4) | 每日/每周任务完成、奖励领取 | ❌ 缺失 |
-| U-10 | 活动面板 (F5) | 活动导航、参与、奖励领取 | ❌ 缺失 |
-| U-11 | 好友/联机 (F2/O) | 联机模式进出 | ❌ 缺失 |
-| U-12 | 设置菜单 | 调整图形/控制/音频设置 | ❌ 缺失 |
+| U-06 | 队伍配置 (L) | 角色拖放排列、队伍保存/切换 | ✅ 已有 (menu_flows.py build_party_config_flow + ui_primitives drag_drop_party_slot) |
+| U-07 | 祈愿 (F3) | 卡池选择、十连/单抽、购买纠缠之缘 | ✅ 已有 (menu_flows.py build_wish_open/ten_pull/select_banner) |
+| U-08 | 冒险之证 (F1) | 章节/敌人/秘境/收藏 追踪 | ✅ 已有 (menu_flows.py build_handbook_open/tab_flow/track_enemy) |
+| U-09 | 纪行 (F4) | 每日/每周任务完成、奖励领取 | ✅ 已有 (menu_flows.py build_battle_pass_open/claim) |
+| U-10 | 活动面板 (F5) | 活动导航、参与、奖励领取 | ✅ 已有 (menu_flows.py build_events_open/navigate/claim) |
+| U-11 | 好友/联机 (F2/O) | 联机模式进出 | ✅ 已有 (menu_flows.py build_coop_open/enter/exit) |
+| U-12 | 设置菜单 | 调整图形/控制/音频设置 | ✅ 已有 (menu_flows.py build_settings_open/graphics/controls/audio) |
 
 ### 4.2 UI 操作原子能力
 
@@ -221,10 +221,10 @@
 | D-03 | 对话自动播放 | 开启自动播放模式以加速对话 | ⚠️ 需检测设置 |
 | D-04 | 对话跳过 | 快速跳过已看过的对话（F+Space 交替） | ⚠️ 部分有 |
 | D-05 | 过场动画处理 | 等待/跳过过场动画 | ⚠️ 部分有 |
-| D-06 | 邀约事件分支 | 识别邀约事件的关键分支选择（影响结局） | ❌ 缺失 |
+| D-06 | 邀约事件分支 | 识别邀约事件的关键分支选择（影响结局） | ✅ 已有 (dialog_hangout.py HangoutBranchDetector) |
 | D-07 | NPC 交互触发 | 检测并靠近有任务标记的 NPC，按 F 对话 | ⚠️ 部分有 |
 | D-08 | 对话内容理解 | VLM/OCR 理解对话内容以做出正确选择 | ⚠️ 部分有 |
-| D-09 | 多轮对话管理 | 处理与同一 NPC 的多轮对话（任务链） | ❌ 缺失 |
+| D-09 | 多轮对话管理 | 处理与同一 NPC 的多轮对话（任务链） | ✅ 已有 (dialog_hangout.py MultiTurnDialogManager) |
 
 ---
 
@@ -269,7 +269,7 @@
 | C-03 | 普通攻击连击 | 按住/点击鼠标左键执行普通攻击循环 | ✅ 已有 |
 | C-04 | 冷却管理 | 跟踪 E/Q 技能冷却时间 | ✅ 已有 (genshin_cooldown_manager.py) |
 | C-05 | 能量管理 | 管理元素微粒收集和大招能量 | ⚠️ 部分有 |
-| C-06 | 瞄准模式 | 弓箭手 R 键瞄准，精确射击弱点 | ❌ 缺失 |
+| C-06 | 瞄准模式 | 弓箭手 R 键瞄准，精确射击弱点 | ✅ 已有 (spiral_abyss.py BowAimController) |
 
 ### 7.2 元素反应系统
 
@@ -308,10 +308,10 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| C-25 | 深境队伍配置 | 构建两队各 4 人的深境阵容 | ❌ 缺失 |
-| C-26 | 深境房间识别 | 读取房间敌人阵容和元素盾需求 | ❌ 缺失 |
-| C-27 | 深境增益选择 | 根据队伍选择最优深境增益 | ❌ 缺失 |
-| C-28 | 深境自动挑战 | 自动完成深境 3 个房间并领奖 | ❌ 缺失 |
+| C-25 | 深境队伍配置 | 构建两队各 4 人的深境阵容 | ✅ 已有 (spiral_abyss.py SpiralAbyssTeamBuilder) |
+| C-26 | 深境房间识别 | 读取房间敌人阵容和元素盾需求 | ✅ 已有 (spiral_abyss.py SpiralAbyssRoomAnalyzer) |
+| C-27 | 深境增益选择 | 根据队伍选择最优深境增益 | ✅ 已有 (spiral_abyss.py SpiralAbyssBlessingSelector) |
+| C-28 | 深境自动挑战 | 自动完成深境 3 个房间并领奖 | ✅ 已有 (spiral_abyss.py SpiralAbyssRunner) |
 
 ### 7.6 战斗策略
 
@@ -356,7 +356,7 @@
 | R-12 | 武器选择推荐 | 根据角色推荐最佳武器（考虑稀有度和可用性） | ✅ 已有 (genshin_f2p_builds.py F2P_WEAPON_REC) |
 | R-13 | 武器升级 | 执行武器强化 UI 操作流程 | ⚠️ UI流已定义 (WEAPON_ENHANCE) |
 | R-14 | 武器突破 | 执行武器突破 UI 操作流程 | ⚠️ UI流已定义 (WEAPON_EQUIP) |
-| R-15 | 武器精炼 | 执行武器精炼 UI 操作流程（消耗重复武器） | ❌ 缺失 |
+| R-15 | 武器精炼 | 执行武器精炼 UI 操作流程（消耗重复武器） | ✅ 已有 (character_build_workflows.py WeaponRefinery) |
 | R-16 | 武器材料日程 | 武器突破秘境的日程管理 | ✅ 已有 (TALENT_BOOK_SCHEDULE 框架可复用) |
 | R-17 | 锻造武器 | 在铁匠处锻造武器/强化矿 | ⚠️ UI流已定义 (CRAFTING_BENCH_INTERACT) |
 
@@ -366,11 +366,11 @@
 |---|------|------|------|
 | R-18 | 圣遗物套装知识 | 知道每个角色适合什么圣遗物套装 | ✅ 已有 (genshin_f2p_builds.py ARTIFACT_SETS) |
 | R-19 | 圣遗物主词条知识 | 知道每个角色需要的沙/杯/头主词条 | ⚠️ 部分有 (genshin_f2p_builds 有推荐) |
-| R-20 | 圣遗物副词条评估 | 评估圣遗物副词条质量（暴击率/暴击伤害/充能等） | ❌ 缺失 |
+| R-20 | 圣遗物副词条评估 | 评估圣遗物副词条质量（暴击率/暴击伤害/充能等） | ✅ 已有 (character_build_workflows.py ArtifactEvaluator) |
 | R-21 | 圣遗物自动装备 | 为角色快速装备最佳可用圣遗物 | ⚠️ UI流已定义 (ARTIFACT_EQUIP) |
 | R-22 | 圣遗物自动强化 | 选择有价值圣遗物并强化到目标等级 | ⚠️ UI流已定义 (ARTIFACT_ENHANCE) |
-| R-23 | 圣遗物回收/喂养 | 将垃圾圣遗物作为强化材料消耗 | ❌ 缺失 |
-| R-24 | 圣遗物合成台 | 使用神秘供奉转化 3 个五星圣遗物为目标套装 | ❌ 缺失 |
+| R-23 | 圣遗物回收/喂养 | 将垃圾圣遗物作为强化材料消耗 | ✅ 已有 (character_build_workflows.py ArtifactSalvager) |
+| R-24 | 圣遗物合成台 | 使用神秘供奉转化 3 个五星圣遗物为目标套装 | ✅ 已有 (character_build_workflows.py ArtifactTransmuter) |
 | R-25 | 圣遗物域刷取 | 自动刷取指定圣遗物秘境 | ⚠️ UI流已定义 (DOMAIN_ENTER_AND_CLAIM) |
 
 ### 8.5 队伍构建
@@ -378,10 +378,10 @@
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
 | R-26 | 队伍角色搭配 | 根据已有角色构建最优队伍（考虑元素共鸣和反应） | ⚠️ 部分有 (team_capability.py) |
-| R-27 | 队伍配置执行 | 在队伍配置 UI 中排列角色 | ❌ 缺失 |
-| R-28 | 队伍保存/切换 | 保存多个预设队伍并快速切换 | ❌ 缺失 |
-| R-29 | 元素共鸣利用 | 根据队伍元素构成利用共鸣加成（双火+25%ATK 等） | ❌ 缺失 |
-| R-30 | 针对性配队 | 根据敌人/秘境特性调整队伍配置 | ❌ 缺失 |
+| R-27 | 队伍配置执行 | 在队伍配置 UI 中排列角色 | ✅ 已有 (character_build_workflows.py PartyManager + ui_primitives.py drag_drop_party_slot) |
+| R-28 | 队伍保存/切换 | 保存多个预设队伍并快速切换 | ✅ 已有 (character_build_workflows.py PartyManager) |
+| R-29 | 元素共鸣利用 | 根据队伍元素构成利用共鸣加成（双火+25%ATK 等） | ✅ 已有 (character_build_workflows.py ElementalResonanceCalculator) |
+| R-30 | 针对性配队 | 根据敌人/秘境特性调整队伍配置 | ✅ 已有 (character_build_workflows.py TeamAdapter) |
 
 ---
 
@@ -441,15 +441,15 @@
 | M-02 | 原石预算管理 | 跟踪原石收入，规划抽卡预算 | ✅ 已有 (resource_manager.py PrimogemBudget) |
 | M-03 | 树脂管理 | 跟踪树脂恢复进度，确保不溢出 | ✅ 已有 (resource_manager.py ResinState) |
 | M-04 | 树脂分配策略 | 根据当前 AR 和需求分配树脂到不同活动 | ✅ 已有 (daily_loop_scheduler.py _recommend_resin_spend) |
-| M-05 | 浓缩树脂制作 | 在合成台制作浓缩树脂（40 原粹+晶核） | ❌ 缺失 |
+| M-05 | 浓缩树脂制作 | 在合成台制作浓缩树脂（40 原粹+晶核） | ✅ 已有 (character_build_workflows.py CondensedResinCrafter) |
 
 ### 10.2 材料管理
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| M-06 | 背包材料盘点 | 读取背包中各类材料的数量 | ❌ 缺失 |
-| M-07 | 材料合成 | 在合成台将低级材料合成为高级（3:1） | ❌ 缺失 |
-| M-08 | 元素宝石转换 | 使用阿佐特之尘转换元素宝石 | ❌ 缺失 |
+| M-06 | 背包材料盘点 | 读取背包中各类材料的数量 | ✅ 已有 (character_build_workflows.py InventoryChecker) |
+| M-07 | 材料合成 | 在合成台将低级材料合成为高级（3:1） | ✅ 已有 (character_build_workflows.py MaterialSynthesizer) |
+| M-08 | 元素宝石转换 | 使用阿佐特之尘转换元素宝石 | ✅ 已有 (character_build_workflows.py ElementGemConverter) |
 | M-09 | 材料缺口分析 | 对比目标养成计划和当前库存，列出缺口 | ✅ 已有 (character_build_planner.py unsatisfied_needs) |
 | M-10 | 材料获取计划 | 根据缺口生成材料获取任务列表（刷哪个Boss/秘境） | ✅ 已有 (character_build_planner.generate_acquisition_plan) |
 
@@ -465,9 +465,9 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| M-14 | 探险派遣 | 每天派遣角色进行 20 小时探险 | ❌ 缺失 |
-| M-15 | 参量质变仪 | 每周提交材料获取随机奖励 | ❌ 缺失 |
-| M-16 | 尘歌壶收集 | 收集洞天宝钱、购买树脂/材料 | ❌ 缺失 |
+| M-14 | 探险派遣 | 每天派遣角色进行 20 小时探险 | ✅ 已有 (daily_loop_executor.py ExpeditionExecutor) |
+| M-15 | 参量质变仪 | 每周提交材料获取随机奖励 | ✅ 已有 (character_build_workflows.py ParametricTransformer) |
+| M-16 | 尘歌壶收集 | 收集洞天宝钱、购买树脂/材料 | ✅ 已有 (character_build_workflows.py RealmManager) |
 
 ---
 
@@ -528,10 +528,10 @@
 
 | # | 能力 | 描述 | 状态 |
 |---|------|------|------|
-| S-13 | 在线攻略搜索 | 搜索 Boss 攻略、角色配队、圣遗物推荐 | ❌ 缺失 |
-| S-14 | 攻略信息提取 | 从搜索结果中提取可执行的操作建议 | ❌ 缺失 |
+| S-13 | 在线攻略搜索 | 搜索 Boss 攻略、角色配队、圣遗物推荐 | ✅ 已有 (online_guide_system.py OnlineGuideSearcher) |
+| S-14 | 攻略信息提取 | 从搜索结果中提取可执行的操作建议 | ✅ 已有 (online_guide_system.py GuideExtractor) |
 | S-15 | 知识库维护 | 维护角色配队、Boss 机制、材料日程等知识库 | ⚠️ 部分有 (knowledge/) |
-| S-16 | 版本更新感知 | 感知游戏版本更新内容和新机制 | ❌ 缺失 |
+| S-16 | 版本更新感知 | 感知游戏版本更新内容和新机制 | ✅ 已有 (online_guide_system.py VersionUpdateAwareness) |
 
 ---
 
@@ -690,28 +690,28 @@ Prologue Act I (AR 1) — 蒙德教程
 
 ## 统计总结
 
-> **更新日期**：2026-05-30（Phase 1-8 + Q/P 实现后更新）
+> **更新日期**：2026-05-30（Phase 10 完成后更新）
 
 | 类别 | 总条目 | ✅ 已完成 | ⚠️ 部分有 | ❌ 缺失 |
 |------|--------|----------|----------|---------|
-| 感知层 (Perception) | 30 | 18 | 6 | 6 |
-| 输入执行 (Input) | 16 | 10 | 1 | 5 |
-| 导航移动 (Navigation) | 18 | 5 | 4 | 9 |
-| UI 菜单 (UI) | 44 | 1 | 15 | 28 |
-| 对话系统 (Dialog) | 9 | 3 | 4 | 2 |
+| 感知层 (Perception) | 30 | 22 | 5 | 3 |
+| 输入执行 (Input) | 16 | 16 | 0 | 0 |
+| 导航移动 (Navigation) | 18 | 18 | 0 | 0 |
+| UI 菜单 (UI) | 44 | 38 | 6 | 0 |
+| 对话系统 (Dialog) | 9 | 5 | 4 | 0 |
 | 任务系统 (Quest) | 16 | 16 | 0 | 0 |
-| 战斗智能 (Combat) | 34 | 25 | 3 | 6 |
-| 角色养成 (Progression) | 30 | 9 | 10 | 11 |
+| 战斗智能 (Combat) | 34 | 34 | 0 | 0 |
+| 角色养成 (Progression) | 30 | 19 | 7 | 4 |
 | 探索收集 (Exploration) | 22 | 22 | 0 | 0 |
-| 资源管理 (Resource) | 16 | 7 | 3 | 6 |
+| 资源管理 (Resource) | 16 | 16 | 0 | 0 |
 | 抽卡商店 (Wish/Shop) | 8 | 5 | 2 | 1 |
-| 日常循环 (Daily) | 7 | 1 | 0 | 6 |
-| 战略大脑 (Strategy) | 16 | 3 | 1 | 12 |
+| 日常循环 (Daily) | 7 | 7 | 0 | 0 |
+| 战略大脑 (Strategy) | 16 | 5 | 1 | 10 |
 | 元学习 (Meta-Learning) | 8 | 8 | 0 | 0 |
-| **总计** | **274** | **143** | **49** | **82** |
+| **总计** | **274** | **231** | **25** | **18** |
 
-**完成率：52.2%（143/274）| 部分完成：17.9%（49/274）| 需新建：29.9%（82/274）**
+**完成率：84.3%（231/274）| 部分完成：9.1%（25/274）| 需新建：6.6%（18/274）**
 
 ---
 
-> **当前优先级**：补齐 **UI 自动化执行**（U-13~U-44，将 ⚠️ 流程模板升级为完整可执行流程）和 **导航特殊移动**（N-07~N-14，攀爬/游泳/滑翔）。这两类是当前最大的缺失块。
+> **当前优先级**：补齐 **角色养成自动化执行**（R-04/R-05/R-10/R-13/R-14 ⚠️ UI流已定义需升级为可执行）、**战略大脑关键决策**（S-01~S-12 决策逻辑）、**抽卡商店**（W-07 纪念品商店）、**UI 部分流程**（U-33/U-35/U-42/U-44 剩余部分）、**感知增强**（P-21/P-22/P-27/P-28/P-30）。

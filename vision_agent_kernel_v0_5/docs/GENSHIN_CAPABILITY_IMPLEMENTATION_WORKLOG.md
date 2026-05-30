@@ -329,3 +329,77 @@
 **测试总计**: 1853 passed, 0 failed (161 新测试)
 
 ---
+
+## Phase 11: 对话系统 + 战略大脑 + UI菜单 + 高级感知 (2026-05-30 续)
+
+### Step 15: 高级感知与输入原语 ✅
+- **文件**: `perception/advanced_perception.py` — OCR 读取、谜题检测、路径优化、空间导航、输入原语
+  - GameTextReader (P-23~P-25): 地图区域/材料/技能描述 OCR 解析
+  - PuzzleDetector (P-29): 谜题状态检测与完成判断
+  - MultiTargetPathOptimizer (N-15): 最近邻+2-opt TSP 求解
+  - SpatialNavigator (N-18): BFS 多层 3D 空间导航
+  - InputPrimitiveBuilder (I-15/I-16): 拖拽/滚轮操作构建器
+- **覆盖能力**: P-23~P-25, P-29, I-15, I-16, N-15, N-18
+- **测试**: `tests/test_advanced_perception.py` — 30 个测试
+
+### Step 16: 角色养成工作流 ✅
+- **文件**: `planning/character_build_workflows.py` — 圣遗物评估、武器精炼、资源管理
+  - ArtifactEvaluator (R-20): 加权副词条评分、饲料检测
+  - WeaponRefinery (R-15): R1→R5 精炼
+  - ArtifactSalvager (R-23): 圣遗物回收 XP 计算
+  - ArtifactTransmuter (R-24): 3→1 神秘供奉
+  - ElementalResonanceCalculator (R-29): 元素共鸣检测
+  - TeamAdapter (R-30): 针对性配队推荐
+  - CondensedResinCrafter (M-05): 浓缩树脂制作
+  - MaterialSynthesizer (M-07): 3:1 材料合成规划
+  - ElementGemConverter (M-08): 阿佐特之尘宝石转换
+  - PartyManager (R-27/R-28): 队伍预设管理
+  - InventoryChecker (M-06): 背包材料盘点
+  - ParametricTransformer (M-15): 参量质变仪 150 点规划
+  - RealmManager (M-16): 尘歌壶宝钱收集
+- **覆盖能力**: R-15, R-20, R-23, R-24, R-27~R-30, M-05~M-08, M-14~M-16
+- **测试**: `tests/test_character_build_workflows.py` — 41 个测试
+
+### Step 17: 战斗瞄准 + 深境螺旋 ✅
+- **文件**: `combat/spiral_abyss.py` — 弓箭瞄准与深境螺旋自动化
+  - BowAimController (C-06): R 键瞄准、蓄力追踪、弱点射击
+  - SpiralAbyssTeamBuilder (C-25): 角色分配到两队
+  - SpiralAbyssRoomAnalyzer (C-26): 缓存反应表、盾牌反制分析
+  - SpiralAbyssBlessingSelector (C-27): 双队协同增益选择
+  - SpiralAbyssRunner (C-28): 楼层准备、房间推进/失败
+- **覆盖能力**: C-06, C-25~C-28
+- **测试**: `tests/test_spiral_abyss.py` — 35 个测试
+
+### Step 18: 对话系统增强 (D-06, D-09) ✅
+- **文件**: `interaction/dialog_hangout.py` — 邀约事件分支检测 + 多轮对话管理
+  - HangoutBranchDetector (D-06): 分支信号识别、结局推荐、进度追踪
+  - MultiTurnDialogManager (D-09): 会话生命周期、阶段检测、关键信息提取
+- **覆盖能力**: D-06, D-09
+- **测试**: `tests/test_dialog_hangout.py` — 31 个测试
+
+### Step 19: 战略大脑在线攻略 (S-13, S-14, S-16) ✅
+- **文件**: `knowledge/online_guide_system.py` — 在线攻略搜索/提取 + 版本感知
+  - OnlineGuideSearcher (S-13): 结构化查询构建、分类搜索
+  - GuideExtractor (S-14): 正则提取可执行建议、元素推荐、警告检测
+  - VersionUpdateAwareness (S-16): 版本追踪、行为影响分析、补丁笔记解析
+- **覆盖能力**: S-13, S-14, S-16
+- **测试**: `tests/test_online_guide_system.py` — 26 个测试
+
+### Step 20: UI 菜单导航流程 (U-06~U-12) ✅
+- **文件**: `interaction/menu_flows.py` — 7 个核心菜单系统导航流程
+  - build_party_config_flow (U-06): L 键/派蒙菜单打开队伍配置
+  - build_wish_open/ten_pull/select_banner (U-07): F3 祈愿系统
+  - build_handbook_open/tab/track_enemy (U-08): F1 冒险之证
+  - build_battle_pass_open/claim (U-09): F4 纪行
+  - build_events_open/navigate/claim (U-10): F5 活动面板
+  - build_coop_open/enter/exit (U-11): F2 联机
+  - build_settings_open/graphics/controls/audio (U-12): 设置菜单
+  - ALL_MENU_FLOWS 注册表 + get_menu_flow 查询
+  - build_return_to_world_flow 通用返回
+- **覆盖能力**: U-06~U-12
+- **测试**: `tests/test_menu_flows.py` — 33 个测试
+
+**测试总计**: 2049 passed, 0 failed (196 新测试)
+**总完成率**: 84.3% (231/274)
+
+---
