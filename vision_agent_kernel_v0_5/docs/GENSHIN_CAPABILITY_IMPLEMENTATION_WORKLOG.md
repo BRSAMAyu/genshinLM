@@ -1621,6 +1621,13 @@
 - VLM 阈值 0.6→0.75
 
 ### Session 9 Totals
-- **New files**: 2 | **Modified files**: 1 | **New tests**: 24 passed | **Commits**: 1
+- **New files**: 2 | **Modified files**: 1 | **New tests**: 24 passed | **Commits**: 2 (Phase 0+1 + audit fix)
+
+### Phase 1 审查完成 (独立 Agent 审查)
+- ✅ PASS: 3 cadence layers、6 slots、Literal 问题、visual_triggers 非空不变式、frame_id 单调性
+- ✅ PASS: ActionAffordance frozen、contract frame quality fields、所有 detector try/except 包装
+- ✅ FIXED: ActionAffordance schema 冲突 → 统一使用 planning.screen_state_claim 版本
+- ⚠️ WARN (非阻塞): frame_quality slot 类型损失、stale threshold 硬编码、VLM usage tracking 待 Phase 3+
+- ⚠️ WARN: Phase 2+ slots (mission_graph/claim_graph_state/navigation_plan/action_request) 待实现
 
 ---
