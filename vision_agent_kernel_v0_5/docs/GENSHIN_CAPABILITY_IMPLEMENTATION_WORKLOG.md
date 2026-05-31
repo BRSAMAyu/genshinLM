@@ -1471,3 +1471,52 @@
 - **Tests**: 17 tests in `tests/test_perception_combat.py`
 
 ---
+
+### 2026-05-31 — Session 7: Full Scenario Coverage + Architecture Dimensions
+
+#### 7a. Exploration + Combat Integration Tests
+- **Updated**: `tests/test_skill_registry.py`
+  - 3 new routing tests: explore_scenario, combat_abyss_floor
+  - 2 new registration tests: all exploration routes, all combat routes
+- All 27 combat scenarios confirmed fully wired through SkillRegistry
+- All 11 exploration scenarios confirmed fully wired
+
+#### 7b. Long Chain + Quest Mechanism SkillRegistry Routing
+- **Modified**: `planning/skill_registry.py`
+  - New routes: `newbie_tutorial_full`, `recover_from_lost`, `quest_execute_mechanism`
+  - Factory methods: `_create_tutorial_adapter`, `_create_lost_recovery_adapter`, `_create_quest_mechanism_adapter`
+  - Safe defaults for `mechanism_type`, `current_region`, `scenario` params
+- **Tests**: 3 new integration tests in `tests/test_skill_registry.py`
+
+#### 7c. CharacterProgressionSession Team Step Fix
+- **Modified**: `planning/session_chains.py`
+  - Added `_step_team()` method (9th step)
+  - Steps total now 9, success threshold >= 6
+- **Updated**: `tests/test_session_chains.py` with team_done assertion
+
+#### 7d. Unified Recovery Manager (Error Recovery Architecture)
+- **Modified**: `runtime/error_classification.py`
+  - `UnifiedRecoveryManager` bridges RecoveryWatchdog → RecoveryOrchestrator
+  - Category mapping: ErrorCategory (7) → RecoveryCategory (7)
+  - Severity mapping: ErrorSeverity (4) → RecoverySeverity (5)
+  - Single `submit()` entry point for all error recovery
+  - Lazy RecoveryOrchestrator creation
+- **Tests**: 5 new tests in `tests/test_error_classification.py`
+
+#### 7e. Collaboration Hotkey Dispatcher (Human-Agent Collaboration)
+- **Modified**: `runtime/collaboration_controller.py`
+  - `CollaborationHotkeyDispatcher` maps F6-F9 to collaboration actions
+  - F6: upgrade autonomy (with confirmation callback)
+  - F7: downgrade autonomy (immediate)
+  - F8: pause/resume toggle
+  - F9: emergency stop
+- **Tests**: 7 new tests in `tests/test_collaboration_controller.py`
+
+#### Session 7 Totals
+- **Modified files**: 5 (skill_registry, session_chains, error_classification, collaboration_controller, test files)
+- **New tests**: 30 (5 registry + 5 recovery + 7 hotkey + 1 team + 4 session + 8 exploration/combat)
+- **Total test count**: ~2770+ passed, 1 known flaky
+- **Commits**: 6 commits pushed to codex/pre-realworld-closure
+- **Architecture dimensions completed**: 4/6 (recovery, collaboration, session persistence, checkpoint)
+
+---
