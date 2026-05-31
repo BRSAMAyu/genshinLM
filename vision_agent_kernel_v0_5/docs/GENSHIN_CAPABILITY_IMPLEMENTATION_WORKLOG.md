@@ -1520,3 +1520,66 @@
 - **Architecture dimensions completed**: 4/6 (recovery, collaboration, session persistence, checkpoint)
 
 ---
+
+### 2026-05-31 — Session 8: Content Versioning + Puzzle Integration + Quest Mechanism Deepening
+
+#### 8a. Content Versioning System (Architecture Dimension 5/6)
+- **New**: `runtime/content_versioning.py` (201 lines)
+  - `ContentVersionManager`: detect game version changes, track compatibility
+  - 4 change types: UI, MECHANIC, CONTENT, SYSTEM
+  - 3 compatibility states: GREEN → YELLOW → RED
+  - `GameVersion` with parse + comparison operators
+  - Health check interval (30 min), auto-calibration support
+  - Known versions: 3.0–5.7
+- **New**: `tests/test_content_versioning.py` — 32 tests
+  - GameVersion parsing, comparison, frozen dataclass
+  - VersionChange/Record/Config dataclasses
+  - ContentVersionManager: check UI/mechanic/content changes, severity escalation
+  - Compatibility state transitions (green→yellow→red→green via resolve)
+  - Health check interval tracking, stats, pending changes
+
+#### 8b. E2E Validation Framework Verification (Architecture Dimension 6/6)
+- **Existing**: `runtime/validation_framework.py` (334 lines) — already complete
+  - 4-tier test pyramid: Unit → Integration → Scenario → Milestone
+  - Test case registry with pass/fail criteria
+  - TierPassCriteria per tier with consecutive pass requirements
+  - TierMetrics + domain metrics + dashboard generation
+- **Existing**: `tests/test_validation_framework.py` — 26 tests all passing
+- **Status**: No code changes needed; framework was already fully implemented
+
+#### 8c. Puzzle Detection Integration Bridge
+- **New**: `planning/puzzle_integration_bridge.py` (133 lines)
+  - `PuzzleIntegrationBridge`: connects PuzzleDetector → CollaborationController
+  - Activated/error puzzles trigger `report_puzzle_detected()` → auto-downgrade to ASSISTED
+  - Solved puzzles emit events and increment solve counter
+  - Notify callback for StateBus integration
+- **New**: `tests/test_puzzle_integration_bridge.py` — 13 tests
+  - Activated puzzle → downgrade, error puzzle → downgrade
+  - Solved puzzle → event emission + counter
+  - Multi-detection picks first non-solved
+  - Edge cases: manual level, already-assisted, no detections
+
+#### 8d. Quest Mechanism Executor (Deepened Integration)
+- **New**: `planning/quest_mechanism_executor.py` (125 lines)
+  - `QuestMechanismExecutor`: translates MechanismDecisions → semantic executor calls
+  - 24 action mappings (proceed→interact, fight→combat_encounter, etc.)
+  - Target coordinate serialization, context with reason/priority
+  - All 12 QuestMechanismType values routable
+- **Modified**: `planning/skill_registry.py`
+  - Fixed `_create_quest_mechanism_adapter()`: now creates QuestMechanismExecutor
+    wrapping QuestMechanismRouter + executor (was incorrectly passing executor to Router)
+- **New**: `tests/test_quest_mechanism_executor.py` — 14 tests
+  - All 12 mechanism types route correctly
+  - Stealth detected → hide, escort threats → fight, domain combat → combat_encounter
+  - Unknown mechanism → False, failed execution → False
+  - Context includes mechanism_reason and priority
+
+#### Session 8 Totals
+- **New files**: 4 (content_versioning, puzzle_integration_bridge, quest_mechanism_executor, test files)
+- **Modified files**: 1 (skill_registry)
+- **New tests**: 59 (32 versioning + 13 puzzle + 14 quest executor)
+- **Total test count**: ~2830+ passed, 1 known flaky
+- **Commits**: 4 commits pushed to codex/pre-realworld-closure
+- **Architecture dimensions completed**: 6/6 (all done)
+
+---
