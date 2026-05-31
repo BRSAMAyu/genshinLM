@@ -78,7 +78,7 @@ class QuestSkillAdapter:
         """Skip cutscene by pressing Escape repeatedly until world_hud detected."""
         log.info("[QuestSkill] attempting to skip cutscene")
         deadline = time.perf_counter() + timeout_sec
-        interval = self._config.cutscene_check_interval_ms / 1000.0
+        interval_sec = self._config.cutscene_check_interval_ms / 1000.0
 
         while time.perf_counter() < deadline:
             # Press escape to skip
@@ -87,7 +87,7 @@ class QuestSkillAdapter:
             except Exception:
                 pass
 
-            self._chunked_sleep(interval)
+            self._busy_wait(interval_sec, deadline)
 
             # Check if we're back in gameplay
             if self._bus is not None:
@@ -134,11 +134,14 @@ class QuestSkillAdapter:
         """Send input to advance dialog by one step."""
         try:
             self._backend.key_down("f", reason="advance_dialog")
-            self._chunked_sleep(0.08)
+            self._busy_wait(0.08, time.perf_counter() + 0.08)
             self._backend.key_up("f", reason="advance_dialog_done")
         except Exception:
             pass
-        self._chunked_sleep(self._config.dialog_advance_delay_ms / 1000.0)
+        self._busy_wait(
+            self._config.dialog_advance_delay_ms / 1000.0,
+            time.perf_counter() + self._config.dialog_advance_delay_ms / 1000.0
+        )
 
     def _handle_dialog_choices(self, choice_selector: Callable[[list[str]], int]) -> None:
         """Handle dialog choices if present."""
@@ -168,7 +171,17 @@ class QuestSkillAdapter:
             log.debug("[QuestSkill] dialog choice handling skipped: %s", exc)
 
     @staticmethod
+    def _busy_wait(seconds: float, deadline: float) -> None:
+        """Poll-based wait without blocking sleep.
+
+        Uses a tight spin loop to avoid the cumulative latency that time.sleep()
+        introduces when called repeatedly in a loop. Check deadline each iteration
+        to support early-exit scenarios.
+        """
+        while time.perf_counter() < deadline and time.perf_counter() < deadline:
+            pass  # Tight spin — exits as soon as deadline is reached
+
+    @staticmethod
     def _chunked_sleep(seconds: float, chunk: float = 0.05) -> None:
         deadline = time.perf_counter() + seconds
-        while time.perf_counter() < deadline:
-            time.sleep(min(chunk, max(0.0, deadline - time.perf_counter())))
+        QuestSkillAdapter._busy_wait(seconds, deadline)
