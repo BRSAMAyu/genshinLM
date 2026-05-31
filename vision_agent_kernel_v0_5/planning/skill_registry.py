@@ -384,8 +384,12 @@ class SkillRegistry:
 
     def _create_quest_mechanism_adapter(self) -> Any:
         from planning.quest_mechanism_router import QuestMechanismRouter
+        from planning.quest_mechanism_executor import QuestMechanismExecutor
 
-        return QuestMechanismRouter(executor=self._executor)
+        return QuestMechanismExecutor(
+            router=QuestMechanismRouter(),
+            executor=self._executor,
+        )
 
     # ------------------------------------------------------------------
     # Architecture dimension: lazy initialization
