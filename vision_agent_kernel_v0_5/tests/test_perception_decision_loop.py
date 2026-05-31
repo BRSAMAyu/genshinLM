@@ -128,7 +128,7 @@ class TestNavigationSignal:
 
 class TestActionAffordance:
     def test_frozen(self):
-        af = ActionAffordance(action_id="x", intent="combat", target="", confidence=0.9)
+        af = ActionAffordance(action_id="x", action_type="combat", target_label="", confidence=0.9)
         mutated = False
         try:
             af.confidence = 0.5  # type: ignore[misc]
@@ -197,7 +197,7 @@ class TestPerceptionFusionRuntime:
         aff = bus.affordances.get()
         assert aff is not None
         assert len(aff) >= 1
-        assert any(a.intent == "dialog_advance" for a in aff)
+        assert any(a.semantic_action == "dialog_advance" for a in aff)
 
     def test_combat_signal_written(self):
         runtime, bus = self._make_runtime()
@@ -277,7 +277,7 @@ class TestPerceptionFusionRuntime:
             runtime.process(_fake_frame(), obs, bus)
             aff = bus.affordances.get()
             assert aff is not None
-            assert any(a.intent == expected_intent for a in aff), f"{state}: {aff}"
+            assert any(a.semantic_action == expected_intent for a in aff), f"{state}: {aff}"
 
     def test_frame_counter_increments(self):
         runtime, bus = self._make_runtime()
@@ -344,10 +344,10 @@ class TestPerceptionDecisionLoop:
         assert fq is not None
 
         # Affordance → SemanticAction mapping
-        combat_aff = next((a for a in aff_list if a.intent == "combat_encounter"), None)
+        combat_aff = next((a for a in aff_list if a.semantic_action == "combat_encounter"), None)
         assert combat_aff is not None
         assert combat_aff.confidence > 0.8
-        assert combat_aff.risk == "high"
+        assert combat_aff.risk_level == "high"
 
 
 # ---------------------------------------------------------------------------

@@ -35,6 +35,7 @@ import numpy as np
 from core.state_bus import StateBus
 from core.types import FocusState, ObstacleField, Observation, TargetTrack, UIStateEstimate
 from planning.screen_state_claim import (
+    ActionAffordance,
     PlayerStatusClaim,
     ScreenStateClaim,
 )
@@ -214,20 +215,6 @@ class NavigationSignal:
     arrival_confirmed: bool = False
     frame_id: int = 0
     timestamp: float = 0.0
-
-
-# ---------------------------------------------------------------------------
-# Affordance output
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True, slots=True)
-class ActionAffordance:
-    action_id: str
-    intent: str
-    target: str
-    confidence: float
-    risk: str = "medium"
-    parameters: dict[str, Any] = field(default_factory=dict)
 
 
 # ---------------------------------------------------------------------------
@@ -513,34 +500,42 @@ class PerceptionFusionRuntime:
         if state == "dialog":
             affordances.append(ActionAffordance(
                 action_id=f"afford_{frame_id}_dialog_advance",
-                intent="dialog_advance",
-                target="",
+                action_type="ui",
+                target_label="advance_button",
                 confidence=0.9,
-                risk="low",
+                semantic_action="dialog_advance",
+                precondition="dialog_active",
+                risk_level="low",
             ))
         elif state == "map":
             affordances.append(ActionAffordance(
                 action_id=f"afford_{frame_id}_teleport",
-                intent="teleport",
-                target="",
+                action_type="navigation",
+                target_label="teleport_waypoint",
                 confidence=0.8,
-                risk="low",
+                semantic_action="teleport",
+                precondition="map_open",
+                risk_level="low",
             ))
         elif state == "combat":
             affordances.append(ActionAffordance(
                 action_id=f"afford_{frame_id}_combat_encounter",
-                intent="combat_encounter",
-                target="",
+                action_type="combat",
+                target_label="enemy",
                 confidence=0.85,
-                risk="high",
+                semantic_action="combat_encounter",
+                precondition="enemy_visible",
+                risk_level="high",
             ))
         elif state == "overworld":
             affordances.append(ActionAffordance(
                 action_id=f"afford_{frame_id}_navigate",
-                intent="navigate",
-                target="",
+                action_type="navigation",
+                target_label="waypoint",
                 confidence=0.7,
-                risk="low",
+                semantic_action="navigate",
+                precondition="overworld_active",
+                risk_level="low",
             ))
 
         return affordances
