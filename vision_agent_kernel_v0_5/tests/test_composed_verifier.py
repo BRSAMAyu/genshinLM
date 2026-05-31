@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 import pytest
 
 from execution.composed_verifier import AndVerifier, NotVerifier, OrVerifier, VoteVerifier
@@ -32,7 +34,7 @@ def test_composed_verifier_and_or_vote() -> None:
     v2 = SimpleMockVerifier("v2", ok=True, confidence=0.8, reason="v2 passed")
     v3 = SimpleMockVerifier("v3", ok=False, confidence=0.2, reason="v3 failed")
 
-    ctx = {}
+    ctx: dict[str, Any] = {}
 
     # 1. AND Composition
     and_all_pass = AndVerifier([v1, v2], verifier_id="and_ok")
