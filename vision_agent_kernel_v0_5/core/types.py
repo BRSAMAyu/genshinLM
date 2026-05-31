@@ -87,7 +87,8 @@ class ObstacleField:
 class CameraModel:
     viewport_width: int = 1280
     viewport_height: int = 720
-    horizontal_fov_deg: float = 90.0
+    # Default FOV for Genshin Impact (75-80° typical, 16:9 approximation ~78°)
+    horizontal_fov_deg: float = 78.0
     vertical_fov_deg: float | None = None
     sensitivity_yaw: float = 1.0
     sensitivity_pitch: float = 1.0

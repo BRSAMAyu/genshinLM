@@ -41,7 +41,7 @@ def test_camera_servo_dead_zone_outputs_zero() -> None:
 
 
 def test_camera_servo_uses_angular_error_not_pixel_error() -> None:
-    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=90.0)
+    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=78.0)
     servo = CameraServo(
         CameraServoConfig(
             dead_zone_deg=0.0,
@@ -56,13 +56,13 @@ def test_camera_servo_uses_angular_error_not_pixel_error() -> None:
     error = servo.compute_error(_track((1280.0, 360.0)), camera)
     intent = servo.step(error, dt=0.05)
 
-    assert math.isclose(error.yaw_error_deg, 45.0, abs_tol=1e-9)
+    assert math.isclose(error.yaw_error_deg, 39.0, abs_tol=1e-9)
     assert intent.yaw_delta == 12.0
     assert intent.pitch_delta == 0.0
 
 
 def test_camera_servo_coasting_predicts_with_velocity() -> None:
-    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=90.0)
+    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=78.0)
     servo = CameraServo(CameraServoConfig(dead_zone_deg=0.0, smoothing_alpha=1.0))
 
     tracked_error = servo.compute_error(_track((640.0, 360.0), state="TRACKED"), camera)

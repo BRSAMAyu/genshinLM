@@ -11,7 +11,7 @@ from control.camera_model import (
 
 
 def test_camera_fov_mapping_center() -> None:
-    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=90.0)
+    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=78.0)
 
     yaw, pitch = pixel_to_yaw_pitch_error_deg((640.0, 360.0), camera)
 
@@ -20,19 +20,19 @@ def test_camera_fov_mapping_center() -> None:
 
 
 def test_camera_fov_mapping_edge() -> None:
-    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=90.0)
+    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=78.0)
 
     right_yaw, _ = pixel_to_yaw_pitch_error_deg((1280.0, 360.0), camera)
     left_yaw, _ = pixel_to_yaw_pitch_error_deg((0.0, 360.0), camera)
     _, bottom_pitch = pixel_to_yaw_pitch_error_deg((640.0, 720.0), camera)
 
-    assert math.isclose(right_yaw, 45.0, abs_tol=1e-9)
-    assert math.isclose(left_yaw, -45.0, abs_tol=1e-9)
+    assert math.isclose(right_yaw, 39.0, abs_tol=1e-9)
+    assert math.isclose(left_yaw, -39.0, abs_tol=1e-9)
     assert math.isclose(bottom_pitch, derive_vertical_fov_deg(camera) / 2.0, abs_tol=1e-9)
 
 
 def test_track_to_camera_error_uses_target_center() -> None:
-    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=90.0)
+    camera = CameraModel(viewport_width=1280, viewport_height=720, horizontal_fov_deg=78.0)
     track = TargetTrack(
         track_id="1",
         class_id="target",
