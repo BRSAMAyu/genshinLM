@@ -206,12 +206,16 @@ class RecoveryPolicy:
 STATE_TRANSITIONS = {
     ("NORMAL", "anomaly_detected"): "ANOMALY",
     ("NORMAL", "interrupt_received"): "ANOMALY",
+    ("NORMAL", "manual_recovery_request"): "PLAN",  # 用户主动请求恢复
     ("ANOMALY", "diagnosis_complete"): "DIAGNOSE",
     ("DIAGNOSE", "strategy_selected"): "PLAN",
+    ("DIAGNOSE", "diagnosis_failed"): "ANOMALY",  # 诊断失败回退
     ("PLAN", "recovery_executed"): "RECOVER",
+    ("PLAN", "planning_timeout"): "ESCALATE",  # 规划超时升级
     ("RECOVER", "verification_success"): "NORMAL",
     ("RECOVER", "verification_failed"): "ESCALATE",
     ("RECOVER", "budget_exhausted"): "ESCALATE",
+    ("RECOVER", "partial_success"): "RECOVER",  # 部分成功允许重试（循环）
     ("ESCALATE", "manual_intervention"): "NORMAL",
     ("ESCALATE", "session_terminated"): None,  # 终止会话
 }
