@@ -186,6 +186,11 @@
 - 保底计数器与F2P抽卡策略
 - 月度商店自动化
 
+### Phase 15.2: Runtime Contract + 3-Layer Perception ✅
+- Runtime Contract 冻结（AUTONOMY_RUNTIME_CONTRACT.md）
+- 3层感知融合（PerceptionFusionRuntime）
+- StateBus Phase 1 Slots（screen_claim/affordances/frame_quality等）
+
 ---
 
 ## 审计与修复
@@ -1581,5 +1586,41 @@
 - **Total test count**: ~2830+ passed, 1 known flaky
 - **Commits**: 4 commits pushed to codex/pre-realworld-closure
 - **Architecture dimensions completed**: 6/6 (all done)
+
+## Phase 15.2: Runtime Contract Freeze + 3-Layer Perception Fusion (2026-05-31)
+
+### 目标
+按照 AUTONOMY_RUNTIME_CONTRACT.md 冻结 Phase 0 运行时契约，实现 Phase 1 感知→决策循环。
+
+### 完成内容
+
+#### Phase 0: Runtime Contract Freeze ✅
+- **New**: `docs/AUTONOMY_RUNTIME_CONTRACT.md` — 8-section 运行时契约文档
+  - §1 数据类型体系：Observation, ScreenStateClaim, SemanticAction, ActionContract, PhysicalReceipt, StateDeltaClaim, NavigationPlan, CombatSignal, DialogChoiceClaim
+  - §2 状态机：PhysicalReceipt (PENDING→SUBMITTED→LEASE_ACCEPTED→FOCUS_OK→EXECUTED→VERIFIED), ProgressState
+  - §3 StateBus Slot 映射：6 个新 slot (screen_claim/affordances/frame_quality/navigation_signal/combat_signal)
+  - §4 不变式：帧ID单调递增、mid-freq 触发、PhysicalReceipt 不可逆
+  - §5 执行契约：ClaimGraph → ExecutionRuntime → PhysicalReceipt → StateDeltaClaim
+  - §6 验证契约：resample + ClaimGraph 对齐
+  - §7 Checkpoint 契约：持久化 CheckpointState + ClaimGraph
+  - §8 VLM 使用契约：仅用于语义补全和不确定性仲裁
+
+#### Phase 1: 3-Layer Perception Fusion ✅
+- **New**: `perception/fusion_runtime.py` — PerceptionFusionRuntime (FramePostProcessor)
+  - HIGH-FREQ (every frame): target_track, obstacle_field, ui_state, visual_triggers
+  - MID-FREQ (~1fps): screen_claim, affordances, combat_signal, navigation_signal
+  - LOW-FREQ (~0.3fps): VLM arbitration for uncertain claims
+  - Detector injection: set_screen_classifier/yolo/combat/navigation/vlm
+  - FrameQualityTracker, CombatSignal, NavigationSignal, ActionAffordance types
+- **Modified**: `core/state_bus.py` — 添加 6 个 Phase 1 slots
+- **New**: `tests/test_perception_decision_loop.py` — 24 tests
+
+### 关键修复
+- `ScreenStateKind` Literal 无法实例化 → 改为 string 直接量
+- `get_slot("x")` → `state_bus.x` (使用 static slots)
+- VLM 阈值 0.6→0.75
+
+### Session 9 Totals
+- **New files**: 2 | **Modified files**: 1 | **New tests**: 24 passed | **Commits**: 1
 
 ---
