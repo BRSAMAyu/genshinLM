@@ -16,12 +16,21 @@ class RecoveryDecision:
 
 
 class RecoveryPolicy:
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        *,
+        frustration_escalate_threshold: float = 80.0,
+        frustration_local_reroute_threshold: float = 30.0,
+        frustration_micro_recovery_threshold: float = 10.0,
+    ) -> None:
         self._prev_timestamp: float | None = None
         self._prev_frustration: float | None = None
         self._ewma_frustration_slope: float = 0.0
         self._alpha: float = 0.35
         self._stuck_count: int = 0
+        self._frustration_escalate = frustration_escalate_threshold
+        self._frustration_local_reroute = frustration_local_reroute_threshold
+        self._frustration_micro_recovery = frustration_micro_recovery_threshold
 
     def decide(self, progress: ProgressState) -> RecoveryDecision:
         now = progress.timestamp
@@ -49,7 +58,7 @@ class RecoveryPolicy:
                 reason=f"active_interrupt:{active.code}",
                 interrupt=active,
             )
-        if progress.frustration >= 80.0:
+        if progress.frustration >= self._frustration_escalate:
             return RecoveryDecision(
                 action="ESCALATE",
                 reason="frustration_escalate",
@@ -113,7 +122,7 @@ class RecoveryPolicy:
                 movement_intent=move_intent,
             )
 
-        if progress.frustration >= 30.0:
+        if progress.frustration >= self._frustration_local_reroute:
             return RecoveryDecision(
                 action="LOCAL_REROUTE",
                 reason="no_task_progress_local_reroute",
@@ -125,7 +134,7 @@ class RecoveryPolicy:
                     reason="recovery_wide_search",
                 ),
             )
-        if progress.frustration >= 10.0:
+        if progress.frustration >= self._frustration_micro_recovery:
             return RecoveryDecision(
                 action="MICRO_RECOVERY",
                 reason="micro_recovery",
