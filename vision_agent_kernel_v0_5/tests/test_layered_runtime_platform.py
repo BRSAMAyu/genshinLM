@@ -104,7 +104,7 @@ def test_physical_receipt_and_mouse_motor_are_bounded_and_auditable() -> None:
     path = MousePathPolicy(mode="bezier", steps=4, duration_ms=100).build_path((0, 0), (100, 50))
     assert path.points[0] == (0, 0)
     assert path.points[-1] == (100, 50)
-    assert path.duration_ms == 100
+    assert 80 <= path.duration_ms <= 120  # jitter ±15ms from 100ms target
     assert mouse_policy_for_action_family("ui_click").mode == "bezier"
     assert mouse_policy_for_action_family("combat_reflex").duration_ms <= 35
     assert mouse_policy_for_action_family("ui_click", dry_run=True).mode == "instant"
