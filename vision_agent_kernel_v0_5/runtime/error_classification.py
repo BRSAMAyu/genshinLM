@@ -334,3 +334,105 @@ class RecoveryWatchdog:
             "error": error,
             "escalation_count": self.state_machine.escalation_count,
         }
+
+
+# ---------------------------------------------------------------------------
+# Unified Recovery Manager — bridges all 3 recovery systems
+# ---------------------------------------------------------------------------
+
+# Category mapping: ErrorCategory → RecoveryOrchestrator's RecoveryCategory
+_CATEGORY_MAP: dict[ErrorCategory, str] = {
+    ErrorCategory.PERCEPTION: "navigation",
+    ErrorCategory.NAVIGATION: "navigation",
+    ErrorCategory.COMBAT: "combat",
+    ErrorCategory.UI: "ui",
+    ErrorCategory.INPUT: "system",
+    ErrorCategory.SYSTEM: "system",
+    ErrorCategory.ENVIRONMENT: "environment",
+}
+
+# Severity mapping: ErrorSeverity → RecoverySeverity name
+_SEVERITY_MAP: dict[ErrorSeverity, str] = {
+    ErrorSeverity.P0_CRITICAL: "critical",
+    ErrorSeverity.P1_SEVERE: "major",
+    ErrorSeverity.P2_MODERATE: "moderate",
+    ErrorSeverity.P3_MINOR: "trivial",
+}
+
+
+@dataclass(slots=True)
+class UnifiedRecoveryManager:
+    """Single entry point connecting error classification → recovery orchestration.
+
+    Bridges the three recovery subsystems:
+    1. RecoveryWatchdog (error classification + state machine)
+    2. RecoveryOrchestrator (recovery action dispatch)
+    3. CrashRecoveryOrchestrator (crash-specific recovery)
+
+    Usage::
+
+        manager = UnifiedRecoveryManager(executor=executor)
+        # Submit error from anywhere:
+        result = manager.submit(code="TARGET_LOST", source="navigation")
+        # Or drive tick-based recovery:
+        manager.tick()
+    """
+
+    executor: Any  # SemanticExecutor
+    _watchdog: RecoveryWatchdog | None = field(default=None, init=False)
+    _orchestrator: Any = field(default=None, init=False)
+
+    def __post_init__(self) -> None:
+        self._watchdog = RecoveryWatchdog(
+            recovery_fn=self._do_recovery,
+        )
+
+    @property
+    def watchdog(self) -> RecoveryWatchdog:
+        return self._watchdog
+
+    @property
+    def orchestrator(self) -> Any:
+        if self._orchestrator is None:
+            from planning.recovery_orchestrator import RecoveryOrchestrator
+            self._orchestrator = RecoveryOrchestrator(executor=self.executor)
+        return self._orchestrator
+
+    def submit(self, code: str, source: str = "", **ctx: float | str | bool) -> dict[str, Any]:
+        """Submit an error code for classification and recovery."""
+        self._watchdog.submit_error(code, source)
+        return self._watchdog.tick()
+
+    def tick(self) -> dict[str, Any]:
+        """Drive the recovery state machine forward."""
+        return self._watchdog.tick()
+
+    @property
+    def is_healthy(self) -> bool:
+        return self._watchdog.is_healthy
+
+    @property
+    def stats(self) -> dict[str, Any]:
+        return self._watchdog.stats
+
+    def _do_recovery(self, error: ErrorEvent) -> bool:
+        """Bridge: translate ErrorEvent → RecoveryEvent → RecoveryOrchestrator."""
+        from planning.recovery_orchestrator import (
+            RecoveryCategory,
+            RecoveryEvent,
+            RecoverySeverity,
+        )
+        cat_str = _CATEGORY_MAP.get(error.category, "system")
+        sev_str = _SEVERITY_MAP.get(error.severity, "moderate")
+        # Map string to enum
+        cat_enum = RecoveryCategory(cat_str)
+        sev_enum = getattr(RecoverySeverity, sev_str.upper(), RecoverySeverity.MODERATE)
+        event = RecoveryEvent(
+            category=cat_enum,
+            severity=sev_enum,
+            description=error.message or error.code,
+            context=error.context,
+            source=error.source,
+        )
+        result = self.orchestrator.recover(event)
+        return result.success

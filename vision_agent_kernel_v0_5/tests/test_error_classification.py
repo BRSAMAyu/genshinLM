@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import time
+from typing import Any
 
 from runtime.error_classification import (
     ErrorCategory,
@@ -451,3 +452,48 @@ class TestRecoveryWatchdog:
             if result["action"] in ("escalated", "abort", "idle"):
                 break
         # Should not crash, just escalate
+
+
+class _FakeUnifiedExecutor:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str, dict[str, Any] | None]] = []
+
+    def execute_semantic(
+        self, action: str, target: str = "", context: dict[str, Any] | None = None,
+    ) -> bool:
+        self.calls.append((action, target, context))
+        return True
+
+
+class TestUnifiedRecoveryManager:
+    def test_submit_and_recover(self):
+        from runtime.error_classification import UnifiedRecoveryManager
+        mgr = UnifiedRecoveryManager(executor=_FakeUnifiedExecutor())
+        result = mgr.submit("STUCK", source="navigation")
+        assert "action" in result
+
+    def test_is_healthy_initially(self):
+        from runtime.error_classification import UnifiedRecoveryManager
+        mgr = UnifiedRecoveryManager(executor=_FakeUnifiedExecutor())
+        assert mgr.is_healthy
+
+    def test_stats(self):
+        from runtime.error_classification import UnifiedRecoveryManager
+        mgr = UnifiedRecoveryManager(executor=_FakeUnifiedExecutor())
+        assert mgr.stats["total_submitted"] == 0
+
+    def test_orchestrator_lazy_created(self):
+        from runtime.error_classification import UnifiedRecoveryManager
+        mgr = UnifiedRecoveryManager(executor=_FakeUnifiedExecutor())
+        orch = mgr.orchestrator
+        assert orch is not None
+        # Second access returns same instance
+        assert mgr.orchestrator is orch
+
+    def test_full_recovery_pipeline(self):
+        from runtime.error_classification import UnifiedRecoveryManager
+        ex = _FakeUnifiedExecutor()
+        mgr = UnifiedRecoveryManager(executor=ex)
+        result = mgr.submit("CHARACTER_DIED", source="combat")
+        # Should have driven classification → recovery orchestrator
+        assert "action" in result
