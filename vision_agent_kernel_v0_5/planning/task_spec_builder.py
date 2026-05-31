@@ -5,19 +5,52 @@ from planning.intent_parser import ParsedIntent
 from planning.mission_queue import MissionGoal, MissionLoop, MissionNode, MissionQueue
 
 
+# Default skill versions for mission nodes
+DEFAULT_SKILL_VERSIONS = {
+    "enter_region": "enter_region_a_v1",
+    "acquire_target": "acquire_monster_a_v1",
+    "combat": "safe_combat_playbook_v1",
+    "verify_reward": None,
+    "cleanup_skill": "return_to_safe_anchor_v1",
+}
+
+
 class TaskSpecBuilder:
-    def __init__(self, route_selector: RouteSelector | None = None) -> None:
+    def __init__(
+        self,
+        route_selector: RouteSelector | None = None,
+        skill_versions: dict[str, str] | None = None,
+    ) -> None:
         self._routes = route_selector or RouteSelector()
+        self._skill_versions = {**DEFAULT_SKILL_VERSIONS}
+        if skill_versions:
+            self._skill_versions.update(skill_versions)
 
     def build(self, intent: ParsedIntent) -> MissionQueue:
         ranked = self._routes.rank_routes(intent.resource_id)
         route = ranked["routes"][0] if ranked.get("routes") else {"route_id": None}
-        failure = {"max_retries": 3, "on_failed": "recover_or_skip", "cleanup_skill": "return_to_safe_anchor_v1"}
+        failure = {
+            "max_retries": 3,
+            "on_failed": "recover_or_skip",
+            "cleanup_skill": self._skill_versions["cleanup_skill"],
+        }
         nodes = [
-            MissionNode("enter_region", "enter_region", "enter_region_a_v1", "region_entered", failure, route_id=route.get("route_id")),
-            MissionNode("acquire_target", "acquire_target", "acquire_monster_a_v1", "target_visible", failure),
-            MissionNode("combat", "combat", "safe_combat_playbook_v1", "target_defeated", failure, playbook="safe_combat_v1"),
-            MissionNode("verify_reward", "verify", None, "reward_seen_or_count_changed", failure),
+            MissionNode(
+                "enter_region", "enter_region", self._skill_versions["enter_region"],
+                "region_entered", failure, route_id=route.get("route_id")
+            ),
+            MissionNode(
+                "acquire_target", "acquire_target", self._skill_versions["acquire_target"],
+                "target_visible", failure
+            ),
+            MissionNode(
+                "combat", "combat", self._skill_versions["combat"],
+                "target_defeated", failure, playbook="safe_combat_v1"
+            ),
+            MissionNode(
+                "verify_reward", "verify", self._skill_versions["verify_reward"],
+                "reward_seen_or_count_changed", failure
+            ),
         ]
         return MissionQueue(
             mission_id=f"mission_{intent.resource_id}",
