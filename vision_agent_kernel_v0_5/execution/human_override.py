@@ -49,7 +49,7 @@ class HumanOverride:
 
     def request_pause(self, reason: str = "human_pause") -> Interrupt:
         interrupt = Interrupt(
-            priority=1,
+            priority=20,  # P2_HUMAN_OVERRIDE
             timestamp=self._timebase.now(),
             code="HUMAN_PAUSE",
             source="human_override",
