@@ -12,6 +12,9 @@ from planning.screen_state_claim import ScreenStateClaim
 
 if TYPE_CHECKING:
     from perception.fusion_runtime import FrameQuality
+    from planning.mainline.mission_graph_v4 import MissionGraphV4
+    from planning.mainline.mainline_runner import MainlineCheckpoint
+    from runtime.claim_events import ClaimGraphState
 
 
 T = TypeVar("T")
@@ -171,6 +174,11 @@ class StateBus:
         self.frame_quality: LatestSlot[FrameQuality] = LatestSlot()  # type: ignore[assignment]
         self.navigation_signal: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
         self.combat_signal: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
+        # Phase 2+ slots (AUTONOMY_RUNTIME_CONTRACT.md §3)
+        self.mission_graph: LatestSlot[MissionGraphV4] = LatestSlot()  # type: ignore[assignment]
+        self.claim_graph_state: LatestSlot[ClaimGraphState] = LatestSlot()  # type: ignore[assignment]
+        self.checkpoint_state: LatestSlot[MainlineCheckpoint] = LatestSlot()  # type: ignore[assignment]
+        self.navigation_plan: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
         self.shutdown_flag = threading.Event()
         self.event_signal = threading.Event()
         self.mode_signal = threading.Event()
