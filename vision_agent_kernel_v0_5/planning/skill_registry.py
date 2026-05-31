@@ -77,6 +77,12 @@ _COMPOSITE_ROUTES: dict[str, tuple[str, str]] = {
     # Mainline progression
     "mainline_full_progression": ("mainline", "run_full_progression"),
     "mainline_execute_chapter": ("mainline", "execute_chapter"),
+    # Long chain: newbie tutorial
+    "newbie_tutorial_full": ("tutorial", "run"),
+    # Long chain: lost recovery
+    "recover_from_lost": ("lost_recovery", "recover"),
+    # Quest mechanism routing
+    "quest_execute_mechanism": ("quest_mechanism", "route"),
 }
 
 _ADAPTER_METHOD_EXTRA_ARGS: dict[str, list[str]] = {
@@ -111,8 +117,12 @@ _ADAPTER_METHOD_EXTRA_ARGS: dict[str, list[str]] = {
     "quest.check_prerequisites": ["current_ar"],
     "mainline.run_full_progression": ["current_ar"],
     "mainline.execute_chapter": ["chapter_id"],
-    # Exploration scenario routing
-    "explore_scenario": ["scenario"],
+    "exploration_scenario.execute_scenario": ["scenario"],
+    # Long chain: tutorial and lost recovery
+    "tutorial.run": [],
+    "lost_recovery.recover": ["current_region"],
+    # Quest mechanism routing
+    "quest_mechanism.route": ["mechanism_type"],
 }
 
 
@@ -276,6 +286,12 @@ class SkillRegistry:
                 return self._create_mainline_adapter()
             if key == "exploration_scenario":
                 return self._create_exploration_scenario_adapter()
+            if key == "tutorial":
+                return self._create_tutorial_adapter()
+            if key == "lost_recovery":
+                return self._create_lost_recovery_adapter()
+            if key == "quest_mechanism":
+                return self._create_quest_mechanism_adapter()
         except Exception as exc:
             log.warning("[SkillRegistry] failed to create adapter '%s': %s", key, exc)
         return None
@@ -350,6 +366,26 @@ class SkillRegistry:
         from exploration.exploration_scenario_router import ExplorationScenarioRouter
 
         return ExplorationScenarioRouter(skill_executor=self._executor)
+
+    def _create_tutorial_adapter(self) -> Any:
+        from planning.newbie_tutorial_chain import NewbieTutorialChain
+
+        return NewbieTutorialChain(executor=self._executor)
+
+    def _create_lost_recovery_adapter(self) -> Any:
+        from navigation.lost_recovery import LostRecovery
+
+        return LostRecovery(
+            teleport_fn=lambda target: self._executor.execute_semantic(
+                "teleport_to", target=target,
+            ),
+            minimap_search_fn=lambda: self._executor.execute_semantic("open_map"),
+        )
+
+    def _create_quest_mechanism_adapter(self) -> Any:
+        from planning.quest_mechanism_router import QuestMechanismRouter
+
+        return QuestMechanismRouter(executor=self._executor)
 
     # ------------------------------------------------------------------
     # Architecture dimension: lazy initialization
@@ -484,5 +520,12 @@ class SkillRegistry:
                 args[param] = context.get("current_ar", 0)
             elif param == "context":
                 args[param] = context
+            elif param == "mechanism_type":
+                from planning.quest_mechanism_router import QuestMechanismType
+                args[param] = context.get("mechanism_type", QuestMechanismType.STANDARD)
+            elif param == "current_region":
+                args[param] = context.get("current_region", "mondstadt")
+            elif param == "scenario":
+                args[param] = context.get("scenario", "common_chest")
 
         return args

@@ -133,3 +133,64 @@ def test_combat_routing_with_context():
         },
     )
     assert result is True
+
+
+def test_exploration_scenario_routing():
+    """explore_scenario routes through ExplorationScenarioRouter."""
+    registry = _make_registry()
+    result = registry.execute(
+        "explore_scenario",
+        context={"scenario": "common_chest"},
+    )
+    assert result is True
+
+
+def test_combat_abyss_floor_routing():
+    registry = _make_registry()
+    result = registry.execute(
+        "combat_abyss_floor",
+        context={"floor_number": 9},
+    )
+    assert result is True
+
+
+def test_all_exploration_routes_registered():
+    registry = _make_registry()
+    for action in [
+        "explore_activate_waypoint", "explore_open_chest",
+        "explore_collect_oculus", "explore_interact", "explore_scenario",
+    ]:
+        assert registry.can_handle(action), f"Missing route: {action}"
+
+
+def test_all_combat_routes_registered():
+    registry = _make_registry()
+    for action in [
+        "combat_encounter", "combat_boss", "combat_basic_attack",
+        "combat_weekly_rotation", "combat_world_boss_farming",
+        "combat_multi_wave", "combat_shield_break",
+        "combat_abyss_mage", "combat_abyss_floor",
+    ]:
+        assert registry.can_handle(action), f"Missing route: {action}"
+
+
+def test_tutorial_routing():
+    registry = _make_registry()
+    assert registry.can_handle("newbie_tutorial_full")
+    result = registry.execute("newbie_tutorial_full")
+    assert result is True
+
+
+def test_lost_recovery_routing():
+    registry = _make_registry()
+    assert registry.can_handle("recover_from_lost")
+    result = registry.execute(
+        "recover_from_lost",
+        context={"current_region": "mondstadt"},
+    )
+    assert isinstance(result, bool)
+
+
+def test_quest_mechanism_routing():
+    registry = _make_registry()
+    assert registry.can_handle("quest_execute_mechanism")
