@@ -4,10 +4,14 @@ import heapq
 import threading
 from collections import deque, defaultdict
 from dataclasses import dataclass, field
-from typing import Generic, TypeVar, Any, Callable
+from typing import Generic, TypeVar, Any, Callable, TYPE_CHECKING
 
 from core.events import Interrupt, ModeRequest
 from core.types import Observation, ProgressState
+from planning.screen_state_claim import ScreenStateClaim
+
+if TYPE_CHECKING:
+    from perception.fusion_runtime import FrameQuality
 
 
 T = TypeVar("T")
@@ -161,6 +165,12 @@ class StateBus:
         self.runtime_health: LatestSlot[RuntimeHealth] = LatestSlot()
         self.current_goal: LatestSlot[str] = LatestSlot()
         self.current_mode: LatestSlot[str] = LatestSlot()
+        # Phase 1 slots (AUTONOMY_RUNTIME_CONTRACT.md §3)
+        self.screen_claim: LatestSlot[ScreenStateClaim] = LatestSlot()  # type: ignore[assignment]
+        self.affordances: LatestSlot[list[Any]] = LatestSlot()  # type: ignore[assignment]
+        self.frame_quality: LatestSlot[FrameQuality] = LatestSlot()  # type: ignore[assignment]
+        self.navigation_signal: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
+        self.combat_signal: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
         self.shutdown_flag = threading.Event()
         self.event_signal = threading.Event()
         self.mode_signal = threading.Event()
