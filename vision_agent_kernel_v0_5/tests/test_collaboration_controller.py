@@ -4,6 +4,7 @@ from __future__ import annotations
 from runtime.collaboration_controller import (
     AutonomyLevel,
     CollaborationController,
+    CollaborationHotkeyDispatcher,
     HandoverChecklist,
     HandoverResult,
     HandoverStatus,
@@ -223,3 +224,64 @@ class TestCollaborationController:
         ctrl.level = AutonomyLevel.SUPERVISED
         ctrl.report_puzzle_detected()
         assert ctrl.level == AutonomyLevel.ASSISTED
+
+
+class TestHotkeyDispatcher:
+    def test_f9_emergency_stop(self):
+        stopped = []
+        ctrl = CollaborationController()
+        ctrl.level = AutonomyLevel.AUTONOMOUS
+        dispatch = CollaborationHotkeyDispatcher(
+            controller=ctrl, stop_callback=lambda: stopped.append(True),
+        )
+        result = dispatch.dispatch("f9")
+        assert result == "emergency_stop"
+        assert stopped
+
+    def test_f8_toggles_pause(self):
+        ctrl = CollaborationController()
+        dispatch = CollaborationHotkeyDispatcher(controller=ctrl)
+        assert not dispatch.is_paused
+        dispatch.dispatch("f8")
+        assert dispatch.is_paused
+        dispatch.dispatch("f8")
+        assert not dispatch.is_paused
+
+    def test_f7_downgrades_autonomy(self):
+        ctrl = CollaborationController()
+        ctrl.level = AutonomyLevel.AUTONOMOUS
+        dispatch = CollaborationHotkeyDispatcher(controller=ctrl)
+        result = dispatch.dispatch("f7")
+        assert "downgraded" in result
+        assert ctrl.level == AutonomyLevel.SUPERVISED
+
+    def test_f7_at_manual_is_noop(self):
+        ctrl = CollaborationController()
+        dispatch = CollaborationHotkeyDispatcher(controller=ctrl)
+        result = dispatch.dispatch("f7")
+        assert result == "already_manual"
+
+    def test_f6_upgrades_with_confirmation(self):
+        ctrl = CollaborationController()
+        ctrl.level = AutonomyLevel.MANUAL
+        dispatch = CollaborationHotkeyDispatcher(
+            controller=ctrl, confirm_callback=lambda msg: True,
+        )
+        result = dispatch.dispatch("f6")
+        assert "upgraded" in result
+        assert ctrl.level == AutonomyLevel.ASSISTED
+
+    def test_f6_upgrades_rejected_without_confirmation(self):
+        ctrl = CollaborationController()
+        ctrl.level = AutonomyLevel.MANUAL
+        dispatch = CollaborationHotkeyDispatcher(
+            controller=ctrl, confirm_callback=lambda msg: False,
+        )
+        result = dispatch.dispatch("f6")
+        assert "rejected" in result
+        assert ctrl.level == AutonomyLevel.MANUAL
+
+    def test_unknown_key(self):
+        ctrl = CollaborationController()
+        dispatch = CollaborationHotkeyDispatcher(controller=ctrl)
+        assert dispatch.dispatch("f1") == "unknown_key"

@@ -416,3 +416,70 @@ class CollaborationController:
             "primogem_spent": self.primogem_spent,
             "session_duration_sec": time.perf_counter() - self.session_start_time,
         }
+
+
+# ---------------------------------------------------------------------------
+# Hotkey dispatcher: maps function keys to collaboration actions
+# ---------------------------------------------------------------------------
+
+@dataclass(slots=True)
+class CollaborationHotkeyDispatcher:
+    """Map function keys to collaboration controller actions.
+
+    Binds:
+    - F7: Autonomy level downgrade (L3→L2→L1→L0)
+    - F8: Pause (via pause_callback)
+    - F9: Emergency stop (via stop_callback)
+    """
+
+    controller: CollaborationController
+    stop_callback: Callable[[], None] | None = None
+    pause_callback: Callable[[], None] | None = None
+    confirm_callback: Callable[[str], bool] | None = None
+    _paused: bool = False
+
+    def dispatch(self, key: str) -> str:
+        """Dispatch a hotkey press. Returns action taken."""
+        if key == "f9":
+            if self.stop_callback:
+                self.stop_callback()
+            return "emergency_stop"
+
+        if key == "f8":
+            self._paused = not self._paused
+            if self.pause_callback:
+                self.pause_callback()
+            return "pause" if self._paused else "resume"
+
+        if key == "f7":
+            return self._downgrade_autonomy()
+
+        if key == "f6":
+            return self._upgrade_autonomy()
+
+        return "unknown_key"
+
+    def _downgrade_autonomy(self) -> str:
+        current = self.controller.level
+        if current == AutonomyLevel.MANUAL:
+            return "already_manual"
+        target = AutonomyLevel(current.value - 1)
+        result = self.controller.set_level(target)
+        return f"downgraded_to_{target.name}" if result.status == HandoverStatus.ACCEPTED else "downgrade_rejected"
+
+    def _upgrade_autonomy(self) -> str:
+        current = self.controller.level
+        if current == AutonomyLevel.AUTONOMOUS:
+            return "already_autonomous"
+        target = AutonomyLevel(current.value + 1)
+        # Upgrade requires confirmation
+        if self.confirm_callback:
+            confirmed = self.confirm_callback(f"Upgrade to {target.name}?")
+        else:
+            confirmed = True
+        result = self.controller.set_level(target, user_confirmed=confirmed)
+        return f"upgraded_to_{target.name}" if result.status == HandoverStatus.ACCEPTED else "upgrade_rejected"
+
+    @property
+    def is_paused(self) -> bool:
+        return self._paused
