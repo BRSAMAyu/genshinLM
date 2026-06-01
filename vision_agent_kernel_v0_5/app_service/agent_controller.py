@@ -28,6 +28,7 @@ from perception.pipeline import PerceptionPipeline, PerceptionPipelineConfig
 from app_service.calibration import CalibrationProfile, CalibrationStore, RoiDefinition
 from app_service.model_manager import ModelManager
 from app_service.product_e2e import ProductE2ERunner
+from app_service.goal_executor import GoalExecutor
 from app_service.skill_manager import SkillDryRunRuntime, SkillRecorder, SkillReplayRuntime, SkillStore, SkillValidationError, SkillValidator
 from app_service.window_selector import WindowInfo, WindowSelector
 from combat.danger_detector import DangerDetector
@@ -117,6 +118,7 @@ class AgentController:
         self._dialogue_generator = DialogueGenerator(self._event_translator)
         self._planner = Planner(self._root, self._skill_store)
         self._sandbox_validator = SandboxValidator(self._root, self._skill_store)
+        self._goal_executor = GoalExecutor(self._root, self._skill_store)
         self._combat_runtime = CombatPlaybookRuntime()
         self._danger_detector = DangerDetector()
         self._dodge_policy = DodgePolicy()
@@ -579,6 +581,33 @@ class AgentController:
 
     def product_latest_report(self) -> dict[str, Any]:
         return self._product_e2e.latest_report()
+
+    def execute_goal(
+        self,
+        goal_text: str,
+        profile: str = "default_1920x1080",
+        live_mode: bool = False,
+        mode: str = "safe-window",
+        exploration_profile: str = "aggressive_deep_probe",
+        persona_id: str = "default_companion",
+    ) -> dict[str, Any]:
+        result = self._goal_executor.execute_goal(
+            goal_text=goal_text,
+            profile=profile,
+            live_mode=live_mode,
+            mode=mode,
+            exploration_profile=exploration_profile,
+        )
+        return result.to_dict()
+
+    def list_learning_review_queue(self) -> dict[str, Any]:
+        return {"items": self._goal_executor.list_learning_review_queue()}
+
+    def adjust_learning_patch(self, patch_id: str, adjustments: dict[str, Any]) -> dict[str, Any]:
+        return self._goal_executor.adjust_learning_patch(patch_id, adjustments)
+
+    def rollback_learning_patch(self, patch_id: str) -> dict[str, Any]:
+        return self._goal_executor.rollback_learning_patch(patch_id)
 
     def _run_real_loop(self) -> None:
         app_id = self._selected_app_id

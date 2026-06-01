@@ -25,6 +25,11 @@ from app_service.schemas import (
     FailureExplanationResponse,
     LatestRunResponse,
     KnowledgeResolveResponse,
+    GoalExecuteRequest,
+    GoalExecuteResponse,
+    LearningPatchAdjustRequest,
+    LearningPatchCommandResponse,
+    LearningReviewQueueResponse,
     MissionPlanRequest,
     MissionPlanResponse,
     ModelBenchmarkResponse,
@@ -289,6 +294,37 @@ def create_api_router(controller: AgentController) -> APIRouter:
     @router.post("/mission/plan", response_model=MissionPlanResponse)
     def mission_plan(request: MissionPlanRequest) -> MissionPlanResponse:
         return MissionPlanResponse(**controller.build_mission_queue(request.goal))
+
+    @router.post("/goals/execute", response_model=GoalExecuteResponse)
+    def execute_goal(request: GoalExecuteRequest) -> GoalExecuteResponse:
+        return GoalExecuteResponse(
+            **controller.execute_goal(
+                goal_text=request.goal_text,
+                profile=request.profile,
+                live_mode=request.live_mode,
+                mode=request.mode,
+                exploration_profile=request.exploration_profile,
+                persona_id=request.persona_id,
+            )
+        )
+
+    @router.get("/goals/learning_review", response_model=LearningReviewQueueResponse)
+    def learning_review_queue() -> LearningReviewQueueResponse:
+        return LearningReviewQueueResponse(**controller.list_learning_review_queue())
+
+    @router.post("/goals/learning_review/{patch_id}/adjust", response_model=LearningPatchCommandResponse)
+    def learning_patch_adjust(patch_id: str, request: LearningPatchAdjustRequest) -> LearningPatchCommandResponse:
+        try:
+            return LearningPatchCommandResponse(**controller.adjust_learning_patch(patch_id, request.adjustments))
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+    @router.post("/goals/learning_review/{patch_id}/rollback", response_model=LearningPatchCommandResponse)
+    def learning_patch_rollback(patch_id: str) -> LearningPatchCommandResponse:
+        try:
+            return LearningPatchCommandResponse(**controller.rollback_learning_patch(patch_id))
+        except FileNotFoundError as exc:
+            raise HTTPException(status_code=404, detail=str(exc)) from exc
 
     @router.post("/planner/explain_failure", response_model=FailureExplanationResponse)
     def planner_explain_failure(request: FailureExplanationRequest) -> FailureExplanationResponse:

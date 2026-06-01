@@ -33,6 +33,9 @@ class CerebrumPlannerAdapter:
 
     Exposes compile_task / replan_on_failure (not plan/replan),
     so AgentLoop uses the neurological (non-legacy) code path.
+
+    When a precompiled MissionGraphV4 is provided, compile_task() converts
+    its nodes directly to SemanticActions (bypassing cerebrum.compile_mission).
     """
 
     _KIND_MAP: dict[str, str] = {
@@ -42,21 +45,23 @@ class CerebrumPlannerAdapter:
         "dialogue": "ui",
         "system": "system",
         "explore": "navigation",
+        "quest": "navigation",
+        "loot": "ui",
+        "unknown": "navigation",
     }
 
-    def __init__(self, cerebrum: Any) -> None:
+    def __init__(self, cerebrum: Any, precompiled_graph: Any | None = None) -> None:
         self._cerebrum = cerebrum
+        self._precompiled_graph = precompiled_graph
 
     def compile_task(self, goal: AgentGoal, spec: TaskSpec) -> Sequence[SemanticAction]:
+        if self._precompiled_graph is not None:
+            return self._compile_from_graph(self._precompiled_graph)
         mission = self._cerebrum.compile_mission(goal)
         actions: list[SemanticAction] = []
         for node in mission.nodes:
             intent = node.skill_intent or node.node_type or "unknown"
-            kind = "ui"
-            for key, val in self._KIND_MAP.items():
-                if key in intent.lower():
-                    kind = val
-                    break
+            kind = self._infer_kind(intent)
             actions.append(SemanticAction(
                 action_id=node.node_id,
                 kind=kind,
@@ -66,6 +71,39 @@ class CerebrumPlannerAdapter:
                 requires_physical_input=True,
             ))
         return actions
+
+    def _compile_from_graph(self, graph: Any) -> Sequence[SemanticAction]:
+        """Convert precompiled MissionGraphV4 nodes to SemanticAction sequence."""
+        order = graph.topological_order()
+        if not order:
+            order = list(graph.node_ids)
+        actions: list[SemanticAction] = []
+        for node_id in order:
+            node = graph.get_node(node_id)
+            if node is None:
+                continue
+            semantic = str(node.metadata.get("semantic_action", node.node_type))
+            target = str(node.metadata.get("target", ""))
+            kind = self._infer_kind(semantic)
+            actions.append(SemanticAction(
+                action_id=node.node_id,
+                kind=kind,
+                intent=semantic,
+                target=target,
+                parameters=tuple(
+                    (str(k), str(v)) for k, v in node.metadata.get("parameters", {}).items()
+                ),
+                requires_physical_input=node.node_type not in ("system",),
+            ))
+        return actions
+
+    @classmethod
+    def _infer_kind(cls, intent: str) -> str:
+        lower = intent.lower()
+        for key, val in cls._KIND_MAP.items():
+            if key in lower:
+                return val
+        return "ui"
 
     def replan_on_failure(
         self,
@@ -200,6 +238,7 @@ def create_live_genshin_loop(
     capture_fps: float = 15.0,
     pixels_per_degree: float = 8.0,
     dry_run: bool = False,
+    precompiled_graph: Any | None = None,
 ) -> tuple[Any, Any, Any]:
     """Wire all live components into an AgentLoop for Genshin gameplay.
 
@@ -256,7 +295,7 @@ def create_live_genshin_loop(
     # --- Planner (Cerebrum L7-L8) ---
     from agent_kernel.cerebrum_agent import CerebrumAgentImpl
     cerebrum = CerebrumAgentImpl()
-    planner = CerebrumPlannerAdapter(cerebrum)
+    planner = CerebrumPlannerAdapter(cerebrum, precompiled_graph=precompiled_graph)
 
     # --- Executor ---
     if dry_run:

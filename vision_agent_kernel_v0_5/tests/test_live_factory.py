@@ -161,3 +161,45 @@ class TestLiveFactoryDryRun:
         loop, capturer, _ = create_live_genshin_loop(goal="测试", window_title="测试", dry_run=True)
         frame = loop._capture_frame()
         assert frame is not None
+
+
+class TestPrecompiledGraph:
+
+    def test_precompiled_graph_generates_actions(self) -> None:
+        from planning.mainline.mission_graph_v4 import ClaimContract, MissionEdgeV4, MissionGraphV4, MissionNodeV4
+
+        graph = MissionGraphV4(mission_id="test_graph")
+        graph.add_node(MissionNodeV4(
+            node_id="step_1",
+            node_type="ui",
+            metadata={"semantic_action": "open_quest_list", "target": "commission_tab"},
+        ))
+        graph.add_node(MissionNodeV4(
+            node_id="step_2",
+            node_type="quest",
+            metadata={"semantic_action": "complete_commission_step", "target": "commission_1"},
+        ))
+        graph.add_edge(MissionEdgeV4("step_1", "step_2"))
+
+        loop, _, _ = create_live_genshin_loop(
+            goal="测试", window_title="测试", dry_run=True,
+            precompiled_graph=graph,
+        )
+        actions = loop._planner.compile_task(
+            AgentGoal(goal_id="g", description="测试", success_criteria="测试"),
+            TaskSpec(task_id="t", objective="测试"),
+        )
+        assert len(actions) == 2
+        assert actions[0].action_id == "step_1"
+        assert actions[0].intent == "open_quest_list"
+        assert actions[1].action_id == "step_2"
+        assert actions[1].intent == "complete_commission_step"
+
+    def test_without_precompiled_graph_uses_cerebrum(self) -> None:
+        loop, _, _ = create_live_genshin_loop(goal="测试", window_title="测试", dry_run=True)
+        assert loop._planner._precompiled_graph is None
+        actions = loop._planner.compile_task(
+            AgentGoal(goal_id="g", description="升级角色", success_criteria="升级"),
+            TaskSpec(task_id="t", objective="升级角色"),
+        )
+        assert len(actions) > 0

@@ -468,3 +468,68 @@ class ShowcaseLatestReportResponse(BaseModel):
     run_id: str | None = None
     report_path: str | None = None
     report_markdown: str | None = None
+
+
+class GoalExecuteRequest(BaseModel):
+    goal_text: str
+    profile: str = "default_1920x1080"
+    live_mode: bool = False
+    mode: Literal["dry-run", "safe-window"] = "safe-window"
+    exploration_profile: Literal["aggressive_deep_probe", "balanced_probe"] = "aggressive_deep_probe"
+    persona_id: str = "default_companion"
+
+
+class GoalNodeTraceModel(BaseModel):
+    node_id: str
+    status: str
+    node_retry_count: int
+    replan_count: int
+    exploration_depth: int
+    recovery_trace_id: str
+    learning_patch_ids: list[str]
+
+
+class LearningReviewItemModel(BaseModel):
+    patch_id: str
+    goal_text: str
+    skill_id: str
+    summary: str
+    confidence: float
+    status: str
+    can_adjust: bool = True
+    can_rollback: bool = True
+    created_at: float
+    last_adjusted_at: float | None = None
+    rolled_back_at: float | None = None
+
+
+class GoalExecuteResponse(BaseModel):
+    ok: bool
+    goal_text: str
+    profile: str
+    live_mode: bool
+    mode: str
+    exploration_profile: str
+    compiled_strategy: str
+    goal_phase: str
+    mission_id: str
+    completed_nodes: list[str] = Field(default_factory=list)
+    failed_nodes: list[str] = Field(default_factory=list)
+    learning_review_queue: list[LearningReviewItemModel] = Field(default_factory=list)
+    node_traces: list[GoalNodeTraceModel] = Field(default_factory=list)
+    error: str | None = None
+
+
+class LearningReviewQueueResponse(BaseModel):
+    items: list[LearningReviewItemModel] = Field(default_factory=list)
+
+
+class LearningPatchAdjustRequest(BaseModel):
+    adjustments: dict[str, Any] = Field(default_factory=dict)
+
+
+class LearningPatchCommandResponse(BaseModel):
+    ok: bool
+    patch_id: str
+    skill_id: str
+    status: str
