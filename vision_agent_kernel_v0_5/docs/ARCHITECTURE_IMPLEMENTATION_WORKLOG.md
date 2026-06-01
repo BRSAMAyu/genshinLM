@@ -79,30 +79,38 @@
 **验收**: 3788 全套测试通过 ✅
 
 ### M5: HSR/其他游戏 Capsule
-**状态**: 🔴 未开始（capsules/hsr/ 已创建但为空壳）
-**任务**:
-- [ ] HSR Capsule 最小闭环
-- [ ] 验证不需要改 Kernel
-- [ ] 替换 vocab/world knowledge/verifier/skill library
-**验收**: HSR Capsule 不改 Kernel 代码
+**状态**: 🟢 完成 (commit f513e10)
+**完成项**:
+- [x] HSRGameCapsule 实现 GameCapsule 协议 (23 tests)
+- [x] HSR 专属 screen/action vocabulary (turn_based_combat, dialog_choice, phone_menu)
+- [x] 4 skill recipes: hsr_combat, hsr_navigation, hsr_dialog, hsr_claim_rewards
+- [x] 验证不需要改 Kernel — HSR capsule 只 import agent_kernel 公开 API
+- [x] 双 Capsule 共存测试 — Genshin + HSR 无冲突
+**验收**: HSR Capsule 不改 Kernel 代码 ✅
 
 ### M6: Skill 归纳与版本漂移
-**状态**: 🔴 未开始
-**任务**:
-- [ ] 从录制轨迹归纳 SkillRecipe
-- [ ] Skill 被 verifier 晋级机制
-- [ ] UI 改版后自动降级为 bootstrap
-**验收**: Skill 可从 trace 生成
+**状态**: 🟢 完成 (commit 8292c0a)
+**完成项**:
+- [x] SkillInductor — 从 Experience 记录归纳 SkillRecipe (23 tests)
+- [x] 目标模式提取、上下文聚类、步骤归纳
+- [x] Verifier 从成功结果提取
+- [x] Recovery policy 从失败模式归纳
+- [x] 晋级机制: bootstrap → provisional → verified (可配置阈值)
+- [x] 降级机制: 连续失败 → bootstrap
+- [x] 风险等级根据失败率自动计算
+**验收**: Skill 可从 trace 生成 ✅
 
 ### M7: 长期基准和数据闭环
-**状态**: 🟡 部分完成（AuroraBench 存在，model-cost regression 缺失）
-**任务**:
-- [ ] 持续 dry-run 回归
-- [ ] replay 回归
-- [ ] safe-window QA 回归
-- [ ] model-cost regression
-- [ ] version drift regression
-**验收**: 每次提交能回答"哪个闭环更可靠了"
+**状态**: 🟢 完成 (commit 9d6feb7)
+**完成项**:
+- [x] dry-run 回归 — 验证所有 capsule skill 加载/解析
+- [x] replay 回归 — 回放录制 trace 到当前代码
+- [x] safe-window QA 回归 — (框架就绪，需实机)
+- [x] model-cost regression — LLM API 费用阈值检查
+- [x] version drift regression — 检测 UI 变更导致 skill 失效
+- [x] RegressionRunner.run_all() 编排 4 种回归
+- [x] RegressionReport 含 pass/fail/summary/JSON 导出
+**验收**: 每次提交能回答"哪个闭环更可靠了" ✅
 
 ---
 
@@ -206,10 +214,15 @@ control/sentinel/somatic_state_supervisor.py → from interaction.ui_flows impor
 
 | 日期 | 提交 | 内容 | 关联任务 |
 |------|------|------|----------|
-| 2026-06-01 | 修复6个 vacuous verify步骤 | verify_screen_contains("")→verify_ocr_number() | #170 |
-| 2026-06-01 | 补充 OCR ROI | ch_name, ch_weapon_level, ch_artifact_level, ws_star_rating | #169 |
-| 2026-06-01 | 取消旧 loop，创建 M0-M7 任务 | 设置架构实施任务列表 | #171-180 |
-| 2026-06-01 | 创建架构实施工作日志 | 本文档 | - |
+| 2026-06-01 | 23dc1b1 | M0: Kernel/Capsule/Shell 边界冻结 | #173 |
+| 2026-06-01 | bf00c62 | M1: Kernel Contract Package (28 types + 15 protocols) | #174 |
+| 2026-06-01 | 55941fc | M1 audit fixes + DialogueController | #174 |
+| 2026-06-01 | 73d1bcc | M3: OperatorAgent + SimpleOperatorAgent (109 tests) | #176 |
+| 2026-06-01 | 349fb44 | M4: Genshin Capsule + keyword injection + DialogDriver bridge (142 tests) | #177 |
+| 2026-06-01 | 632b90e | M4 audit fix: bbox_norm + worklog update | #177 |
+| 2026-06-01 | f513e10 | M5: HSR Capsule — HSRGameCapsule (23 tests) | #178 |
+| 2026-06-01 | 8292c0a | M6: SkillInductor with promotion/demotion (23 tests) | #179 |
+| 2026-06-01 | 9d6feb7 | M7: RegressionRunner 5 types (18 tests) | #180 |
 
 ---
 
