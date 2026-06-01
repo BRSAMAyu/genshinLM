@@ -363,22 +363,26 @@ class DialogDriver:
         return False
 
     def _build_scene_graph(self, frame: object, screen_state: str) -> SceneGraph:
-        """Build a lightweight SceneGraph from current frame for the DialogueController."""
-        import time as _time
+        """Build a lightweight SceneGraph from current frame for the DialogueController.
 
-        # Attempt to detect dialog options from the classifier state
+        Provides best-effort bbox estimates for dialog regions so the
+        DialogueController can attempt option detection. These are coarse
+        defaults; VLM/OCR integration will refine them in production.
+        """
         objects: list[SceneObject] = []
         if screen_state == "dialog":
+            # Dialog text area — bottom center (where text appears)
             objects.append(SceneObject(
-                object_id="dialog_area",
+                object_id="dialog_text",
                 kind="dialog_option",
                 label="dialog",
-                bbox_norm=None,
-                source="classifier",
+                bbox_norm=(0.15, 0.65, 0.85, 0.85),
+                confidence=0.7,
+                source="heuristic",
             ))
 
         return SceneGraph(
-            timestamp=_time.perf_counter(),
+            timestamp=time.perf_counter(),
             scene_state=screen_state,
             objects=tuple(objects),
         )

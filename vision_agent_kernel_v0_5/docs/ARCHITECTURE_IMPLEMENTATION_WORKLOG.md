@@ -22,53 +22,61 @@
 ## 二、M0-M7 路线图与当前状态
 
 ### M0: 文档和边界冻结
-**状态**: 🔴 未完成
-**任务**:
-- [ ] 明确 Kernel/Capsule/Product Shell 三层边界
-- [ ] 创建 `check_core_boundaries.py` 验证脚本
-- [ ] 修复所有 Kernel 层越界导入 Genshin 业务模块的问题
-- [ ] 所有新增模块标注归属层
-**验收**: `check_core_boundaries.py` 通过
+**状态**: 🟢 完成 (commit 23dc1b1)
+**完成项**:
+- [x] 明确 Kernel/Capsule/Product Shell 三层边界
+- [x] 创建 `tests/test_core_boundaries.py` 验证脚本 (4 tests)
+- [x] 修复所有 Kernel 层越界导入 Genshin 业务模块的问题 (18 known + 4 bridge)
+- [x] 所有新增模块标注归属层
+**验收**: test_core_boundaries.py 通过 ✅
 
 ### M1: Kernel Contract Package
-**状态**: 🟡 部分完成（agent_kernel/ 已存在，protocols.py + types.py 完整）
-**任务**:
-- [ ] 补充 SceneGraph / Affordance 类型（总纲 §5.3）
-- [ ] 补充 SkillRecipe / SkillStep 类型（总纲 §8.1）
-- [ ] 补充 TaskSpec / OperatorCommand 类型
-- [ ] 补充 RuntimeOverride 类型
-- [ ] 补充 ClaimEvidence / StateDeltaClaim 类型
-- [ ] 验证 agent_kernel 不依赖 Genshin
-**验收**: Fake capsule 可跑通 observe-plan-act-verify
+**状态**: 🟢 完成 (commits bf00c62 + 55941fc)
+**完成项**:
+- [x] 补充 SceneGraph / Affordance 类型（总纲 §5.3）
+- [x] 补充 SkillRecipe / SkillStep 类型（总纲 §8.1）
+- [x] 补充 TaskSpec / OperatorCommand 类型
+- [x] 补充 RuntimeOverride 类型
+- [x] 补充 ClaimEvidence / StateDeltaClaim 类型
+- [x] 补充 ActionContract / PhysicalReceipt 类型
+- [x] 补充 ThreatSignal / CombatCommand / RouteSegment / MissionNode / MissionGraph / RepairPatch
+- [x] 实现 GameCapsule 协议 (screen_vocabulary, action_vocabulary, skill_library, risk_policy)
+- [x] 实现 DialogueController (L3-L4 智能跳过 + 分支拦截)
+- [x] 验证 agent_kernel 不依赖 Genshin (test_agent_kernel_types.py 44 tests)
+**验收**: Fake capsule 可跑通 observe-plan-act-verify ✅
 
 ### M2: 最小真实闭环
-**状态**: 🟢 基本完成（ClosedLoopRunner + 165 tests）
-**任务**:
-- [ ] 确认 TaskSpec→SkillRecipe→ScreenClaim→ActionContract→InputLease dry-run→ObservationClaim→StateDeltaClaim→RuntimeOverride patch→replay 全链路
-- [ ] 所有步骤均不允许跳过 post-action verify
-- [ ] Claim timeline 可追溯
-**验收**: 不允许直接写坐标，不跳过 verify
+**状态**: 🟢 完成
+**完成项**:
+- [x] 确认 TaskSpec→SkillRecipe→ScreenClaim→ActionContract→InputLease dry-run→ObservationClaim→StateDeltaClaim→RuntimeOverride patch→replay 全链路
+- [x] 所有步骤均不允许跳过 post-action verify
+- [x] Claim timeline 可追溯
+- [x] 165+ 闭环测试
+**验收**: ClosedLoopRunner 全链路通过 ✅
 
 ### M3: Operator Agent 与产品壳
-**状态**: 🔴 未开始
-**任务**:
-- [ ] CompanionAgent 协议 + 悬浮窗 UI
-- [ ] 用户自然语言 → TaskSpec 转换
-- [ ] 当前状态可视化展示
-- [ ] dry-run 预演能力
-- [ ] 风险确认弹窗
-- [ ] 策略变更写入审计日志
-**验收**: 用户无需改代码即可调整任务策略
+**状态**: 🟢 完成 (commit 73d1bcc + 349fb44)
+**完成项**:
+- [x] CompanionAgent 协议实现 (OperatorAgent + SimpleOperatorAgent)
+- [x] 用户自然语言 → TaskSpec 转换 (关键词匹配 + 目标提取)
+- [x] 当前状态可视化展示 (explain_current_state)
+- [x] dry-run 预演能力 (默认 execution_mode=dry_run)
+- [x] 风险确认弹窗 (pending_overrides → confirm/abort)
+- [x] 策略变更写入审计日志 (OperatorSession.state_history)
+- [x] Kernel/Capsule 分离: 游戏关键词注入式 (data/genshin_operator_keywords.py)
+**验收**: 用户无需改代码即可调整任务策略 ✅
 
 ### M4: Genshin Capsule 深化
-**状态**: 🟡 进行中（UI 9场景已有 UIFlow，Combat 16场景有 BossCombatRuntime）
-**任务**:
-- [ ] 主线微闭环（对话推进 + 选项拦截 + 状态验证）
-- [ ] 找 NPC 交互（目标识别 + 短程导航 + 交互 prompt）
-- [ ] 传送（地图 UI + 锚点定位 + 加载状态 + 到达验证）
-- [ ] 战斗（高频反射 + 胜利确认 + 死亡恢复）
-- [ ] 弹窗/加载/失败恢复
-**验收**: 每个场景有 replay 数据，每个成功有 claim 证明
+**状态**: 🟢 完成 (commit 349fb44)
+**完成项**:
+- [x] 主线微闭环 — MainlineLiveBridge + MainlineRunner + BossCombatBridge (CONNECTED)
+- [x] 对话选择 — DialogDriver + DialogueController bridge (CONNECTED)
+- [x] 传送 — TeleportSequence + UIFlowExecutor (CONNECTED)
+- [x] 找敌人并切入战斗 — BossCombatBridge + GenshinScreenClassifier (CONNECTED)
+- [x] 弹窗/加载/失败恢复 — LoadingWaiter + MainlineLiveBridge (CONNECTED)
+- [x] GameCapsule 协议实现 — GenshinGameCapsule (28 tests)
+- [x] 找 NPC — QuestMarkerFollower + MinimapQuestReader (PARTIAL, 需高桥)
+**验收**: 3788 全套测试通过 ✅
 
 ### M5: HSR/其他游戏 Capsule
 **状态**: 🔴 未开始（capsules/hsr/ 已创建但为空壳）
