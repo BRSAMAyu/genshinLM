@@ -201,15 +201,14 @@ _POLICY_KEYWORDS: dict[str, tuple[str, str]] = {
 # Override keywords — patterns for parameter adjustment
 _OVERRIDE_PATTERNS: list[tuple[str, str]] = [
     # Chinese patterns: specific parameter names first (before generic patterns)
-    # These use the original (non-lowered) text because Chinese chars are case-less
-    (r"置信度\s*[调设到为]\s*([0-9.]+)", "confidence_threshold"),
-    (r"超时\s*[调设到为]\s*([0-9]+)\s*秒", "timeout_sec"),
+    (r"置信度\s*(?:调到|调为|设为|设到|到)\s*([0-9.]+)", "confidence_threshold"),
+    (r"(?:设置)?超时(?:时间)?\s*(?:调到|调为|设置为?|设到|到|为)\s*([0-9]+)\s*秒", "timeout_sec"),
     (r"重试.{0,4}?([0-9]+)", "max_retries"),
-    (r"频率\s*[调设到为]\s*([0-9.]+)", "frequency"),
-    # Generic Chinese patterns: "把 X 调到 Y" or "设置 X 为 Y"
+    (r"频率\s*(?:调到|调为|设为|设到|到)\s*([0-9.]+)", "frequency"),
+    # Generic Chinese patterns: "设置 X 为 Y" or "把 X 调到 Y"
     (r"设置\s*(.+?)\s*为\s*(.+)", "generic_param_set"),
     (r"把\s*(.+?)\s*调到\s*([0-9.]+)", "generic_param"),
-    # English patterns (case-insensitive via re.IGNORECASE applied separately)
+    # English patterns
     (r"set\s+confidence\s+(?:to\s+)?([0-9.]+)", "confidence_threshold"),
     (r"set\s+timeout\s+(?:to\s+)?([0-9]+)\s*s(?:ec)?", "timeout_sec"),
     (r"set\s+retries\s+(?:to\s+)?([0-9]+)", "max_retries"),
