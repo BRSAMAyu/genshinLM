@@ -29,7 +29,10 @@ class ActionableElement:
 class DesktopNode:
     """A geometric node in a parsed UI tree."""
     node_id: str
-    role: Literal["button", "list_item", "dialog_text", "icon", "slider", "modal", "panel", "unknown"]
+    role: Literal[
+        "button", "list_item", "dialog_text", "dialog_option", "quest_entry",
+        "reward_item", "teleport_point", "icon", "slider", "modal", "panel", "unknown",
+    ]
     label: str
     bbox: tuple[float, float, float, float]  # Normalised window-space (x1, y1, x2, y2)
     confidence: float
@@ -51,7 +54,10 @@ class DesktopTree:
 class SceneObject:
     """A 3D object detected in the game world (NPC, waypoints, interactable items)."""
     object_id: str
-    kind: Literal["npc", "enemy", "waypoint", "item", "door", "puzzle_part", "unknown"]
+    kind: Literal[
+        "npc", "enemy", "waypoint", "item", "door", "puzzle_part",
+        "button", "dialog_option", "unknown",
+    ]
     label: str
     bbox_norm: tuple[float, float, float, float] | None = None
     spatial_hint: str = ""  # e.g., "left", "near", "above", "behind"
@@ -130,7 +136,7 @@ class TaskSpec:
     dialog_policy: Literal["progress_main_story", "read_all_options", "manual_only"] = "progress_main_story"
     resource_policy: Literal["no_rare_consumables", "allow_all", "strict_safety"] = "no_rare_consumables"
     uncertainty_policy: Literal["ask_user_immediately", "ask_user_after_120s", "pause_only"] = "ask_user_after_120s"
-    execution_mode: Literal["dry_run", "authorized_safe_window", "live_unsafe"] = "dry_run"
+    execution_mode: Literal["dry_run", "safe_window", "authorized_safe_window", "replay"] = "dry_run"
     # Legacy fields
     priority: int = 50
     parent_task_id: str = ""

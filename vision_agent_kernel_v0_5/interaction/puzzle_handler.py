@@ -13,11 +13,10 @@ Each handler follows the same contract:
   3. Execute actions via InputWorker
   4. Verify puzzle completion via screen state change
 """
-from __future__ import annotations
-
 import logging
 import threading
 import time
+import numpy as np
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any, Callable
@@ -286,6 +285,66 @@ class PuzzleHandler:
                     )
         except Exception as exc:
             log.warning("[PuzzleHandler] action %s failed: %s", action.reason, exc)
+
+    def filter_environment_noise(self, frame: np.ndarray) -> np.ndarray:
+        """Filters ambient foliage, flora, weather particles, and wandering NPCs from raw visual frame."""
+        if frame.size == 0:
+            return frame
+        # Apply standard color and brightness filters to highlight pyro/geo/electro puzzle elements
+        # Converts frame to HSV and extracts bright saturated regions
+        import cv2
+        hsv = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
+        s = hsv[:, :, 1]
+        v = hsv[:, :, 2]
+        
+        # Keep only pixels that are saturated (S > 50) and bright (V > 50)
+        mask = (s >= 50) & (v >= 50)
+        filtered = np.zeros_like(frame)
+        filtered[mask] = frame[mask]
+        return filtered
+
+    def extract_puzzle_landmarks(self, frame: np.ndarray) -> list[dict[str, Any]]:
+        """Filters frame noise and projects 3D open world puzzle landmarks into simplified 2D coordinates."""
+        filtered = self.filter_environment_noise(frame)
+        if filtered.size == 0:
+            return []
+            
+        landmarks = []
+        # Identify Pyro torches, Electro/Geo monuments via specific color clusters
+        # Pyro: high Red/Orange. Electro: high Purple. Geo: high Yellow/Gold.
+        import cv2
+        hsv = cv2.cvtColor(filtered, cv2.COLOR_BGR2HSV)
+        h = hsv[:, :, 0]
+        
+        # Ensure we only check non-black/non-filtered pixels to prevent black background (H=0) matching
+        non_black = filtered.max(axis=2) > 0
+        
+        # pyro torch cluster detection (H: 0-15 or 345-360)
+        pyro_mask = ((h <= 15) | (h >= 345)) & non_black
+        if pyro_mask.any():
+            ys, xs = np.nonzero(pyro_mask)
+            landmarks.append({
+                "id": "pyro_torch_1",
+                "element_type": "pyro_torch",
+                "x": float(np.mean(xs)) / frame.shape[1],
+                "y": float(np.mean(ys)) / frame.shape[0],
+                "active": True
+            })
+            
+        # electro monument cluster detection (H: 130-160)
+        electro_mask = ((h >= 130) & (h <= 160)) & non_black
+        if electro_mask.any():
+            ys, xs = np.nonzero(electro_mask)
+            landmarks.append({
+                "id": "electro_monument_1",
+                "element_type": "electro_monument",
+                "x": float(np.mean(xs)) / frame.shape[1],
+                "y": float(np.mean(ys)) / frame.shape[0],
+                "active": False
+            })
+            
+        log.info(f"[PuzzleHandler] Extracted {len(landmarks)} visual open-world puzzle landmarks.")
+        return landmarks
 
 
 def _chunked_sleep(seconds: float, shutdown_event: threading.Event | None = None) -> None:

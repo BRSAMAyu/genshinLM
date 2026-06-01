@@ -16,7 +16,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
 
-from agent_kernel.types import SceneGraph
+from agent_kernel.types import DesktopTree, SceneGraph, SceneObject
 
 log = logging.getLogger(__name__)
 
@@ -172,13 +172,14 @@ class DialogueController:
         """Set a VLM delegate for unknown option resolution."""
         self._vlm_delegate = delegate
 
-    def tick(self, scene_graph: SceneGraph) -> DialogueActionResult:
+    def tick(self, scene_graph: SceneGraph | DesktopTree) -> DialogueActionResult:
         """Process one dialogue controller tick.
 
         Called at the brainstem frequency (10-20Hz). Returns the action
         that should be taken (skip, select_option, pause, wait, complete).
         """
         now = time.perf_counter()
+        scene_graph = self._coerce_scene_graph(scene_graph)
 
         # Check if we're in dialogue scene
         if not self._is_dialogue_scene(scene_graph):
@@ -251,17 +252,18 @@ class DialogueController:
         self._consecutive_skips = 0
         self._last_skip_time = 0.0
 
-    def tick_dialogue_skip(self, tree: SceneGraph) -> None:
+    def tick_dialogue_skip(self, tree: SceneGraph | DesktopTree) -> None:
         """Alias for tick supporting DialogueController protocol conformance."""
         self.tick(tree)
 
-    def is_option_present(self, scene_graph: SceneGraph) -> bool:
+    def is_option_present(self, scene_graph: SceneGraph | DesktopTree) -> bool:
         """Check if a dialogue branch choice is currently on screen."""
+        scene_graph = self._coerce_scene_graph(scene_graph)
         return len(self._detect_options(scene_graph)) > 0
 
     def select_best_option(
         self,
-        scene_graph: SceneGraph,
+        scene_graph: SceneGraph | DesktopTree,
         option_registry: dict[str, Any] | None = None,
     ) -> dict[str, Any] | None:
         """Select the best dialogue option from available choices.
@@ -269,6 +271,7 @@ class DialogueController:
         Uses option_registry for known options, falls back to VLM for unknown.
         Returns a dict with option details or None if no options found.
         """
+        scene_graph = self._coerce_scene_graph(scene_graph)
         options = self._detect_options(scene_graph)
         if not options:
             return None
@@ -289,6 +292,27 @@ class DialogueController:
     def _is_dialogue_scene(self, scene_graph: SceneGraph) -> bool:
         """Check if we're in a dialogue scene."""
         return scene_graph.scene_state in ("dialog", "dialogue", "cutscene")
+
+    def _coerce_scene_graph(self, tree: SceneGraph | DesktopTree) -> SceneGraph:
+        if isinstance(tree, SceneGraph):
+            return tree
+        objects = tuple(
+            SceneObject(
+                object_id=node.node_id,
+                kind="dialog_option" if node.role == "dialog_option" else ("button" if node.role == "button" else "unknown"),
+                label=node.label,
+                bbox_norm=node.bbox,
+                confidence=node.confidence,
+                source=node.source,
+            )
+            for node in tree.nodes
+        )
+        return SceneGraph(
+            timestamp=tree.timestamp,
+            scene_state=tree.screen_state,
+            objects=objects,
+            confidence=max((node.confidence for node in tree.nodes), default=0.0),
+        )
 
     def _is_cg_or_transition(self, scene_graph: SceneGraph) -> bool:
         """Check if we're in a CG/cutscene/transition (should pause skip)."""

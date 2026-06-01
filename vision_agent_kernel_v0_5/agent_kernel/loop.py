@@ -85,6 +85,10 @@ class AgentLoop:
         # Legacy detection: if the planner has plan/replan methods, it's legacy
         self._is_legacy = hasattr(self._planner, "plan")
 
+        # Cerebrum throttle: per ADR, L7-L8 should run at 0.1-0.2Hz (5-10s interval)
+        self._last_cerebrum_time: float = 0.0
+        self._cerebrum_interval_sec: float = 5.0  # minimum 5s between Cerebrum calls
+
         # Thread safety & State bus
         self._state_bus: dict[str, Any] = {
             "active_overrides": {},
@@ -134,6 +138,7 @@ class AgentLoop:
         steps_succeeded = 0
         verified_claims: list[StateDeltaClaim] = []
         plan_iterations = 0
+        goal_achieved = False
 
         try:
             while plan_iterations < self._max_plan_iterations:
@@ -147,7 +152,6 @@ class AgentLoop:
                     time.sleep(0.05)
                     continue
 
-                plan_iterations += 1
                 frame_id = self._increment_frame_id()
                 
                 # A. Sensor cortex fusion (Observe)
@@ -168,6 +172,15 @@ class AgentLoop:
                         continue
 
                 # C. Strategic compilation (Cerebrum L8 Cloud-First Planner)
+                # Throttled to 0.1-0.2Hz per ADR — skip if called too recently
+                now_mono = time.monotonic()
+                if now_mono - self._last_cerebrum_time < self._cerebrum_interval_sec:
+                    # This is a fast control tick, not a failed plan iteration.
+                    time.sleep(0.05)
+                    continue
+                self._last_cerebrum_time = now_mono
+                plan_iterations += 1
+
                 # Fetch currently active overrides from StateBus
                 active_overrides = self.get_active_overrides()
                 
@@ -208,7 +221,7 @@ class AgentLoop:
                             ("success_criteria", "state_changed")
                         ),
                         timeout_ms=1500,
-                        risk_level=action.kind if action.kind in ("low", "medium", "high") else "medium"
+                        risk_level="medium"
                     )
 
                     # Validate contract
@@ -230,6 +243,8 @@ class AgentLoop:
                         
                         claim = self._checker.adjudicate_delta(obs, post_obs, goal.success_criteria)
                         verified_claims.append(claim)
+                        if claim.verified:
+                            goal_achieved = True
                         
                         # Cache successful runtime override experiences
                         if active_overrides:
@@ -237,11 +252,16 @@ class AgentLoop:
                     else:
                         log.warning(f"[Kernel] Contract execution lost focus or lease expired: {contract.contract_id}")
 
+                # Tick-rate governor: prevent CPU spin when no dialogue/combat
+                if goal_achieved:
+                    break
+                time.sleep(0.05)  # ~20Hz baseline tick
+
             # 3. Session Wrap-up & Config Patching
             log.info("=== [Kernel] Execution completed. Starting Session Wrap-up ===")
             self._propose_permanent_capsule_patches()
 
-            achieved = any(claim.verified for claim in verified_claims) if verified_claims else False
+            achieved = goal_achieved or (any(claim.verified for claim in verified_claims) if verified_claims else False)
             return GoalResult(
                 goal_id=goal.goal_id,
                 achieved=achieved,
@@ -303,7 +323,7 @@ class AgentLoop:
                         log.info("[Spinal] High-threat signal detected! Preempting InputLease for combat reflexes.")
                         
                         # Acquire direct, low-latency combat lease
-                        lease_id = self._executor.execute_contract(
+                        receipt = self._executor.execute_contract(
                             ActionContract(
                                 contract_id=f"combat_{uuid.uuid4().hex[:8]}",
                                 semantic_action=SemanticAction("combat_combos", "combat", "dodge_reflex", requires_physical_input=True),
@@ -311,6 +331,8 @@ class AgentLoop:
                                 risk_level="low"
                             )
                         )
+                        if not isinstance(receipt, PhysicalReceipt):
+                            log.debug("[Spinal] Combat reflex executor returned non-standard receipt: %r", receipt)
                         # Tick combat state machine連招
                         self._combat_agent.tick_combat_reflex(threats, current_combo_step=1)
                 except Exception as exc:
@@ -366,13 +388,15 @@ class AgentLoop:
 
     def _propose_permanent_capsule_patches(self) -> None:
         overrides = self.get_active_overrides()
-        if overrides:
+        if overrides and self._companion is not None:
             log.info("[Companion] Constructing Capsule Patch Proposal with unified YAML diff for review...")
             # We mock the CompanionAgent proposing the YAML schema patch
             mock_override = RuntimeOverride("mock", "option_daily", tuple(overrides.items()))
             proposal = self._companion.propose_capsule_patch("genshin", mock_override)
             log.info(f"[YAML Diff Review] Proposing the following changes:\n{proposal.yaml_diff}")
             log.info("[YAML Diff Review] User clicked 'CONFIRM SAVE'. YAML configs updated successfully.")
+        elif overrides:
+            log.info("[Companion] Active overrides recorded; no companion is attached for permanent patch proposal.")
 
     def _run_legacy(self, goal: AgentGoal) -> GoalResult:
         """Execute the agent loop until goal is achieved or exhausted (Legacy)."""

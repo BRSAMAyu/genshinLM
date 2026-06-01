@@ -51,7 +51,7 @@ class VLMPerceptionProvider:
         self._screen_w = screen_width
         self._screen_h = screen_height
 
-    def observe(self, frame: np.ndarray) -> SemanticObservation:
+    def observe(self, frame: np.ndarray, frame_id: int = 0) -> SemanticObservation:
         import time as _time
 
         # Fast HSV-based classification
@@ -68,6 +68,7 @@ class VLMPerceptionProvider:
 
         return SemanticObservation(
             timestamp=_time.perf_counter(),
+            frame_id=frame_id,
             scene_description=f"screen_state={screen_state.state}",
             actionable_elements=(),
             screen_state=screen_state.state,

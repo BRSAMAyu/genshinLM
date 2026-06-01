@@ -246,6 +246,7 @@ control/sentinel/somatic_state_supervisor.py → from interaction.ui_flows impor
 | 2026-06-01 | 1401011 | SpinalReflexAgentImpl (L1-L2) + MemoryStore conformance (15 tests) | #187-188 |
 | 2026-06-01 | a66b25c | SkillRecipeLookup.find_applicable + cross-cutting protocol audit | — |
 | 2026-06-01 | d02a65e | Fix P0+P1 audit gaps: ClaimAdjudicator, DialogueController, GameCapsule, CerebellumController (97 tests) | #189-192 |
+| 2026-06-01 | 64e5045 | Merge Gemini architecture refactor with backward compat fixes (3961 tests) | merge |
 
 ---
 

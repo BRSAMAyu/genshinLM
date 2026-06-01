@@ -40,7 +40,7 @@ class GenshinNavigator:
         "natlan_stadium": "nat_stadium",
     }
 
-    def __init__(self, knowledge_dir: Path | None = None) -> None:
+    def __init__(self, knowledge_dir: Path | None = None, input_backend: Any = None) -> None:
         self._state = NavigationState(False, "", "unknown", 0.0, "idle", 0.0)
         self._waypoint_reached_threshold_px = 30
         self._adj: dict[str, list[_GraphEdge]] = {}
@@ -48,8 +48,83 @@ class GenshinNavigator:
         self._waypoint_positions: dict[str, list[float]] = {}
         self._loaded = False
         self._knowledge_dir = _resolve_knowledge_dir(knowledge_dir)
+        self.input_backend = input_backend
+        
+        # Integrate Monocular Depth Estimation
+        from perception.depth_anything_estimator import DepthAnythingEstimator
+        self.depth_estimator = DepthAnythingEstimator()
+
         # Fallback mode: when waypoint isn't unlocked, fall back to walk + minimap
         self._fallback_to_walk: bool = False
+
+    def execute_3d_sweep(self, sweep_angle_deg: float = 360.0, duration_sec: float = 2.0) -> None:
+        """Executes a smooth circular camera sweep using mouse movements to scan environment."""
+        if self.input_backend is None:
+            log.warning("[GenshinNavigator] No input_backend configured for 3D camera sweep.")
+            return
+        import time
+        steps = 20
+        step_duration = duration_sec / steps
+        # DirectInput horizontal camera movement mapping (approximate)
+        dx_per_step = (sweep_angle_deg * 4.5) / steps
+        for _ in range(steps):
+            if hasattr(self.input_backend, "mouse_move"):
+                self.input_backend.mouse_move(dx=int(dx_per_step), dy=0, reason="3d_environment_sweep")
+            time.sleep(step_duration)
+
+    def steer_towards_minimap_target(self, target_angle: float) -> float:
+        """Adjusts camera heading relative to minimap target angle.
+        
+        target_angle is detected direction (0=up/forward, clockwise positive).
+        Returns the yaw delta applied.
+        """
+        if self.input_backend is None:
+            return 0.0
+        # In a real setup, if target is to the right (e.g. angle > 0 and < 180), we turn right.
+        # If target is to the left (angle > 180), we turn left.
+        # Calculate yaw delta to align heading with target_angle.
+        if target_angle > 180.0:
+            angle_diff = target_angle - 360.0 # Map to [-180, 0]
+        else:
+            angle_diff = target_angle # [0, 180]
+            
+        if abs(angle_diff) > 10.0: # steering threshold
+            dx = angle_diff * 3.5
+            if hasattr(self.input_backend, "mouse_move"):
+                self.input_backend.mouse_move(dx=int(dx), dy=0, reason="minimap_chevron_steering")
+            return dx
+        return 0.0
+
+    def update_3d_avoidance(self, frame: np.ndarray) -> float:
+        """Checks for vertical walls or steep slopes using visual depth estimation, returning steer yaw adjustment."""
+        depth_map = self.depth_estimator.estimate_depth(frame)
+        if self.depth_estimator.detect_vertical_obstacle(depth_map):
+            log.warning("[GenshinNavigator] Obstacle detected ahead! Initiating 3D evasion steering.")
+            # Execute sharp 90-degree yaw turn to the right (90 * 3.5 = 315) to circumvent wall
+            if self.input_backend is not None and hasattr(self.input_backend, "mouse_move"):
+                self.input_backend.mouse_move(dx=315, dy=0, reason="3d_obstacle_evasion")
+            return 315.0
+        return 0.0
+
+    def predict_and_steer_yaw(self, chevron_history: list[float]) -> float:
+        """Applies a Predictive Heading Servo that anticipates the next 3 yaw states.
+        
+        This eliminates the 'walk-and-stop-to-think' latency bottleneck.
+        """
+        if not chevron_history or self.input_backend is None:
+            return 0.0
+            
+        # Fit a simple linear extrapolation trend to the last 3 chevron angles
+        recent = chevron_history[-3:]
+        if len(recent) < 2:
+            predicted_angle = recent[0]
+        else:
+            diffs = [recent[i] - recent[i-1] for i in range(1, len(recent))]
+            trend = float(np.mean(diffs))
+            predicted_angle = recent[-1] + trend * 1.5 # Forecast 1.5 frames ahead
+            
+        log.info(f"[GenshinNavigator] Predictive Heading Servo calculated target forecast: {predicted_angle:.2f} deg.")
+        return self.steer_towards_minimap_target(predicted_angle)
 
     def _ensure_graph(self) -> None:
         if self._loaded:

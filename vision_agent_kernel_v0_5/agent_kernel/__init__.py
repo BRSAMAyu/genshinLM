@@ -41,6 +41,20 @@ from agent_kernel.types import (
     RouteSegment,
     RepairPatch,
 )
+from agent_kernel.claim_bridge import ClaimBridgeResult, KernelClaimBridge
+from agent_kernel.embodied_runtime import (
+    CombatModeDetector,
+    DailyCommissionDryRunRuntime,
+    DailyCommissionObjective,
+    DailyCommissionTrace,
+    EmbodiedAction,
+    HybridOpenWorldNavigator,
+    NavigationFrame,
+    RealTimeCombatPolicy,
+    TeamCombatRuntime,
+    TeamMemberRuntime,
+)
+from agent_kernel.skill_lookup import KernelSkillRecipeLookup
 from agent_kernel.protocols import (
     GameCapsule,
     MemoryStore,
@@ -95,6 +109,19 @@ __all__ = [
     "MissionGraph",
     "RouteSegment",
     "RepairPatch",
+    "ClaimBridgeResult",
+    "KernelClaimBridge",
+    "CombatModeDetector",
+    "DailyCommissionDryRunRuntime",
+    "DailyCommissionObjective",
+    "DailyCommissionTrace",
+    "EmbodiedAction",
+    "HybridOpenWorldNavigator",
+    "NavigationFrame",
+    "RealTimeCombatPolicy",
+    "TeamCombatRuntime",
+    "TeamMemberRuntime",
+    "KernelSkillRecipeLookup",
     # Protocols
     "GameCapsule",
     "MemoryStore",

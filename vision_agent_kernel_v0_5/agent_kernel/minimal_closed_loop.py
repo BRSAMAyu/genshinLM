@@ -26,6 +26,7 @@ from agent_kernel.types import (
     SemanticAction,
     SemanticObservation,
     StateDeltaClaim,
+    StepResult,
     TaskSpec,
     WorldStateGraph,
     ObservationClaim,
@@ -124,6 +125,30 @@ class MockExecutionProvider:
 
     def __init__(self) -> None:
         self.lease_active = False
+
+    def execute(self, primitive: Any) -> StepResult:
+        return StepResult(
+            step_id=str(uuid.uuid4()),
+            success=True,
+            error="",
+            duration_sec=0.05,
+        )
+
+    def locate_and_click(self, description: str) -> StepResult:
+        return StepResult(
+            step_id=description,
+            success=True,
+            error="",
+            duration_sec=0.05,
+        )
+
+    def press_key(self, key: str, reason: str = "") -> StepResult:
+        return StepResult(
+            step_id=key,
+            success=True,
+            error="",
+            duration_sec=0.02,
+        )
 
     def execute_contract(self, contract: ActionContract) -> PhysicalReceipt:
         action = contract.semantic_action
