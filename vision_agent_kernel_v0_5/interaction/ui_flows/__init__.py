@@ -11,7 +11,9 @@ from interaction.ui_flow_engine import (
     UIStep,
     cancel,
     click,
+    click_artifact_slot,
     click_char_tab,
+    click_character_slot,
     click_menu_button,
     confirm,
     delay,
@@ -19,6 +21,7 @@ from interaction.ui_flow_engine import (
     open_menu,
     press,
     scroll,
+    verify_ocr_number,
     wait_loading,
     wait_not_loading,
     wait_state,
@@ -121,6 +124,22 @@ CLOSE_MENU = UIFlow(
 # Character progression flows
 # ===================================================================
 
+# Select a character slot (1-4) from the character bar at bottom of character screen.
+# Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - UI-01 step 3
+CHARACTER_SELECT_IN_MENU = UIFlow(
+    name="character_select_in_menu",
+    description="Select a character from the bottom character bar (slot 1-4). "
+                "Must already be on character detail screen.",
+    precondition_state="full_menu",
+    steps=(
+        wait_state("full_menu", timeout_ms=3000),
+        # Default: select slot 1. Caller should create custom flow for other slots.
+        click_character_slot(1, delay_ms=400),
+        delay(300),
+    ),
+)
+
+
 # Enhanced character level-up with state verification
 # Spec: docs/GENSHIN_UI_OPERATION_SCENARIOS.md - 角色升级 (1-90级)
 # Required: Already on character detail screen (full_menu state)
@@ -146,7 +165,7 @@ CHARACTER_LEVEL_UP = UIFlow(
 # Composite: Open character menu → level up → close
 CHARACTER_LEVEL_UP_FULL = UIFlow(
     name="character_level_up_full",
-    description="Full character level-up flow: open menu → level up → close menu",
+    description="Full character level-up flow: open menu → level up → verify → close menu",
     steps=(
         # Open character menu via Paimon menu
         open_menu("open_character_menu"),
@@ -158,6 +177,8 @@ CHARACTER_LEVEL_UP_FULL = UIFlow(
         click(nx=0.85, ny=0.85, reason="click_level_up_button", delay_ms=500),
         click(nx=0.65, ny=0.85, reason="confirm_level_up", delay_ms=800),
         delay(1000),
+        # Verify level changed (OCR check — fail-open if no OCR)
+        verify_ocr_number(reason="verify_level_up"),
         # Close menu
         press("escape", reason="close_menu_after_level_up", delay_ms=500),
     ),
@@ -188,7 +209,7 @@ CHARACTER_ASCEND = UIFlow(
 # Composite: Open character menu → ascend → close
 CHARACTER_ASCEND_FULL = UIFlow(
     name="character_ascend_full",
-    description="Full character ascension flow: open menu → ascend → close menu",
+    description="Full character ascension flow: open menu → ascend → verify → close menu",
     steps=(
         open_menu("open_character_menu"),
         delay(300),
@@ -200,6 +221,8 @@ CHARACTER_ASCEND_FULL = UIFlow(
         wait_loading(timeout_ms=5000),
         wait_not_loading(timeout_ms=8000),
         delay(500),
+        # Verify ascension completed — level number should be visible on character screen
+        verify_ocr_number(reason="verify_ascend_level"),
         press("escape", reason="close_menu_after_ascend", delay_ms=500),
     ),
 )
@@ -254,7 +277,7 @@ CHARACTER_TALENT_UPGRADE_BURST = UIFlow(
 # Composite: Open menu → upgrade normal attack talent → close
 CHARACTER_TALENT_UPGRADE_FULL = UIFlow(
     name="character_talent_upgrade_full",
-    description="Full talent upgrade flow: open menu → talents tab → upgrade normal attack → close",
+    description="Full talent upgrade flow: open menu → talents tab → upgrade normal attack → verify → close",
     steps=(
         open_menu("open_character_menu"),
         delay(300),
@@ -266,6 +289,8 @@ CHARACTER_TALENT_UPGRADE_FULL = UIFlow(
         click(nx=0.85, ny=0.85, reason="click_upgrade_talent", delay_ms=300),
         click(nx=0.65, ny=0.85, reason="confirm_talent_upgrade", delay_ms=800),
         delay(500),
+        # Verify talent upgrade — talent level number should be visible
+        verify_ocr_number(reason="verify_talent_level"),
         press("escape", reason="close_menu_after_talent_upgrade", delay_ms=500),
     ),
 )
@@ -293,12 +318,14 @@ WEAPON_EQUIP = UIFlow(
 WEAPON_ENHANCE = UIFlow(
     name="weapon_enhance",
     description="Enhance the equipped weapon (from character weapon tab). "
-                "Auto-fills upgrade materials ( ores / fodder weapons )",
+                "Selects weapon slot → enhance → auto-fill → confirm",
     precondition_state="full_menu",
     steps=(
         wait_state("full_menu", timeout_ms=3000),
         delay(300),
         click_char_tab("weapon", delay_ms=600),
+        # Click equipped weapon to select it first
+        click(nx=0.85, ny=0.50, reason="click_equipped_weapon", delay_ms=400),
         click(nx=0.85, ny=0.70, reason="click_enhance_button", delay_ms=500),
         click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=400),
         click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=800),
@@ -326,7 +353,7 @@ WEAPON_REFINE = UIFlow(
 # Composite: Open menu → refine weapon → close
 WEAPON_REFINE_FULL = UIFlow(
     name="weapon_refine_full",
-    description="Full weapon refine flow: open menu → weapon tab → refine → close",
+    description="Full weapon refine flow: open menu → weapon tab → refine → verify → close",
     steps=(
         open_menu("open_character_menu"),
         delay(300),
@@ -339,6 +366,8 @@ WEAPON_REFINE_FULL = UIFlow(
         click(nx=0.50, ny=0.35, reason="select_duplicate", delay_ms=300),
         click(nx=0.65, ny=0.85, reason="confirm_refine", delay_ms=600),
         delay(500),
+        # Verify refine completed — refinement rank number should be visible
+        verify_ocr_number(reason="verify_refine_rank"),
         press("escape", reason="close_menu_after_refine", delay_ms=500),
     ),
 )
@@ -346,7 +375,7 @@ WEAPON_REFINE_FULL = UIFlow(
 # Composite: Open menu → equip weapon → close
 WEAPON_EQUIP_FULL = UIFlow(
     name="weapon_equip_full",
-    description="Full weapon equip flow: open menu → weapon tab → equip → close",
+    description="Full weapon equip flow: open menu → weapon tab → equip → verify → close",
     steps=(
         open_menu("open_character_menu"),
         delay(300),
@@ -357,6 +386,8 @@ WEAPON_EQUIP_FULL = UIFlow(
         click(nx=0.85, ny=0.50, reason="click_weapon_slot", delay_ms=500),
         click(nx=0.50, ny=0.35, reason="select_weapon", delay_ms=400),
         click(nx=0.65, ny=0.85, reason="equip_weapon", delay_ms=600),
+        # Verify weapon equipped — weapon level number should be visible
+        verify_ocr_number(reason="verify_weapon_level"),
         press("escape", reason="close_menu_after_weapon_equip", delay_ms=500),
     ),
 )
@@ -364,7 +395,7 @@ WEAPON_EQUIP_FULL = UIFlow(
 # Composite: Open menu → enhance weapon → close
 WEAPON_ENHANCE_FULL = UIFlow(
     name="weapon_enhance_full",
-    description="Full weapon enhance flow: open menu → weapon tab → enhance → close",
+    description="Full weapon enhance flow: open menu → weapon tab → select equipped weapon → enhance → verify → close",
     steps=(
         open_menu("open_character_menu"),
         delay(300),
@@ -372,10 +403,13 @@ WEAPON_ENHANCE_FULL = UIFlow(
         wait_state("full_menu", timeout_ms=5000),
         delay(400),
         click_char_tab("weapon", delay_ms=600),
+        # Click equipped weapon to select it first
+        click(nx=0.85, ny=0.50, reason="click_equipped_weapon", delay_ms=400),
         click(nx=0.85, ny=0.70, reason="click_enhance_button", delay_ms=500),
         click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=400),
         click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=800),
         delay(500),
+        verify_ocr_number(reason="verify_weapon_level"),
         press("escape", reason="close_menu_after_weapon_enhance", delay_ms=500),
     ),
 )
@@ -389,15 +423,15 @@ WEAPON_ENHANCE_FULL = UIFlow(
 
 ARTIFACT_EQUIP = UIFlow(
     name="artifact_equip",
-    description="Equip an artifact to a target slot (on character artifacts tab). "
-                "Slot is specified by caller via ny coordinate.",
+    description="Equip an artifact to the Flower slot (default). "
+                "Use click_artifact_slot() for other slots: flower/plume/circlet/sands/goblet",
     precondition_state="full_menu",
     steps=(
         wait_state("full_menu", timeout_ms=3000),
         delay(300),
         click_char_tab("artifacts", delay_ms=600),
-        # Target slot — default to center slot (0.35, 0.42)
-        click(nx=0.35, ny=0.42, reason="click_artifact_slot", delay_ms=500),
+        # Default: click flower slot (生之花)
+        click_artifact_slot("flower", delay_ms=500),
         click(nx=0.50, ny=0.35, reason="select_artifact", delay_ms=400),
         click(nx=0.65, ny=0.85, reason="equip_artifact", delay_ms=600),
     ),
@@ -405,13 +439,14 @@ ARTIFACT_EQUIP = UIFlow(
 
 ARTIFACT_ENHANCE = UIFlow(
     name="artifact_enhance",
-    description="Enhance an equipped artifact using other artifacts as fodder.",
+    description="Enhance the Flower slot artifact using other artifacts as fodder. "
+                "Use click_artifact_slot() for other slots.",
     precondition_state="full_menu",
     steps=(
         wait_state("full_menu", timeout_ms=3000),
         delay(300),
         click_char_tab("artifacts", delay_ms=600),
-        click(nx=0.35, ny=0.42, reason="click_artifact_to_enhance", delay_ms=400),
+        click_artifact_slot("flower", delay_ms=400),
         click(nx=0.85, ny=0.70, reason="click_enhance_button", delay_ms=500),
         click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=400),
         click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=1000),
@@ -422,7 +457,7 @@ ARTIFACT_ENHANCE = UIFlow(
 # Composite: Open menu → equip artifact → close
 ARTIFACT_EQUIP_FULL = UIFlow(
     name="artifact_equip_full",
-    description="Full artifact equip flow: open menu → artifacts tab → equip → close",
+    description="Full artifact equip flow: open menu → artifacts tab → equip flower slot → verify → close",
     steps=(
         open_menu("open_character_menu"),
         delay(300),
@@ -430,9 +465,11 @@ ARTIFACT_EQUIP_FULL = UIFlow(
         wait_state("full_menu", timeout_ms=5000),
         delay(400),
         click_char_tab("artifacts", delay_ms=600),
-        click(nx=0.35, ny=0.42, reason="click_artifact_slot", delay_ms=500),
+        click_artifact_slot("flower", delay_ms=500),
         click(nx=0.50, ny=0.35, reason="select_artifact", delay_ms=400),
         click(nx=0.65, ny=0.85, reason="equip_artifact", delay_ms=600),
+        # Verify artifact equipped — artifact level number should be visible
+        verify_ocr_number(reason="verify_artifact_level"),
         press("escape", reason="close_menu_after_artifact_equip", delay_ms=500),
     ),
 )
@@ -440,7 +477,7 @@ ARTIFACT_EQUIP_FULL = UIFlow(
 # Composite: Open menu → enhance artifact → close
 ARTIFACT_ENHANCE_FULL = UIFlow(
     name="artifact_enhance_full",
-    description="Full artifact enhance flow: open menu → artifacts tab → enhance → close",
+    description="Full artifact enhance flow: open menu → artifacts tab → enhance flower slot → verify → close",
     steps=(
         open_menu("open_character_menu"),
         delay(300),
@@ -448,11 +485,12 @@ ARTIFACT_ENHANCE_FULL = UIFlow(
         wait_state("full_menu", timeout_ms=5000),
         delay(400),
         click_char_tab("artifacts", delay_ms=600),
-        click(nx=0.35, ny=0.42, reason="click_artifact_to_enhance", delay_ms=400),
+        click_artifact_slot("flower", delay_ms=400),
         click(nx=0.85, ny=0.70, reason="click_enhance_button", delay_ms=500),
         click(nx=0.85, ny=0.80, reason="auto_fill_materials", delay_ms=400),
         click(nx=0.65, ny=0.85, reason="confirm_enhance", delay_ms=1000),
         delay(500),
+        verify_ocr_number(reason="verify_artifact_level"),
         press("escape", reason="close_menu_after_artifact_enhance", delay_ms=500),
     ),
 )
@@ -598,11 +636,14 @@ WISH_SINGLE_PULL = UIFlow(
 # Composite: Open wish screen → ten pull → close
 WISH_TEN_PULL_FULL = UIFlow(
     name="wish_ten_pull_full",
-    description="Full wish ten-pull flow: open wish → select banner → pull → close",
+    description="Full wish ten-pull flow: open wish → select character banner → pull → verify → close",
     steps=(
         press("f3", reason="open_wish_screen"),
         wait_state("full_menu", timeout_ms=5000),
         delay(500),
+        # Select character banner (leftmost)
+        click(nx=0.15, ny=0.88, reason="select_character_banner", delay_ms=500),
+        delay(300),
         click(nx=0.85, ny=0.85, reason="x10_wish_button", delay_ms=500),
         click(nx=0.65, ny=0.85, reason="confirm_wish", delay_ms=1000),
         loop(
@@ -613,6 +654,8 @@ WISH_TEN_PULL_FULL = UIFlow(
             max_iterations=10,
             reason="skip_wish_animation",
         ),
+        # Verify wish results shown — star rating numbers should be visible
+        verify_ocr_number(reason="verify_wish_star_rating"),
         click(nx=0.50, ny=0.90, reason="close_wish_results", delay_ms=500),
         press("escape", reason="close_wish_screen", delay_ms=500),
     ),
@@ -652,6 +695,36 @@ SHOP_BUY_MONTHLY_FATES = UIFlow(
         click(nx=0.35, ny=0.55, reason="select_acquaint_fate", delay_ms=300),
         confirm(reason="buy_acquaint_fate"),
         delay(500),
+    ),
+)
+
+# Composite: Full shop purchase flow
+SHOP_BUY_MONTHLY_FATES_FULL = UIFlow(
+    name="shop_buy_monthly_fates_full",
+    description="Full shop flow: open Paimon menu → shop → buy fates → close",
+    steps=(
+        # Open Paimon menu and navigate to shop
+        open_menu("open_paimon_menu"),
+        delay(300),
+        click_menu_button("shop", delay_ms=800),
+        # Click Paimon's Bargains tab
+        click(nx=0.20, ny=0.10, reason="paimon_bargains_tab", delay_ms=500),
+        # Switch to stardust exchange tab
+        click(nx=0.30, ny=0.10, reason="stardust_exchange_tab", delay_ms=500),
+        # Buy intertwined fate x5
+        click(nx=0.35, ny=0.35, reason="select_intertwined_fate", delay_ms=300),
+        confirm(reason="buy_fate"),
+        delay(500),
+        click(nx=0.55, ny=0.35, reason="select_intertwined_fate_5", delay_ms=300),
+        confirm(reason="buy_fate_5"),
+        delay(500),
+        # Buy acquainted fate
+        click(nx=0.35, ny=0.55, reason="select_acquaint_fate", delay_ms=300),
+        confirm(reason="buy_acquaint_fate"),
+        delay(500),
+        # Close shop
+        press("escape", reason="close_shop", delay_ms=500),
+        press("escape", reason="close_paimon_menu", delay_ms=500),
     ),
 )
 
@@ -817,6 +890,27 @@ FORGING_FORGE_ITEM = UIFlow(
     ),
 )
 
+# Composite: Full forging flow
+FORGING_FORGE_ITEM_FULL = UIFlow(
+    name="forging_forge_item_full",
+    description="Full forging flow: interact with blacksmith → forge item → close",
+    steps=(
+        press("f", reason="interact_blacksmith"),
+        delay(800),
+        # Select forging option from dialog
+        confirm(reason="select_forge_option"),
+        delay(500),
+        # Select first forging recipe
+        click(nx=0.25, ny=0.35, reason="select_forge_recipe", delay_ms=300),
+        # Click forge button
+        click(nx=0.65, ny=0.85, reason="click_forge", delay_ms=500),
+        confirm(reason="confirm_forge"),
+        delay(1000),
+        # Close blacksmith dialog
+        press("escape", reason="close_blacksmith", delay_ms=500),
+    ),
+)
+
 # ===================================================================
 # NPC shop purchase flow (U-35)
 # ===================================================================
@@ -840,6 +934,24 @@ NPC_SHOP_BUY_ITEM = UIFlow(
         click(nx=0.65, ny=0.85, reason="click_buy", delay_ms=300),
         confirm(reason="confirm_purchase"),
         delay(500),
+    ),
+)
+
+# Composite: Full NPC shop purchase flow
+NPC_SHOP_BUY_ITEM_FULL = UIFlow(
+    name="npc_shop_buy_item_full",
+    description="Full NPC shop flow: interact → buy item → close",
+    steps=(
+        press("f", reason="interact_npc_shop"),
+        delay(800),
+        # Select first item in shop list
+        click(nx=0.30, ny=0.35, reason="select_shop_item", delay_ms=300),
+        # Click buy button
+        click(nx=0.65, ny=0.85, reason="click_buy", delay_ms=300),
+        confirm(reason="confirm_purchase"),
+        delay(500),
+        # Close NPC dialog
+        press("escape", reason="close_npc_shop", delay_ms=500),
     ),
 )
 
@@ -1071,6 +1183,7 @@ ALL_FLOWS: dict[str, UIFlow] = {
         CLOSE_MENU,
         CHARACTER_LEVEL_UP,
         CHARACTER_LEVEL_UP_FULL,
+        CHARACTER_SELECT_IN_MENU,
         CHARACTER_ASCEND,
         CHARACTER_ASCEND_FULL,
         CHARACTER_TALENT_UPGRADE,
@@ -1096,6 +1209,7 @@ ALL_FLOWS: dict[str, UIFlow] = {
         WISH_TEN_PULL_FULL,
         SHOP_OPEN_PAIMON_BARGAINS,
         SHOP_BUY_MONTHLY_FATES,
+        SHOP_BUY_MONTHLY_FATES_FULL,
         CRAFTING_BENCH_INTERACT,
         CRAFTING_SYNTHESIZE_FULL,
         COOKING_INTERACT,
@@ -1106,8 +1220,10 @@ ALL_FLOWS: dict[str, UIFlow] = {
         STATUE_OFFER_OCULI,
         FORGING_INTERACT,
         FORGING_FORGE_ITEM,
+        FORGING_FORGE_ITEM_FULL,
         NPC_SHOP_INTERACT,
         NPC_SHOP_BUY_ITEM,
+        NPC_SHOP_BUY_ITEM_FULL,
         COMBAT_FOOD_REVIVE,
         STATUE_ELEMENT_RESONANCE,
         # New flows

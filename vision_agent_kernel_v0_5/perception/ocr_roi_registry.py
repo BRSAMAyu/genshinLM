@@ -193,12 +193,22 @@ _LOADING_ROIS: list[OcrRoiSpec] = [
 
 _CHARACTER_ROIS: list[OcrRoiSpec] = [
     _spec("ch_level", OcrPurpose.CHARACTER_LEVEL, 0.05, 0.15, 0.12, 0.06,
-          (GameScene.CHARACTER_SCREEN,), priority=5, description="Character level number"),
+          (GameScene.CHARACTER_SCREEN,), priority=5, description="Character level number (left panel)"),
+    _spec("ch_name", OcrPurpose.GENERIC_TEXT, 0.78, 0.14, 0.18, 0.06,
+          (GameScene.CHARACTER_SCREEN,), priority=5, description="Character name on right detail panel"),
+    _spec("ch_level_detail", OcrPurpose.CHARACTER_LEVEL, 0.78, 0.14, 0.10, 0.06,
+          (GameScene.CHARACTER_SCREEN,), priority=6, description="Character level on right detail panel"),
     _spec("ch_talent", OcrPurpose.TALENT_LEVEL, 0.60, 0.70, 0.15, 0.05,
           (GameScene.CHARACTER_SCREEN,), priority=10, description="Talent level numbers"),
+    _spec("ch_weapon_level", OcrPurpose.GENERIC_NUMBER, 0.70, 0.40, 0.15, 0.05,
+          (GameScene.CHARACTER_SCREEN,), priority=10, description="Weapon level on weapon tab"),
     _spec("ch_artifact_stat", OcrPurpose.ARTIFACT_MAIN_STAT, 0.45, 0.25, 0.25, 0.08,
           (GameScene.CHARACTER_SCREEN, GameScene.INVENTORY),
           priority=15, description="Artifact main stat text"),
+    _spec("ch_artifact_level", OcrPurpose.GENERIC_NUMBER, 0.45, 0.20, 0.10, 0.05,
+          (GameScene.CHARACTER_SCREEN,), priority=12, description="Artifact level on artifact tab"),
+    _spec("ch_char_strip", OcrPurpose.GENERIC_TEXT, 0.0, 0.79, 1.0, 0.06,
+          (GameScene.CHARACTER_SCREEN,), priority=20, description="Bottom character selection strip"),
 ]
 
 _CRAFTING_ROIS: list[OcrRoiSpec] = [
@@ -228,6 +238,13 @@ _QUEST_LOG_ROIS: list[OcrRoiSpec] = [
 _PARTY_SETUP_ROIS: list[OcrRoiSpec] = [
     _spec("ps_level", OcrPurpose.CHARACTER_LEVEL, 0.10, 0.40, 0.10, 0.05,
           (GameScene.PARTY_SETUP,), priority=5, description="Character level in party setup"),
+]
+
+_WISH_ROIS: list[OcrRoiSpec] = [
+    _spec("ws_primogem", OcrPurpose.PRIMOGEM_COUNT, 0.70, 0.01, 0.10, 0.04,
+          (GameScene.WISH,), priority=5, description="Primogem count on wish screen"),
+    _spec("ws_star_rating", OcrPurpose.GENERIC_NUMBER, 0.30, 0.35, 0.40, 0.30,
+          (GameScene.WISH,), priority=10, description="Wish result star ratings"),
 ]
 
 # Full fallback scan for unknown scenes
@@ -275,7 +292,7 @@ class GameSceneOcrRegistry:
             _OVERWORLD_ROIS + _COMBAT_ROIS + _MENU_ROIS +
             _DIALOG_ROIS + _LOADING_ROIS + _CHARACTER_ROIS +
             _CRAFTING_ROIS + _DOMAIN_ROIS + _QUEST_LOG_ROIS +
-            _PARTY_SETUP_ROIS + [_FULL_SCAN_SPEC]
+            _PARTY_SETUP_ROIS + _WISH_ROIS + [_FULL_SCAN_SPEC]
         )
         for spec in all_builtins:
             self.register(spec)
