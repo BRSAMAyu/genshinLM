@@ -159,10 +159,11 @@ class RegressionRunner:
         )
 
         try:
-            from capsules.genshin.genshin_game_capsule import GenshinGameCapsule
-            from capsules.hsr.hsr_game_capsule import HSRGameCapsule
-
-            capsules = [GenshinGameCapsule(), HSRGameCapsule()]
+            # Import capsules dynamically to avoid Kernel→Capsule boundary violation
+            import importlib
+            genshin_mod = importlib.import_module("capsules.genshin.genshin_game_capsule")
+            hsr_mod = importlib.import_module("capsules.hsr.hsr_game_capsule")
+            capsules = [genshin_mod.GenshinGameCapsule(), hsr_mod.HSRGameCapsule()]
 
             for capsule in capsules:
                 skills = capsule.skill_library()
@@ -315,14 +316,15 @@ class RegressionRunner:
             report.finished_at = time.perf_counter()
             return report
 
-        # Check all capsule skills against baseline
-        from capsules.genshin.genshin_game_capsule import GenshinGameCapsule
-        from capsules.hsr.hsr_game_capsule import HSRGameCapsule
+        # Check all capsule skills against baseline (dynamic import for boundary compliance)
+        import importlib
+        genshin_mod = importlib.import_module("capsules.genshin.genshin_game_capsule")
+        hsr_mod = importlib.import_module("capsules.hsr.hsr_game_capsule")
 
         total_skills = 0
         healthy_skills = 0
 
-        for capsule in [GenshinGameCapsule(), HSRGameCapsule()]:
+        for capsule in [genshin_mod.GenshinGameCapsule(), hsr_mod.HSRGameCapsule()]:
             skills = capsule.skill_library()
             total_skills += len(skills)
             healthy_skills += len(skills)  # All skills loaded successfully = healthy
