@@ -234,6 +234,7 @@ _MENU_BUTTONS: dict[str, tuple[float, float]] = {
     "party":         (0.55, 0.48),
     "wish":          (0.75, 0.48),
     "adventure":     (0.35, 0.66),
+    "mail":          (0.35, 0.66),  # mail is inside adventure menu
     "battle_pass":   (0.55, 0.66),
     "events":        (0.75, 0.66),
     "shop":          (0.35, 0.84),
@@ -547,6 +548,8 @@ class UIFlowExecutor:
 
         Reads from StateBus.screen_claim OCR results. If OcrClaimBuilder
         is not available, logs a warning and passes (fail-open).
+        When min/max are specified but OCR finds no number → FAIL (fail-safe).
+        When min/max are not specified → log result if found, skip if none.
         """
         claim = self._bus.screen_claim.get()
         ocr_min = step.ocr_expected_min
@@ -554,6 +557,9 @@ class UIFlowExecutor:
 
         if claim is None:
             log.debug("[UIFlow] verify_ocr_number: no screen claim, skipping")
+            # Gap 8 fix: if min/max specified, require OCR → fail-safe
+            if ocr_min is not None or ocr_max is not None:
+                raise UIFlowTimeout(f"no screen claim available for OCR verification: {step.reason}")
             return
 
         # Try to extract numbers from OCR text in the claim
@@ -574,22 +580,29 @@ class UIFlowExecutor:
                 log.debug("[UIFlow] verify_ocr_number: %d in [%s, %s]", value, ocr_min, ocr_max)
                 return
 
-        # No number found — if strict min/max provided, this is a failure
+        # No number found in OCR
         if ocr_min is not None or ocr_max is not None:
-            log.warning("[UIFlow] verify_ocr_number: no number found in OCR, passing (fail-open)")
+            # Gap 8 fix: strict range specified but no number → fail-safe
+            raise UIFlowTimeout(
+                f"OCR verification failed: no number found (expected min={ocr_min}, max={ocr_max}): {step.reason}"
+            )
+        # No range specified → log warning, step passes (lenient)
+        log.warning("[UIFlow] verify_ocr_number: no number found in OCR, skipping (%s)", step.reason)
 
     def _step_verify_screen_contains(self, step: UIStep) -> None:
         """Verify screen OCR text contains expected substring.
 
-        Reads from StateBus.screen_claim. Fail-open if no claim available.
+        Reads from StateBus.screen_claim. When expected_text is specified
+        and not found → FAIL (fail-safe). When expected_text is not
+        specified → skip (lenient).
         """
         if step.expected_text is None:
             return
 
         claim = self._bus.screen_claim.get()
         if claim is None:
-            log.debug("[UIFlow] verify_screen_contains: no screen claim, skipping")
-            return
+            # Gap 8 fix: expected text but no screen claim → fail-safe
+            raise UIFlowTimeout(f"no screen claim available for verify: {step.expected_text}")
 
         # Check screen state
         state = getattr(claim, "screen_state", "")
@@ -604,9 +617,9 @@ class UIFlowExecutor:
             log.debug("[UIFlow] verify_screen_contains: found %r", target)
             return
 
-        log.warning(
-            "[UIFlow] verify_screen_contains: %r not found in texts, passing (fail-open)",
-            target,
+        # Gap 8 fix: expected text not found → fail-safe (raise instead of warn-pass)
+        raise UIFlowTimeout(
+            f"screen verification failed: '{step.expected_text}' not found: {step.reason}"
         )
 
     # ------------------------------------------------------------------

@@ -169,14 +169,16 @@ def test_adapter_explore_statue_sends_f_key() -> None:
     assert any("f" in c for c in keys), "expected F-key interact for statue"
 
 
-def test_adapter_explore_underwater_uses_action_intent() -> None:
+def test_adapter_explore_underwater_sends_dive_key() -> None:
+    """G5 fix: explore_underwater sends F key for dive interaction."""
     backend = _Backend()
     adapter = UIFlowSkillAdapter(input_worker=_Worker(backend))  # type: ignore[arg-type]
 
     assert adapter.can_handle("explore_underwater")
     assert adapter.execute_semantic("explore_underwater", "", {})
 
-    assert any(c[0] == "action_intent" and "explore" in c[1] for c in backend.calls)
+    keys = [c for c in backend.calls if c[0] in ("key_down", "key_up")]
+    assert any("f" in c for c in keys), "expected F-key for underwater dive"
 
 
 def test_adapter_explore_skill_id_routes_to_handler() -> None:
@@ -213,14 +215,20 @@ def test_adapter_quest_skip_cutscene_sends_escape() -> None:
     assert any("escape" in c for c in keys), "expected Escape for cutscene skip"
 
 
-def test_adapter_quest_track_uses_action_intent() -> None:
+def test_adapter_quest_track_executes_flow() -> None:
+    """G3 fix: quest_track now executes QUEST_SELECT_AND_TRACK UIFlow (J key + click track)."""
     backend = _Backend()
     adapter = UIFlowSkillAdapter(input_worker=_Worker(backend))  # type: ignore[arg-type]
 
     assert adapter.can_handle("quest_track")
     assert adapter.execute_semantic("quest_track", "", {})
 
-    assert any(c[0] == "action_intent" and "quest" in c[1] for c in backend.calls)
+    # Should press J key to open quest log, then click track button
+    keys = [c for c in backend.calls if c[0] in ("key_down", "key_up")]
+    assert any("j" in c for c in keys), "expected J-key to open quest log"
+    # Should also click (track button coords)
+    clicks = [c for c in backend.calls if c[0] == "click_at"]
+    assert len(clicks) > 0, "expected click_at for track button"
 
 
 def test_adapter_quest_archon_uses_action_intent() -> None:

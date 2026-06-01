@@ -1166,11 +1166,224 @@ TEAM_FORMATION_VERIFY = UIFlow(
 )
 
 # ===================================================================
+# Mail flows (G2)
+# ===================================================================
+
+OPEN_MAIL = UIFlow(
+    name="open_mail",
+    description="Open mail inbox via adventure menu",
+    steps=(
+        open_menu("open_paimon_menu"),
+        delay(300),
+        click_menu_button("adventure", delay_ms=800),
+        # In adventure menu, click mail tab
+        click(nx=0.25, ny=0.08, reason="mail_tab", delay_ms=400),
+    ),
+)
+
+MAIL_CLAIM_ATTACHMENT = UIFlow(
+    name="mail_claim_attachment",
+    description="Claim attachment from selected mail",
+    steps=(
+        click(nx=0.30, ny=0.35, reason="select_mail_item", delay_ms=400),
+        click(nx=0.65, ny=0.85, reason="claim_attachment", delay_ms=500),
+        delay(500),
+        press("escape", reason="close_mail", delay_ms=300),
+    ),
+)
+
+MAIL_CLAIM_ALL = UIFlow(
+    name="mail_claim_all",
+    description="Claim all mail attachments at once",
+    steps=(
+        open_menu("open_paimon_menu"),
+        delay(300),
+        click_menu_button("adventure", delay_ms=800),
+        click(nx=0.25, ny=0.08, reason="mail_tab", delay_ms=400),
+        delay(500),
+        # Claim all button at top right
+        click(nx=0.85, ny=0.08, reason="claim_all_mail", delay_ms=500),
+        confirm(reason="confirm_claim_all"),
+        delay(1000),
+        press("escape", reason="close_mail", delay_ms=300),
+    ),
+)
+
+# ===================================================================
+# Quest tracking flows (G3)
+# ===================================================================
+
+OPEN_QUEST_LOG = UIFlow(
+    name="open_quest_log",
+    description="Open quest log with quest list",
+    steps=(
+        press("j", reason="open_quest_log"),
+        delay(800),
+    ),
+)
+
+QUEST_SELECT_AND_TRACK = UIFlow(
+    name="quest_select_and_track",
+    description="Open quest log, select quest, click track button",
+    steps=(
+        press("j", reason="open_quest_log"),
+        delay(800),
+        # Quest list on left side
+        click(nx=0.18, ny=0.35, reason="select_first_quest", delay_ms=400),
+        # Track button at top right of quest panel
+        click(nx=0.85, ny=0.15, reason="track_quest_button", delay_ms=300),
+        delay(300),
+        press("escape", reason="close_quest_log", delay_ms=300),
+    ),
+)
+
+# ===================================================================
+# Exploration scenario handlers (Gap 5 fix: 9/11 missing)
+# ===================================================================
+
+EXPLORE_STATUE_ACTIVATE = UIFlow(
+    name="explore_statue_activate",
+    description="Interact with Statue of the Seven, offer oculi",
+    steps=(
+        press("f", reason="interact_statue"),
+        delay(800),
+        click(nx=0.50, ny=0.60, reason="offer_oculi_option", delay_ms=500),
+        confirm(reason="confirm_offer_statue"),
+        delay(500),
+        press("escape", reason="close_statue_menu", delay_ms=300),
+    ),
+)
+
+EXPLORE_OPEN_CHEST = UIFlow(
+    name="explore_open_chest",
+    description="Open a common chest: walk to chest, press F",
+    steps=(
+        press("f", reason="interact_chest"),
+        delay(500),
+        press("f", reason="open_chest_skip", delay_ms=300),
+    ),
+)
+
+EXPLORE_ELEMENT_MONUMENT = UIFlow(
+    name="explore_element_monument",
+    description="Solve element monument: F to interact, select element",
+    steps=(
+        press("f", reason="interact_element_monument"),
+        delay(600),
+        click(nx=0.50, ny=0.55, reason="select_element", delay_ms=300),
+        delay(1000),
+    ),
+)
+
+EXPLORE_TORCH_PUZZLE = UIFlow(
+    name="explore_torch_puzzle",
+    description="Light torches in sequence",
+    steps=(
+        press("f", reason="light_torch_1"),
+        delay(400),
+        press("f", reason="light_torch_2"),
+        delay(400),
+        press("f", reason="light_torch_3"),
+        delay(400),
+    ),
+)
+
+EXPLORE_PRESSURE_PLATE = UIFlow(
+    name="explore_pressure_plate",
+    description="Step on pressure plate to activate mechanism",
+    steps=(
+        press("f", reason="interact_pressure_plate"),
+        delay(500),
+        confirm(reason="confirm_plate"),
+        delay(500),
+    ),
+)
+
+EXPLORE_TIMED_CHALLENGE = UIFlow(
+    name="explore_timed_challenge",
+    description="Start timed challenge at pressure plate",
+    steps=(
+        press("f", reason="interact_timed_challenge"),
+        delay(500),
+        confirm(reason="confirm_challenge_start"),
+        delay(500),
+    ),
+)
+
+EXPLORE_OCULUS_COLLECT = UIFlow(
+    name="explore_oculus_collect",
+    description="Collect anemoculus/geoculus: F to collect",
+    steps=(
+        press("f", reason="collect_oculus"),
+        delay(600),
+        delay(500),
+    ),
+)
+
+EXPLORE_WITHERING_ZONE = UIFlow(
+    name="explore_withering_zone",
+    description="Clear withering zone: interact, then Dendro skill",
+    steps=(
+        press("f", reason="interact_withering_zone"),
+        delay(500),
+        press("e", reason="clear_withering_dendro"),
+        delay(1000),
+        confirm(reason="confirm_clear_withering"),
+        delay(500),
+    ),
+)
+
+EXPLORE_UNDERWATER = UIFlow(
+    name="explore_underwater",
+    description="Enter Fontaine underwater: F to dive",
+    steps=(
+        press("f", reason="interact_dive"),
+        delay(800),
+        press("w", reason="swim_forward", delay_ms=200),
+        delay(200),
+        press("w", reason="swim_forward_2", delay_ms=200),
+    ),
+)
+
+# ===================================================================
+# World boss rotation + wave defense (Gap 7 fix)
+# ===================================================================
+
+WORLD_BOSS_ROTATION_CLAIM = UIFlow(
+    name="world_boss_rotation_claim",
+    description="Claim world boss reward after defeating it",
+    steps=(
+        press("f", reason="claim_world_boss_reward"),
+        delay(500),
+        confirm(reason="confirm_world_boss_claim"),
+        delay(500),
+        press("escape", reason="close_world_boss_dialog", delay_ms=300),
+    ),
+)
+
+WAVE_DEFENSE_START = UIFlow(
+    name="wave_defense_start",
+    description="Start wave defense challenge",
+    steps=(
+        press("f", reason="interact_wave_defense"),
+        delay(500),
+        click(nx=0.65, ny=0.85, reason="start_wave_defense", delay_ms=500),
+        wait_loading(timeout_ms=10000),
+        wait_not_loading(timeout_ms=15000),
+    ),
+)
+
+# ===================================================================
 # Forged flows registry addition
 # ===================================================================
 
 ALL_FLOWS: dict[str, UIFlow] = {
     f.name: f for f in [
+        OPEN_MAIL,
+        MAIL_CLAIM_ATTACHMENT,
+        MAIL_CLAIM_ALL,
+        OPEN_QUEST_LOG,
+        QUEST_SELECT_AND_TRACK,
         OPEN_CHARACTER_MENU,
         OPEN_BACKPACK,
         OPEN_MAP,
@@ -1235,6 +1448,19 @@ ALL_FLOWS: dict[str, UIFlow] = {
         BACKPACK_MULTI_SELECT,
         TEAM_LOCK_ACTIVE,
         TEAM_FORMATION_VERIFY,
+        # G5: exploration flows
+        EXPLORE_STATUE_ACTIVATE,
+        EXPLORE_OPEN_CHEST,
+        EXPLORE_ELEMENT_MONUMENT,
+        EXPLORE_TORCH_PUZZLE,
+        EXPLORE_PRESSURE_PLATE,
+        EXPLORE_TIMED_CHALLENGE,
+        EXPLORE_OCULUS_COLLECT,
+        EXPLORE_WITHERING_ZONE,
+        EXPLORE_UNDERWATER,
+        # G7: world boss + wave defense
+        WORLD_BOSS_ROTATION_CLAIM,
+        WAVE_DEFENSE_START,
     ]
 }
 

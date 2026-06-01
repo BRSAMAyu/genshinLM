@@ -10,6 +10,19 @@ from typing import Any
 from planning.mainline.mission_graph_v4 import ClaimContract, MissionEdgeV4, MissionGraphV4, MissionNodeV4
 from app_service.skill_manager import SkillStore
 
+# G4: Daily commission executor (lazy import to avoid hard dep on ui_adapter)
+_DailyCommissionExecutor: type | None = None
+
+
+def _get_daily_commission_executor(
+    ui_adapter: Any, teleport: Any | None = None, capture_frame: Any | None = None
+) -> Any:
+    global _DailyCommissionExecutor
+    if _DailyCommissionExecutor is None:
+        from agent_kernel.daily_commission_executor import DailyCommissionExecutor
+        _DailyCommissionExecutor = DailyCommissionExecutor
+    return _DailyCommissionExecutor(ui_adapter, teleport, teleport)
+
 
 @dataclass(frozen=True, slots=True)
 class LearningPatchProposal:
@@ -98,6 +111,11 @@ class GoalExecutor:
         traces: list[GoalNodeTrace] = []
 
         try:
+            # G4 shortcut: detect daily-commission goals and delegate to executor
+            _normalized = goal_text.lower()
+            if any(tok in _normalized for tok in ("daily commission", "daily", "每日委托", "委托")):
+                return self._execute_via_commission_executor(goal_text, live_mode, api_key)
+
             # Unified AgentLoop path (L0-L9 full neurological runtime)
             from agent_kernel.live_factory import create_live_genshin_loop
             from agent_kernel.types import AgentGoal, TaskSpec
@@ -458,6 +476,111 @@ class GoalExecutor:
         }
         saved = self._skill_store.save_skill(payload)
         return saved.skill_id
+
+    def _execute_via_commission_executor(
+        self,
+        goal_text: str,
+        live_mode: bool,
+        api_key: str | None,
+    ) -> GoalExecutionResult:
+        """G4: Delegate daily commission goals to DailyCommissionExecutor."""
+        try:
+            # Build a minimal ui adapter from live_factory if in live mode
+            from agent_kernel.live_factory import create_live_genshin_loop
+            from agent_kernel.daily_commission_executor import DailyCommissionExecutor
+            from agent_kernel.embodied_runtime import DailyCommissionObjective
+
+            agent_loop, capturer, backend = create_live_genshin_loop(
+                goal=goal_text,
+                window_title="原神",
+                api_key=api_key,
+                dry_run=not live_mode,
+                precompiled_graph=None,
+            )
+            capturer.start()
+            try:
+                executor = DailyCommissionExecutor(
+                    ui_adapter=agent_loop._ui_adapter if hasattr(agent_loop, "_ui_adapter") else backend,
+                    teleport_sequence=getattr(agent_loop, "_teleport_seq", None),
+                    capture_frame=agent_loop._capture_frame if hasattr(agent_loop, "_capture_frame") else None,
+                )
+
+                # Build commission objectives from goal_text keywords
+                objectives = self._build_commission_objectives(goal_text)
+                results = []
+                for obj in objectives:
+                    result = executor.execute_commission(obj, frame_source=None)
+                    results.append(result)
+
+                all_success = all(r.success for r in results)
+                mission_id = f"daily_{uuid.uuid4().hex[:8]}"
+                return GoalExecutionResult(
+                    ok=all_success,
+                    goal_text=goal_text,
+                    profile="default_1920x1080",
+                    live_mode=live_mode,
+                    mode="safe-window" if live_mode else "dry_run",
+                    exploration_profile="known_template_daily_commission",
+                    compiled_strategy="daily_commission_executor",
+                    goal_phase="completed" if all_success else "failed",
+                    mission_id=mission_id,
+                    completed_nodes=[f"commission_{i}" for i in range(len(objectives))],
+                    failed_nodes=[] if all_success else [f"commission_{i}" for i, r in enumerate(results) if not r.success],
+                    learning_review_queue=[],
+                    node_traces=[],
+                    error=None if all_success else "some commissions failed",
+                )
+            finally:
+                capturer.stop()
+                try:
+                    backend.release_all(reason="goal_finished")
+                except Exception:
+                    pass
+        except Exception as exc:
+            return GoalExecutionResult(
+                ok=False,
+                goal_text=goal_text,
+                profile="default_1920x1080",
+                live_mode=live_mode,
+                mode="safe-window" if live_mode else "dry_run",
+                exploration_profile="known_template_daily_commission",
+                compiled_strategy="daily_commission_executor",
+                goal_phase="failed",
+                mission_id=f"daily_{uuid.uuid4().hex[:8]}",
+                completed_nodes=[],
+                failed_nodes=[],
+                learning_review_queue=[],
+                node_traces=[],
+                error=str(exc),
+            )
+
+    def _build_commission_objectives(self, goal_text: str) -> list[Any]:
+        """Parse goal_text into DailyCommissionObjective list."""
+        from agent_kernel.embodied_runtime import DailyCommissionObjective
+        normalized = goal_text.lower()
+        objectives: list[Any] = []
+
+        # Detect commission count (default 4)
+        count = 4
+        for word in normalized.split():
+            try:
+                count = max(1, min(4, int(word)))
+            except ValueError:
+                pass
+
+        # Heuristic: if keywords mention combat/puzzle/dialogue/interaction, mark those
+        commission_types = ["combat", "dialogue", "puzzle", "interaction"]
+        for idx in range(count):
+            ctype = commission_types[idx % len(commission_types)]
+            objectives.append(DailyCommissionObjective(
+                objective_id=f"commission_{idx + 1}",
+                objective_type=ctype,
+                target_region="mondstadt",
+                waypoint_id="mondstadt_guild",
+                target_label="",
+                puzzle_hint="",
+            ))
+        return objectives
 
     def _read_review_queue(self) -> dict[str, Any]:
         try:

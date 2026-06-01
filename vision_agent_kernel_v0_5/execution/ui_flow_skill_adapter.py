@@ -3,13 +3,18 @@ from __future__ import annotations
 import logging
 import time
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from core.state_bus import StateBus
 from execution.console_backend import ConsoleInputBackend
 from execution.input_worker import InputWorker
+from interaction.npc_shop_interactor import NpcShopInteractor
 from interaction.ui_flow_engine import UIFlow, UIFlowExecutor
 from interaction.ui_flows import ALL_FLOWS, get_flow
+
+if TYPE_CHECKING:
+    from interaction.quest_marker_follower import QuestMarkerFollower
+    from interaction.somatic_supervisor import SomaticStateSupervisor
 
 log = logging.getLogger(__name__)
 
@@ -100,6 +105,7 @@ class UIFlowSkillAdapter:
         "npc_shop_interact": "npc_shop_interact",
         "npc_shop_buy_item": "npc_shop_buy_item",
         "npc_shop_buy_item_full": "npc_shop_buy_item_full",
+        "npc_shop_buy_specific": "npc_shop_buy_specific",
         "shop_buy_monthly_fates_full": "shop_buy_monthly_fates_full",
         "combat_food_revive": "combat_food_revive",
         "statue_element_resonance": "statue_element_resonance",
@@ -125,6 +131,13 @@ class UIFlowSkillAdapter:
         "combat_multi_wave": "combat_multi_wave",
         "combat_weekly_rotation": "combat_weekly_rotation",
         "combat_world_farming": "combat_world_farming",
+        "open_mail": "open_mail",
+        "claim_mail": "mail_claim_all",
+        "claim_all_mail": "mail_claim_all",
+        "mail_claim": "mail_claim_all",
+        "mail_claim_all": "mail_claim_all",
+        "mail_claim_attachment": "mail_claim_attachment",
+        "quest_select_and_track": "quest_select_and_track",
         # Exploration aliases
         "explore_activate_waypoint": "explore_waypoint",
         "explore_activate_statue": "explore_statue",
@@ -196,6 +209,7 @@ class UIFlowSkillAdapter:
         self._somatic_supervisor = somatic_supervisor
         self._skill_registry = skill_registry
         self._ocr_builder = ocr_claim_builder
+        self._shop_interactor: NpcShopInteractor | None = None
         if executor is not None:
             self._executor = executor
             self._worker = input_worker
@@ -209,6 +223,8 @@ class UIFlowSkillAdapter:
                 input_worker=self._worker,
                 wait_chunk_ms=self._config.wait_chunk_ms,
             )
+        # G8 fix: initialize NPC shop grid interactor
+        self._init_shop_interactor()
         self._aliases = dict(self._DEFAULT_ALIASES)
         self._aliases.update(self._config.semantic_aliases)
         self._primitive_handlers: dict[str, PrimitiveHandler] = {
@@ -264,6 +280,10 @@ class UIFlowSkillAdapter:
             "scroll_up": self._handle_action_intent,
             "open_quest_log": self._handle_open_menu_alias,
             "open_character_screen": self._handle_open_menu_alias,
+            # Mail handlers (G2)
+            "open_mail": self._handle_mail,
+            "mail_claim": self._handle_mail,
+            "mail_claim_all": self._handle_mail,
             "auto_combat": self._handle_action_intent,
             # Combat scenario handlers
             "combat_basic": self._handle_combat,
@@ -340,6 +360,8 @@ class UIFlowSkillAdapter:
             "mainline_ch3": self._handle_mainline,
             "mainline_ch4": self._handle_mainline,
             "mainline_ch5": self._handle_mainline,
+            # G8 fix: NPC shop specific item purchase
+            "npc_shop_buy_specific": self._handle_npc_shop_buy_specific,
         }
 
     @property
@@ -459,6 +481,16 @@ class UIFlowSkillAdapter:
             except Exception:
                 log.debug("[UIFlowSkillAdapter] input worker auto-start skipped", exc_info=True)
 
+    def _init_shop_interactor(self) -> None:
+        """G8 fix: initialize NpcShopInteractor if backend supports click_at."""
+        backend = self._backend()
+        if backend is not None and hasattr(backend, "click_at"):
+            try:
+                self._shop_interactor = NpcShopInteractor(backend=backend, state_bus=self._bus)
+                log.debug("[UIFlowSkillAdapter] NpcShopInteractor initialized")
+            except Exception as exc:
+                log.warning("[UIFlowSkillAdapter] NpcShopInteractor init failed: %s", exc)
+
     def _resolve_flow_name(self, action: str) -> str | None:
         if action in ALL_FLOWS:
             return action
@@ -556,17 +588,91 @@ class UIFlowSkillAdapter:
             log.warning("[UIFlowSkillAdapter] select option failed: %s", exc)
             return False
 
-    def _handle_combat(self, target: str, context: dict[str, Any]) -> bool:
-        """Handle combat scenario actions via CombatSkillAdapter delegation.
+    def _combat_key(self, key: str, reason: str = "") -> bool:
+        """Execute a combat key press with down/up sequence."""
+        backend = self._backend()
+        try:
+            backend.key_down(key, reason=reason or f"combat_key:{key}")
+            self._chunked_sleep(0.08)
+            backend.key_up(key, reason=f"{reason}_done" if reason else f"combat_key:{key}_done")
+            return True
+        except Exception as exc:
+            log.warning("[UIFlowSkillAdapter] combat key %s failed: %s", key, exc)
+            return False
 
-        In dry-run (ConsoleInputBackend), accepts the action as a no-op.
-        In live mode, delegates to combat.combat_skill_adapter.CombatSkillAdapter.
+    def _handle_combat(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle combat scenario actions with real key execution (G6).
+
+        Maps semantic actions to real key presses:
+        - basic_attack/attack: hold LMB for auto-attack
+        - dodge/dash: Shift+S for backdash
+        - cast_skill_e: E key
+        - cast_burst_q/use_burst/use_ultimate: Q key
+        - switch_char: 1-4 key for character slot
+        - lock_target: Tab key
+        - jump: Space key
+        - sprint: Left Shift hold
+        - auto_attack: F1 to toggle
         """
         action = str(context.get("semantic_action", "combat_basic"))
         backend = self._backend()
+
+        # Map semantic actions to real key presses
+        if action in ("basic_attack", "attack", "combo_normal_attack"):
+            # Hold LMB for auto-attack
+            try:
+                backend.left_click_down(reason="combat_attack")
+                self._chunked_sleep(0.5)
+                backend.left_click_up(reason="combat_attack_done")
+                return True
+            except Exception as exc:
+                log.warning("[UIFlowSkillAdapter] basic attack failed: %s", exc)
+
+        if action in ("dodge", "dash"):
+            # Shift + direction (default: S to backdash)
+            try:
+                backend.key_down("shift", reason="dodge_modifier")
+                backend.key_down("s", reason="dodge_back")
+                self._chunked_sleep(0.1)
+                backend.key_up("s", reason="dodge_back_done")
+                backend.key_up("shift", reason="dodge_modifier_done")
+                return True
+            except Exception as exc:
+                log.warning("[UIFlowSkillAdapter] dodge failed: %s", exc)
+
+        if action == "cast_skill_e":
+            return self._combat_key("e", "combat_skill_e")
+
+        if action in ("cast_burst_q", "use_burst", "use_ultimate"):
+            return self._combat_key("q", "combat_burst_q")
+
+        if action == "switch_char" or action.startswith("switch_char"):
+            # Parse slot from target (e.g., "slot_2" -> "2")
+            slot = self._parse_character_slot(target) or 1
+            return self._combat_key(str(slot), "combat_switch_char")
+
+        if action == "lock_target":
+            return self._combat_key("tab", "combat_lock_target")
+
+        if action == "jump":
+            return self._combat_key("space", "combat_jump")
+
+        if action == "sprint":
+            try:
+                backend.key_down("left shift", reason="combat_sprint")
+                self._chunked_sleep(0.3)
+                backend.key_up("left shift", reason="combat_sprint_done")
+                return True
+            except Exception as exc:
+                log.warning("[UIFlowSkillAdapter] sprint failed: %s", exc)
+
+        if action == "auto_attack":
+            return self._combat_key("f1", "combat_auto_toggle")
+
+        # Fall back to action_intent for combat scenarios
         if hasattr(backend, "action_intent"):
             backend.action_intent(f"combat:{action}", reason="semantic_combat")
-        log.info("[UIFlowSkillAdapter] combat action accepted: %s target=%s", action, target)
+        log.info("[UIFlowSkillAdapter] combat action accepted (no key mapped): %s target=%s", action, target)
         return True
 
     _BOSS_ID_MAP: dict[str, str] = {
@@ -666,12 +772,21 @@ class UIFlowSkillAdapter:
         return True
 
     def _handle_quest_track(self, target: str, context: dict[str, Any]) -> bool:
-        """Handle quest tracking: V-key to track quest marker."""
-        backend = self._backend()
-        if hasattr(backend, "action_intent"):
-            backend.action_intent("quest:track", reason="semantic_quest_track")
-        log.info("[UIFlowSkillAdapter] quest track target=%s", target)
-        return True
+        """Handle quest tracking: open quest log and select+track quest."""
+        action = str(context.get("semantic_action", "quest_track"))
+        if action == "open_quest_log":
+            return self.execute_flow_as_semantic("open_quest_log")
+        # Default: open quest log + select + track
+        return self.execute_flow_as_semantic("quest_select_and_track")
+
+    def _handle_mail(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle mail actions: open mail, claim attachment, claim all."""
+        action = str(context.get("semantic_action", "mail_claim_all"))
+        if action in ("open_mail", "claim_mail"):
+            return self.execute_flow_as_semantic("open_mail")
+        if action in ("claim_all_mail", "mail_claim_all"):
+            return self.execute_flow_as_semantic("mail_claim_all")
+        return self.execute_flow_as_semantic("mail_claim_attachment")
 
     def _handle_quest_action_intent(self, target: str, context: dict[str, Any]) -> bool:
         """Handle quest management actions (read log, daily, archon, story, world, event)."""
@@ -810,3 +925,21 @@ class UIFlowSkillAdapter:
         except Exception as exc:
             log.warning("[UIFlowSkillAdapter] open menu failed for %s: %s", action, exc)
             return False
+
+    # G8 fix: NPC shop specific item handler
+    def _handle_npc_shop_buy_specific(self, target: str, context: dict[str, Any]) -> bool:
+        """Buy a specific item from NPC shop by name or index."""
+        del context
+        # Parse target: could be "index:3" or "name:Weapon_Material"
+        if target.startswith("index:"):
+            try:
+                idx = int(target.split(":")[1])
+                if self._shop_interactor is not None:
+                    return self._shop_interactor.buy_item_by_index(idx)
+                log.warning("[UIFlowSkillAdapter] shop_interactor not available")
+                return False
+            except (ValueError, IndexError):
+                log.warning("[UIFlowSkillAdapter] invalid shop index: %s", target)
+                return False
+        # Default: use existing flow
+        return self.execute_flow_as_semantic("npc_shop_buy_item")
