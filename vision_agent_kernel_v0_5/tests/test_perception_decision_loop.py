@@ -154,6 +154,7 @@ class TestPerceptionFusionRuntime:
             "bbox": (100.0, 200.0, 300.0, 400.0),
         }])
         obs = _fake_observation(1)
+        bus.publish_observation(obs)
         # Process via FramePostProcessor interface
         runtime.process(_fake_frame(), obs, bus)
         slot = bus.latest_observation.get()
@@ -163,6 +164,7 @@ class TestPerceptionFusionRuntime:
     def test_process_sets_non_none_obstacle_field(self):
         runtime, bus = self._make_runtime()
         obs = _fake_observation(2)
+        bus.publish_observation(obs)
         runtime.process(_fake_frame(), obs, bus)
         slot = bus.latest_observation.get()
         assert slot is not None
@@ -172,6 +174,7 @@ class TestPerceptionFusionRuntime:
         runtime, bus = self._make_runtime()
         runtime.set_screen_classifier(lambda f: "overworld")
         obs = _fake_observation(3)
+        bus.publish_observation(obs)
         runtime.process(_fake_frame(), obs, bus)
         slot = bus.latest_observation.get()
         assert slot is not None
@@ -234,6 +237,7 @@ class TestPerceptionFusionRuntime:
         runtime.set_screen_classifier(lambda f: "overworld")
         runtime.set_yolo_detector(lambda f: [{"track_id": "e1", "class_id": "enemy", "confidence": 0.9, "bbox": (0, 0, 100, 100)}])
         obs = _fake_observation(1)
+        bus.publish_observation(obs)
         runtime.process(_fake_frame(), obs, bus)
         slot = bus.latest_observation.get()
         assert slot is not None
@@ -245,6 +249,7 @@ class TestPerceptionFusionRuntime:
         runtime, bus = self._make_runtime()
         runtime.set_screen_classifier(lambda f: "not_a_real_state")
         obs = _fake_observation(1)
+        bus.publish_observation(obs)
         runtime.process(_fake_frame(), obs, bus)
         slot = bus.latest_observation.get()
         assert slot is not None
@@ -255,6 +260,7 @@ class TestPerceptionFusionRuntime:
         runtime, bus = self._make_runtime()
         runtime.set_yolo_detector(lambda f: (_[None] for _ in ()).throw(RuntimeError("oops")))  # type: ignore[return-value]
         obs = _fake_observation(1)
+        bus.publish_observation(obs)
         runtime.process(_fake_frame(), obs, bus)
         slot = bus.latest_observation.get()
         assert slot is not None
@@ -330,6 +336,7 @@ class TestPerceptionDecisionLoop:
         ))
 
         obs = _fake_observation(1)
+        bus.publish_observation(obs)
         runtime.process(_fake_frame(), obs, bus)
 
         # Check all slots populated

@@ -1,0 +1,87 @@
+# Sparkle Agent Capsule Specification: Honkai Star Rail (HSR) Minimal Verification Capsule
+# Version: 1.0.0
+# Purpose: Anti-leak validation proving the generic Sparkle Agent Kernel supports HSR without Core modifications.
+
+capsule_id: "hsr_verification_capsule"
+game_id: "honkai_star_rail"
+developer: "miHoYo"
+version: "1.0.0"
+
+# 1. 2D UI Screen Vocabulary (States matching the DesktopTree parser)
+screen_vocabulary:
+  states:
+    - name: "world_hud"
+      key_templates: ["hud_map_icon", "hud_phone_icon"]
+      ocr_triggers: ["Map", "Quest"]
+    - name: "npc_dialog"
+      key_templates: ["dialog_skip_icon"]
+      ocr_triggers: ["Katheryne", "Interstellar Peace Guide"]
+    - name: "combat_arena"
+      key_templates: ["turn_indicator", "action_bar"]
+      ocr_triggers: ["Turn", "Speed"]
+
+# 2. Keymap Translations (Peripheral Nerves conversion)
+keymap:
+  movement:
+    forward: "W"
+    backward: "S"
+    left: "A"
+    right: "D"
+  interaction:
+    trigger: "F"
+    cancel: "Esc"
+    menu: "Esc"
+  combat:
+    basic_attack: "Q"
+    skill: "E"
+    ultimate_ch1: "1"
+    ultimate_ch2: "2"
+    ultimate_ch3: "3"
+    ultimate_ch4: "4"
+
+# 3. 3D World Navigation & Landmarks (WorldStateGraph configuration)
+world_knowledge:
+  landmarks:
+    - id: "parlor_car_anchor"
+      name: "Astral Express Parlor Car Anchor"
+      coords_xyz: [102.5, 0.0, -15.4]
+    - id: "pom_pom_npc"
+      name: "Pom-Pom"
+      coords_xyz: [105.0, 0.0, -10.2]
+  navigation_graph:
+    nodes:
+      - id: "spawn_point"
+        coords_xyz: [100.0, 0.0, -20.0]
+      - id: "midpoint"
+        coords_xyz: [102.0, 0.0, -15.0]
+      - id: "pom_pom_interact"
+        coords_xyz: [104.5, 0.0, -11.0]
+    edges:
+      - from: "spawn_point"
+        to: "midpoint"
+        action: "run"
+      - from: "midpoint"
+        to: "pom_pom_interact"
+        action: "run"
+
+# 4. Turn-based Combat Combo Profiles (Spinal Cord Combat Reflex Engine)
+combat_combos:
+  team_composition:
+    - index: 1
+      name: "Trailblazer"
+      role: "dps"
+      default_actions:
+        - condition: "skill_points > 1"
+          action: "cast_skill_e"
+        - condition: "skill_points <= 1"
+          action: "combo_normal_attack"
+        - condition: "ultimate_ready == true"
+          action: "cast_burst_q"
+    - index: 2
+      name: "March 7th"
+      role: "shielder"
+      default_actions:
+        - condition: "low_hp_ally == true"
+          action: "cast_skill_e"  # Shield lowest HP ally
+        - condition: "always"
+          action: "combo_normal_attack"

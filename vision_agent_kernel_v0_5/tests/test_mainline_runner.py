@@ -20,6 +20,11 @@ def _claim(claim_type: str = "screen_state_match") -> ClaimContract:
     return ClaimContract(claim_type=claim_type)
 
 
+def _exec_fn(node: MissionNodeV4) -> dict[str, str]:
+    """Return claim data matching the node's output_claims."""
+    return {c.claim_type: "ok" for c in node.output_claims if c.claim_type} or {"result": "ok"}
+
+
 def _node(
     node_id: str = "n1",
     node_type: str = "observe",
@@ -46,7 +51,7 @@ def _linear_graph() -> MissionGraphV4:
 
 class TestMainlineRunner:
     def test_linear_graph_dry_run(self) -> None:
-        runner = MainlineRunner()
+        runner = MainlineRunner(skill_execute_fn=_exec_fn)
         graph = _linear_graph()
         result = runner.run(graph)
         assert result.success
@@ -77,7 +82,7 @@ class TestMainlineRunner:
 
         def execute_fn(node):
             executed.append(node.node_id)
-            return {"claim": "verified"}
+            return _exec_fn(node)
 
         runner = MainlineRunner(skill_execute_fn=execute_fn)
         result = runner.run(_linear_graph())
@@ -92,7 +97,7 @@ class TestMainlineRunner:
             call_count += 1
             if node.node_id == "mid":
                 raise RuntimeError("skill failed")
-            return {}
+            return _exec_fn(node)
 
         runner = MainlineRunner(skill_execute_fn=failing_fn, max_node_retries=1)
         result = runner.run(_linear_graph())
@@ -113,7 +118,7 @@ class TestMainlineRunner:
         def fail_on_b(node):
             if node.node_id == "b":
                 raise RuntimeError("fail")
-            return {}
+            return _exec_fn(node)
 
         result = MainlineRunner(skill_execute_fn=fail_on_b, max_node_retries=0).run(g)
         assert "a" in result.completed_nodes
@@ -130,7 +135,7 @@ class TestMainlineRunner:
 
     def test_sentinel_integration(self) -> None:
         sentinel = SentinelRuntime()
-        runner = MainlineRunner(sentinel=sentinel)
+        runner = MainlineRunner(sentinel=sentinel, skill_execute_fn=_exec_fn)
         result = runner.run(_linear_graph())
         assert result.success
         # No anomalies in healthy execution
@@ -149,7 +154,7 @@ class TestMainlineRunner:
         assert not result.success  # no nodes = no terminals completed
 
     def test_single_node_graph(self) -> None:
-        runner = MainlineRunner()
+        runner = MainlineRunner(skill_execute_fn=_exec_fn)
         g = MissionGraphV4()
         g.add_node(_node("only", outputs=(_claim("done"),)))
         result = runner.run(g)
@@ -167,7 +172,7 @@ class TestMainlineRunner:
         g.add_edge(MissionEdgeV4("b", "d"))
         g.add_edge(MissionEdgeV4("c", "d"))
 
-        runner = MainlineRunner()
+        runner = MainlineRunner(skill_execute_fn=_exec_fn)
         result = runner.run(g)
         assert result.success
         assert len(result.completed_nodes) == 4

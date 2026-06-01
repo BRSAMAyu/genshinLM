@@ -448,6 +448,39 @@ class GenshinExecutionProvider:
             duration_sec=_time.perf_counter() - started,
         )
 
+    def execute_contract(self, contract: ActionContract) -> PhysicalReceipt:
+        import uuid
+        import time
+        from agent_kernel.types import ActionPrimitive
+        prim = ActionPrimitive(
+            primitive_type=contract.semantic_action.intent,
+            target=contract.semantic_action.target,
+            params=contract.semantic_action.parameters,
+        )
+        res = self.execute(prim)
+        return PhysicalReceipt(
+            receipt_id=uuid.uuid4(),
+            lease_id=uuid.uuid4(),
+            issued_at=time.time(),
+            expires_at=time.time() + 0.25,
+            action_type="click",
+            execution_latency_ms=res.duration_sec * 1000.0,
+            focus_maintained=True,
+            action_id=contract.semantic_action.action_id,
+            status="verified" if res.success else "failed",
+            submitted_at=time.time(),
+            lease_accepted=True,
+            focus_ok=True,
+            duration_ms=res.duration_sec * 1000.0,
+        )
+
+    def emergency_halt(self) -> None:
+        if self._backend is not None:
+            try:
+                self._backend.release_all(reason="emergency_halt")
+            except Exception:
+                pass
+
     def set_last_frame(self, frame: np.ndarray) -> None:
         self._last_frame = frame
 

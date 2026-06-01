@@ -1,0 +1,18 @@
+{
+  "metadata": {
+    "checkpoint_id": "ck_20260601_101539_020",
+    "checkpoint_type": "incremental",
+    "session_id": "skill_registry",
+    "triggered_by": "skill_character_progression_full",
+    "agent_version": "v0.5",
+    "game_version": "",
+    "created_at": 322939.0281484
+  },
+  "account_snapshot": {},
+  "task_state": {
+    "last_action": "character_progression_full"
+  },
+  "location_snapshot": {},
+  "resource_snapshot": {},
+  "checksum": "a7721308b1fe2295fcdf73931c386cf41424064723a4fcff4f7911a48c3ae37b"
+}

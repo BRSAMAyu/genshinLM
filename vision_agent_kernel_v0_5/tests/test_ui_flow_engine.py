@@ -21,6 +21,8 @@ from interaction.ui_flow_engine import (
     UIFlowTimeout,
     UIStep,
     click,
+    click_artifact_slot,
+    click_character_slot,
     click_menu_button,
     confirm,
     delay,
@@ -43,6 +45,7 @@ from interaction.ui_flows import (
     CLOSE_MENU,
     TELEPORT_FLOW,
     CHARACTER_LEVEL_UP,
+    CHARACTER_SELECT_IN_MENU,
     WISH_TEN_PULL,
     get_flow,
 )
@@ -367,3 +370,95 @@ class TestUIFlowsLibrary:
 
     def test_flow_count_minimum(self) -> None:
         assert len(ALL_FLOWS) >= 20, f"expected at least 20 flows, got {len(ALL_FLOWS)}"
+
+
+class TestCharacterSlotSelection:
+    def test_click_character_slot_valid(self) -> None:
+        step = click_character_slot(1)
+        assert step.type == STEP_CLICK_AT
+        assert step.nx == 0.05
+        assert step.ny == 0.88
+
+    def test_click_character_slot_4(self) -> None:
+        step = click_character_slot(4)
+        assert step.nx == 0.26
+        assert step.ny == 0.88
+
+    def test_click_character_slot_invalid_raises(self) -> None:
+        with pytest.raises(ValueError, match="slot must be 1-4"):
+            click_character_slot(5)
+
+    def test_click_character_slot_0_raises(self) -> None:
+        with pytest.raises(ValueError, match="slot must be 1-4"):
+            click_character_slot(0)
+
+    def test_character_select_in_menu_registered(self) -> None:
+        assert "character_select_in_menu" in ALL_FLOWS
+        flow = ALL_FLOWS["character_select_in_menu"]
+        assert flow.precondition_state == "full_menu"
+        types = [s.type for s in flow.steps]
+        assert STEP_WAIT_STATE in types
+        assert STEP_CLICK_AT in types
+
+
+class TestArtifactSlotSelection:
+    def test_click_artifact_slot_flower(self) -> None:
+        step = click_artifact_slot("flower")
+        assert step.type == STEP_CLICK_AT
+        assert step.nx == 0.50
+        assert step.ny == 0.30
+
+    def test_click_artifact_slot_plume(self) -> None:
+        step = click_artifact_slot("plume")
+        assert step.nx == 0.65
+        assert step.ny == 0.50
+
+    def test_click_artifact_slot_circlet(self) -> None:
+        step = click_artifact_slot("circlet")
+        assert step.nx == 0.50
+        assert step.ny == 0.70
+
+    def test_click_artifact_slot_sands(self) -> None:
+        step = click_artifact_slot("sands")
+        assert step.nx == 0.35
+        assert step.ny == 0.50
+
+    def test_click_artifact_slot_goblet(self) -> None:
+        step = click_artifact_slot("goblet")
+        assert step.nx == 0.50
+        assert step.ny == 0.50
+
+    def test_click_artifact_slot_invalid_raises(self) -> None:
+        with pytest.raises(ValueError, match="unknown artifact slot"):
+            click_artifact_slot("ring")
+
+    def test_artifact_equip_uses_flower_slot(self) -> None:
+        flow = ALL_FLOWS["artifact_equip"]
+        # Steps: wait_state, delay, click_char_tab, click_artifact_slot, ...
+        slot_step = flow.steps[3]
+        assert slot_step.nx == 0.50
+        assert slot_step.ny == 0.30
+
+    def test_artifact_enhance_uses_flower_slot(self) -> None:
+        flow = ALL_FLOWS["artifact_enhance"]
+        # Steps: wait_state, delay, click_char_tab, click_artifact_slot, ...
+        slot_step = flow.steps[3]
+        assert slot_step.nx == 0.50
+        assert slot_step.ny == 0.30
+
+
+class TestWeaponEnhanceFlow:
+    def test_weapon_enhance_selects_weapon_first(self) -> None:
+        flow = ALL_FLOWS["weapon_enhance"]
+        # Step 2: click_char_tab("weapon")
+        # Step 3: click equipped weapon at (0.85, 0.50)
+        weapon_select = flow.steps[3]
+        assert weapon_select.reason == "click_equipped_weapon"
+        assert weapon_select.nx == 0.85
+        assert weapon_select.ny == 0.50
+
+    def test_weapon_enhance_has_enhance_button(self) -> None:
+        flow = ALL_FLOWS["weapon_enhance"]
+        enhance_step = flow.steps[4]
+        assert enhance_step.reason == "click_enhance_button"
+        assert enhance_step.ny == 0.70

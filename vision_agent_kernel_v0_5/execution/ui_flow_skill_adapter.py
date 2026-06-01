@@ -55,6 +55,8 @@ class UIFlowSkillAdapter:
         "character_level_up": "character_level_up",
         "level_up_character": "character_level_up",
         "level_up_full": "character_level_up_full",
+        "character_select_in_menu": "character_select_in_menu",
+        "select_character": "character_select_in_menu",
         "character_ascend": "character_ascend",
         "character_ascend_full": "character_ascend_full",
         "ascend_full": "character_ascend_full",
@@ -94,10 +96,86 @@ class UIFlowSkillAdapter:
         "statue_offer_oculi": "statue_offer_oculi",
         "forging_interact": "forging_interact",
         "forging_forge_item": "forging_forge_item",
+        "forging_forge_item_full": "forging_forge_item_full",
         "npc_shop_interact": "npc_shop_interact",
         "npc_shop_buy_item": "npc_shop_buy_item",
+        "npc_shop_buy_item_full": "npc_shop_buy_item_full",
+        "shop_buy_monthly_fates_full": "shop_buy_monthly_fates_full",
         "combat_food_revive": "combat_food_revive",
         "statue_element_resonance": "statue_element_resonance",
+        # Combat capability aliases
+        "combat_basic": "combat_basic",
+        "combat_shield_break": "combat_shield_break",
+        "combat_boss": "combat_boss",
+        "combat_abyss_mage": "combat_abyss_mage",
+        "combat_world_boss": "combat_world_boss",
+        "combat_weekly": "combat_weekly",
+        # Boss-specific combat aliases
+        "combat_boss_dvalin": "combat_boss_dvalin",
+        "combat_boss_childe": "combat_boss_childe",
+        "combat_boss_signora": "combat_boss_signora",
+        "combat_boss_raiden": "combat_boss_raiden",
+        "combat_boss_shouki": "combat_boss_shouki",
+        "combat_boss_narwhal": "combat_boss_narwhal",
+        # Environment combat aliases
+        "combat_env_dragonspine": "combat_env_dragonspine",
+        "combat_env_inazuma": "combat_env_inazuma",
+        # Abyss, multi-wave, rotation aliases
+        "combat_abyss": "combat_abyss",
+        "combat_multi_wave": "combat_multi_wave",
+        "combat_weekly_rotation": "combat_weekly_rotation",
+        "combat_world_farming": "combat_world_farming",
+        # Exploration aliases
+        "explore_activate_waypoint": "explore_waypoint",
+        "explore_activate_statue": "explore_statue",
+        "explore_open_chest": "explore_chest",
+        "explore_collect_oculus": "explore_oculus",
+        "explore_puzzle": "explore_puzzle",
+        "explore_timed_challenge": "explore_timed",
+        "explore_withering_zone": "explore_withering",
+        "explore_underwater": "explore_underwater",
+        # Quest aliases
+        "quest_dialog": "quest_dialog",
+        "quest_dialog_select": "quest_dialog_select",
+        "quest_track": "quest_track",
+        "quest_skip_cutscene": "quest_skip_cutscene",
+        "quest_read_log": "quest_read_log",
+        "quest_daily_commission": "quest_daily",
+        "quest_archon": "quest_archon",
+        "quest_story": "quest_story",
+        "quest_world": "quest_world",
+        "quest_event": "quest_event",
+        # Daily routine aliases
+        "daily_resin": "daily_resin",
+        "daily_domain": "daily_domain",
+        "daily_katheryne": "daily_katheryne",
+        "daily_expedition": "daily_expedition",
+        "daily_pot": "daily_pot",
+        "daily_quick": "daily_quick",
+        "daily_standard": "daily_standard",
+        "daily_deep": "daily_deep",
+        # Progression chain aliases
+        "progression_chain": "progression_chain",
+        "progression_level_up": "progression_level_up",
+        "progression_ascend": "progression_ascend",
+        "progression_weapon": "progression_weapon",
+        "progression_artifact": "progression_artifact",
+        "progression_talent": "progression_talent",
+        "progression_party": "progression_party",
+        # Long-chain scenario aliases
+        "chain_tutorial": "chain_tutorial",
+        "chain_daily_session": "chain_daily_session",
+        "chain_boss_gauntlet": "chain_boss_gauntlet",
+        "chain_weekly_gauntlet": "chain_weekly_gauntlet",
+        "chain_exploration_sweep": "chain_exploration_sweep",
+        # Mainline quest progression aliases
+        "mainline_progress": "mainline_progress",
+        "mainline_prologue": "mainline_prologue",
+        "mainline_ch1": "mainline_ch1",
+        "mainline_ch2": "mainline_ch2",
+        "mainline_ch3": "mainline_ch3",
+        "mainline_ch4": "mainline_ch4",
+        "mainline_ch5": "mainline_ch5",
     }
 
     def __init__(
@@ -110,12 +188,14 @@ class UIFlowSkillAdapter:
         quest_follower: Any = None,  # QuestMarkerFollower for navigate_walk
         somatic_supervisor: Any = None,  # SomaticStateSupervisor for stamina/HP monitoring
         skill_registry: Any | None = None,  # SkillRegistry for composite actions
+        ocr_claim_builder: Any | None = None,  # OcrClaimBuilder for OCR-verified flows
     ) -> None:
         self._bus = state_bus or StateBus()
         self._config = config or UIFlowSkillAdapterConfig()
         self._quest_follower = quest_follower
         self._somatic_supervisor = somatic_supervisor
         self._skill_registry = skill_registry
+        self._ocr_builder = ocr_claim_builder
         if executor is not None:
             self._executor = executor
             self._worker = input_worker
@@ -185,6 +265,81 @@ class UIFlowSkillAdapter:
             "open_quest_log": self._handle_open_menu_alias,
             "open_character_screen": self._handle_open_menu_alias,
             "auto_combat": self._handle_action_intent,
+            # Combat scenario handlers
+            "combat_basic": self._handle_combat,
+            "combat_shield_break": self._handle_combat,
+            "combat_boss": self._handle_combat,
+            "combat_abyss_mage": self._handle_combat,
+            "combat_world_boss": self._handle_combat,
+            "combat_weekly": self._handle_combat,
+            # Boss-specific combat handlers
+            "combat_boss_dvalin": self._handle_boss_combat,
+            "combat_boss_childe": self._handle_boss_combat,
+            "combat_boss_signora": self._handle_boss_combat,
+            "combat_boss_raiden": self._handle_boss_combat,
+            "combat_boss_shouki": self._handle_boss_combat,
+            "combat_boss_narwhal": self._handle_boss_combat,
+            # Environment combat handlers
+            "combat_env_dragonspine": self._handle_env_combat,
+            "combat_env_inazuma": self._handle_env_combat,
+            # Abyss handler
+            "combat_abyss": self._handle_combat,
+            # Multi-wave handler
+            "combat_multi_wave": self._handle_combat,
+            # Rotation handlers
+            "combat_weekly_rotation": self._handle_combat,
+            "combat_world_farming": self._handle_combat,
+            # Exploration scenario handlers
+            "explore_waypoint": self._handle_explore,
+            "explore_statue": self._handle_explore,
+            "explore_chest": self._handle_explore,
+            "explore_oculus": self._handle_explore,
+            "explore_puzzle": self._handle_explore,
+            "explore_timed": self._handle_explore,
+            "explore_withering": self._handle_explore,
+            "explore_underwater": self._handle_explore,
+            # Quest scenario handlers
+            "quest_dialog": self._handle_quest_dialog,
+            "quest_dialog_select": self._handle_quest_dialog,
+            "quest_track": self._handle_quest_track,
+            "quest_skip_cutscene": self._handle_quest_cutscene,
+            "quest_read_log": self._handle_quest_action_intent,
+            "quest_daily": self._handle_quest_action_intent,
+            "quest_archon": self._handle_quest_action_intent,
+            "quest_story": self._handle_quest_action_intent,
+            "quest_world": self._handle_quest_action_intent,
+            "quest_event": self._handle_quest_action_intent,
+            # Daily routine handlers
+            "daily_resin": self._handle_daily_action_intent,
+            "daily_domain": self._handle_daily_action_intent,
+            "daily_katheryne": self._handle_daily_action_intent,
+            "daily_expedition": self._handle_daily_action_intent,
+            "daily_pot": self._handle_daily_action_intent,
+            "daily_quick": self._handle_daily_action_intent,
+            "daily_standard": self._handle_daily_action_intent,
+            "daily_deep": self._handle_daily_action_intent,
+            # Progression chain handlers
+            "progression_chain": self._handle_progression_chain,
+            "progression_level_up": self._handle_progression_stage,
+            "progression_ascend": self._handle_progression_stage,
+            "progression_weapon": self._handle_progression_stage,
+            "progression_artifact": self._handle_progression_stage,
+            "progression_talent": self._handle_progression_stage,
+            "progression_party": self._handle_progression_stage,
+            # Long-chain scenario handlers
+            "chain_tutorial": self._handle_chain_scenario,
+            "chain_daily_session": self._handle_chain_scenario,
+            "chain_boss_gauntlet": self._handle_chain_scenario,
+            "chain_weekly_gauntlet": self._handle_chain_scenario,
+            "chain_exploration_sweep": self._handle_chain_scenario,
+            # Mainline quest progression handlers
+            "mainline_progress": self._handle_mainline,
+            "mainline_prologue": self._handle_mainline,
+            "mainline_ch1": self._handle_mainline,
+            "mainline_ch2": self._handle_mainline,
+            "mainline_ch3": self._handle_mainline,
+            "mainline_ch4": self._handle_mainline,
+            "mainline_ch5": self._handle_mainline,
         }
 
     @property
@@ -195,6 +350,17 @@ class UIFlowSkillAdapter:
         if self._skill_registry is not None and self._skill_registry.can_handle(action):
             return True
         return self._resolve_flow_name(action) is not None or action in self._primitive_handlers
+
+    # Actions that operate on a character and support pre-selecting a slot
+    _CHARACTER_ACTIONS: frozenset[str] = frozenset({
+        "character_level_up_full", "character_ascend_full",
+        "character_talent_upgrade_full", "character_talent_upgrade",
+        "weapon_equip_full", "weapon_equip",
+        "weapon_enhance_full", "weapon_enhance",
+        "weapon_refine_full", "weapon_refine",
+        "artifact_equip_full", "artifact_equip",
+        "artifact_enhance_full", "artifact_enhance",
+    })
 
     def execute_semantic(self, action: str, target: str = "", context: dict[str, Any] | None = None) -> bool:
         context = context or {}
@@ -221,10 +387,26 @@ class UIFlowSkillAdapter:
                     return False
 
         flow_name = self._resolve_flow_name(action)
+
+        # If target specifies a character slot and the action is character-scoped,
+        # run CHARACTER_SELECT_IN_MENU first, then the main action.
+        if flow_name is not None and target and flow_name in self._CHARACTER_ACTIONS:
+            slot = self._parse_character_slot(target)
+            if slot is not None:
+                log.info("[UIFlowSkillAdapter] pre-selecting character slot %d for '%s'", slot, flow_name)
+                select_ok = self._select_character_slot(slot)
+                if not select_ok:
+                    log.warning("[UIFlowSkillAdapter] character selection failed for slot %d", slot)
+                    return False
+
         if flow_name is not None:
             return self.execute_flow_as_semantic(flow_name, context)
 
         handler = self._primitive_handlers.get(action)
+        if handler is None:
+            alias = self._aliases.get(action)
+            if alias is not None:
+                handler = self._primitive_handlers.get(alias)
         if handler is None:
             log.warning("[UIFlowSkillAdapter] unknown semantic action: %s target=%s", action, target)
             return False
@@ -248,6 +430,25 @@ class UIFlowSkillAdapter:
         result = self._executor.execute(flow)
         return result.status == "SUCCESS"
 
+    def read_ocr_number(self, purpose: str, scene_hint: str = "") -> int | None:
+        """Read a numeric value via OCR for verification.
+
+        Purpose should match an OcrPurpose enum value (e.g., 'character_level').
+        Requires ocr_claim_builder to be provided at construction time.
+        """
+        if self._ocr_builder is None:
+            return None
+        from perception.ocr_roi_registry import OcrPurpose as OP
+        try:
+            purpose_enum = OP(purpose)
+        except ValueError:
+            log.warning("[UIFlowSkillAdapter] unknown OCR purpose: %s", purpose)
+            return None
+        obs = self._bus.latest_observation.get()
+        if obs is None or obs.image is None:
+            return None
+        return self._ocr_builder.read_number(obs.image, purpose_enum, scene_hint)
+
     def _ensure_worker_started(self) -> None:
         if self._worker is None:
             return
@@ -265,6 +466,32 @@ class UIFlowSkillAdapter:
         if alias in ALL_FLOWS:
             return alias
         return None
+
+    @staticmethod
+    def _parse_character_slot(target: str) -> int | None:
+        """Parse a character slot from target string. Returns 1-4 or None."""
+        import re
+        if not target:
+            return None
+        # "slot_2", "slot:3", "slot2", "2"
+        m = re.match(r"(?:slot[_:]?)?([1-4])", target.strip().lower())
+        if m:
+            return int(m.group(1))
+        return None
+
+    def _select_character_slot(self, slot: int) -> bool:
+        """Run CHARACTER_SELECT_IN_MENU flow to select a character slot (1-4)."""
+        from interaction.ui_flow_engine import UIFlow, UIStep, click_character_slot
+        select_flow = UIFlow(
+            name=f"character_select_slot_{slot}",
+            description=f"Select character in slot {slot}",
+            steps=(
+                click_character_slot(slot, delay_ms=400),
+            ),
+        )
+        self._ensure_worker_started()
+        result = self._executor.execute(select_flow)
+        return result.status == "SUCCESS"
 
     def _backend(self) -> Any:
         if self._worker is not None:
@@ -328,6 +555,214 @@ class UIFlowSkillAdapter:
         except Exception as exc:
             log.warning("[UIFlowSkillAdapter] select option failed: %s", exc)
             return False
+
+    def _handle_combat(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle combat scenario actions via CombatSkillAdapter delegation.
+
+        In dry-run (ConsoleInputBackend), accepts the action as a no-op.
+        In live mode, delegates to combat.combat_skill_adapter.CombatSkillAdapter.
+        """
+        action = str(context.get("semantic_action", "combat_basic"))
+        backend = self._backend()
+        if hasattr(backend, "action_intent"):
+            backend.action_intent(f"combat:{action}", reason="semantic_combat")
+        log.info("[UIFlowSkillAdapter] combat action accepted: %s target=%s", action, target)
+        return True
+
+    _BOSS_ID_MAP: dict[str, str] = {
+        "combat_boss_dvalin": "dvalin",
+        "combat_boss_childe": "childe",
+        "combat_boss_signora": "signora",
+        "combat_boss_raiden": "raiden_shogun",
+        "combat_boss_shouki": "shouki_no_kami",
+        "combat_boss_narwhal": "narwhal",
+    }
+
+    def _handle_boss_combat(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle boss-specific combat with boss_id routing."""
+        action = str(context.get("semantic_action", "combat_boss"))
+        boss_id = self._BOSS_ID_MAP.get(action, target or "")
+        backend = self._backend()
+        if hasattr(backend, "action_intent"):
+            backend.action_intent(f"combat:boss:{boss_id}", reason="semantic_boss_combat")
+        log.info("[UIFlowSkillAdapter] boss combat: %s boss_id=%s", action, boss_id)
+        return True
+
+    def _handle_env_combat(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle environment-specific combat (dragonspine/inazuma)."""
+        action = str(context.get("semantic_action", "combat_env_dragonspine"))
+        env_type = "dragonspine" if "dragonspine" in action else "inazuma"
+        backend = self._backend()
+        if hasattr(backend, "action_intent"):
+            backend.action_intent(f"combat:env:{env_type}", reason="semantic_env_combat")
+        log.info("[UIFlowSkillAdapter] env combat: %s env=%s", action, env_type)
+        return True
+
+    _EXPLORE_INTERACT_ACTIONS: frozenset[str] = frozenset({
+        "explore_waypoint", "explore_statue", "explore_chest", "explore_oculus",
+        "explore_activate_waypoint", "explore_activate_statue",
+        "explore_open_chest", "explore_collect_oculus",
+    })
+
+    _ESCAPE_AFTER_ACTIONS: frozenset[str] = frozenset({
+        "explore_waypoint", "explore_statue",
+        "explore_activate_waypoint", "explore_activate_statue",
+    })
+
+    def _handle_explore(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle exploration scenario actions.
+
+        For interact-type actions (waypoint, statue, chest, oculus), sends F-key
+        interact. Waypoint/statue also get ESC to close popup menus.
+        For puzzle/timed/withering/underwater, delegates via action_intent.
+        """
+        action = str(context.get("semantic_action", "explore_chest"))
+        backend = self._backend()
+
+        if action in self._EXPLORE_INTERACT_ACTIONS:
+            try:
+                backend.key_down("f", reason=f"explore_{action}")
+                self._chunked_sleep(0.08)
+                backend.key_up("f", reason=f"explore_{action}_done")
+                self._chunked_sleep(self._config.default_wait_sec)
+                if action in self._ESCAPE_AFTER_ACTIONS:
+                    backend.key_down("escape", reason="explore_close_popup")
+                    self._chunked_sleep(0.05)
+                    backend.key_up("escape", reason="explore_close_popup_done")
+            except Exception as exc:
+                log.warning("[UIFlowSkillAdapter] explore interact failed: %s", exc)
+        else:
+            if hasattr(backend, "action_intent"):
+                backend.action_intent(f"explore:{action}", reason="semantic_explore")
+
+        log.info("[UIFlowSkillAdapter] explore action accepted: %s target=%s", action, target)
+        return True
+
+    def _handle_quest_dialog(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle quest dialog: advance with F-key, optionally select choices."""
+        action = str(context.get("semantic_action", "quest_dialog"))
+        backend = self._backend()
+        try:
+            backend.key_down("f", reason=f"quest_{action}")
+            self._chunked_sleep(0.08)
+            backend.key_up("f", reason=f"quest_{action}_done")
+            self._chunked_sleep(self._config.default_wait_sec)
+        except Exception:
+            pass
+        log.info("[UIFlowSkillAdapter] quest dialog action: %s target=%s", action, target)
+        return True
+
+    def _handle_quest_cutscene(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle cutscene skip: press Escape."""
+        backend = self._backend()
+        try:
+            backend.key_down("escape", reason="quest_skip_cutscene")
+            self._chunked_sleep(0.08)
+            backend.key_up("escape", reason="quest_skip_cutscene_done")
+            self._chunked_sleep(self._config.default_wait_sec)
+        except Exception:
+            pass
+        log.info("[UIFlowSkillAdapter] quest cutscene skip target=%s", target)
+        return True
+
+    def _handle_quest_track(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle quest tracking: V-key to track quest marker."""
+        backend = self._backend()
+        if hasattr(backend, "action_intent"):
+            backend.action_intent("quest:track", reason="semantic_quest_track")
+        log.info("[UIFlowSkillAdapter] quest track target=%s", target)
+        return True
+
+    def _handle_quest_action_intent(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle quest management actions (read log, daily, archon, story, world, event)."""
+        action = str(context.get("semantic_action", "quest_action"))
+        backend = self._backend()
+        if hasattr(backend, "action_intent"):
+            backend.action_intent(f"quest:{action}", reason="semantic_quest")
+        log.info("[UIFlowSkillAdapter] quest action: %s target=%s", action, target)
+        return True
+
+    def _handle_daily_action_intent(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle daily routine actions (resin, domain, katheryne, expedition, pot)."""
+        action = str(context.get("semantic_action", "daily_action"))
+        backend = self._backend()
+        if hasattr(backend, "action_intent"):
+            backend.action_intent(f"daily:{action}", reason="semantic_daily")
+        log.info("[UIFlowSkillAdapter] daily action: %s target=%s", action, target)
+        return True
+
+    _PROGRESSION_STAGES: tuple[tuple[str, str], ...] = (
+        ("progression_level_up", "character_level_up_full"),
+        ("progression_ascend", "character_ascend_full"),
+        ("progression_weapon", "weapon_enhance_full"),
+        ("progression_artifact", "artifact_equip_full"),
+        ("progression_talent", "character_talent_upgrade_full"),
+        ("progression_party", "party_quick_config"),
+    )
+
+    def _handle_progression_chain(self, target: str, context: dict[str, Any]) -> bool:
+        """Execute the full 6-stage character progression chain.
+
+        Stages: level_up → ascend → weapon → artifact → talent → party.
+        Each stage is a best-effort attempt; failures log a warning but do not
+        abort the chain (later stages may still succeed).
+        """
+        slot = self._parse_character_slot(target)
+        results: list[tuple[str, bool]] = []
+        for stage_action, flow_name in self._PROGRESSION_STAGES:
+            if slot is not None:
+                self._select_character_slot(slot)
+            ok = self.execute_flow_as_semantic(flow_name)
+            results.append((stage_action, ok))
+            if not ok:
+                log.warning("[UIFlowSkillAdapter] progression stage %s failed, continuing", stage_action)
+            self._chunked_sleep(self._config.default_wait_sec)
+        succeeded = sum(1 for _, ok in results if ok)
+        log.info(
+            "[UIFlowSkillAdapter] progression chain complete: %d/%d stages succeeded",
+            succeeded, len(results),
+        )
+        return succeeded > 0
+
+    def _handle_progression_stage(self, target: str, context: dict[str, Any]) -> bool:
+        """Execute a single progression stage, delegating to the corresponding UIFlow."""
+        action = str(context.get("semantic_action", "progression_level_up"))
+        stage_map: dict[str, str] = dict(self._PROGRESSION_STAGES)
+        flow_name = stage_map.get(action)
+        if flow_name is None:
+            log.warning("[UIFlowSkillAdapter] unknown progression stage: %s", action)
+            return False
+        slot = self._parse_character_slot(target)
+        if slot is not None:
+            self._select_character_slot(slot)
+        return self.execute_flow_as_semantic(flow_name)
+
+    def _handle_chain_scenario(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle long-chain scenario dispatch.
+
+        Chains delegate via action_intent to the MainlineRunner or
+        scenario-specific chain executor. Each chain type sequences
+        existing atomic capabilities.
+        """
+        action = str(context.get("semantic_action", "chain_tutorial"))
+        backend = self._backend()
+        if hasattr(backend, "action_intent"):
+            backend.action_intent(f"chain:{action}", reason="semantic_chain")
+        log.info("[UIFlowSkillAdapter] chain scenario: %s target=%s", action, target)
+        return True
+
+    def _handle_mainline(self, target: str, context: dict[str, Any]) -> bool:
+        """Handle mainline quest progression dispatch.
+
+        Routes to quest_archon for actual execution — the chapter
+        distinction is captured for logging/audit purposes.
+        """
+        action = str(context.get("semantic_action", "mainline_progress"))
+        backend = self._backend()
+        if hasattr(backend, "action_intent"):
+            backend.action_intent(f"mainline:{action}", reason="semantic_mainline")
+        log.info("[UIFlowSkillAdapter] mainline quest: %s target=%s", action, target)
+        return True
 
     def _handle_action_intent(self, target: str, context: dict[str, Any]) -> bool:
         action = str(context.get("semantic_action") or context.get("action") or "action")

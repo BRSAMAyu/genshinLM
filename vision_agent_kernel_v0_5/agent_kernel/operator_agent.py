@@ -342,26 +342,56 @@ class OperatorAgent:
             confidence=0.85,
         )
 
+    def parse_override(self, user_command: str, tree: Any = None) -> RuntimeOverride:
+        """Parse natural language command into a safe policy RuntimeOverride patch (CompanionAgent compliance)."""
+        res = self.propose_override(user_command, {})
+        if res is not None:
+            return res
+        return RuntimeOverride(
+            override_id=f"ovr_{uuid.uuid4().hex[:8]}",
+            target_parameter="",
+            new_value="",
+            reason=user_command,
+            source="user",
+            scope="session",
+            confidence=0.0
+        )
+
     def propose_capsule_patch(
         self,
-        override: RuntimeOverride,
-        session_outcome: str,
+        arg1: Any,
+        arg2: Any,
     ) -> CapsulePatchProposal | None:
-        """Propose making a runtime override permanent as a Capsule YAML patch.
-
-        Only proposes if the session outcome was successful.
-        """
-        if session_outcome != "success":
-            return None
-        return CapsulePatchProposal(
-            proposal_id=f"patch_{uuid.uuid4().hex[:8]}",
-            capsule_id="runtime_params",
-            yaml_path=f"parameters/{override.target_parameter}",
-            patch_data=((override.target_parameter, override.new_value),),
-            reason=f"Promoted from session override: {override.reason}",
-            verified=False,
-            user_confirmed=False,
-        )
+        """Propose making a runtime override permanent. Supports both legacy and L9 protocol signatures."""
+        if isinstance(arg1, str):
+            # L9 Protocol style: propose_capsule_patch(capsule_id, successful_override)
+            capsule_id = arg1
+            override = arg2
+            return CapsulePatchProposal(
+                proposal_id=f"patch_{uuid.uuid4().hex[:8]}",
+                capsule_id=capsule_id,
+                target_yaml_file=f"parameters/{override.target_parameter}",
+                yaml_path=f"parameters/{override.target_parameter}",
+                patch_data=((override.target_parameter, override.new_value),),
+                reason=f"Promoted from session override: {override.reason}",
+                verified=False,
+                user_confirmed=False,
+            )
+        else:
+            # Legacy style: propose_capsule_patch(override, session_outcome)
+            override = arg1
+            session_outcome = arg2
+            if session_outcome != "success":
+                return None
+            return CapsulePatchProposal(
+                proposal_id=f"patch_{uuid.uuid4().hex[:8]}",
+                capsule_id="runtime_params",
+                yaml_path=f"parameters/{override.target_parameter}",
+                patch_data=((override.target_parameter, override.new_value),),
+                reason=f"Promoted from session override: {override.reason}",
+                verified=False,
+                user_confirmed=False,
+            )
 
     def explain_current_state(self, state: dict[str, Any]) -> str:
         """Generate a human-readable explanation of the current agent state."""

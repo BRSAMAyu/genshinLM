@@ -451,7 +451,7 @@ class TestMainlineRunnerDryRunMarker(unittest.TestCase):
         with self.assertLogs("planning.mainline.mainline_runner", level="WARNING") as cm:
             result = runner._execute_node(node, completed=set())
 
-        self.assertIn("DRY-RUN", "\n".join(cm.output))
+        self.assertIn("no skill_execute_fn", "\n".join(cm.output))
         self.assertTrue(result.claim_data.get("dry_run"), "NodeResult.claim_data must mark dry_run=True")
 
 

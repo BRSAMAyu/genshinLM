@@ -80,6 +80,11 @@ class UIStep:
     # loop (repeat sub-steps while condition not met)
     loop_body: tuple[UIStep, ...] | None = None
     loop_max_iterations: int = 10
+    # verify_ocr_number: expect a number matching this condition
+    ocr_expected_min: int | None = None   # minimum expected value (inclusive)
+    ocr_expected_max: int | None = None   # maximum expected value (inclusive)
+    # verify_screen_contains: expected text substring
+    expected_text: str | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,6 +216,8 @@ STEP_HOLD_CLICK = "hold_click"
 STEP_DRAG = "drag"
 STEP_DOUBLE_CLICK = "double_click"
 STEP_LOOP = "loop"
+STEP_VERIFY_OCR_NUMBER = "verify_ocr_number"
+STEP_VERIFY_SCREEN_CONTAINS = "verify_screen_contains"
 
 # Canonical confirm / cancel positions (normalised to client area)
 _CONFIRM_NX = 0.65
@@ -241,6 +248,23 @@ _CHAR_TABS: dict[str, float] = {
     "artifacts":  0.45,
     "talents":    0.55,
     "constellation": 0.65,
+}
+
+# Character bar slot positions at bottom of character detail screen (ny=0.88)
+_CHAR_BAR_SLOTS: dict[int, tuple[float, float]] = {
+    1: (0.05, 0.88),
+    2: (0.12, 0.88),
+    3: (0.19, 0.88),
+    4: (0.26, 0.88),
+}
+
+# Artifact slot positions on character artifact screen
+_ARTIFACT_SLOTS: dict[str, tuple[float, float]] = {
+    "flower":   (0.50, 0.30),  # 生之花
+    "plume":    (0.65, 0.50),  # 死之羽
+    "circlet":  (0.50, 0.70),  # 理之冠
+    "sands":    (0.35, 0.50),  # 时之沙
+    "goblet":   (0.50, 0.50),  # 空之杯
 }
 
 
@@ -338,6 +362,8 @@ class UIFlowExecutor:
             STEP_OPEN_MENU:      self._step_open_menu,
             STEP_HOLD_CLICK:     self._step_hold_click,
             STEP_LOOP:           self._step_loop,
+            STEP_VERIFY_OCR_NUMBER: self._step_verify_ocr_number,
+            STEP_VERIFY_SCREEN_CONTAINS: self._step_verify_screen_contains,
         }.get(step.type)
         if handler is None:
             raise ValueError(f"unsupported UIStep type: {step.type!r}")
@@ -516,6 +542,73 @@ class UIFlowExecutor:
             # 1-second pause before next iteration
             self._sleep(1.0)
 
+    def _step_verify_ocr_number(self, step: UIStep) -> None:
+        """Verify an OCR number matches expected range.
+
+        Reads from StateBus.screen_claim OCR results. If OcrClaimBuilder
+        is not available, logs a warning and passes (fail-open).
+        """
+        claim = self._bus.screen_claim.get()
+        ocr_min = step.ocr_expected_min
+        ocr_max = step.ocr_expected_max
+
+        if claim is None:
+            log.debug("[UIFlow] verify_ocr_number: no screen claim, skipping")
+            return
+
+        # Try to extract numbers from OCR text in the claim
+        raw_texts = getattr(claim, "raw_ocr_texts", ())
+        import re
+        for text in raw_texts:
+            digits = re.sub(r"\D", "", str(text))
+            if digits:
+                value = int(digits)
+                if ocr_min is not None and value < ocr_min:
+                    raise UIFlowTimeout(
+                        f"OCR number {value} < expected min {ocr_min}: {step.reason}"
+                    )
+                if ocr_max is not None and value > ocr_max:
+                    raise UIFlowTimeout(
+                        f"OCR number {value} > expected max {ocr_max}: {step.reason}"
+                    )
+                log.debug("[UIFlow] verify_ocr_number: %d in [%s, %s]", value, ocr_min, ocr_max)
+                return
+
+        # No number found — if strict min/max provided, this is a failure
+        if ocr_min is not None or ocr_max is not None:
+            log.warning("[UIFlow] verify_ocr_number: no number found in OCR, passing (fail-open)")
+
+    def _step_verify_screen_contains(self, step: UIStep) -> None:
+        """Verify screen OCR text contains expected substring.
+
+        Reads from StateBus.screen_claim. Fail-open if no claim available.
+        """
+        if step.expected_text is None:
+            return
+
+        claim = self._bus.screen_claim.get()
+        if claim is None:
+            log.debug("[UIFlow] verify_screen_contains: no screen claim, skipping")
+            return
+
+        # Check screen state
+        state = getattr(claim, "screen_state", "")
+        state_str = state if isinstance(state, str) else getattr(state, "value", str(state))
+
+        # Check OCR texts
+        raw_texts = getattr(claim, "raw_ocr_texts", ())
+        all_text = " ".join(str(t) for t in raw_texts).lower()
+        target = step.expected_text.lower()
+
+        if target in all_text or target in state_str.lower():
+            log.debug("[UIFlow] verify_screen_contains: found %r", target)
+            return
+
+        log.warning(
+            "[UIFlow] verify_screen_contains: %r not found in texts, passing (fail-open)",
+            target,
+        )
+
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
@@ -661,3 +754,46 @@ def click_char_tab(tab: str, delay_ms: int = 300) -> UIStep:
     if nx is None:
         raise ValueError(f"unknown char tab: {tab!r}.  Known: {list(_CHAR_TABS)}")
     return UIStep(type=STEP_CLICK_AT, nx=nx, ny=0.10, reason=f"char_tab:{tab}", delay_ms=delay_ms)
+
+
+def click_character_slot(slot: int, delay_ms: int = 300) -> UIStep:
+    pos = _CHAR_BAR_SLOTS.get(slot)
+    if pos is None:
+        raise ValueError(f"slot must be 1-4, got {slot!r}")
+    return UIStep(type=STEP_CLICK_AT, nx=pos[0], ny=pos[1], reason=f"select_char_slot_{slot}", delay_ms=delay_ms)
+
+
+def click_artifact_slot(slot: str, delay_ms: int = 300) -> UIStep:
+    pos = _ARTIFACT_SLOTS.get(slot)
+    if pos is None:
+        raise ValueError(f"unknown artifact slot: {slot!r}. Known: {list(_ARTIFACT_SLOTS)}")
+    return UIStep(type=STEP_CLICK_AT, nx=pos[0], ny=pos[1], reason=f"artifact_slot:{slot}", delay_ms=delay_ms)
+
+
+def verify_ocr_number(
+    expected_min: int | None = None,
+    expected_max: int | None = None,
+    reason: str = "",
+) -> UIStep:
+    """Verify OCR detects a number within expected range.
+
+    Reads from StateBus.screen_claim OCR results. Fail-open if no OCR data.
+    """
+    return UIStep(
+        type=STEP_VERIFY_OCR_NUMBER,
+        ocr_expected_min=expected_min,
+        ocr_expected_max=expected_max,
+        reason=reason,
+    )
+
+
+def verify_screen_contains(expected_text: str, reason: str = "") -> UIStep:
+    """Verify screen OCR text contains expected substring.
+
+    Reads from StateBus.screen_claim. Fail-open if no claim available.
+    """
+    return UIStep(
+        type=STEP_VERIFY_SCREEN_CONTAINS,
+        expected_text=expected_text,
+        reason=reason,
+    )

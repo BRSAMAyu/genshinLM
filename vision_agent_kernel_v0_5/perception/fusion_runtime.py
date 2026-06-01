@@ -263,9 +263,12 @@ class PerceptionFusionRuntime:
         observation: Observation,
         state_bus: StateBus,
     ) -> None:
-        """FramePostProcessor interface entry point."""
+        """FramePostProcessor interface entry point.
+
+        NOTE: Does NOT publish observation — the pipeline is the single publisher.
+        This method only modifies observation in-place and writes to StateBus slots.
+        """
         self._process(frame, observation, state_bus)
-        state_bus.publish_observation(observation)
 
     def _process(
         self,
@@ -439,6 +442,9 @@ class PerceptionFusionRuntime:
                 state_bus.combat_signal.put(cs)
             except Exception as exc:
                 log.debug("[Fusion] combat detect failed: %s", exc)
+                state_bus.combat_signal.put(self._default_combat_signal(claim, frame_id, timestamp))
+        else:
+            state_bus.combat_signal.put(self._default_combat_signal(claim, frame_id, timestamp))
 
         # Navigation signal
         if self._navigation_detect_fn is not None:
@@ -449,6 +455,38 @@ class PerceptionFusionRuntime:
                 state_bus.navigation_signal.put(ns)
             except Exception as exc:
                 log.debug("[Fusion] navigation detect failed: %s", exc)
+                state_bus.navigation_signal.put(self._default_navigation_signal(claim, frame_id, timestamp))
+        else:
+            state_bus.navigation_signal.put(self._default_navigation_signal(claim, frame_id, timestamp))
+
+    def _default_combat_signal(
+        self,
+        claim: ScreenStateClaim,
+        frame_id: int,
+        timestamp: float,
+    ) -> CombatSignal:
+        state = claim.screen_state if isinstance(claim.screen_state, str) else claim.screen_state.value
+        in_combat = state == "combat"
+        return CombatSignal(
+            enemy_visible=in_combat,
+            enemy_count=1 if in_combat else 0,
+            frame_id=frame_id,
+            timestamp=timestamp,
+        )
+
+    def _default_navigation_signal(
+        self,
+        claim: ScreenStateClaim,
+        frame_id: int,
+        timestamp: float,
+    ) -> NavigationSignal:
+        state = claim.screen_state if isinstance(claim.screen_state, str) else claim.screen_state.value
+        return NavigationSignal(
+            on_screen=state in {"overworld", "map"},
+            arrival_confirmed=False,
+            frame_id=frame_id,
+            timestamp=timestamp,
+        )
 
     def _build_screen_state_claim(
         self,

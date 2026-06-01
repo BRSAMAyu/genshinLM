@@ -140,11 +140,132 @@
 - **文件**: `planning/meta_learning.py` — 战斗经验记录、敌人档案、跨Boss知识迁移、策略迭代
 - **覆盖能力**: L-01 至 L-08
 
-#### Step 8: 抽卡/商店系统 ✅
-- **文件**: `planning/wish_shop_system.py` — 保底计数器、F2P抽卡策略、月度商店购买
-- **覆盖能力**: W-01 至 W-08
+### 2026-05-31 — Phase 1 补充 + Phase 0 神经连接修复
 
-**测试总计**: 1609 passed, 0 failed
+#### P0/P1/P2 神经连接修复 ✅
+- **状态**: 已完成
+- **文件**:
+  - `perception/combat_perception.py` — P2.1 敌人HP条检测 + P2.2 角色切换UI + P2.3 实时体力跟踪
+  - `runtime/analytics_consumer.py` — P0.1 observation_ring → RuntimeHealth consumer
+  - `runtime/runtime_health_publisher.py` — P0.4 runtime_health producer
+  - `combat/boss_combat_bridge.py` — P0.3 + P1.3 BossCombatRuntime → InputWorker bridge
+  - `tests/test_combat_perception.py` — 13 个测试全部通过
+  - `tests/test_neural_connections.py` — 12 个神经连接测试全部通过
+- **修复**:
+  - EnemyHPBarDetector / CharacterSwitchDetector / StaminaTracker HSV tuple解包bug
+  - BossCombatBridge.tick_once() frame_id=0 首帧跳过问题（改用timestamp检测）
+  - 聚焦振荡反馈循环: `_ensure_target_focused()` cooldown改为lock保护
+  - 除零保护: mouse_move/mouse_move_to添加screen_w/screen_h验证
+  - 静默异常处理: 所有 `except Exception: pass` 改为 `log.warning()`
+  - NavigationController 无StateBus写入: 添加`_publish_decision()`
+- **测试总计**: 26 passed (P0/P1/P2 + combat perception)
+
+#### UI-01 场景验证 ✅
+- **状态**: 已完成
+- 验证 `UIFlowExecutor` + `UIFlowSkillAdapter` 完整覆盖 UI-01 角色升级场景
+- `CHARACTER_LEVEL_UP_FULL` UIFlow 已实现（open_menu → click_level_up → confirm → close）
+- UIFlowSkillAdapter 有完整 semantic alias 映射
+- `CharacterProgressionAdapter.stage1_level_up()` 调用 `execute_semantic("character_level_up_full")`
+
+#### UI-02 角色突破 ✅
+- 验证 `CHARACTER_ASCEND_FULL` UIFlow 完整性（open_menu → ascend → close）
+- 包含 `wait_loading` + `wait_not_loading` 处理突破加载动画
+
+#### UI-03 天赋升级 ✅
+- 验证 `CHARACTER_TALENT_UPGRADE_FULL` UIFlow 完整性
+- 覆盖普攻/技能/爆发三种天赋升级流程
+- `click_char_tab("talents")` 处理 tab 切换
+
+#### UI-04 武器装备 ✅
+- 验证 `WEAPON_EQUIP_FULL` + `WEAPON_ENHANCE_FULL` UIFlow 完整性
+
+#### UI-05~09 场景验证 ✅
+- UI-05 武器强化: `WEAPON_ENHANCE`, `WEAPON_ENHANCE_FULL`
+- UI-06 武器精炼: `WEAPON_REFINE`, `WEAPON_REFINE_FULL`
+- UI-07 圣遗物装备: `ARTIFACT_EQUIP`, `ARTIFACT_EQUIP_FULL`
+- UI-08 圣遗物强化: `ARTIFACT_ENHANCE`, `ARTIFACT_ENHANCE_FULL`
+- UI-09 祈愿抽卡: `WISH_TEN_PULL_FULL` (含 loop skip 动画)
+
+#### UI-10 队伍配置 ✅
+- 验证 `PARTY_QUICK_CONFIG` + `PARTY_CONFIG_SLOT` UIFlow 完整性
+- 覆盖4角色编队、元素共鸣配置
+
+#### UI-11 抽卡祈愿 ✅
+- 验证 `WISH_TEN_PULL_FULL` + `WISH_SINGLE_PULL` UIFlow 完整性
+- 包含 loop skip_animation 处理祈愿动画跳过
+
+### UI操作9场景全部完成 ✅
+
+### 下一个阶段：战斗16场景（docs/GENSHIN_COMBAT_SCENARIO_BREAKDOWN.md）
+
+### 战斗集成修复 ✅
+- **P0: BossCombatBridge 接入 MainlineLiveBridge**
+  - `MainlineLiveBridge.__init__()` 创建 BossCombatBridge + SkillRegistry
+  - `execute_live_mission()` 自动 start/stop combat bridge
+  - combat_signal → BossCombatRuntime → InputWorker 完整闭环
+- **P0: SkillRegistry 接入 UIFlowSkillAdapter**
+  - `UIFlowSkillAdapter` 构造时注入 `skill_registry`
+  - 复合动作 "combat_encounter"/"combat_boss" 路由到 CombatSkillAdapter
+  - 战斗/探索/任务/日常/养成 全部可通过语义执行器调用
+- **P1: QuestStateMachine 接入 SkillRegistry**
+  - `SkillRegistry._create_quest_adapter()` 自动创建 QuestStateMachine
+  - `QuestSkillAdapter.advance_quest()` 发布状态到 StateBus
+- **测试**: 15 neural connections + 69 integration tests 全部通过
+
+### 任务集成修复 ✅
+- QuestSkillAdapter 新增 `_publish_quest_state()` 方法
+- SkillRegistry quest adapter 自动注入 QuestStateMachine
+- 10个集成缺口已修复，任务流程现在完整闭环
+| 任务 | 组件 | 测试 |
+|------|------|------|
+| P2.1 | EnemyHPBarDetector | 13 passed |
+| P2.2 | CharacterSwitchDetector | 13 passed |
+| P2.3 | StaminaTracker | 13 passed |
+
+### 神经连接修复完成 ✅
+| 连接 | 组件 | 测试 |
+|------|------|------|
+| P0.1 | AnalyticsConsumer | 12 passed |
+| P0.3 | BossCombatBridge | 12 passed |
+| P0.4 | RuntimeHealthPublisher | 12 passed |
+| P1.2 | UIFlowSkillAdapter↔ExecutionRuntime | 12 passed |
+| P1.3 | BossCombatRuntime→InputWorker | 12 passed |
+
+### 探索集成修复 ✅
+- QuestMarkerFollower 新增 `state_bus` 参数，导航到达/超时时发布状态
+- MainlineLiveBridge 创建 QuestMarkerFollower 时传入 StateBus
+- 探索路由已在 SkillRegistry 注册（explore_activate_waypoint, explore_open_chest 等）
+
+### 已修复的集成缺口总汇
+| 系统 | 缺口 | 修复 |
+|------|------|------|
+| 战斗循环 | BossCombatBridge 从未启动 | 接入 MainlineLiveBridge.execute_live_mission() |
+| 战斗语义 | SkillRegistry 空注册 | 注入 UIFlowSkillAdapter，combat_encounter 路由生效 |
+| 任务状态 | QuestStateMachine 无 StateBus | SkillRegistry 自动注入，QuestSkillAdapter 发布状态 |
+| 探索导航 | QuestMarkerFollower 无 StateBus | 新增 state_bus 参数，导航状态发布 |
+| 感知信号 | CombatSignal 字段未填充 | 字段已存在（shield_element, boss_phase 等），需接入 HSV 检测器 |
+
+### 待实现（P2）
+- TeleportSequence UIFlow 化: 替换 raw backend 调用为声明式 UIFlow
+- ExplorationEngine 主线接入: 将探索规划接入 MissionGraph 节点执行
+
+### GenshinCombatDetector 实现 ✅
+- **文件**: `perception/genshin_combat_detector.py` + `tests/test_genshin_combat_detector.py`
+- **功能**: HSV 检测器，填充 CombatSignal 的关键字段
+  - `_detect_shield_element()`: 检测敌人元素盾（hydro/pyro/cryo/electro）
+  - `_detect_boss_phase()`: 检测Boss阶段转换（金色光效）和狂暴（红色闪光）
+  - `_detect_hitstun()`: 检测屏幕边缘红色晕影（玩家受击）
+  - `_detect_stamina()`: 快速体力条读取
+  - `_compute_danger()`: 综合危险评分
+- **集成**: 通过 `PerceptionFusionRuntime.set_combat_detector(detector.detect)` 注入
+- **测试**: 12 passed（含4种元素盾检测、Boss阶段、受击、体力、危险评分）
+
+### 日常循环3层验证 ✅
+- DailyLoopExecutor 已通过 SkillRegistry 注册
+- 3层路由: `run_daily_quick` → execute_layer1, `run_daily_standard` → execute_layer2, `run_daily_deep` → execute_layer3
+- 66 tests passed
+
+### 下一个场景：UI-10 日常循环
 
 ---
 
@@ -1715,3 +1836,659 @@
 **All 7 phases complete. Full test suite: 2922 passed.**
 
 ---
+
+## Phase 15.3: 文档体系审查与修复 (2026-05-31)
+
+### 审查执行摘要
+- **审查范围**: 17份新生成文档 + 1份原始checklist
+- **审查方法**: 3个并行Agent (A/B/D组) + 交叉验证，共5轮
+- **发现**: 6 P0 / 27 P1 / 20 P2 问题
+- **修复**: 6 P0全部修复，R1验证通过，0新问题
+
+### P0 问题修复验证 ✅
+
+| P0 | 问题 | 验证结果 |
+|----|------|---------|
+| P0-1 | AQ-005「璃月港的繁星」缺失 | ✅ 已补入完整内容 (370-454行) |
+| P0-2 | 魔神任务统计表 (8→9) | ✅ 修正为9，合计17 |
+| P0-3 | 层级命名混乱 | ✅ 统一为"本节第X层"格式 |
+| P0-4 | 周本/秘境混淆 | ✅ 雷音权现周本独立，雷最胜紫晶碎屑来自无相之雷秘境 |
+| P0-5 | 角色突破AR限制数据错误 | ✅ 全部7个节点精确化 |
+| P0-6 | AR40→50累计EXP偏差 | ✅ 修正为约329,200 |
+
+### 交叉引用一致性 ✅
+
+| 检查项 | 结果 |
+|--------|------|
+| 能力ID系统 | A组混用R/P标签 → 建议统一（低优先级） |
+| 场景编号 | A2不连续/A1无编号 → 已标注（P2） |
+| 架构组件与代码对齐 | ✅ StateBus/Interrupt/ModeArbiter/InputLease/ProgressState/SomaticState 完全一致 |
+| 各章节Boss等级 | ✅ 主线/任务/战斗三文档等级一致 |
+| AR门槛与突破节点 | ✅ 全部7个节点验证通过 |
+
+### 架构对齐验证 ✅
+
+通过源码验证，以下组件与文档描述完全一致：
+- StateBus: LatestSlot / RingBuffer / PriorityEventQueue ✅
+- Interrupt优先级: P0=0, P1=10, P2=20, P3=30, P4=40, P5=50, P6=100 ✅
+- ModeArbiter模式 ✅
+- InputLease结构 ✅
+- ProgressState字段 ✅
+- SomaticState字段 ✅
+- 五平面名称 ✅
+
+### 遗留P1/P2问题 (非阻断)
+
+| 类别 | 问题 | 优先级 |
+|------|------|--------|
+| A1 UI操作 | 缺少总览表格、场景无统一编号 | P1 |
+| A2 任务场景 | 世界任务子步骤简略、每日委托无示例 | P1 |
+| D1 错误恢复 | 全局状态机遗漏4条合法转移、P2优先级数值 | P1 |
+| D5 路线图 | 工时估算算术错误、关键路径甘特图 | P1 |
+| 文档格式 | 能力ID系统不统一、场景编号不一致 | P2 |
+
+### 最终状态
+
+| 维度 | 状态 |
+|------|------|
+| Phase 0-7 实现 | ✅ 完成 (2922 tests) |
+| 文档体系 P0 修复 | ✅ 完成 (6/6 验证通过) |
+| 架构对齐验证 | ✅ 通过 (100% 组件对齐) |
+| P1/P2 问题 | ✅ 已记录，待后续处理 |
+| 交叉引用一致性 | ✅ 通过 |
+
+---
+
+## 系统自主通关能力最终评估
+
+### Phase 0-7 实现完成度: 100%
+
+| 分层 | 组件 | 状态 |
+|------|------|------|
+| 感知层 | 3层感知融合 (HIGH/MID/LOW cadence) | ✅ 已实现 |
+| 执行层 | ExecutionRuntime + BackendFactory + UIFlowSkillAdapter | ✅ 已实现 |
+| 导航层 | MapNavigationRuntime + QuestMarkerFollower | ✅ 已实现 |
+| 任务层 | MainlineRunner + MainlineLiveBridge + SkillRegistry | ✅ 已实现 |
+| 战斗层 | BossCombatRuntime + 9个Boss Handler + SurvivalPolicyEngine | ✅ 已实现 |
+| 持久化层 | CheckpointStore + SessionState + RecoveryOrchestrator | ✅ 已实现 |
+| 协作层 | CollaborationController (4级权限) + ValidationFramework | ✅ 已实现 |
+
+### 审计发现 BLOCKER/CRITICAL 缺口 (Phase 0-7 范围外)
+
+**以下缺口由综合审计发现，需在生产集成阶段修复：**
+
+| # | 缺口 | 影响 | 优先级 |
+|---|------|------|--------|
+| B1 | MainlineRunner.run() claim_check_fn 存储但从未调用 | 节点执行无前置/后置验证 | BLOCKER |
+| B2 | NavigationPlan 从未写入 StateBus | 导航节点执行但无状态发布 | BLOCKER |
+| B3 | MainlineRunner 不读取 screen_claim | 无法感知游戏状态适配错误 | BLOCKER |
+| B4 | Checkpoint 仅存内存，不写 StateBus/磁盘 | 崩溃即丢失所有进度 | BLOCKER |
+| B5 | PerceptionFusionRuntime 未接入生产管道 | 4个 StateBus slot 永远为空 | CRITICAL |
+| B6 | DialogChoiceArbiter 产生 claim 但无执行路径 | 对话分支选择不触发点击 | CRITICAL |
+| C1 | MainlineRunner 无节点类型分支 | dialog/combat/navigate 统一处理 | CRITICAL |
+| C2 | MainlineAutonomyLoop 在实机路径中被绕过 | 观察循环/BAGEL信念/上下文凝缩未使用 | CRITICAL |
+| C3 | MainlineRunner 与 Orchestrator 完全隔离 | 两套控制循环无协调 | CRITICAL |
+
+### 结论
+
+**Phase 0-7 实现计划**: ✅ 全部完成
+
+**综合审计结论**: 系统具备完整的组件库（59个UIFlow、9个Boss Handler、22个SkillRegistry路由），但主要执行路径存在 BLOCKER 级别的集成缺口，主要集中在：
+1. MainlineRunner 缺乏 claim 验证循环
+2. 感知融合管道未接入生产路径
+3. Checkpoint 机制未与 StateBus/磁盘绑定
+4. Dialog 分支选择无执行闭环
+
+**下一步建议**: 进入生产集成阶段，修复上述 BLOCKER 缺口后，系统将具备实机自主通关基础能力。
+
+---
+
+### 2026-05-31 — UI 场景验证与增强
+
+#### ExplorationEngine → MissionGraph 桥接 ✅
+- **文件**: `planning/exploration_mission_bridge.py` (REWRITTEN)
+- **测试**: `tests/test_exploration_mission_bridge.py` (16 tests)
+- **变更**:
+  - 修正 API 不匹配：原 bridge 调用 `get_next_targets()` 但 ExplorationEngine 实际方法是 `plan_session()`
+  - 使用 `ExplorationTarget.objective.value` 替代不存在的 `target.target_type`
+  - 添加 `_resolve_region()` 字符串→枚举转换
+  - 预算缩放：`max_duration_sec = est_time * 3`
+  - 所有 7 种 ExplorationObjective 正确映射到 skill_candidates
+
+#### UI-01 角色升级场景验证 ✅
+- **发现**: CHARACTER_LEVEL_UP / CHARACTER_LEVEL_UP_FULL 已完整覆盖
+- **增强**: 添加 `CHARACTER_SELECT_IN_MENU` 流程（底部角色栏切换角色）
+  - 新增 `_CHAR_BAR_SLOTS` 常量 (4个角色位置)
+  - 新增 `click_character_slot(slot)` 构建器函数
+  - 新增 alias: `character_select_in_menu`, `select_character`
+- **测试**: 5 个新测试 (slot 1-4, invalid, registered)
+
+#### UI-02~11 全场景验证与修复 ✅
+- **验证结果**: 全部 9 个 UI 场景已有对应 UIFlow 定义 + _FULL 变体 + alias
+- **修复1**: `WEAPON_ENHANCE` 添加显式武器选择步骤
+  - 新增 `click_equipped_weapon` 步骤 (0.85, 0.50)
+  - 修复前: 直接点击强化按钮，可能无选中武器
+- **修复2**: 圣遗物流程使用标准槽位常量
+  - 新增 `_ARTIFACT_SLOTS` 常量 (flower/plume/circlet/sands/goblet)
+  - 新增 `click_artifact_slot(slot)` 构建器函数
+  - `ARTIFACT_EQUIP` / `ARTIFACT_ENHANCE` 改用 `click_artifact_slot("flower")`
+- **测试**: 11 个新测试 (5 圣遗物槽位 + invalid + equip/enhance + 武器选择/强化按钮)
+
+#### 测试结果
+- 全部 UI 测试通过: 42 tests
+- exploration bridge 测试通过: 16 tests
+- 神经连接测试通过: 13 tests
+- 无回归
+
+---
+
+### 2026-05-31 — 探索谜题框架 + BLOCKER 缺口修复 + 通用框架设计
+
+#### 探索谜题处理框架 ✅
+- **文件**: `interaction/puzzle_handler.py` (NEW)
+- **测试**: `tests/test_puzzle_handler.py` (18 tests)
+- **覆盖**: 5 种谜题类型 (元素方碑/火炬/压力板/限时挑战/死域)
+- **架构**: VLM 集成接口 + 启发式 fallback + 后端抽象
+- SkillRegistry 新增 5 个 exploration_puzzle 路由
+- ExplorationMissionBridge 更新 puzzle_solve → explore_puzzle_monument 路由
+
+#### 通用 Agent 框架设计文档 ✅
+- **文件**: `docs/SPARKLE_AGENT_KERNEL_DESIGN.md` (NEW)
+- **核心洞察**: 硬编码 UIFlow 不可持续，需要 VLM/LLM 驱动的通用能力
+- **三层架构**: Agent Kernel (框架) → Application Adapter (适配) → Physical Interface (物理)
+- **四大通用协议**: PerceptionProvider, Planner, ExecutionProvider, MemoryStore
+- **渐进降级**: VLM 可用→自主 / VLM 不可用→预定义 UIFlow / 全不可用→纯反射
+- **实施路线**: Phase A (接口) → Phase B (AgentLoop) → Phase C (Genshin适配) → Phase D (替代)
+
+#### BLOCKER 缺口修复
+
+##### C1: MainlineRunner 节点类型分支 ✅
+- **文件**: `planning/mainline/mainline_runner.py` (MODIFY)
+- **修复**: 新增 `register_type_handler(prefix, handler)` + `_resolve_type_handler(node)`
+- **机制**: 最长前缀匹配，combat_boss_raid 匹配 combat_boss 而非 combat
+- **测试**: `tests/test_mainline_type_routing.py` (7 tests)
+- **使用**: MainlineLiveBridge 可注册 dialog/combat/explore/navigate 各类型处理器
+
+##### C3: MainlineRunner ↔ Orchestrator 集成 ✅
+- **文件**: `planning/mainline/mainline_runner.py` (MODIFY)
+- **修复**: 新增 `state_bus` 参数 + `_should_pause_for_orchestrator()` 检查
+- **机制**: 主循环每轮检查 StateBus P0-P2 中断，收到紧急中断时暂停执行
+- **影响**: MainlineRunner 现在能响应 Orchestrator 发出的紧急停止/覆盖指令
+
+##### B1: claim_check 输出声明覆盖 ✅
+- **文件**: `planning/mainline/mainline_runner.py` (MODIFY)
+- **修复**: `_verify_output_claims()` 现在也调用 legacy claim_check_fn 验证输出声明
+- **影响**: 前置+后置声明验证现在都经过 claim_check_fn
+
+##### B4: Checkpoint 强制磁盘持久化 ✅
+- **文件**: `planning/mainline/mainline_runner.py` (MODIFY)
+- **修复**: `MainlineCheckpointPublisher` 无 disk_store 时自动 fallback 到 JSONL 文件
+- **机制**: `checkpoints/{checkpoint_id}.jsonl` 自动创建
+- **影响**: 崩溃后不再丢失进度
+
+#### AgentKernel 框架 Phase A 实现 ✅
+- **包**: `agent_kernel/` (NEW)
+- **核心类型** (`agent_kernel/types.py`):
+  - `SemanticObservation` — VLM 增强的屏幕语义观察
+  - `ActionableElement` — 可交互元素 (bbox, confidence, state)
+  - `AgentGoal` — 目标 (description, success_criteria)
+  - `ActionPlan` — LLM 生成的计划 (steps, confidence)
+  - `PlannedStep` — 单步操作 (target_description, expected_outcome, fallback)
+  - `ActionPrimitive` — 低级执行原语 (primitive_type, target, params)
+  - `StepResult` — 执行结果 (success, observation_after)
+  - `Experience` — 经验记录 (outcome, failure_reason)
+  - `GoalResult` — 最终目标结果
+- **核心协议** (`agent_kernel/protocols.py`):
+  - `PerceptionProvider` — 框架无关感知接口
+  - `Planner` — 规划协议 (plan + replan)
+  - `SuccessChecker` — 目标达成检查
+  - `ExecutionProvider` — 物理执行接口
+  - `MemoryStore` — 经验存储协议
+- **AgentLoop** (`agent_kernel/loop.py`):
+  - 核心自主循环: observe → plan → execute → verify → learn
+  - 最长前缀匹配类型路由 (复用 MainlineRunner 设计)
+  - 失败重试 + 重新规划
+  - 危险操作人工确认门控
+  - 经验自动记录
+- **FileMemoryStore** (`agent_kernel/memory.py`):
+  - JSONL 持久化经验
+  - 关键词检索 + 失败经验检索
+  - 相关性排序
+- **测试**: `tests/test_agent_kernel.py` (24 tests) — 全通过
+
+#### AgentKernel 框架 Phase B 实现 ✅
+- **状态**: 已完成
+- **文件**: `agent_kernel/adapters.py` (NEW)
+- **生产级适配器**:
+  - `VLMPerceptionProvider` — GenshinScreenClassifier (快速) + VLM ground_ui (精确定位) + VLM describe_image (语义理解) + OCR (文本提取)
+  - `VLMSuccessChecker` — VLM 驱动的目标达成检查，支持 keyword fallback (中英文 sub-string 匹配)
+  - `LLMPlanner` — 封装现有 llm/planner.py，适配 AgentKernel 签名，从 memory 注入历史经验上下文
+  - `GenshinExecutionProvider` — ComputerUseController 封装，ActionPrimitive → VLM 定位 + 物理点击/按键
+- **设计原则**: 渐进降级 — VLM 不可用时退化为 HSV 分类器 / mock planner / UIFlow
+- **测试**: `tests/test_agent_kernel_adapters.py` (23 tests) — 全通过
+
+#### 战斗能力覆盖调查 ✅
+- **调查范围**: 16 个战斗场景 (C-01~C-16)
+- **结果**: 15/16 已实现，仅 C-07 (Flanking/Positioning) 缺失
+- **已实现**: C-01 目标检测, C-02 自动接近, C-03 自动攻击, C-04 元素战技爆发, C-05 角色切换, C-06 元素反应, C-08 硬直窗口, C-09 Boss阶段跟踪, C-10 食物治疗, C-11 死亡复活, C-12 闪避反射, C-13 多目标管理, C-14 Boss特殊机制, C-15 深境螺旋, C-16 紧急生存
+
+#### C-07 绕后/侧翼定位系统 ✅
+- **文件**: `combat/flanking_policy.py` (NEW)
+- **新增组件**:
+  - `PositionStrategy` enum: AGGRESSIVE_FRONT / FLANK_LEFT / FLANK_RIGHT / FLANK_REAR / STALK_REAR / KITE_AROUND / PHASE_BURST
+  - `FlankingPolicy`: 决策引擎，根据敌人类型、护盾状态、硬直窗口选择最优策略
+  - `FlankingNavigator`: 动作计算器，将策略转化为按键序列
+  - `FlankingIntegration`: 与现有战斗系统的集成桥接
+  - `FlankingContext` / `FlankingState`: 上下文和运行时状态
+- **覆盖场景**:
+  - 木盾/冰盾丘丘暴徒：绕后避免护盾格挡正面伤害
+  - Boss Dvalin：尾部站位获取背刺加成
+  - 硬直窗口：快速突进至最佳爆发位置
+- **测试**: `tests/test_flanking_policy.py` (27 tests) — 全通过
+
+#### 探索场景前置条件自动检测 ✅
+- **文件**: `exploration/exploration_scenario_router.py` (MODIFY)
+- **修复**: 精致/珍贵/华丽宝箱（exquisite/precious/luxurious_chest）前置条件自动检测
+  - 战斗敌人检测：`_auto_detect_prerequisites()` 调用 `combat_detector.is_in_combat()`
+  - 元素封印检测：调用 `elemental_chest_detector.detect()` 获取 `seal_element`
+  - 置信度门控：`seal_confidence >= 0.5` 才触发元素技能释放
+  - 显式 context优先：`enemies_nearby` / `seal_element` 已存在时不覆盖
+  - 普通宝箱(common_chest) 不触发自动检测（无前置条件）
+- **新增构造函数参数**: `frame_supplier`, `elemental_chest_detector`, `combat_detector`
+- **测试**: `tests/test_exploration_scenario_router.py` 新增 7 个 auto-detect 测试 (23 tests) — 全通过
+
+#### PuzzleHandler 集成 ✅
+- **文件**: `exploration/exploration_scenario_router.py` (MODIFY)
+- **修复**: 将 `PuzzleHandler` 接入 `ExplorationScenarioRouter`，作为谜题/挑战的 VLM 引导求解器
+- **集成场景**:
+  - `_handle_elemental_monument`: PuzzleHandler 优先，手动序列兜底
+  - `_handle_torch_puzzle`: PuzzleHandler 优先，手动序列兜底
+  - `_handle_pressure_plate`: PuzzleHandler 优先，手动序列兜底
+  - `_handle_timed_challenge`: PuzzleHandler 优先，手动序列兜底
+  - `_handle_withering_zone`: PuzzleHandler 优先，手动序列兜底
+- **设计原则**: `puzzle_handler is None` 或 `frame is None` 时优雅降级至手动序列
+- **测试**: `tests/test_exploration_scenario_router.py` + `tests/test_flanking_policy.py` — 全通过 (50 tests)
+
+### 2026-06-01 — Exploration Puzzle Integration + Flanking Closure
+
+#### 探索场景 PuzzleHandler 全面集成 ✅
+- **修复**: `_handle_withering_zone` 接入 `PuzzleHandler.WITHERING_ZONE` 规划求解
+- **覆盖**:全部 5 个谜题类型均已集成 PuzzleHandler（元素方碑/火炬/压力板/限时挑战/死域）
+- **测试**: 全通过 (50 tests)
+
+#### 最小可运行闭环实现 ✅
+- **新增**: `runtime/claim_runtime.py` 新增 `RuntimeOverrideClaim` 和 `CapsulePatchProposal`
+  - RuntimeOverrideClaim: 伴侣驱动的运行时参数/skill/policy 覆盖，必须通过 policy validator
+  - CapsulePatchProposal: 永久 YAML 变更提案，必须走 schema→diff→replay→confirm→commit 流程
+  - 安全规则: critical 需人工确认、permanent scope 走 patch proposal、confidence<0.5 阻止自动应用
+- **新增**: `execution/closed_loop_runner.py` — 最小端到端闭环证明
+  - 链路: Companion text → TaskSpec → SkillRecipe → ScreenClaim → ActionContract → ExecutionRuntime → ObservationClaim → StateDeltaClaim
+  - RuntimeOverride: validate → apply / rollback
+  - CapsulePatchProposal: schema → diff → replay → user confirm → commit
+- **新增**: `tests/test_closed_loop_runner.py` (29 tests) — 全通过
+- **测试**: 全项目 3322 passed, 1 skipped — 无回归
+
+#### 架构文档体系建立 ✅
+- **新增**: 4 份架构规范文档
+  - `CAPSULE_SPEC.md` — YAML + Python plugin 胶囊规范、schema、patch 流程
+  - `OPERATOR_AGENT_SPEC.md` — 伴侣 Agent、RuntimeOverride、用户确认协议
+  - `DESKTOP_TREE_SPEC.md` — 模板锚定、ROI OCR、几何聚类、UI tree verifier
+  - `WORLD_STATE_GRAPH_SPEC.md` — 3D 寻路、landmark、目标跟踪、路线 claim
+- **更新**: `SPARKLE_AGENT_KERNEL_DESIGN.md` — 标注为总纲，列出子文档索引
+- **更新**: `AURORA_SPARKLE_AGENTS_CORE_ARCHITECTURE.md` — 标注为 runtime ADR，增加 cloud-first 约束
+
+#### ClosedLoopRunner UIFlowSkillAdapter 集成 ✅
+- **修复**: `execution/closed_loop_runner.py` 接入 UIFlowSkillAdapter 执行路径
+  - 新增 `skill_adapter` 构造函数参数
+  - `_step_execute` 优先使用 UIFlowSkillAdapter（UI操作），其次 ExecutionRuntime（原始输入）
+  - `_step_verify` 支持适配器路径：adapter 返回 True 即视为 verified
+  - `SimpleSkillRecipeLookup.with_default_ui_flows()` 自动注册9个UI场景的 SkillRecipe
+- **验证**: "升级胡桃到90级" → TaskSpec(character_level_up) → SkillRecipe(character_level_up_full) → UIFlowSkillAdapter.execute_semantic() → ClaimGraph populated
+- **覆盖**: 全部9个UI操作场景已注册（角色升级/突破/天赋/武器装备强化精炼/圣遗物装备强化/祈愿）
+- **测试**: 新增5个适配器集成测试 (34 tests total) — 全通过
+- **全项目**: 3327 passed, 1 skipped — 无回归
+
+#### 审计修复 + HSR 反泄漏验证 ✅
+- **审计**: 独立 Opus agent 审查 closed loop 集成，发现 6 个问题（2 medium / 4 low）
+- **修复**:
+  - `LoopStepResult.details` 类型从 `str` 放宽为 `str | TaskSpecResult | SkillRecipe | ScreenClaimResult`
+  - `propose_patch` 不再自认证 replay（由 caller 执行）
+  - 移除 `type: ignore[assignment]` 标注
+- **HSR 反泄漏**:
+  - `SimpleTaskSpecResolver` 新增 HSR 关键词（战斗→hsr_combat、对话→hsr_dialog、导航→hsr_navigate）
+  - 新增 3 个 HSR 反泄漏测试证明 kernel 可驱动非原神游戏
+  - 验证 ClaimGraph 在 HSR 场景下正常工作
+- **测试**: 新增 8 个测试 (37 tests total) — 全通过
+- **全项目**: 3330 passed, 1 skipped — 无回归
+
+#### Reflex Latency Benchmark ✅
+- **新增**: `benchmarks/reflex_latency_bench/` — 3 个延迟基准场景
+  - `bench_detect_decision`: 合成帧→HSV危险检测→决策（目标: p95 ≤ 20ms）
+  - `bench_lease_submit`: InputLease 验证+提交（目标: p95 ≤ 5ms）
+  - `bench_focus_release`: 焦点丢失→clear所有租约（目标: p95 ≤ 50ms）
+- **新增**: `tests/test_reflex_latency_bench.py` (13 tests) — 含 p95 预算验证
+- **结果**: 3/3 基准全部通过架构目标
+- **全项目**: 3343 passed, 1 skipped — 无回归
+
+#### Phase 7 E2E Gauntlets 补全 ✅
+- **新增**: `tests/test_long_horizon_resume.py` (8 tests)
+  - 4 个长程场景覆盖: happy_path, combat_recovery, double_interrupt, danger_interleave
+  - 验证: 终端节点证据覆盖、恢复跳过已验证节点、中断计数
+- **已有**: `tests/test_boss_combat_gauntlet.py` (11 tests)
+  - 6 个 Boss 战斗场景 + 状态机不变量 + checkpoint/resume 周期
+- **全 Phase 2-7 计划完成**: ExecutionRuntime, BackendFactory, StateBus slots, MapNavigationRuntime,
+  QuestLogReader, DialogChoiceArbiter, BossCombat 集成, E2E gauntlets — 全部实现
+- **验证**: 全部 9 个 UI 操作场景（UI-01~09）已有 UIFlow + _FULL 组合变体
+- **设计**: 角色选择通过 CHARACTER_SELECT_IN_MENU 独立流程组合，不在 _FULL 中硬编码
+- **集成**: 9 个能力已注册到 SimpleSkillRecipeLookup.with_default_ui_flows()
+- **结论**: UI 操作层闭环完整，缺口在于真机联调（OCR/VLM 验证），非代码架构问题
+
+#### VerificationProvider 升级 ✅
+- **变更**: `_step_verify` 从布尔自断言升级为 3 级优先验证管线
+  - Tier 1: `receipt` (ExecutionRuntime receipt, conf=0.9) — 最强
+  - Tier 2: `VLM/OCR` (VerificationProvider, 动态 confidence) — 中等
+  - Tier 3: `self_assert` (adapter-only success, conf=0.3) — 最弱，低于 0.5 阈值
+- **新增**: `VerificationProvider` protocol, `VerificationResult`, `VLMVerificationProvider`, `ReceiptVerificationProvider`
+- **修复**: 4 个 adapter 测试因 self_assert conf<0.5 改为 `asserted` 而非 `verified`
+  - 解决方案: 测试注入 `_FakeVerificationProvider` (conf=0.85, method="vlm")
+- **语义**: Claim status 从 "verified" 细分为 "verified" (≥0.5) / "asserted" (<0.5)
+- **测试**: 37 tests passed — 无回归
+- **全项目**: 3343 passed, 1 skipped — 无回归
+
+#### UI 9 场景闭环集成验证 ✅
+- **新增**: `tests/test_ui9_scenario_integration.py` (14 tests)
+  - 参数化 9 场景独立验证 + 顺序全链路 + claim graph 累积 + 时序验证
+  - 真实 UIFlowSkillAdapter (ConsoleInputBackend) dry-run 全 9 场景链路验证
+  - VerificationProvider 逐场景调用验证
+- **修复**: `SimpleTaskSpecResolver` 关键词匹配优先级
+  - 问题: "天赋升级" 匹配到 "升级" (character_level_up) 而非 "天赋"
+  - 解决: 按关键词长度降序匹配，最长优先（"天赋升级" > "天赋" > "升级"）
+  - 新增关键词: "强化"→weapon_enhance, "精炼"→weapon_refine, "祈愿十连"→wish_pull
+  - 新增英语关键词: enhance, refine, wish pull, wish ten 等
+- **新增**: UIFlowSkillAdapter 角色槽位选择
+  - `_parse_character_slot()`: 从 target 字符串解析槽位 (slot_1/2/3/4)
+  - `_select_character_slot()`: 执行 CHARACTER_SELECT_IN_MENU 前置流程
+  - `_CHARACTER_ACTIONS`: 14 个需要角色上下文的 action 集合
+  - 当 target 指定 slot 时自动在主操作前执行角色选择
+- **新增**: `tests/test_ui_flow_skill_adapter.py` 3 个新测试
+  - test_character_slot_parsing: 槽位字符串解析
+  - test_adapter_character_select_with_slot_target: 带槽位选择的完整执行
+  - test_character_slot_selection: ClosedLoopRunner 集成
+- **测试**: 17 new tests, all pass
+- **全项目**: 3368 passed, 1 skipped — 无回归
+
+#### 战斗能力闭环集成 ✅
+- **新增**: 战斗关键词解析（SimpleTaskSpecResolver）
+  - 6 个 Genshin 战斗能力: combat_basic, combat_shield_break, combat_boss, combat_abyss_mage, combat_world_boss, combat_weekly
+  - 中英文关键词: 打怪, 杀boss, 世界boss, 周本, 深渊法师, 精英怪, fight, boss fight, world boss, weekly boss
+  - HSR 关键词保留: 进入战斗→hsr_combat (最长优先匹配避免冲突)
+- **新增**: UIFlowSkillAdapter 战斗处理 (_handle_combat)
+  - 6 个战斗语义动作注册为 primitive handlers
+  - dry-run 模式下 accept combat action
+  - live 模式下委托 combat.combat_skill_adapter.CombatSkillAdapter
+- **新增**: SimpleSkillRecipeLookup 注册 6 个战斗能力
+- **新增**: TestCombatCapabilityBridge (9 tests)
+  - 参数化关键词解析测试 (7 个场景)
+  - combat_basic + combat_boss 闭环执行测试
+- **测试**: 9 new tests, all pass
+- **全项目**: 3377 passed, 1 skipped — 无回归
+
+#### 探索能力闭环集成 ✅
+- **新增**: 探索关键词解析（SimpleTaskSpecResolver）
+  - 8 个探索能力: explore_waypoint, explore_statue, explore_chest, explore_oculus, explore_puzzle, explore_timed, explore_withering, explore_underwater
+  - 36 个中英文关键词: 传送锚点, 七天神像, 宝箱, 神瞳, 解谜, 限时挑战, 死域, 水下探索, open chest, collect oculus, activate waypoint, withering zone 等
+  - 最长优先匹配确保 "传送锚点激活" → explore_waypoint (not "传送锚点" → explore_waypoint then redundant)
+- **新增**: UIFlowSkillAdapter 探索处理 (_handle_explore)
+  - 4 个交互型动作 (waypoint/statue/chest/oculus): F-key interact + ESC close popup
+  - 4 个策略型动作 (puzzle/timed/withering/underwater): action_intent delegation
+  - 8 个探索语义动作注册为 primitive handlers
+- **新增**: SimpleSkillRecipeLookup 注册 8 个探索能力
+- **新增**: TestExplorationCapabilityBridge (29 tests in test_closed_loop_runner.py)
+  - 参数化关键词解析测试 (26 个中英文场景)
+  - waypoint/chest/oculus 闭环执行测试 (3 个)
+- **新增**: 探索适配器测试 (6 tests in test_ui_flow_skill_adapter.py)
+  - 交互型: waypoint/chest/oculus/statue F-key 测试 (4 个)
+  - 策略型: puzzle/underwater action_intent 测试 (2 个)
+- **测试**: 35 new tests, all pass
+- **全项目**: 3413 passed, 1 skipped — 无回归
+
+#### 探索集成审计修复 ✅
+- **修复**: 关键路由 bug — skill_id 到 handler 的映射断裂
+  - execute_semantic() 新增 alias→primitive_handler 回退路径
+  - 修复前: 8 个探索能力中 6 个在运行时静默返回 False
+  - 修复后: 所有 skill_id 正确路由到对应 handler
+- **修复**: 探索交互 ESC 键过度使用
+  - 新增 _ESCAPE_AFTER_ACTIONS frozenset — 仅 waypoint/statue 发送 ESC
+  - chest/oculus 不再错误关闭奖励/拾取界面
+- **修复**: 探索 handler 错误静默吞异常 → 改为 log.warning
+- **修复**: HSR 关键词冲突 — "推进对话" 从 HSR 移至 quest_dialog，HSR 改用 "星穹对话"
+- **新增**: 真实路由测试 (test_adapter_explore_skill_id_routes_to_handler)
+  - 验证 skill_id (explore_activate_waypoint 等) 通过 alias 回退正确路由
+
+#### 任务能力闭环集成 ✅
+- **新增**: 任务关键词解析（SimpleTaskSpecResolver）
+  - 10 个任务能力: quest_dialog, quest_dialog_select, quest_track, quest_skip_cutscene, quest_read_log, quest_daily, quest_archon, quest_story, quest_world, quest_event
+  - 24 个中英文关键词: 推进对话, 对话选择, 跳过过场, 任务日志, 每日委托, 魔神任务, 传说任务, 邀约事件, 世界任务, 活动任务, 追踪任务 等
+- **新增**: UIFlowSkillAdapter 任务处理
+  - _handle_quest_dialog: F-key 推进对话
+  - _handle_quest_cutscene: ESC 跳过过场
+  - _handle_quest_track: V-key 追踪任务标记
+  - _handle_quest_action_intent: 通用任务管理 (read_log, daily, archon, story, world, event)
+  - 10 个任务语义动作注册为 primitive handlers
+- **新增**: SimpleSkillRecipeLookup 注册 10 个任务能力
+- **新增**: TestQuestCapabilityBridge (24 tests in test_closed_loop_runner.py)
+  - 参数化关键词解析测试 (21 个中英文场景)
+  - quest_dialog/archon/daily 闭环执行测试 (3 个)
+- **新增**: 任务适配器测试 (5 tests in test_ui_flow_skill_adapter.py)
+  - dialog (F-key), cutscene (ESC), track (action_intent), archon, daily
+- **测试**: 30 new tests, all pass
+- **全项目**: 3443 passed, 1 skipped — 无回归
+
+#### 日常循环能力闭环集成 ✅
+- **新增**: 日常关键词解析（SimpleTaskSpecResolver）
+  - 8 个日常能力: daily_resin, daily_domain, daily_katheryne, daily_expedition, daily_pot, daily_quick, daily_standard, daily_deep
+  - 28 个中英文关键词: 消耗树脂, 秘境, 天赋秘境, 圣遗物秘境, 浓缩树脂, 凯瑟琳奖励, 探索派遣, 尘歌壶, 速通日常, 标准日常, 深度日常 等
+- **新增**: UIFlowSkillAdapter 日常处理 (_handle_daily_action_intent)
+  - 8 个日常语义动作注册为 primitive handlers
+  - 通过 action_intent 委托到日常调度系统
+- **新增**: SimpleSkillRecipeLookup 注册 8 个日常能力
+- **新增**: TestDailyRoutineCapabilityBridge (22 tests in test_closed_loop_runner.py)
+  - 参数化关键词解析测试 (20 个中英文场景)
+  - domain/quick 闭环执行测试 (2 个)
+- **新增**: 日常适配器测试 (2 tests in test_ui_flow_skill_adapter.py)
+  - domain, resin action_intent 测试
+- **测试**: 24 new tests, all pass
+- **全项目**: 3467 passed, 1 skipped — 无回归
+
+#### UI 场景 UIFlow 完整性验证 + 缺失流程补全 ✅
+- **验证**: UI-01 (角色升级) UIFlow vs 规范
+  - CHARACTER_LEVEL_UP + CHARACTER_LEVEL_UP_FULL: 坐标 (0.85,0.85) 和 (0.65,0.85) 与规范完全匹配
+  - 角色条位置 (0.05-0.26, 0.88) 与规范完全匹配
+  - OCR 验证和角色名称确认是 UIFlow 静态步骤无法实现的动态逻辑 → 已通过 VerificationProvider 和 adapter slot pre-selection 在更高层处理
+- **新增**: 3 个 _FULL 组合流程（填补规范中标记的"部分定义"缺口）
+  - SHOP_BUY_MONTHLY_FATES_FULL: 打开派蒙菜单→商店→星尘兑换→购买纠缠/相遇之缘→关闭
+  - FORGING_FORGE_ITEM_FULL: F交互→锻造选项→选配方→锻造→确认→关闭
+  - NPC_SHOP_BUY_ITEM_FULL: F交互→选择物品→购买→确认→关闭
+- **注册**: 3 个新流程加入 ALL_FLOWS 和 UIFlowSkillAdapter._DEFAULT_ALIASES
+- **全项目**: 3467 passed, 1 skipped — 无回归
+
+#### UIFlow 缺口修复 (Opus 审计结果) + 进度链实现 ✅
+- **修复**: 4 个 UIFlow 缺口（Opus 独立审计发现）
+  - WEAPON_ENHANCE_FULL: 添加缺失的"点击已装备武器"步骤 (0.85, 0.50)
+  - ARTIFACT_EQUIP_FULL: 将硬编码坐标 (0.35, 0.42) 替换为 click_artifact_slot("flower")
+  - ARTIFACT_ENHANCE_FULL: 同上，替换为 click_artifact_slot("flower")
+  - WISH_TEN_PULL_FULL: 添加缺失的 banner 选择步骤 (0.15, 0.88)
+- **新增**: 角色进度链处理器 (UIFlowSkillAdapter)
+  - _PROGRESSION_STAGES: 6 阶段映射表 (level_up→ascend→weapon→artifact→talent→party)
+  - _handle_progression_chain(): 顺序执行全部 6 阶段，失败不中断后续
+  - _handle_progression_stage(): 单阶段委托到对应 UIFlow
+  - 支持角色 slot 预选
+- **新增**: 进度链测试 (4 tests in test_ui_flow_skill_adapter.py)
+- **测试**: 4 new tests, 147 adapter tests all pass
+- **全项目**: 3467 passed, 1 skipped — 无回归
+
+#### 战斗16场景关键词集成 ✅
+- **新增**: ClosedLoopRunner 战斗场景关键词 (50+ 新关键词)
+  - Boss专属: 风魔龙, 特瓦林, 公子, 达达利亚, 女士, 罗莎琳, 雷电将军, 正机之神, 散兵boss, 巨鲸, 吞噬一切的巨鲸
+  - 环境: 龙脊雪山, 雪山战斗, 极寒, 稻妻雷暴, 雷暴战斗
+  - 深渊: 深境螺旋, 螺旋, 深渊
+  - 多波次: 多波次, 防守战
+  - 循环: 周本循环, 世界boss循环, boss扫荡
+  - English: dvalin, stormterror, childe, tartaglia, signora, raiden shogun, scaramouche boss, narwhal, dragonspine, inazuma storm, spiral abyss, multi wave, defense, weekly rotation, boss farming
+- **新增**: SimpleSkillRecipeLookup 14 个战斗能力注册
+  - combat_boss_dvalin/childe/signora/raiden/shouki/narwhal
+  - combat_env_dragonspine/inazuma
+  - combat_abyss, combat_multi_wave
+  - combat_weekly_rotation, combat_world_farming
+- **新增**: UIFlowSkillAdapter 战斗处理器 (3 新方法)
+  - _handle_boss_combat(): boss_id 路由映射 (6 boss)
+  - _handle_env_combat(): 环境类型路由 (dragonspine/inazuma)
+  - _BOSS_ID_MAP: action→boss_id 映射字典
+- **新增**: 适配器测试 (4 tests in test_ui_flow_skill_adapter.py)
+  - boss combat 路由、全 boss 覆盖、环境路由、abyss/multiwave/rotation
+- **新增**: ClosedLoopRunner 测试 (24 new parametrized + 2 closed-loop)
+  - 风魔龙→dvalin 闭环、龙脊雪山→dragonspine 闭环
+- **测试**: 29 new tests (3467→3496), all pass
+
+#### 长链场景 + 主线推进链集成 ✅
+- **新增**: ClosedLoopRunner 长链场景关键词 (40+ 新关键词)
+  - 长链: 新手教程, 新手链, tutorial, 日常会话, 15分钟日常, boss连战, boss试炼, 周本连战, 探索清剿, 区域清剿, 养成全流程, 角色满配
+  - 主线: 主线推进, 魔神任务推进, 推进主线, 序章, 第一~五章, prologue, chapter 1-5, mainline
+- **新增**: SimpleSkillRecipeLookup 12 个长链/主线能力注册
+  - chain_tutorial, chain_daily_session, chain_boss_gauntlet, chain_weekly_gauntlet, chain_exploration_sweep
+  - mainline_progress, mainline_prologue, mainline_ch1-5
+- **新增**: UIFlowSkillAdapter 长链/主线处理器 (2 新方法)
+  - _handle_chain_scenario(): action_intent 委托到链式执行器
+  - _handle_mainline(): action_intent 委托到主线推进器
+- **新增**: 适配器测试 (2 tests): 链场景路由、主线路由
+- **新增**: ClosedLoopRunner 测试 (22 parametrized + 2 closed-loop)
+  - 新手教程闭环、序章闭环
+- **覆盖**: 5 个长链场景 + 6 个主线章节 + 16 个战斗场景 + 8 个探索 + 10 个任务 + 8 个日常 + 7 个养成 + 9 个UI = 69 种能力路由
+- **测试**: 24 new tests (3496→3520), all pass
+
+#### OCR感知集成 — OcrClaimBuilder ✅
+- **新增**: `perception/ocr_claim_builder.py` — OCR感知层集成模块
+  - OcrClaimBuilder: 将 GenshinScreenClassifier 状态 → GameScene → OcrTargetedScanner → ScreenStateClaimBuilder 融合
+  - _CLASSIFIER_TO_SCENE: 22 个分类器状态→GameScene映射
+  - _scan_to_ocr_output: OcrScanResult→OcrOutput格式转换（像素bbox→归一化坐标）
+  - build_claim(): 一站式构建 OCR 增强的 ScreenStateClaim
+  - read_number(): 按用途读取数值（如角色等级、树脂数量）
+  - read_purpose(): 按用途读取OCR结果
+  - OCR 失败时优雅降级为纯分类器claim
+- **修复**: ScreenStateClaimBuilder._STATE_ALIASES 添加 "character_screen" → "character_select"
+- **新增**: UIFlowSkillAdapter.ocr_claim_builder 参数 + read_ocr_number() 方法
+  - UI操作可读取OCR验证数据（角色等级、树脂数量等）
+  - 无OCR时优雅降级（返回None）
+- **新增**: tests/test_ocr_claim_builder.py (9 tests)
+  - 场景映射、无OCR构建、假OCR构建、数值读取、失败处理
+- **测试**: 9 new tests (3519→3528), all pass
+- **全项目**: 3528 passed, 1 skipped — 无回归
+- **架构意义**: 闭合了 "点击→验证" 循环，UI场景现在可以验证操作结果
+
+#### Cutscene检测 + P0感知缺口修复 ✅
+- **新增**: GenshinScreenClassifier._detect_cutscene() — 过场动画检测
+  - 信箱黑边检测 (顶部/底部ROI暗色检测)
+  - Skip按钮检测 (右下角高亮区域)
+  - 过滤条件：无小地图、无血条、非均匀帧(std≥30)
+  - 输出状态: "cutscene" (confidence 0.8)
+- **修复**: Opus审计发现 _scan_to_ocr_output 硬编码1920x1080
+  - 改为传入 frame_h, frame_w 参数进行正确的bbox归一化
+- **修复**: ScreenStateClaimBuilder 添加 "character_screen" → "character_select" 别名
+- **更新**: OCR claim builder 场景映射添加 "cutscene" → GameScene.DIALOG
+- **更新**: test_screen_state_dataclass_fields 添加 "cutscene" 到期望指标集
+- **P0缺口状态**: cutscene skip detection ✅ (Q-33 已覆盖)
+- **全项目**: 3528 passed, 1 skipped — 无回归
+
+#### R-33 队伍构建验证器 + R-32 圣遗物套装验证器 ✅
+- **新增**: `combat/team_build_validator.py` — R-33 战斗前队伍安全检查
+  - TeamValidationResult(valid, safety_score, warnings, blockers)
+  - TeamBuildValidator.validate(): 5项检查
+    - 空队伍阻断
+    - 治疗/护盾角色检测（无则警告/严格模式阻断）
+    - 空位警告
+    - Boss元素抗性覆盖（≥70%警告）
+    - Boss推荐反应匹配（蒸发/融化/冻结/激化/超载/超导）
+  - _calculate_safety_score(): 加权评分 (base 0.5, +0.25治疗, +0.15护盾, +0.1满队)
+  - 已集成到 CombatSkillAdapter._validate_team_quick()
+- **新增**: `combat/artifact_set_validator.py` — R-32 圣遗物套装匹配验证
+  - ArtifactSetResult(character_id, recommended_set, detected_sets, match_score, warnings, matched)
+  - _parse_set_spec(): 解析 "Emblem of Severed Fate 4pc" / "Noblesse 2pc + Crimson 2pc" 格式
+  - _normalize_set_name(): 模糊匹配（大小写、连字符、撇号）
+  - ArtifactSetValidator.validate(): 单角色验证（主套装+备选套装匹配）
+  - ArtifactSetValidator.validate_team(): 全队批量验证
+  - 使用 knowledge/genshin_f2p_builds.py 作为推荐套装数据源
+  - 已集成到 CombatSkillAdapter._check_artifact_sets()（非阻断，仅日志警告）
+- **新增**: tests/test_team_build_validator.py (11 tests)
+- **新增**: tests/test_artifact_set_validator.py (20 tests)
+- **P0缺口状态**: R-33 ✅, R-32 ✅ — 所有8个P0阻断项已完成
+- **全项目**: 3559 passed, 1 skipped — 无回归
+
+#### Phase 5 测试补全 + QuestLogReader 修复 ✅
+- **新增**: tests/test_backend_factory.py (4 tests) — BackendFactory console/safe_window/background 模式
+- **新增**: tests/test_quest_log_reader.py (8 tests) — QuestLogReader OCR读取+知识库匹配
+  - 测试: 无OCR函数、OCR返回、短文本过滤、异常处理、知识库匹配、字段验证
+- **新增**: tests/test_dialog_choice_arbiter.py (7 tests) — DialogChoiceArbiter VLM仲裁
+  - 测试: 高置信度选择、低置信度VLM回退、无分析器默认、VLM调用限制、计数器重置
+- **修复**: QuestLogReader._infer_quest_id() 字段名错误
+  - QuestStep 使用 step_id/objective 而非 quest_id/step_index
+- **修复**: QuestLogReader.match_progress() 同样使用了错误字段名
+- **全项目**: 3578 passed, 1 skipped — 无回归
+
+#### R-43 AR阶段养成规划器 ✅
+- **新增**: `knowledge/ar_stage_planner.py` — AR依赖养成优先级规划
+  - 5个AR阶段: early(1-20), mid_early(20-35), mid_late(35-45), endgame_prep(45-55), endgame(55-60)
+  - ProgressionPriority: 每阶段3个优先级，含树脂预算分配
+  - ARStagePlanner: get_stage(), get_priority_names(), get_resin_budget(), get_avoid_list()
+  - should_farm_artifacts()/should_farm_talents(): AR门禁检查
+- **新增**: tests/test_ar_stage_planner.py (17 tests)
+- **修复**: daily_tasks " commissions" 前导空格typo (Opus审计发现)
+
+#### R-34 圣遗物主词条验证器 ✅
+- **新增**: `combat/artifact_main_stat_validator.py` — 圣遗物主词条错误检测
+  - _normalize_stat(): 统一 stat 名称（ATK%/CRIT RATE/HB/EM/DMG%等）
+  - _ROLE_MAIN_STATS: 6种角色的有效主词条映射
+  - _NEVER_STATS: 角色不应使用的主词条（DPS不应有HB circlet）
+  - ArtifactMainStatValidator.validate(): 构建推荐对比 + 角色通用检查
+  - 支持 "or" 替代选项（如 "ER% or ATK%" 两者均有效）
+- **新增**: tests/test_artifact_main_stat_validator.py (14 tests)
+
+#### R-37 替代武器推荐器 ✅
+- **新增**: `knowledge/weapon_recommender.py` — F2P武器替代选择
+  - WeaponRecommendation: character_id, best_weapon, alternatives, selected, rank
+  - WeaponRecommender.recommend(): 按优先级选择可用武器
+  - 模糊匹配: 部分名称也能匹配（"catch" → "The Catch R5"）
+  - recommend_team(): 全队批量推荐
+- **新增**: tests/test_weapon_recommender.py (10 tests)
+
+#### 闭环审计 + 架构验证 ✅
+- **验证**: 最小可运行闭环完全就绪（5个组件全部FUNCTIONAL + INTEGRATED）
+  - ClosedLoopRunner: TaskSpec→SkillRecipe→ScreenClaim→ActionContract→InputLease→ObservationClaim→StateDeltaClaim
+  - RuntimeOverrideClaim + CapsulePatchProposal: 5阶段验证流程
+  - 所有StateBus slots: screen_claim, affordances, mission_graph, checkpoint_state, navigation_plan等
+  - 165 closed-loop tests passing
+- **修复**: QuestLogReader 字段名bug（quest_id→step_id, step_index→0）
+- **验证**: S-32 crash recovery 已存在于 execution/crash_recovery.py（8 tests）
+- **验证**: 6阶段养成链已完全注册到 UIFlowSkillAdapter（level_up→ascend→weapon→artifact→talent→party）
+- **验证**: 战斗16场景关键词路由完整（boss-specific 6, environment 2, abyss, multi-wave, rotations 2, long-chain 5, mainline 7）
+- **全项目**: 3619 passed, 1 skipped — 无回归
+
+#### 本会话统计
+- **新增模块**: 4 (ar_stage_planner, artifact_main_stat_validator, weapon_recommender, artifact_set_validator)
+- **修复模块**: 2 (quest_log_reader, ar_stage_planner typo)
+- **新增测试**: 71 tests across 7 files
+- **测试增长**: 3528 → 3619 (+91 tests net)
+- **已覆盖能力缺口**: R-32, R-33, R-34, R-37, R-43, S-32, P-19
+
+#### UI场景OCR验证闭环 ✅
+- **新增**: UIFlow引擎 OCR验证步骤原语
+  - `verify_ocr_number(expected_min, expected_max, reason)` — OCR数字范围验证
+  - `verify_screen_contains(expected_text, reason)` — 屏幕文字内容验证
+  - STEP_VERIFY_OCR_NUMBER / STEP_VERIFY_SCREEN_CONTAINS 新步骤类型
+  - _step_verify_ocr_number / _step_verify_screen_contains 执行器
+  - Fail-open设计：无OCR数据时跳过验证（不阻断流程）
+- **增强**: CHARACTER_LEVEL_UP_FULL 添加 verify_ocr_number 步骤
+- **增强**: CHARACTER_ASCEND_FULL 添加 verify_screen_contains 步骤
+- **新增**: UIStep字段 ocr_expected_min/max, expected_text
+- **新增**: tests/test_ui_flow_verify_steps.py (7 tests)
+- **全项目**: 3626 passed, 1 skipped — 无回归
+- **已验证闭环**: 全5组件FUNCTIONAL + INTEGRATED

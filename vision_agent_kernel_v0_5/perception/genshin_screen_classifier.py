@@ -31,6 +31,9 @@ class GenshinScreenClassifier:
         self._combat_indicator_roi = (770, 930, 850, 970)
         self._death_roi = (660, 400, 1260, 680)
         self._notification_roi = (1400, 100, 1900, 500)
+        self._letterbox_top_roi = (0, 0, 1920, 60)
+        self._letterbox_bottom_roi = (0, 1020, 1920, 1080)
+        self._skip_button_roi = (1650, 900, 1900, 1000)
         self._history: list[str] = []
 
     def classify(self, frame: np.ndarray) -> ScreenState:
@@ -53,6 +56,7 @@ class GenshinScreenClassifier:
         skill_icons = self._detect_skill_icons(frame, sx, sy, overall_mean)
         combat = self._detect_combat_indicator(frame, sx, sy)
         notification = self._detect_notification(frame, sx, sy)
+        cutscene = self._detect_cutscene(frame, sx, sy, minimap, hp_bar)
 
         indicators: dict[str, bool] = {
             "dark_frame": bool(dark),
@@ -65,6 +69,7 @@ class GenshinScreenClassifier:
             "skill_icons": bool(skill_icons),
             "combat": bool(combat),
             "notification": bool(notification),
+            "cutscene": bool(cutscene),
         }
 
         # Determine raw classified state
@@ -74,6 +79,9 @@ class GenshinScreenClassifier:
         elif loading:
             raw_state = "loading_screen"
             conf = 0.9
+        elif cutscene:
+            raw_state = "cutscene"
+            conf = 0.8
         elif dialog:
             raw_state = "dialog"
             conf = 0.85
@@ -274,6 +282,41 @@ class GenshinScreenClassifier:
         # Confirm no minimap present
         minimap = self._detect_minimap(frame, sx, sy)
         return not minimap
+
+    def _detect_cutscene(
+        self, frame: np.ndarray, sx: float, sy: float,
+        has_minimap: bool, has_hp: bool,
+    ) -> bool:
+        """Detect cinematic cutscene: letterbox bars, no HUD, skip button."""
+        # Must have no minimap and no HP bar (cinematic hides HUD)
+        if has_minimap or has_hp:
+            return False
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY) if frame.ndim == 3 else frame
+        overall_std = float(np.std(gray))
+        # Reject uniform frames (solid color, all-white, all-black)
+        if overall_std < 30.0:
+            return False
+        h, w = frame.shape[:2]
+        # Check for letterbox (top + bottom black bars)
+        x1t, y1t, x2t, y2t = self._scale_roi(self._letterbox_top_roi, sx, sy)
+        top_bar = gray[y1t:y2t, x1t:x2t]
+        x1b, y1b, x2b, y2b = self._scale_roi(self._letterbox_bottom_roi, sx, sy)
+        bot_bar = gray[y1b:y2b, x1b:x2b]
+        if top_bar.size > 0 and bot_bar.size > 0:
+            top_dark = float(np.mean(top_bar)) < 30.0
+            bot_dark = float(np.mean(bot_bar)) < 30.0
+            if top_dark and bot_dark:
+                return True
+        # Alternative: check for skip button even without letterbox
+        x1s, y1s, x2s, y2s = self._scale_roi(self._skip_button_roi, sx, sy)
+        skip_roi = frame[y1s:y2s, x1s:x2s]
+        if skip_roi.size == 0:
+            return False
+        hsv = cv2.cvtColor(skip_roi, cv2.COLOR_BGR2HSV)
+        # Skip button: bright white/blue text on dark
+        bright_mask = cv2.inRange(hsv, (0, 0, 200), (180, 30, 255))
+        bright_ratio = float(np.count_nonzero(bright_mask)) / bright_mask.size
+        return bright_ratio > 0.05
 
     def _detect_notification(self, frame: np.ndarray, sx: float, sy: float) -> bool:
         """Detect notification overlay: bright text on right side of screen."""

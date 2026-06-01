@@ -60,6 +60,10 @@ class CombatSkillAdapter:
         """Execute a full combat encounter using generated playbook."""
         duration = duration_sec or self._config.default_combat_duration_sec
 
+        # R-33: Pre-combat team validation
+        if not self._validate_team_quick(team_elements, team_characters):
+            log.warning("[CombatSkill] team validation failed, proceeding with caution")
+
         playbook = self._planner.generate_playbook(
             team_elements=team_elements,
             team_characters=team_characters,
@@ -551,6 +555,47 @@ class CombatSkillAdapter:
                 return NarwhalHandler(executor).execute()
             return False
         return _handler
+
+    def _validate_team_quick(
+        self,
+        team_elements: list[str],
+        team_characters: list[str],
+    ) -> bool:
+        """Quick team safety check before combat. Returns True if team is viable."""
+        try:
+            from combat.team_build_validator import TeamBuildValidator
+            from combat.team_capability import TeamCapabilityAnalyzer
+            analyzer = TeamCapabilityAnalyzer()
+            team = analyzer.analyze(team_characters, team_elements)
+            validator = TeamBuildValidator()
+            result = validator.validate(team)
+            if not result.safe_to_proceed:
+                log.warning(
+                    "[CombatSkill] team validation blockers: %s",
+                    result.blockers,
+                )
+                return False
+            if result.warnings:
+                log.info("[CombatSkill] team warnings: %s", result.warnings)
+        except Exception as exc:
+            log.debug("[CombatSkill] team validation skipped: %s", exc)
+
+        # R-32: Artifact set check (non-blocking — log warnings only)
+        self._check_artifact_sets(team_characters)
+        return True
+
+    def _check_artifact_sets(self, team_characters: list[str]) -> None:
+        """Log artifact set warnings for the team (non-blocking)."""
+        try:
+            from combat.artifact_set_validator import ArtifactSetValidator
+            validator = ArtifactSetValidator()
+            # Without detected sets, this logs recommended builds as reference
+            for cid in team_characters:
+                result = validator.validate(cid, [])
+                if result.warnings:
+                    log.info("[CombatSkill] artifact %s: %s", cid, result.warnings)
+        except Exception as exc:
+            log.debug("[CombatSkill] artifact set check skipped: %s", exc)
 
 
 class _CombatExecutorBridge:

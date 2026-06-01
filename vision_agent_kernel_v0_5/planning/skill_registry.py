@@ -66,6 +66,11 @@ _COMPOSITE_ROUTES: dict[str, tuple[str, str]] = {
     "explore_open_chest": ("exploration", "open_chest"),
     "explore_collect_oculus": ("exploration", "collect_oculus"),
     "explore_interact": ("exploration", "interact_with_object"),
+    "explore_puzzle_monument": ("exploration_puzzle", "solve_elemental_monument"),
+    "explore_puzzle_torch": ("exploration_puzzle", "solve_torch"),
+    "explore_puzzle_pressure": ("exploration_puzzle", "solve_pressure_plate"),
+    "explore_timed_challenge": ("exploration_puzzle", "solve_timed_challenge"),
+    "explore_withering_zone": ("exploration_puzzle", "solve_withering_zone"),
     # Exploration scenario routing
     "explore_scenario": ("exploration_scenario", "execute_scenario"),
     # Quest composites
@@ -338,7 +343,14 @@ class SkillRegistry:
         backend = self._get_backend()
         if backend is None:
             return None
-        return QuestSkillAdapter(backend=backend, state_bus=self._bus)
+        # Wire QuestStateMachine if available
+        quest_sm = None
+        try:
+            from planning.quest_state_machine import QuestStateMachine
+            quest_sm = QuestStateMachine(quest_id="auto")
+        except Exception:
+            pass
+        return QuestSkillAdapter(backend=backend, state_bus=self._bus, quest_state_machine=quest_sm)
 
     def _create_daily_routine_adapter(self) -> Any:
         from orchestration.daily_routine_skill_adapter import DailyRoutineSkillAdapter, DailyRoutineConfig

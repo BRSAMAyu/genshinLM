@@ -63,12 +63,13 @@ class MainlineAPI:
         claim_graph: ClaimGraph | None = None,
         fig: FalsifiableInterventionGraph | None = None,
         skill_registry: SkillRegistry | None = None,
+        runner: MainlineRunner | None = None,
     ) -> None:
         self._claim_graph = claim_graph or ClaimGraph()
         self._fig = fig or FalsifiableInterventionGraph()
         self._skill_registry = skill_registry or SkillRegistry()
         self._sentinel = SentinelRuntime()
-        self._runner = MainlineRunner(sentinel=self._sentinel)
+        self._runner = runner or MainlineRunner(sentinel=self._sentinel)
         self._state = MainlineState()
         self._lock = threading.Lock()
         self._last_result: MissionRunResult | None = None

@@ -2,7 +2,7 @@
   "skill_id": "demo_combat_showcase_skill",
   "name": "Demo Combat Showcase Skill",
   "type": "combat",
-  "version": 6,
+  "version": 7,
   "metadata": {
     "source": "showcase_demo",
     "smart_authoring": [
@@ -89,6 +89,20 @@
     "require_focus": true,
     "max_duration_ms": 8000
   },
+  "capsule_id": "core",
+  "capabilities": [],
+  "parameters_schema": {},
+  "resources": [],
+  "verifier_contracts": [],
+  "planner": {},
+  "semantic_actions": [],
+  "ui_anchors": [],
+  "capabilities_required": [],
+  "capabilities_provided": [],
+  "failure_modes": [],
+  "fallbacks": [],
+  "profile_compatibility": {},
+  "benchmark_stats": {},
   "archived": false,
-  "updated_at": 1779256253.3537745
+  "updated_at": 1780279281.353658
 }

@@ -369,11 +369,23 @@ class GenshinActionExecutor:
         return ok
 
     def _click_at_normalized(self, nx: float, ny: float, reason: str) -> bool:
-        """Click at normalized (0-1) coordinates, converting to absolute screen coords."""
+        """Click at normalized (0-1) coordinates with strict safety bounds verification."""
+        if not (0.0 <= nx <= 1.0 and 0.0 <= ny <= 1.0):
+            log.warning("[GenshinExecutor] Click coordinates (%f, %f) out of logical screen bounds!", nx, ny)
+            return False
         try:
             rect = self._backend.client_rect()
             sx = rect.left + int(nx * rect.width)
             sy = rect.top + int(ny * rect.height)
+            
+            # Enforce physical window sandbox bounds
+            if not (rect.left <= sx <= rect.right and rect.top <= sy <= rect.bottom):
+                log.warning(
+                    "[GenshinExecutor] Click coordinate (%d, %d) projected outside client rect boundaries (%d, %d, %d, %d)!",
+                    sx, sy, rect.left, rect.top, rect.right, rect.bottom
+                )
+                return False
+                
             self._backend.click_at(sx, sy, reason=reason)
             return True
         except Exception as exc:

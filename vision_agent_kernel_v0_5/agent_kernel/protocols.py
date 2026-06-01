@@ -1,342 +1,77 @@
-"""Protocols (interfaces) for the AgentKernel framework.
+"""Protocols (interfaces) for the Sparkle Agent Kernel core neurology.
 
-Each protocol defines the contract that adapters must implement.
-Uses Python's typing.Protocol for structural subtyping — no inheritance required.
-
-Layer mapping (from AURORA_SPARKLE_AGENTS_CORE_ARCHITECTURE.md §3):
-  L0   InputLeaseManager     — 100Hz physical safety, lease management
-  L1-2 SpinalReflexAgent     — 50Hz combat reflex, threat evaluation
-  L3-4 BrainstemNavigator    — 10-20Hz PID navigation, stuck detection
-  L3-4 DialogueController    — 3-5Hz smart dialogue skip + branch intercept
-  L5-6 CerebellumController  — 2-5Hz DesktopTree, OCR, route compilation
-  L7-8 CerebrumAgent         — 0.1-0.2Hz mission compilation, failure diagnosis
-  L9   CompanionAgent        — on-demand user interaction, override handling
-
-Plus cross-cutting protocols:
-  PerceptionProvider         — frame → semantic observation
-  Planner                    — observation + goal → action plan
-  ExecutionProvider          — action primitive → step result
-  SuccessChecker             — observation + criteria → verified?
-  MemoryStore                — experience recording and recall
-  SkillRecipeLookup          — skill ID → SkillRecipe resolution
+Each protocol defines the strict contract that game capsules and drivers must
+implement. Uses Python's typing.Protocol for structural subtyping.
 """
 from __future__ import annotations
 
-from typing import Any, Protocol, runtime_checkable
+from typing import Protocol, runtime_checkable, Dict, Any, Sequence
+from uuid import UUID
 
 from agent_kernel.types import (
+    ActionContract,
     ActionPlan,
     ActionPrimitive,
     AgentGoal,
     CapsulePatchProposal,
-    CombatCommand,
+    DesktopTree,
     Experience,
-    MissionGraph,
-    MissionNode,
+    GoalResult,
     PhysicalReceipt,
-    RepairPatch,
-    RouteSegment,
     RuntimeOverride,
-    SceneGraph,
+    SemanticAction,
     SemanticObservation,
-    SkillRecipe,
     StateDeltaClaim,
     StepResult,
     TaskSpec,
+    WorldStateGraph,
+    SceneGraph,
+    SkillRecipe,
     ThreatSignal,
+    MissionNode,
+    MissionGraph,
+    RouteSegment,
+    ObservationClaim,
+    RepairPatch,
 )
 
-
 # ===========================================================================
-# L0: Physical Safety Layer (100Hz)
-# ===========================================================================
-
-@runtime_checkable
-class InputLeaseManager(Protocol):
-    """L0: Control physical input with absolute safety.
-
-    Manages lease-based input control with human-first intercept.
-    When a physical user intervenes, all leases are instantly released.
-    """
-
-    def acquire_lease(self, owner: str, duration_sec: float, priority: int) -> str | None:
-        """Acquire an input lease. Returns lease_id or None if denied."""
-        ...
-
-    def release_lease(self, lease_id: str) -> bool:
-        """Release a specific lease."""
-        ...
-
-    def verify_window_focus(self) -> bool:
-        """Check that the target window still has focus."""
-        ...
-
-    def detect_human_intervention(self) -> bool:
-        """Detect physical mouse/keyboard activity from a human user."""
-        ...
-
-    def emergency_release_all(self) -> None:
-        """Force-release all active leases immediately."""
-        ...
-
-
-# ===========================================================================
-# L1-L2: Spinal Reflex Layer (50Hz)
+# 1. Core General Protocols (Legacy & Multi-Game Capsule)
 # ===========================================================================
 
 @runtime_checkable
-class SpinalReflexAgent(Protocol):
-    """L1-L2: High-frequency combat reflex engine.
-
-    Evaluates threats and generates combat commands at 50Hz.
-    Uses lightweight YOLO detection + combo state machine.
-    """
-
-    def evaluate_threats(self, latest_frame: object) -> list[ThreatSignal]:
-        """Evaluate current frame for threats. Returns threat signals."""
-        ...
-
-    def tick_combat_reflex(
-        self,
-        threats: list[ThreatSignal],
-        current_combo_step: int,
-    ) -> CombatCommand | None:
-        """Generate a combat command based on current threats and combo state."""
-        ...
-
-
-# ===========================================================================
-# L3-L4: Brainstem Layer (10-20Hz)
-# ===========================================================================
-
-@runtime_checkable
-class BrainstemNavigator(Protocol):
-    """L3-L4: PID navigation controller with stuck detection.
-
-    Handles heading servo, movement execution, and automatic unstuck routines.
-    """
-
-    def update_heading_servo(
-        self,
-        current_yaw: float,
-        target_segment: RouteSegment,
-    ) -> None:
-        """Update the heading servo to face the next route segment."""
-        ...
-
-    def detect_stuck_state(
-        self,
-        current_pos: tuple[float, float, float],
-        elapsed_sec: float,
-    ) -> bool:
-        """Detect if the agent is stuck (no meaningful position change)."""
-        ...
-
-    def execute_unstuck_routine(self, method: str = "jump") -> None:
-        """Execute an unstuck routine (jump, dash_back, teleport_fallback)."""
-        ...
+class GameCapsule(Protocol):
+    """Encapsulation of a single game's specs, UI vocabularies and routes."""
+    @property
+    def game_id(self) -> str: ...
+    
+    def screen_vocabulary(self) -> dict[str, Any]: ...
+    def action_vocabulary(self) -> dict[str, Any]: ...
+    def world_knowledge(self) -> dict[str, Any]: ...
+    def verifier_bundle(self) -> dict[str, Any]: ...
+    def skill_library(self) -> dict[str, Any]: ...
 
 
 @runtime_checkable
-class DialogueController(Protocol):
-    """L3-L4: Smart dialogue skip with branch interception.
+class MemoryStore(Protocol):
+    """Record and recall experiences."""
 
-    When in dialogue mode, skips through text at 3-5Hz.
-    When a branch choice appears, pauses and delegates selection.
-    """
-
-    def tick(self, scene_graph: SceneGraph) -> object:
-        """Process one dialogue controller tick.
-
-        Handles text advancement and branch detection.
-        Returns a DialogueActionResult indicating skip/select/wait.
-        """
+    def record(self, experience: Experience) -> None:
+        """Store an experience."""
         ...
 
-    def is_option_present(self, scene_graph: SceneGraph) -> bool:
-        """Check if a dialogue branch choice is currently on screen."""
+    def recall(self, situation: str, limit: int = 5) -> list[Experience]:
+        """Retrieve relevant past experiences."""
         ...
 
-    def select_best_option(
-        self,
-        scene_graph: SceneGraph,
-        option_registry: dict[str, Any] | None = None,
-    ) -> dict[str, Any] | None:
-        """Select the best dialogue option from available choices.
-
-        Uses option_registry for known options, falls back to VLM for unknown.
-        """
-        ...
-
-
-# ===========================================================================
-# L5-L6: Cerebellum Layer (2-5Hz)
-# ===========================================================================
-
-@runtime_checkable
-class CerebellumController(Protocol):
-    """L5-L6: DesktopTree construction, OCR, and route compilation.
-
-    Builds structured UI trees from raw frames using template anchoring
-    and geometric clustering. Compiles navigation routes.
-    """
-
-    def locate_ui_panel_roi(
-        self,
-        frame: object,
-        panel_template_id: str,
-    ) -> tuple[float, float, float, float] | None:
-        """Locate a UI panel ROI using template matching."""
-        ...
-
-    def parse_desktop_tree(
-        self,
-        frame: object,
-        active_roi: tuple[float, float, float, float] | None = None,
-    ) -> SceneGraph:
-        """Parse a frame into a structured SceneGraph (UI tree)."""
-        ...
-
-    def compile_route(
-        self,
-        current_pos: tuple[float, float, float],
-        destination: tuple[float, float, float],
-    ) -> list[RouteSegment]:
-        """Compile a navigation route from current position to destination.
-
-        Returns a list of route segment dicts.
-        """
-        ...
-
-    def commit_yaml_patch(
-        self,
-        capsule_id: str,
-        patch_data: dict[str, Any],
-    ) -> bool:
-        """Write a permanent YAML patch to a capsule's config."""
-        ...
-
-    def align_ui_anchor(
-        self,
-        tree: SceneGraph,
-        target_label: str,
-        active_overrides: dict[str, Any] | None = None,
-    ) -> SceneObject | None:
-        """Find a UI anchor element using template label + overrides.
-
-        Used by SPARKLE 2.1 for template-anchored UI tree construction.
-        """
-        ...
-
-
-# ===========================================================================
-# L7-L8: Cerebrum Agent (0.1-0.2Hz, cloud-first)
-# ===========================================================================
-
-@runtime_checkable
-class CerebrumAgent(Protocol):
-    """L7-L8: Cloud-hosted strategic brain.
-
-    Handles mission compilation, failure diagnosis, visual puzzle solving,
-    and replanning. Cloud-first but must support offline fallback.
-    """
-
-    def compile_mission(self, goal: AgentGoal) -> MissionGraph:
-        """Compile a goal into a MissionGraph (plan DAG)."""
-        ...
-
-    def diagnose_failure(
-        self,
-        failed_node: MissionNode,
-        screenshot: object,
-        error_trace: str,
-    ) -> RepairPatch:
-        """Diagnose why a mission node failed. Returns a repair patch."""
-        ...
-
-    def solve_visual_puzzle(
-        self,
-        puzzle_image: object,
-        scene_description: str,
-    ) -> tuple[str, ...]:
-        """Solve a visual puzzle using multi-modal reasoning.
-
-        Returns a tuple of action descriptions to execute.
-        """
-        ...
-
-
-# ===========================================================================
-# L9: Companion Agent (on-demand)
-# ===========================================================================
-
-@runtime_checkable
-class CompanionAgent(Protocol):
-    """L9: User-facing dialogue companion.
-
-    Handles natural language interaction, state explanation,
-    runtime override injection, and YAML patch proposals.
-    """
-
-    def handle_user_message(
-        self,
-        message: str,
-        current_context: dict[str, Any],
-    ) -> dict[str, Any]:
-        """Handle a user message and return a response.
-
-        Response includes display_message, technical_action, and optional
-        patch_draft.
-        """
-        ...
-
-    def propose_override(
-        self,
-        user_text: str,
-        current_state: dict[str, Any],
-    ) -> RuntimeOverride | None:
-        """Parse user text into a RuntimeOverride proposal."""
-        ...
-
-    def propose_capsule_patch(
-        self,
-        override: RuntimeOverride,
-        session_outcome: str,
-    ) -> CapsulePatchProposal | None:
-        """Propose making a runtime override permanent as a Capsule YAML patch."""
-        ...
-
-    def explain_current_state(self, state: dict[str, Any]) -> str:
-        """Generate a human-readable explanation of the current agent state."""
-        ...
-
-
-# ===========================================================================
-# Cross-cutting Protocols
-# ===========================================================================
-
-@runtime_checkable
-class PerceptionProvider(Protocol):
-    """Transform raw frames into semantic understanding."""
-
-    def observe(self, frame: object) -> SemanticObservation:
-        """Produce a semantic observation from a raw frame."""
-        ...
-
-    def describe_scene(self, frame: object, prompt: str) -> str:
-        """Get a natural language description of the scene."""
-        ...
-
-    def locate_element(
-        self, frame: object, description: str,
-    ) -> object | None:
-        """Find an element matching a natural language description."""
+    def recall_failures(self, goal_type: str) -> list[Experience]:
+        """Retrieve failed experiences for a goal type."""
         ...
 
 
 @runtime_checkable
 class Planner(Protocol):
-    """Generate action plans from observations and goals."""
+    """Generate action plans from observations and goals (Legacy compatibility)."""
 
     def plan(
         self,
@@ -359,8 +94,66 @@ class Planner(Protocol):
 
 
 @runtime_checkable
+class SkillRecipeLookup(Protocol):
+    """Repository mapping skill intent strings to generalized recipes."""
+    def lookup(self, capability: str) -> SkillRecipe: ...
+    def lookup_recipe(self, skill_id: str) -> dict[str, Any]: ...
+
+
+# ===========================================================================
+# 2. Perception Protocols (L3-L6)
+# ===========================================================================
+
+@runtime_checkable
+class PerceptionProvider(Protocol):
+    """Cortex Fusion: Transforms raw capture frame into full SemanticObservation."""
+
+    def observe(self, frame: object, frame_id: int) -> SemanticObservation:
+        """Produce a full observation (2D DesktopTree + 3D WorldStateGraph)."""
+        ...
+
+    def parse_desktop_tree(
+        self, frame: object, active_roi: tuple[float, float, float, float] | None = None
+    ) -> DesktopTree:
+        """Locate containers using templates, run local OCR, and cluster nodes."""
+        ...
+
+    def build_world_state(self, frame: object) -> WorldStateGraph:
+        """Analyze 3D terrain, waypoints, targets, landmarks, and obstacles."""
+        ...
+
+
+# ===========================================================================
+# 3. Planning & Verification Protocols (L7-L8)
+# ===========================================================================
+
+@runtime_checkable
+class CerebrumPlanner(Protocol):
+    """Cerebrum: Low-frequency, Cloud-First strategic planner and replanner."""
+
+    def compile_task(self, goal: AgentGoal, spec: TaskSpec) -> Sequence[SemanticAction]:
+        """Generate high-level strategic actions to achieve a goal."""
+        ...
+
+    def replan_on_failure(
+        self,
+        failed_action: SemanticAction,
+        observation: SemanticObservation,
+        error_msg: str,
+    ) -> Sequence[SemanticAction]:
+        """Determine strategic recovery route or request human intervention."""
+        ...
+
+
+@runtime_checkable
 class SuccessChecker(Protocol):
-    """Check whether a goal has been achieved."""
+    """Adjudicates claims and verifies if a goal has been reached."""
+
+    def adjudicate_delta(
+        self, pre_obs: SemanticObservation, post_obs: SemanticObservation, criteria: str
+    ) -> StateDeltaClaim:
+        """Check post-action observation claims to verify expected state shifts."""
+        ...
 
     def check(
         self, observation: SemanticObservation, criteria: str,
@@ -370,8 +163,26 @@ class SuccessChecker(Protocol):
 
 
 @runtime_checkable
+class ClaimAdjudicator(Protocol):
+    """L8 Fact Verification: Core facts adjudication."""
+    def adjudicate(
+        self,
+        claim: StateDeltaClaim,
+        observations: list[ObservationClaim],
+        *,
+        dependency_health: float = 1.0,
+        drift_penalty: float = 1.0,
+        sample_sufficiency: float = 1.0,
+    ) -> Any: ...
+
+
+# ===========================================================================
+# 4. Execution Protocols (L0-L2)
+# ===========================================================================
+
+@runtime_checkable
 class ExecutionProvider(Protocol):
-    """Execute action primitives via physical input."""
+    """Execution Runtime: The unique and secure gatekeeper to physical keyboard/mouse."""
 
     def execute(self, primitive: ActionPrimitive) -> StepResult:
         """Execute a single primitive and return the result."""
@@ -385,108 +196,85 @@ class ExecutionProvider(Protocol):
         """Press a keyboard key."""
         ...
 
-
-@runtime_checkable
-class MemoryStore(Protocol):
-    """Record and recall experiences."""
-
-    def record(self, experience: Experience) -> None:
-        """Store an experience."""
+    def execute_contract(self, contract: ActionContract) -> PhysicalReceipt:
+        """Execute a validated contract under active safety leases."""
         ...
 
-    def recall(self, situation: str, limit: int = 5) -> list[Experience]:
-        """Retrieve relevant past experiences."""
-        ...
-
-    def recall_failures(self, goal_type: str) -> list[Experience]:
-        """Retrieve failed experiences for a goal type."""
-        ...
-
-
-@runtime_checkable
-class SkillRecipeLookup(Protocol):
-    """Resolve skill IDs to SkillRecipe instances."""
-
-    def lookup(self, skill_id: str) -> SkillRecipe | None:
-        """Look up a SkillRecipe by ID."""
-        ...
-
-    def find_applicable(
-        self,
-        context: str,
-        goal: AgentGoal,
-    ) -> list[SkillRecipe]:
-        """Find all skills applicable to the given context and goal."""
-        ...
-
-
-@runtime_checkable
-class ClaimAdjudicator(Protocol):
-    """Verify state delta claims against observation evidence."""
-
-    def adjudicate(
-        self,
-        claim: StateDeltaClaim,
-        observations: list[object] = ...,
-        *,
-        dependency_health: float = 1.0,
-        drift_penalty: float = 1.0,
-        sample_sufficiency: float = 1.0,
-    ) -> object:
-        """Verify a claim and return adjudication result.
-
-        The simplified protocol signature allows claim-only calls
-        while supporting the full runtime signature with observations
-        and health parameters.
-        """
+    def emergency_halt(self) -> None:
+        """Immediately release all active keys, cancel physical inputs, and clear queues."""
         ...
 
 
 # ===========================================================================
-# Game Capsule Protocol (§6 in SPARKLE_AGENT_KERNEL_DESIGN.md)
+# 5. Low-level Controller Protocols (L0-L5)
 # ===========================================================================
 
 @runtime_checkable
-class GameCapsule(Protocol):
-    """Protocol for game-specific capsule integration.
+class InputLeaseManager(Protocol):
+    """L0 物理安全层：控制物理键鼠的绝对控制权与安全截断"""
+    def acquire_lease(self, owner: str, duration_sec: float, priority: int) -> UUID | str | None: ...
+    def release_lease(self, lease_id: UUID | str) -> bool: ...
+    def verify_window_focus(self) -> bool: ...
+    def detect_human_intervention(self) -> bool: ...
+    def emergency_release_all(self) -> None: ...
 
-    Each game must implement this protocol to plug into the Kernel.
-    The Kernel never imports game-specific code; it only uses this interface.
-    """
 
-    @property
-    def game_id(self) -> str:
-        """Unique identifier for this game capsule (e.g., 'genshin', 'hsr')."""
+@runtime_checkable
+class SpinalReflexAgent(Protocol):
+    """L1-L2 脊髓层：实时战斗反射与连招状态机"""
+    def evaluate_threats(self, latest_frame: Any) -> list[ThreatSignal]: ...
+    def tick_combat_reflex(self, threats: Sequence[ThreatSignal], current_combo_step: int) -> Any: ...
+
+
+@runtime_checkable
+class BrainstemNavigator(Protocol):
+    """L3-L4 脑干层：物理 PID 导航与自动避卡"""
+    def update_heading_servo(self, current_yaw: float, target_segment: RouteSegment) -> None: ...
+    def detect_stuck_state(self, current_pos: tuple[float, float, float], elapsed_sec: float) -> bool: ...
+    def execute_unstuck_routine(self, method: str) -> None: ...
+
+
+@runtime_checkable
+class DialogueController(Protocol):
+    """L3-L4 脑干层：智能对话跳过与选项拦截选择"""
+    def tick_dialogue_skip(self, tree: SceneGraph) -> None: ...
+    def tick(self, scene_graph: SceneGraph) -> None: ...
+    def is_option_present(self, tree: SceneGraph) -> bool: ...
+    def select_best_option(self, tree: SceneGraph, option_registry: dict[str, Any] | None = None) -> Any: ...
+
+
+@runtime_checkable
+class CerebellumController(Protocol):
+    """L5-L6 小脑层：动态 UI 树解析、锚点对齐与路线编译"""
+    def locate_ui_panel_roi(self, frame: Any, panel_template_id: str) -> tuple[float, float, float, float] | None: ...
+    def parse_desktop_tree(self, frame: Any, active_roi: tuple[float, float, float, float] | None = None) -> SceneGraph: ...
+    def align_ui_anchor(self, tree: SceneGraph, target_label: str, active_overrides: dict[str, Any] | None = None) -> Any: ...
+    def compile_route(self, current_pos: tuple[float, float, float], destination: tuple[float, float, float]) -> Sequence[RouteSegment]: ...
+    def commit_yaml_patch(self, capsule_id: str, patch_data: dict[str, Any]) -> bool: ...
+
+
+@runtime_checkable
+class CerebrumAgent(Protocol):
+    """L8 大脑层：高级战略规划与复杂故障诊断"""
+    def compile_mission(self, goal: AgentGoal) -> MissionGraph: ...
+    def diagnose_failure(self, failed_node: MissionNode, screenshot: Any, error_trace: str) -> RepairPatch: ...
+    def solve_visual_puzzle(self, puzzle_image: Any, scene_description: str) -> tuple[str, ...]: ...
+
+
+# ===========================================================================
+# 6. Companion Interaction Protocols (L9)
+# ===========================================================================
+
+@runtime_checkable
+class CompanionAgent(Protocol):
+    """Companion: High-level natural language companion dialogue interface."""
+
+    def parse_override(self, user_command: str, tree: DesktopTree) -> RuntimeOverride:
+        """Parse natural language command into a safe policy RuntimeOverride patch."""
         ...
 
-    def screen_vocabulary(self) -> tuple[str, ...]:
-        """Return known screen state names for this game."""
-        ...
-
-    def action_vocabulary(self) -> tuple[str, ...]:
-        """Return known action types for this game."""
-        ...
-
-    def skill_library(self) -> dict[str, SkillRecipe]:
-        """Return all skills provided by this capsule."""
-        ...
-
-    def risk_policy(self) -> dict[str, str]:
-        """Return risk level mappings for this game's actions."""
-        ...
-
-    def world_knowledge(self) -> dict[str, object]:
-        """Return game world knowledge (waypoints, regions, items).
-
-        Used by the Kernel's navigation and planning layers to access
-        Capsule-specific world structure without importing game code.
-        """
-        ...
-
-    def verifier_bundle(self) -> dict[str, object]:
-        """Return domain-specific verifier configurations.
-
-        Maps claim types to verifier parameters for this game's
-        unique UI patterns and state transitions.
-        """
+    def propose_capsule_patch(
+        self, capsule_id: str, successful_override: RuntimeOverride
+    ) -> CapsulePatchProposal:
+        """Generate schema-validated Capsule patch with displayable diff."""
         ...

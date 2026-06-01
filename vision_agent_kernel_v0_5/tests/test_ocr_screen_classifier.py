@@ -143,7 +143,7 @@ class TestGenshinScreenClassifier:
         assert isinstance(state.state, str)
         assert 0.0 <= state.confidence <= 1.0
         assert isinstance(state.indicators, dict)
-        expected_keys = {"dark_frame", "loading_screen", "dialog_box", "minimap", "hp_bar", "skill_icons", "combat", "death_screen", "notification", "domain_entrance"}
+        expected_keys = {"dark_frame", "loading_screen", "dialog_box", "minimap", "hp_bar", "skill_icons", "combat", "death_screen", "notification", "domain_entrance", "cutscene"}
         assert set(state.indicators.keys()) == expected_keys
 
     def test_classify_with_small_frame(self, classifier: GenshinScreenClassifier) -> None:

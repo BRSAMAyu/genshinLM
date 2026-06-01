@@ -4,6 +4,7 @@ from __future__ import annotations
 import pytest
 
 from app_service.mainline_api import MainlineAPI
+from planning.mainline.mainline_runner import MainlineRunner
 from planning.mainline.mission_graph_v4 import (
     ClaimContract,
     MissionEdgeV4,
@@ -11,6 +12,10 @@ from planning.mainline.mission_graph_v4 import (
     MissionNodeV4,
 )
 from skills.schema import SkillDef
+
+
+def _exec_fn(node: MissionNodeV4) -> dict[str, str]:
+    return {c.claim_type: "ok" for c in node.output_claims if c.claim_type} or {"result": "ok"}
 
 
 def _linear_graph() -> MissionGraphV4:
@@ -35,14 +40,16 @@ class TestMainlineAPI:
         assert state["skill_count"] == 0
 
     def test_start_mission(self) -> None:
-        api = MainlineAPI()
+        runner = MainlineRunner(skill_execute_fn=_exec_fn)
+        api = MainlineAPI(runner=runner)
         result = api.start(_linear_graph())
         assert result["ok"]
         state = api.get_state()
         assert state["runner_state"] in ("completed", "error")
 
     def test_start_after_completion_succeeds(self) -> None:
-        api = MainlineAPI()
+        runner = MainlineRunner(skill_execute_fn=_exec_fn)
+        api = MainlineAPI(runner=runner)
         api.start(_linear_graph())  # completes immediately
         # After completion, state is "completed" not "running"
         result = api.start(_linear_graph())

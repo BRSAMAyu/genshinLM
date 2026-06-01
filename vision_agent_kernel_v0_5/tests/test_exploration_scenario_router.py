@@ -155,3 +155,131 @@ def test_all_11_scenarios_callable():
     for s in scenarios:
         result = router.execute_scenario(s)
         assert result.success is True, f"{s} failed"
+
+
+# ---------------------------------------------------------------------------
+# Prerequisite auto-detection tests
+# ---------------------------------------------------------------------------
+
+from unittest.mock import MagicMock
+import numpy as np
+
+
+def _fake_frame() -> np.ndarray:
+    return np.zeros((1080, 1920, 3), dtype=np.uint8)
+
+
+class _MockCombatDetector:
+    def __init__(self, in_combat: bool) -> None:
+        self._in_combat = in_combat
+
+    def is_in_combat(self, frame: np.ndarray) -> bool:
+        return self._in_combat
+
+
+class _MockElementalChestDetector:
+    def __init__(self, barrier: bool, elements: list) -> None:
+        self._barrier = barrier
+        self._elements = elements
+        self.detect_calls = 0
+
+    def detect(self, frame: np.ndarray):
+        self.detect_calls += 1
+        m = MagicMock()
+        m.elemental_barrier = self._barrier
+        m.required_elements = self._elements
+        m.confidence = 0.8
+        return m
+
+
+def test_auto_detect_enemies_injects_combat():
+    router, ex = _make_router(
+        frame_supplier=_fake_frame,
+        combat_detector=_MockCombatDetector(in_combat=True),
+    )
+    result = router.execute_scenario("exquisite_chest")
+    assert result.success is True
+    actions = [c[0] for c in ex.calls]
+    assert "combat_basic_attack" in actions
+
+
+def test_auto_detect_seal_element_injects_use_skill():
+    router, ex = _make_router(
+        frame_supplier=_fake_frame,
+        elemental_chest_detector=_MockElementalChestDetector(
+            barrier=True, elements=[MagicMock(name="PYRO")]
+        ),
+    )
+    result = router.execute_scenario("precious_chest")
+    assert result.success is True
+    # use_skill should be called for the elemental seal
+    actions = [c[0] for c in ex.calls]
+    assert "use_skill" in actions
+
+
+def test_auto_detect_no_combat_no_seal():
+    router, ex = _make_router(
+        frame_supplier=_fake_frame,
+        combat_detector=_MockCombatDetector(in_combat=False),
+        elemental_chest_detector=_MockElementalChestDetector(barrier=False, elements=[]),
+    )
+    result = router.execute_scenario("luxurious_chest")
+    assert result.success is True
+    # No combat or seal handling needed
+    actions = [c[0] for c in ex.calls]
+    assert "combat_basic_attack" not in actions
+    assert "use_skill" not in actions
+
+
+def test_auto_detect_common_chest_skips_detection():
+    """Common chests should not trigger auto-detection."""
+    router, ex = _make_router(
+        frame_supplier=_fake_frame,
+        combat_detector=_MockCombatDetector(in_combat=True),
+        elemental_chest_detector=_MockElementalChestDetector(
+            barrier=True, elements=[MagicMock(name="ELECTRO")]
+        ),
+    )
+    result = router.execute_scenario("common_chest")
+    assert result.success is True
+    # Common chests have no prerequisites — no auto-detection
+    actions = [c[0] for c in ex.calls]
+    assert "combat_basic_attack" not in actions
+    assert "use_skill" not in actions
+
+
+def test_auto_detect_result_details_includes_flags():
+    router, ex = _make_router(
+        frame_supplier=_fake_frame,
+        combat_detector=_MockCombatDetector(in_combat=True),
+        elemental_chest_detector=_MockElementalChestDetector(
+            barrier=True, elements=[MagicMock(name="GEO")]
+        ),
+    )
+    result = router.execute_scenario("exquisite_chest")
+    # Details should reflect auto-detected flags
+    assert "enemies=True" in result.details or "enemies=" in result.details
+
+
+def test_no_frame_supplier_graceful():
+    """No crash when frame_supplier is None."""
+    router, ex = _make_router()
+    result = router.execute_scenario("exquisite_chest")
+    assert result.success is True
+
+
+def test_explicit_context_not_overwritten():
+    """Explicit context keys should not be overwritten by auto-detection."""
+    router, ex = _make_router(
+        frame_supplier=_fake_frame,
+        combat_detector=_MockCombatDetector(in_combat=False),
+    )
+    result = router.execute_scenario(
+        "exquisite_chest",
+        context={"enemies_nearby": True, "seal_element": "cryo"},
+    )
+    assert result.success is True
+    actions = [c[0] for c in ex.calls]
+    # Both explicit flags should trigger their handlers
+    assert "combat_basic_attack" in actions
+    assert "use_skill" in actions

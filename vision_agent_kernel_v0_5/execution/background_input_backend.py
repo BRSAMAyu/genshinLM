@@ -182,6 +182,59 @@ class BackgroundInputBackend:
         """No-op in background mode — we don't need focus."""
         pass
 
+    # --- Protocol compliance stubs ---
+    def mouse_move(self, dx: float, dy: float, reason: str = "") -> bool:
+        log.warning("[BackgroundInput] mouse_move not supported in background mode")
+        return False
+
+    def mouse_move_to(self, x: int, y: int, reason: str = "") -> bool:
+        log.warning("[BackgroundInput] mouse_move_to not supported in background mode")
+        return False
+
+    def left_click(self, reason: str = "") -> bool:
+        log.warning("[BackgroundInput] left_click not supported in background mode")
+        return False
+
+    def right_click(self, reason: str = "") -> bool:
+        log.warning("[BackgroundInput] right_click not supported in background mode")
+        return False
+
+    def mouse_scroll(self, delta: int = -1, reason: str = "") -> bool:
+        log.warning("[BackgroundInput] mouse_scroll not supported in background mode")
+        return False
+
+    def hold_click(self, duration_sec: float = 0.5, reason: str = "") -> bool:
+        log.warning("[BackgroundInput] hold_click not supported in background mode")
+        return False
+
+    def mouse_drag(
+        self, start_x: int, start_y: int, end_x: int, end_y: int,
+        duration_ms: int = 300, button: Literal["left", "right"] = "left", reason: str = ""
+    ) -> bool:
+        log.warning("[BackgroundInput] mouse_drag not supported in background mode")
+        return False
+
+    def mouse_relative_drag(
+        self, dx: int, dy: int, duration_ms: int = 150,
+        button: Literal["left", "right", "middle"] = "right", reason: str = ""
+    ) -> bool:
+        log.warning("[BackgroundInput] mouse_relative_drag not supported in background mode")
+        return False
+
+    def mouse_double_click(
+        self, x: int, y: int, button: Literal["left", "right"] = "left", reason: str = ""
+    ) -> bool:
+        log.warning("[BackgroundInput] mouse_double_click not supported in background mode")
+        return False
+
+    def type_text(self, text: str, delay_between_keys_ms: int = 50, reason: str = "") -> bool:
+        log.warning("[BackgroundInput] type_text not supported in background mode")
+        return False
+
+    def execute_combo(self, keys: list[str], hold_time_ms: int = 100, reason: str = "") -> bool:
+        log.warning("[BackgroundInput] execute_combo not supported in background mode")
+        return False
+
     @property
     def _released(self) -> bool:
         with self._lock:
@@ -366,7 +419,62 @@ class FlashFocusBackend:
         """No-op — flash focus handles foreground switching automatically."""
         pass
 
+    # --- Protocol compliance stubs ---
+    def mouse_move(self, dx: float, dy: float, reason: str = "") -> bool:
+        log.warning("[FlashFocus] mouse_move not supported in background mode")
+        return False
+
+    def mouse_move_to(self, x: int, y: int, reason: str = "") -> bool:
+        log.warning("[FlashFocus] mouse_move_to not supported in background mode")
+        return False
+
+    def left_click(self, reason: str = "") -> bool:
+        log.warning("[FlashFocus] left_click not supported in background mode")
+        return False
+
+    def right_click(self, reason: str = "") -> bool:
+        log.warning("[FlashFocus] right_click not supported in background mode")
+        return False
+
+    def mouse_scroll(self, delta: int = -1, reason: str = "") -> bool:
+        log.warning("[FlashFocus] mouse_scroll not supported in background mode")
+        return False
+
+    def hold_click(self, duration_sec: float = 0.5, reason: str = "") -> bool:
+        log.warning("[FlashFocus] hold_click not supported in background mode")
+        return False
+
+    def mouse_drag(
+        self, start_x: int, start_y: int, end_x: int, end_y: int,
+        duration_ms: int = 300, button: Literal["left", "right"] = "left", reason: str = ""
+    ) -> bool:
+        log.warning("[FlashFocus] mouse_drag not supported in background mode")
+        return False
+
+    def mouse_relative_drag(
+        self, dx: int, dy: int, duration_ms: int = 150,
+        button: Literal["left", "right", "middle"] = "right", reason: str = ""
+    ) -> bool:
+        log.warning("[FlashFocus] mouse_relative_drag not supported in background mode")
+        return False
+
+    def mouse_double_click(
+        self, x: int, y: int, button: Literal["left", "right"] = "left", reason: str = ""
+    ) -> bool:
+        log.warning("[FlashFocus] mouse_double_click not supported in background mode")
+        return False
+
+    def type_text(self, text: str, delay_between_keys_ms: int = 50, reason: str = "") -> bool:
+        log.warning("[FlashFocus] type_text not supported in background mode")
+        return False
+
+    def execute_combo(self, keys: list[str], hold_time_ms: int = 100, reason: str = "") -> bool:
+        log.warning("[FlashFocus] execute_combo not supported in background mode")
+        return False
+
     @property
     def _released(self) -> bool:
         with self._lock:
             return len(self._down_keys) == 0
+
+

@@ -95,8 +95,8 @@ class QuestLogReader:
             matched = self._find_best_match(entry.objective_text)
             if matched is not None:
                 claims.append(QuestProgressClaim(
-                    quest_id=matched.quest_id,
-                    step_index=matched.step_index,
+                    quest_id=matched.step_id,
+                    step_index=0,
                     status="in_progress",
                     matched_text=entry.objective_text,
                     confidence=min(entry.confidence, 0.9),
@@ -146,8 +146,8 @@ class QuestLogReader:
         text_lower = text.lower()
 
         for qs in self._quest_knowledge:
-            if qs.quest_id in text_lower or qs.objective.lower() in text_lower:
-                return (qs.quest_id, qs.step_index)
+            if qs.step_id in text_lower or qs.objective.lower() in text_lower:
+                return (qs.step_id, 0)
 
         return ("unknown", 0)
 

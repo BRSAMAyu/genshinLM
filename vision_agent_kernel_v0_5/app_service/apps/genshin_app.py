@@ -17,6 +17,7 @@ class GenshinApp:
         self._cooldown_slot = None
         self._failure_bridge = None
         self._persona_bridge = None
+        self._fusion_runtime = None
         self._active = False
 
     def install(self, context: AppContext) -> None:
@@ -30,6 +31,11 @@ class GenshinApp:
             cooldown_slot=self._cooldown_slot,
         )
         context.pipeline.add_post_processor(processor)
+
+        from perception.fusion_runtime import PerceptionFusionRuntime
+        self._fusion_runtime = PerceptionFusionRuntime(state_bus=context.state_bus)
+        self._fusion_runtime.set_screen_classifier(_GenshinScreenStateAdapter())
+        context.pipeline.add_post_processor(self._fusion_runtime)
 
         from app_service.apps.genshin_skills import (
             GenshinCombatSkill,
@@ -111,3 +117,26 @@ class _GenshinPerceptionBridge:
                 _log.warning("DangerSignalExtractor.extract failed: %s", e)
                 observation.extensions["genshin_danger_error"] = str(e)
         self._prev_frame = frame.copy() if frame is not None else None
+
+
+class _GenshinScreenStateAdapter:
+    """Lazy adapter from GenshinScreenClassifier output to ScreenStateClaim strings."""
+
+    def __init__(self) -> None:
+        self._classifier = None
+
+    def __call__(self, frame) -> str:
+        if self._classifier is None:
+            try:
+                from perception.genshin_screen_classifier import GenshinScreenClassifier
+                self._classifier = GenshinScreenClassifier()
+            except Exception as exc:
+                _log.warning("Failed to load GenshinScreenClassifier for fusion: %s", exc)
+                return "unknown"
+        try:
+            state = self._classifier.classify(frame)
+            value = getattr(state, "state", state)
+            return value if isinstance(value, str) else str(value)
+        except Exception as exc:
+            _log.warning("Fusion screen classification failed: %s", exc)
+            return "unknown"

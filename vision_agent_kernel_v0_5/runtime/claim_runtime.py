@@ -232,6 +232,100 @@ class FalseNegativeReport:
     reason: str
 
 
+OverrideType = Literal["param", "skill", "policy", "threshold", "skip", "retry"]
+OverrideStatus = Literal["pending", "validated", "rejected", "applied", "expired", "rolled_back"]
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeOverrideClaim:
+    """A companion-driven override request that must pass policy validation.
+
+    Overrides can adjust parameters, swap skills, change policies, or modify
+    thresholds at runtime. They are NOT direct input — they produce temporary
+    policy patches that regenerate ActionContracts through the normal pipeline.
+
+    Permanent writes to capsule YAML require separate CapsulePatchProposal flow.
+    """
+    override_id: str
+    target_component: str        # skill_id, policy_name, or node_id
+    override_type: OverrideType
+    proposed_value: Any
+    justification: str
+    confidence: float = 0.0
+    status: OverrideStatus = "pending"
+    scope: Literal["session", "mission", "permanent"] = "session"
+    risk_level: RiskLevel = "medium"
+    created_at: float = field(default_factory=time.time)
+    applied_at: float | None = None
+    rolled_back_at: float | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def is_safe_to_apply(self) -> bool:
+        if self.status != "validated":
+            return False
+        if self.scope == "permanent":
+            return False  # permanent requires CapsulePatchProposal
+        if self.risk_level == "critical":
+            return False  # critical overrides need human confirmation
+        return self.confidence >= 0.5
+
+    def validate(self) -> RuntimeOverrideClaim:
+        return replace(self, status="validated")
+
+    def reject(self, reason: str) -> RuntimeOverrideClaim:
+        return replace(self, status="rejected", metadata={**self.metadata, "reject_reason": reason})
+
+    def apply(self) -> RuntimeOverrideClaim:
+        return replace(self, status="applied", applied_at=time.perf_counter())
+
+    def rollback(self, reason: str = "") -> RuntimeOverrideClaim:
+        return replace(self, status="rolled_back", rolled_back_at=time.perf_counter(),
+                       metadata={**self.metadata, "rollback_reason": reason})
+
+
+PatchValidationStatus = Literal["draft", "schema_validated", "diff_reviewed", "replay_verified", "user_confirmed", "committed", "rejected"]
+
+
+@dataclass(frozen=True, slots=True)
+class CapsulePatchProposal:
+    """A proposed permanent change to a capsule YAML file.
+
+    Must pass: schema validation → diff display → replay verification →
+    user confirmation → version recording before committing.
+    """
+    patch_id: str
+    capsule_id: str
+    skill_id: str
+    patch_type: Literal["add_step", "modify_step", "remove_step", "change_param", "new_skill"]
+    current_yaml: str
+    proposed_yaml: str
+    diff_summary: str
+    validation_status: PatchValidationStatus = "draft"
+    replay_result: str = ""
+    risk_level: RiskLevel = "medium"
+    created_at: float = field(default_factory=time.time)
+    committed_at: float | None = None
+    metadata: dict[str, Any] = field(default_factory=dict)
+
+    def with_schema_validated(self) -> CapsulePatchProposal:
+        return replace(self, validation_status="schema_validated")
+
+    def with_diff_reviewed(self) -> CapsulePatchProposal:
+        return replace(self, validation_status="diff_reviewed")
+
+    def with_replay_verified(self, result: str = "pass") -> CapsulePatchProposal:
+        return replace(self, validation_status="replay_verified", replay_result=result)
+
+    def with_user_confirmed(self) -> CapsulePatchProposal:
+        return replace(self, validation_status="user_confirmed")
+
+    def commit(self) -> CapsulePatchProposal:
+        if self.validation_status != "user_confirmed":
+            return replace(self, validation_status="rejected",
+                           metadata={**self.metadata, "reject_reason": "not_user_confirmed"})
+        return replace(self, validation_status="committed", committed_at=time.perf_counter())
+
+
 class ClaimGraph:
     """Claim dependency graph with cluster-scoped invalidation.
 

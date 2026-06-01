@@ -114,6 +114,40 @@ class TestTeleportSequence:
         assert last["screen"] == "world_hud"
 
 
+class TestTeleportSequenceUIFlow:
+    """Tests for TeleportSequence UIFlow-based execution."""
+
+    def test_instantiate_with_ui_flow_executor(self) -> None:
+        from navigation.teleport_sequence import TeleportSequence
+        from interaction.ui_flow_engine import UIFlowExecutor
+        from core.state_bus import StateBus
+        from execution.console_backend import ConsoleInputBackend
+        from execution.input_worker import InputWorker
+
+        bus = StateBus()
+        backend = ConsoleInputBackend()
+        worker = InputWorker(backend=backend, state_bus=bus)
+        executor = UIFlowExecutor(state_bus=bus, input_worker=worker)
+
+        seq = TeleportSequence(ui_flow_executor=executor)
+        assert seq._ui_flow_executor is executor
+        assert seq._executor is None
+
+    def test_instantiate_with_raw_executor(self) -> None:
+        from navigation.teleport_sequence import TeleportSequence
+
+        seq = TeleportSequence(executor=None, classifier=None)
+        assert seq._ui_flow_executor is None
+        assert seq._executor is None
+
+    def test_teleport_no_executor_returns_false(self) -> None:
+        from navigation.teleport_sequence import TeleportSequence
+
+        seq = TeleportSequence()
+        result = seq.teleport_to_waypoint("mondstadt")
+        assert result is False
+
+
 # ---------------------------------------------------------------------------
 # Dialog handling
 # ---------------------------------------------------------------------------

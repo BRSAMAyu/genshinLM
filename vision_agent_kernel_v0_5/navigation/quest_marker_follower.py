@@ -4,7 +4,7 @@ import logging
 import math
 import threading
 import time
-from typing import TYPE_CHECKING, Callable
+from typing import TYPE_CHECKING, Any, Callable
 
 from navigation.minimap_quest_reader import MinimapQuestReader
 from control.camera_servo import CameraServo, genshin_camera_servo_config
@@ -33,10 +33,12 @@ class QuestMarkerFollower:
         backend: SafeWindowInputBackend,
         reader: MinimapQuestReader,
         servo: CameraServo | None = None,
+        state_bus: Any | None = None,
     ) -> None:
         self._backend = backend
         self._reader = reader
         self._servo = servo or CameraServo(genshin_camera_servo_config())
+        self._bus = state_bus
 
     def navigate_to_marker(
         self,
@@ -58,6 +60,7 @@ class QuestMarkerFollower:
 
             if self._reader.is_at_destination(frame):
                 log.info("[QuestFollower] arrived at destination after %d steps", step)
+                self._publish_nav_state("arrived", step)
                 return True
 
             angle = self._reader.read_quest_direction(frame)
@@ -82,8 +85,8 @@ class QuestMarkerFollower:
             for key in keys:
                 try:
                     self._backend.key_down(key, reason="quest_follow")
-                except Exception:
-                    pass
+                except Exception as exc:
+                    log.warning("key_down %s failed: %s", key, exc)
 
             # Rotate camera smoothly during the step_interval
             intents = self._servo.step_multi(error, dt=step_interval)
@@ -92,8 +95,8 @@ class QuestMarkerFollower:
                 if abs(intent.yaw_delta) > 1e-5 or abs(intent.pitch_delta) > 1e-5:
                     try:
                         self._backend.mouse_move(intent.yaw_delta, intent.pitch_delta, reason="quest_camera_servo")
-                    except Exception:
-                        pass
+                    except Exception as exc:
+                        log.warning("camera servo mouse_move failed: %s", exc)
                 sleep_time = intent.duration_ms / 1000.0
                 _chunked_sleep(sleep_time)
                 total_duration += sleep_time
@@ -107,11 +110,31 @@ class QuestMarkerFollower:
             for key in keys:
                 try:
                     self._backend.key_up(key, reason="quest_follow_done")
-                except Exception:
-                    pass
+                except Exception as exc:
+                    log.warning("key_up %s failed: %s", key, exc)
 
         log.warning("[QuestFollower] max_steps (%d) exhausted", max_steps)
+        self._publish_nav_state("exhausted", max_steps)
         return False
+
+    def _publish_nav_state(self, status: str, step: int) -> None:
+        """Publish navigation progress to StateBus."""
+        if self._bus is None:
+            return
+        try:
+            if hasattr(self._bus, "navigation_signal"):
+                nav = self._bus.navigation_signal.get()
+                if nav is not None:
+                    nav_dict = {
+                        "status": status,
+                        "step": step,
+                        "timestamp": time.perf_counter(),
+                    }
+                    self._bus.navigation_signal.put(type(nav)(**{
+                        k: getattr(nav, k) for k in nav.__dataclass_fields__
+                    }))
+        except Exception:
+            pass
 
     def _angle_to_keys(self, angle: float) -> list[str]:
         """Convert angle to WASD keys. 0=up(W), pi/2=right(D), pi=down(S), -pi/2=left(A)."""

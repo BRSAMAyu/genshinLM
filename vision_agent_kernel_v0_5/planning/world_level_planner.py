@@ -371,7 +371,7 @@ class IntensityJumpHandler:
         intensity: IntensityLevel,
         current_team_count: int,
         has_shield_character: bool = False,
-        has healer: bool = False,
+        has_healer: bool = False,
     ) -> tuple[str, ...]:
         """Get immediate actions to stabilize after intensity spike."""
         actions: list[str] = []
@@ -380,6 +380,8 @@ class IntensityJumpHandler:
             actions.append("Switch to defensive team composition")
             if not has_shield_character:
                 actions.append("Add shield character to team")
+            if not has_healer:
+                actions.append("Add healer or reliable sustain to team")
 
         if intensity >= IntensityLevel.SEVERE:
             actions.append("Retreat and use resources to boost character power")

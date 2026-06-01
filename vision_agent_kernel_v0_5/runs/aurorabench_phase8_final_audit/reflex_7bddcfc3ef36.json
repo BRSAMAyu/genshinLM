@@ -1,0 +1,395 @@
+{
+  "suite_name": "reflex",
+  "run_id": "7bddcfc3ef36",
+  "timestamp": "2026-05-31T05:32:07.499783+00:00",
+  "total_scenarios": 6,
+  "passed_scenarios": 6,
+  "failed_scenarios": 0,
+  "evidence_coverage_rate": 0.6388888888888888,
+  "results": [
+    {
+      "benchmark_id": "reflex_ground_danger",
+      "run_id": "65f93369",
+      "suite_name": "reflex_gauntlet",
+      "scenario_name": "ground_danger",
+      "passed": true,
+      "evidence_ids": [
+        "evidence_preempt_preempt_1_frame_10",
+        "evidence_preempt_preempt_2_frame_20",
+        "evidence_resume_resume_preempt_2_frame_32"
+      ],
+      "report": {
+        "dodges": 2,
+        "expected_dodges": 1,
+        "resume_contracts": 1,
+        "total_frames": 60
+      },
+      "metrics": {
+        "frame_to_observation_ms": 0.005400012014433742,
+        "observation_to_interrupt_ms": 0.0109999964479357,
+        "interrupt_to_lease_ms": 0.000400003045797348,
+        "danger_clear_time_ms": 1.2169000110588968,
+        "danger_false_clear_rate": 0.0,
+        "resume_success_rate": 1.0,
+        "max_consecutive_dodges": 2,
+        "final_task_success": true,
+        "evidence_coverage": 0.75,
+        "task_success_rate": 0.0,
+        "verifier_false_accept_rate": 0.0,
+        "anchor_resolution_rate": 0.0,
+        "click_success_rate": 0.0,
+        "navigation_drift_rate": 0.0,
+        "stuck_recovery_rate": 0.0,
+        "reflex_latency_p95": 0.0,
+        "release_all_success_rate": 0.0,
+        "human_interventions": 0,
+        "mean_time_to_recover_ms": 0.0,
+        "memory_growth_mb_per_hour": 0.0,
+        "context_compaction_success_rate": 0.0,
+        "boss_clear_rate": 0.0,
+        "survival_rate": 0.0,
+        "death_count": 0,
+        "damage_window_utilization": 0.0,
+        "reaction_uptime": 0.0,
+        "danger_false_negative_rate": 0.0,
+        "danger_false_positive_rate": 0.0,
+        "target_reacquire_success_rate": 0.0,
+        "heal_success_rate": 0.0,
+        "safe_abort_success_rate": 0.0,
+        "input_stuck_count": 0
+      }
+    },
+    {
+      "benchmark_id": "reflex_projectile_danger",
+      "run_id": "08f4700e",
+      "suite_name": "reflex_gauntlet",
+      "scenario_name": "projectile_danger",
+      "passed": true,
+      "evidence_ids": [
+        "evidence_preempt_preempt_1_frame_15",
+        "evidence_preempt_preempt_2_frame_25",
+        "evidence_resume_resume_preempt_2_frame_32"
+      ],
+      "report": {
+        "dodges": 2,
+        "expected_dodges": 1,
+        "resume_contracts": 1,
+        "total_frames": 60
+      },
+      "metrics": {
+        "frame_to_observation_ms": 0.002200016751885414,
+        "observation_to_interrupt_ms": 0.007700000423938036,
+        "interrupt_to_lease_ms": 0.0002999731805175543,
+        "danger_clear_time_ms": 0.5222999898251146,
+        "danger_false_clear_rate": 0.0,
+        "resume_success_rate": 1.0,
+        "max_consecutive_dodges": 2,
+        "final_task_success": true,
+        "evidence_coverage": 0.75,
+        "task_success_rate": 0.0,
+        "verifier_false_accept_rate": 0.0,
+        "anchor_resolution_rate": 0.0,
+        "click_success_rate": 0.0,
+        "navigation_drift_rate": 0.0,
+        "stuck_recovery_rate": 0.0,
+        "reflex_latency_p95": 0.0,
+        "release_all_success_rate": 0.0,
+        "human_interventions": 0,
+        "mean_time_to_recover_ms": 0.0,
+        "memory_growth_mb_per_hour": 0.0,
+        "context_compaction_success_rate": 0.0,
+        "boss_clear_rate": 0.0,
+        "survival_rate": 0.0,
+        "death_count": 0,
+        "damage_window_utilization": 0.0,
+        "reaction_uptime": 0.0,
+        "danger_false_negative_rate": 0.0,
+        "danger_false_positive_rate": 0.0,
+        "target_reacquire_success_rate": 0.0,
+        "heal_success_rate": 0.0,
+        "safe_abort_success_rate": 0.0,
+        "input_stuck_count": 0
+      }
+    },
+    {
+      "benchmark_id": "reflex_hp_drop_danger",
+      "run_id": "92edcc5e",
+      "suite_name": "reflex_gauntlet",
+      "scenario_name": "hp_drop_danger",
+      "passed": true,
+      "evidence_ids": [
+        "evidence_preempt_preempt_1_frame_20",
+        "evidence_resume_resume_preempt_1_frame_32"
+      ],
+      "report": {
+        "dodges": 1,
+        "expected_dodges": 1,
+        "resume_contracts": 1,
+        "total_frames": 60
+      },
+      "metrics": {
+        "frame_to_observation_ms": 0.0036999990697950125,
+        "observation_to_interrupt_ms": 0.010399991879239678,
+        "interrupt_to_lease_ms": 0.000300002284348011,
+        "danger_clear_time_ms": 0.5115999956615269,
+        "danger_false_clear_rate": 0.0,
+        "resume_success_rate": 1.0,
+        "max_consecutive_dodges": 1,
+        "final_task_success": true,
+        "evidence_coverage": 1.0,
+        "task_success_rate": 0.0,
+        "verifier_false_accept_rate": 0.0,
+        "anchor_resolution_rate": 0.0,
+        "click_success_rate": 0.0,
+        "navigation_drift_rate": 0.0,
+        "stuck_recovery_rate": 0.0,
+        "reflex_latency_p95": 0.0,
+        "release_all_success_rate": 0.0,
+        "human_interventions": 0,
+        "mean_time_to_recover_ms": 0.0,
+        "memory_growth_mb_per_hour": 0.0,
+        "context_compaction_success_rate": 0.0,
+        "boss_clear_rate": 0.0,
+        "survival_rate": 0.0,
+        "death_count": 0,
+        "damage_window_utilization": 0.0,
+        "reaction_uptime": 0.0,
+        "danger_false_negative_rate": 0.0,
+        "danger_false_positive_rate": 0.0,
+        "target_reacquire_success_rate": 0.0,
+        "heal_success_rate": 0.0,
+        "safe_abort_success_rate": 0.0,
+        "input_stuck_count": 0
+      }
+    },
+    {
+      "benchmark_id": "reflex_target_occlusion",
+      "run_id": "4b40654a",
+      "suite_name": "reflex_gauntlet",
+      "scenario_name": "target_occlusion",
+      "passed": true,
+      "evidence_ids": [
+        "evidence_preempt_preempt_1_frame_10",
+        "evidence_preempt_preempt_2_frame_20",
+        "evidence_preempt_preempt_3_frame_30",
+        "evidence_resume_resume_preempt_3_frame_37"
+      ],
+      "report": {
+        "dodges": 3,
+        "expected_dodges": 1,
+        "resume_contracts": 1,
+        "total_frames": 65
+      },
+      "metrics": {
+        "frame_to_observation_ms": 0.00200001522898674,
+        "observation_to_interrupt_ms": 0.007700000423938036,
+        "interrupt_to_lease_ms": 0.000300002284348011,
+        "danger_clear_time_ms": 1.141999993706122,
+        "danger_false_clear_rate": 0.0,
+        "resume_success_rate": 1.0,
+        "max_consecutive_dodges": 3,
+        "final_task_success": true,
+        "evidence_coverage": 0.6666666666666666,
+        "task_success_rate": 0.0,
+        "verifier_false_accept_rate": 0.0,
+        "anchor_resolution_rate": 0.0,
+        "click_success_rate": 0.0,
+        "navigation_drift_rate": 0.0,
+        "stuck_recovery_rate": 0.0,
+        "reflex_latency_p95": 0.0,
+        "release_all_success_rate": 0.0,
+        "human_interventions": 0,
+        "mean_time_to_recover_ms": 0.0,
+        "memory_growth_mb_per_hour": 0.0,
+        "context_compaction_success_rate": 0.0,
+        "boss_clear_rate": 0.0,
+        "survival_rate": 0.0,
+        "death_count": 0,
+        "damage_window_utilization": 0.0,
+        "reaction_uptime": 0.0,
+        "danger_false_negative_rate": 0.0,
+        "danger_false_positive_rate": 0.0,
+        "target_reacquire_success_rate": 0.0,
+        "heal_success_rate": 0.0,
+        "safe_abort_success_rate": 0.0,
+        "input_stuck_count": 0
+      }
+    },
+    {
+      "benchmark_id": "reflex_repeated_danger",
+      "run_id": "597d315a",
+      "suite_name": "reflex_gauntlet",
+      "scenario_name": "repeated_danger",
+      "passed": true,
+      "evidence_ids": [
+        "evidence_preempt_preempt_1_frame_10",
+        "evidence_preempt_preempt_2_frame_30",
+        "evidence_preempt_preempt_3_frame_50",
+        "evidence_resume_resume_preempt_3_frame_72"
+      ],
+      "report": {
+        "dodges": 3,
+        "expected_dodges": 3,
+        "resume_contracts": 1,
+        "total_frames": 100
+      },
+      "metrics": {
+        "frame_to_observation_ms": 0.0041000021155923605,
+        "observation_to_interrupt_ms": 0.005999987479299307,
+        "interrupt_to_lease_ms": 0.000300002284348011,
+        "danger_clear_time_ms": 3.602499986300245,
+        "danger_false_clear_rate": 0.0,
+        "resume_success_rate": 1.0,
+        "max_consecutive_dodges": 3,
+        "final_task_success": true,
+        "evidence_coverage": 0.6666666666666666,
+        "task_success_rate": 0.0,
+        "verifier_false_accept_rate": 0.0,
+        "anchor_resolution_rate": 0.0,
+        "click_success_rate": 0.0,
+        "navigation_drift_rate": 0.0,
+        "stuck_recovery_rate": 0.0,
+        "reflex_latency_p95": 0.0,
+        "release_all_success_rate": 0.0,
+        "human_interventions": 0,
+        "mean_time_to_recover_ms": 0.0,
+        "memory_growth_mb_per_hour": 0.0,
+        "context_compaction_success_rate": 0.0,
+        "boss_clear_rate": 0.0,
+        "survival_rate": 0.0,
+        "death_count": 0,
+        "damage_window_utilization": 0.0,
+        "reaction_uptime": 0.0,
+        "danger_false_negative_rate": 0.0,
+        "danger_false_positive_rate": 0.0,
+        "target_reacquire_success_rate": 0.0,
+        "heal_success_rate": 0.0,
+        "safe_abort_success_rate": 0.0,
+        "input_stuck_count": 0
+      }
+    },
+    {
+      "benchmark_id": "reflex_false_positive",
+      "run_id": "190e07f1",
+      "suite_name": "reflex_gauntlet",
+      "scenario_name": "false_positive",
+      "passed": true,
+      "evidence_ids": [],
+      "report": {
+        "dodges": 0,
+        "expected_dodges": 0,
+        "resume_contracts": 0,
+        "total_frames": 40
+      },
+      "metrics": {
+        "frame_to_observation_ms": 0.0,
+        "observation_to_interrupt_ms": 0.0,
+        "interrupt_to_lease_ms": 0.0,
+        "danger_clear_time_ms": 0.0,
+        "danger_false_clear_rate": 0.0,
+        "resume_success_rate": 0.0,
+        "max_consecutive_dodges": 0,
+        "final_task_success": true,
+        "evidence_coverage": 0.0,
+        "task_success_rate": 0.0,
+        "verifier_false_accept_rate": 0.0,
+        "anchor_resolution_rate": 0.0,
+        "click_success_rate": 0.0,
+        "navigation_drift_rate": 0.0,
+        "stuck_recovery_rate": 0.0,
+        "reflex_latency_p95": 0.0,
+        "release_all_success_rate": 0.0,
+        "human_interventions": 0,
+        "mean_time_to_recover_ms": 0.0,
+        "memory_growth_mb_per_hour": 0.0,
+        "context_compaction_success_rate": 0.0,
+        "boss_clear_rate": 0.0,
+        "survival_rate": 0.0,
+        "death_count": 0,
+        "damage_window_utilization": 0.0,
+        "reaction_uptime": 0.0,
+        "danger_false_negative_rate": 0.0,
+        "danger_false_positive_rate": 0.0,
+        "target_reacquire_success_rate": 0.0,
+        "heal_success_rate": 0.0,
+        "safe_abort_success_rate": 0.0,
+        "input_stuck_count": 0
+      }
+    }
+  ],
+  "summary": {
+    "suite": "reflex",
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "pass_rate": 1.0,
+    "scenarios": [
+      {
+        "scenario_name": "ground_danger",
+        "passed": true,
+        "evidence_count": 3,
+        "report_keys": [
+          "dodges",
+          "expected_dodges",
+          "resume_contracts",
+          "total_frames"
+        ]
+      },
+      {
+        "scenario_name": "projectile_danger",
+        "passed": true,
+        "evidence_count": 3,
+        "report_keys": [
+          "dodges",
+          "expected_dodges",
+          "resume_contracts",
+          "total_frames"
+        ]
+      },
+      {
+        "scenario_name": "hp_drop_danger",
+        "passed": true,
+        "evidence_count": 2,
+        "report_keys": [
+          "dodges",
+          "expected_dodges",
+          "resume_contracts",
+          "total_frames"
+        ]
+      },
+      {
+        "scenario_name": "target_occlusion",
+        "passed": true,
+        "evidence_count": 4,
+        "report_keys": [
+          "dodges",
+          "expected_dodges",
+          "resume_contracts",
+          "total_frames"
+        ]
+      },
+      {
+        "scenario_name": "repeated_danger",
+        "passed": true,
+        "evidence_count": 4,
+        "report_keys": [
+          "dodges",
+          "expected_dodges",
+          "resume_contracts",
+          "total_frames"
+        ]
+      },
+      {
+        "scenario_name": "false_positive",
+        "passed": true,
+        "evidence_count": 0,
+        "report_keys": [
+          "dodges",
+          "expected_dodges",
+          "resume_contracts",
+          "total_frames"
+        ]
+      }
+    ]
+  }
+}

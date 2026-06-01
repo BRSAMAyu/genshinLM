@@ -20,7 +20,8 @@ class MinimapQuestReader:
         self._viewport = viewport
         self._minimap_roi = (20, 20, 200, 200)  # left-top circular minimap
         self._quest_color_ranges = [
-            ((0, 180, 180), (10, 255, 255)),    # red quest marker
+            ((0, 180, 180), (10, 255, 255)),    # red quest marker (low hue)
+            ((170, 180, 180), (179, 255, 255)),  # red quest marker (wraparound)
             ((20, 180, 180), (35, 255, 255)),    # yellow quest marker
         ]
 

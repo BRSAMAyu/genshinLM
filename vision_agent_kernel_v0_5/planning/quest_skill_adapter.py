@@ -118,11 +118,27 @@ class QuestSkillAdapter:
             log.debug("[QuestSkill] no quest state machine, skipping advance")
             return True
         next_step = self._quest_sm.advance(evidence=evidence)
+        self._publish_quest_state()
         if next_step is None:
             log.info("[QuestSkill] quest chain completed")
             return True
         log.info("[QuestSkill] advanced to step: %s", next_step.description)
         return True
+
+    def _publish_quest_state(self) -> None:
+        """Publish current quest state to StateBus for other components."""
+        if self._bus is None or self._quest_sm is None:
+            return
+        try:
+            state_data = {
+                "quest_id": getattr(self._quest_sm, "quest_id", ""),
+                "current_step": getattr(self._quest_sm, "current_step_index", 0),
+                "status": getattr(self._quest_sm, "status", "unknown"),
+            }
+            if hasattr(self._bus, "quest_state"):
+                self._bus.quest_state.put(state_data)
+        except Exception:
+            pass
 
     def check_prerequisites(self, current_ar: int = 0) -> bool:
         """Check if current quest step prerequisites are met."""

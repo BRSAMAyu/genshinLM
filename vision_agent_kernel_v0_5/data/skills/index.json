@@ -12,9 +12,9 @@
       "skill_id": "demo_combat_showcase_skill",
       "name": "Demo Combat Showcase Skill",
       "type": "combat",
-      "version": 6,
+      "version": 7,
       "archived": false,
-      "updated_at": 1779256253.3537745
+      "updated_at": 1780279281.353658
     }
   ]
 }

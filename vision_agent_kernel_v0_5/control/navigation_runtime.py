@@ -1,9 +1,15 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from core.types import InputLease
+
+if TYPE_CHECKING:
+    from core.state_bus import StateBus
+
+log = logging.getLogger(__name__)
 
 
 RecoveryAction = Literal["release_all", "backstep", "jump_forward", "turn_90", "escalate"]
@@ -69,23 +75,35 @@ class StuckDetector:
 
 
 class NavigationController:
-    def __init__(self, servo: HeadingServo | None = None, stuck: StuckDetector | None = None) -> None:
+    def __init__(
+        self,
+        servo: HeadingServo | None = None,
+        stuck: StuckDetector | None = None,
+        state_bus: StateBus | None = None,
+    ) -> None:
         self._servo = servo or HeadingServo()
         self._stuck = stuck or StuckDetector()
+        self._state_bus = state_bus
         self._recoveries = 0
 
     def step(self, segment: RouteSegment, sample: NavigationSample, now: float) -> NavigationDecision:
         if sample.distance_to_target <= float(segment.stuck_policy.get("arrive_distance", 1.0)):
-            return NavigationDecision("arrived", "within_tolerance")
+            decision = NavigationDecision("arrived", "within_tolerance")
+            self._publish_decision(decision)
+            return decision
         if self._stuck.update(sample):
             self._recoveries += 1
             if self._recoveries > int(segment.stuck_policy.get("max_recoveries", 2)):
-                return NavigationDecision("escalate", "stuck_recovery_exhausted", recovery_actions=["escalate"])
-            return NavigationDecision(
+                decision = NavigationDecision("escalate", "stuck_recovery_exhausted", recovery_actions=["escalate"])
+                self._publish_decision(decision)
+                return decision
+            decision = NavigationDecision(
                 "recover",
                 "stuck_detected",
                 recovery_actions=["release_all", "backstep", "jump_forward", "turn_90"],
             )
+            self._publish_decision(decision)
+            return decision
         mouse_delta = self._servo.mouse_delta_for(sample.heading_error_deg)
         lease = InputLease(
             lease_id=f"nav:{segment.segment_id}:{int(now * 1000)}",
@@ -97,4 +115,13 @@ class NavigationController:
             expires_at=now + 0.25,
             reason=f"move_segment:{segment.segment_id}",
         )
-        return NavigationDecision("move", "progressing", lease=lease)
+        decision = NavigationDecision("move", "progressing", lease=lease)
+        self._publish_decision(decision)
+        return decision
+
+    def _publish_decision(self, decision: NavigationDecision) -> None:
+        if self._state_bus is not None:
+            try:
+                self._state_bus.navigation_signal.put(decision)
+            except Exception as exc:
+                log.warning("failed to publish navigation decision to StateBus: %s", exc)

@@ -1,13 +1,3 @@
 {
-  "tasks": [
-    {
-      "id": "def763be",
-      "cron": "*/10 * * * *",
-      "prompt": "继续推进原神自主通关能力实现。按照以下优先级从短到长、从简到繁推进：\n\n**当前阶段：UI操作场景（9个小场景）**\n\n工作规范：\n1. 每次专注一个具体小场景，高质量完成后再进入下一个\n2. 每完成一个场景，派遣独立agent后台审查，同时开始下一个\n3. 代码层面能修的、完善的、打通的全部做好\n4. 确保模块与现有系统有机整合（StateBus、UIFlow、Perception、SkillAdapter）\n5. 所有代码遵循项目规范：`@dataclass(frozen=True, slots=True)`、`from __future__ import annotations`、`_chunked_sleep`\n6. 每次完成前运行pytest确保全部通过\n7. 更新工作日志 docs/GENSHIN_CAPABILITY_IMPLEMENTATION_WORKLOG.md\n\n参考文档（在docs/目录下）：\n- GENSHIN_UI_OPERATION_SCENARIOS.md — UI操作9场景（当前重点）\n- GENSHIN_COMBAT_SCENARIO_BREAKDOWN.md — 战斗16场景\n- GENSHIN_EXPLORATION_SCENARIO_BREAKDOWN.md — 探索11场景\n- GENSHIN_QUEST_SCENARIOS.md — 任务16场景\n- GENSHIN_DAILY_ROUTINE_SCENARIOS.md — 日常循环3层\n- GENSHIN_CHARACTER_PROGRESSION_CHAIN.md — 角色养成链6阶段\n- GENSHIN_LONG_CHAIN_SCENARIOS.md — 长程串联5链\n- GENSHIN_CAPABILITY_GAP_ANALYSIS.md — 能力缺口分析\n- GENSHIN_MAINLINE_PROGRESSION_CHAIN.md — 主线推进链\n- GENSHIN_PERCEPTION_PRECISION_MATRIX.md — 感知精度矩阵\n\n从 docs/GENSHIN_UI_OPERATION_SCENARIOS.md 的第一个场景开始：角色升级（1-90级）。检查现有 UIFlow 是否已覆盖此场景，如果没有则新增 UIFlow 并确保与 UIFlowSkillAdapter 集成。如果已有则验证其完整性并修复任何缺口。完成后继续下一个场景。",
-      "createdAt": 1780157737517,
-      "recurring": true,
-      "createdBySessionId": "1a1deb51-2d3e-4afb-b329-44312dff872e",
-      "createdByPid": 91216
-    }
-  ]
+  "tasks": []
 }

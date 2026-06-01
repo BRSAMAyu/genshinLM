@@ -251,6 +251,10 @@ class DialogueController:
         self._consecutive_skips = 0
         self._last_skip_time = 0.0
 
+    def tick_dialogue_skip(self, tree: SceneGraph) -> None:
+        """Alias for tick supporting DialogueController protocol conformance."""
+        self.tick(tree)
+
     def is_option_present(self, scene_graph: SceneGraph) -> bool:
         """Check if a dialogue branch choice is currently on screen."""
         return len(self._detect_options(scene_graph)) > 0

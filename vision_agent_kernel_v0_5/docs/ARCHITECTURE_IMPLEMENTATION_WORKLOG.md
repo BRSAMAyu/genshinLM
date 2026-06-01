@@ -244,6 +244,8 @@ control/sentinel/somatic_state_supervisor.py → from interaction.ui_flows impor
 | 2026-06-01 | c606e31 | L0-L8 concrete layer implementations (34 tests, 3914 total) | #181-184 |
 | 2026-06-01 | c698ee3 | RuntimeOverride StateBus slot + UnknownSceneHandler (14 tests) | #185-186 |
 | 2026-06-01 | 1401011 | SpinalReflexAgentImpl (L1-L2) + MemoryStore conformance (15 tests) | #187-188 |
+| 2026-06-01 | a66b25c | SkillRecipeLookup.find_applicable + cross-cutting protocol audit | — |
+| 2026-06-01 | d02a65e | Fix P0+P1 audit gaps: ClaimAdjudicator, DialogueController, GameCapsule, CerebellumController (97 tests) | #189-192 |
 
 ---
 

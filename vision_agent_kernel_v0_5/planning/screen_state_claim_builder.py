@@ -99,6 +99,7 @@ class ScreenStateClaimBuilder:
         "gameplay": "overworld",
         "exploration": "overworld",
         "character_select_screen": "character_select",
+        "character_screen": "character_select",
         "rank_up": "adventure_rank_up",
         "notification_popup": "notification",
         "domain_start": "domain_entrance",

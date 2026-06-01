@@ -1,20 +1,23 @@
-"""Core data types for the AgentKernel framework.
+"""Core high-fidelity data types for the Sparkle Agent Kernel.
 
-All types are frozen dataclasses with slots=True, following project conventions.
-No dependencies on any game-specific code.
+All types are frozen dataclasses with slots=True, ensuring strict mathematical
+immutability, thread-safety, and Zero-Copy compliance in low-latency environments.
+No game-specific dependencies are allowed in this core module.
 """
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any, Literal, Dict, Tuple, Sequence
+from uuid import UUID
+import uuid
 
-
-# ---------------------------------------------------------------------------
-# Perception types
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# 1. Perception & Scene Graph Types (L3-L6)
+# ===========================================================================
 
 @dataclass(frozen=True, slots=True)
 class ActionableElement:
-    """A clickable/interactable element detected on screen."""
+    """A clickable/interactable element detected on screen (Legacy compatibility)."""
     element_type: str          # "button", "slot", "character_card", "menu_item", "text_input"
     label: str                 # "升级", "确认", "钟离", "C"
     bbox: tuple[float, float, float, float]  # Normalised (x1, y1, x2, y2)
@@ -23,20 +26,91 @@ class ActionableElement:
 
 
 @dataclass(frozen=True, slots=True)
-class SemanticObservation:
-    """VLM/OCR enriched observation of the current screen."""
+class DesktopNode:
+    """A geometric node in a parsed UI tree."""
+    node_id: str
+    role: Literal["button", "list_item", "dialog_text", "icon", "slider", "modal", "panel", "unknown"]
+    label: str
+    bbox: tuple[float, float, float, float]  # Normalised window-space (x1, y1, x2, y2)
+    confidence: float
+    state: Literal["enabled", "disabled", "selected", "hidden"] = "enabled"
+    source: Literal["ocr", "template_match", "vlm_grounding", "heuristic"] = "ocr"
+
+
+@dataclass(frozen=True, slots=True)
+class DesktopTree:
+    """Clustered 2D UI tree representation, clean and easy for LLMs to read."""
     timestamp: float
-    scene_description: str     # "角色详情页，当前角色是钟离，等级80/90"
-    actionable_elements: tuple[ActionableElement, ...] = ()
-    screen_state: str = ""     # "character_detail", "world_hud", "dialog"
+    screen_state: str
+    nodes: tuple[DesktopNode, ...] = ()
+    is_modal_active: bool = False
+    active_roi: tuple[float, float, float, float] | None = None  # Normalized ROI of the panel
+
+
+@dataclass(frozen=True, slots=True)
+class SceneObject:
+    """A 3D object detected in the game world (NPC, waypoints, interactable items)."""
+    object_id: str
+    kind: Literal["npc", "enemy", "waypoint", "item", "door", "puzzle_part", "unknown"]
+    label: str
+    bbox_norm: tuple[float, float, float, float] | None = None
+    spatial_hint: str = ""  # e.g., "left", "near", "above", "behind"
+    confidence: float = 0.0
+    source: str = "unknown"
+
+
+@dataclass(frozen=True, slots=True)
+class WorldStateGraph:
+    """3D spatial state containing waypoints, obstacles, landmarks and targets."""
+    timestamp: float
+    player_position: tuple[float, float, float]  # (x, y, z) in game world coordinates
+    player_yaw: float  # heading angle in degrees
+    landmarks: tuple[SceneObject, ...] = ()
+    targets: tuple[SceneObject, ...] = ()
+    obstacles: tuple[SceneObject, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class Affordance:
+    """A high-level target affordance indicating action possibilities."""
+    affordance_id: str
+    verb: str                   # talk, attack, open, select, teleport, follow, inspect
+    target_object_id: str
+    preconditions: tuple[str, ...] = ()
+    expected_delta: str = ""
+    risk_level: str = "low"
+
+
+@dataclass(frozen=True, slots=True)
+class SceneGraph:
+    """Legacy SceneGraph representing objects and affordances."""
+    timestamp: float
+    scene_state: str = "unknown"
+    objects: tuple[SceneObject, ...] = ()
+    affordances: tuple[Affordance, ...] = ()
+    frame_id: int = 0
+    confidence: float = 0.0
+
+
+@dataclass(frozen=True, slots=True)
+class SemanticObservation:
+    """Full unified sensor cortex observation."""
+    timestamp: float
+    frame_id: int = 0
+    screen_state: str = "unknown"
+    desktop_tree: DesktopTree | None = None
+    world_state: WorldStateGraph | None = None
     raw_ocr_text: str = ""
+    vlm_description: str = ""
+    frame_quality: float = 1.0
+    scene_description: str = ""
+    actionable_elements: tuple[ActionableElement, ...] = ()
     vlm_confidence: float = 0.0
-    frame_hash: str = ""       # dedup key
 
 
-# ---------------------------------------------------------------------------
-# Planning types
-# ---------------------------------------------------------------------------
+# ===========================================================================
+# 2. Strategy & Task Specification Types (L7-L9)
+# ===========================================================================
 
 @dataclass(frozen=True, slots=True)
 class AgentGoal:
@@ -49,8 +123,60 @@ class AgentGoal:
 
 
 @dataclass(frozen=True, slots=True)
+class TaskSpec:
+    """Supreme task specification generated by Operator/Companion Agent."""
+    task_id: str
+    objective: str  # High-level goal text
+    dialog_policy: Literal["progress_main_story", "read_all_options", "manual_only"] = "progress_main_story"
+    resource_policy: Literal["no_rare_consumables", "allow_all", "strict_safety"] = "no_rare_consumables"
+    uncertainty_policy: Literal["ask_user_immediately", "ask_user_after_120s", "pause_only"] = "ask_user_after_120s"
+    execution_mode: Literal["dry_run", "authorized_safe_window", "live_unsafe"] = "dry_run"
+    # Legacy fields
+    priority: int = 50
+    parent_task_id: str = ""
+    parameters: tuple[tuple[str, str], ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeOverride:
+    """A safe policy patch injected dynamically by the Companion Agent."""
+    override_id: str
+    target_node_id: str = ""
+    policy_overrides: tuple[tuple[str, str], ...] = ()
+    timestamp: float = 0.0
+    reason: str = ""
+    # legacy fields mapping for test compatibility
+    target_parameter: str = ""
+    new_value: str = ""
+    scope: str = "session"
+    source: str = "user"
+    confidence: float = 1.0
+
+
+@dataclass(frozen=True, slots=True)
+class OperatorCommand:
+    """User-facing CLI or UI Operator command (Legacy compatibility)."""
+    command_id: str
+    user_text: str = ""
+    parsed_intent: str = ""
+    parameters: tuple[tuple[str, str], ...] = ()
+    confidence: float = 0.0
+    # legacy property matching
+    @property
+    def command_text(self) -> str:
+        return self.user_text
+    @property
+    def args(self) -> tuple[tuple[str, str], ...]:
+        return self.parameters
+
+
+# ===========================================================================
+# 3. Knowledge Compression (Skill) & Legacy Planning Types
+# ===========================================================================
+
+@dataclass(frozen=True, slots=True)
 class PlannedStep:
-    """One step in an action plan."""
+    """One step in an action plan (Legacy compatibility)."""
     step_id: str
     description: str          # "点击升级按钮"
     target_description: str   # VLM locator: "显示'升级'文字的按钮"
@@ -60,7 +186,7 @@ class PlannedStep:
 
 @dataclass(frozen=True, slots=True)
 class ActionPlan:
-    """An LLM-generated plan to achieve a goal."""
+    """An LLM-generated plan to achieve a goal (Legacy compatibility)."""
     plan_id: str
     goal_id: str
     steps: tuple[PlannedStep, ...] = ()
@@ -68,13 +194,39 @@ class ActionPlan:
     requires_confirmation: bool = False  # dangerous actions need human OK
 
 
-# ---------------------------------------------------------------------------
-# Execution types
-# ---------------------------------------------------------------------------
+@dataclass(frozen=True, slots=True)
+class SkillStep:
+    """A single walkthrough operational step in a Skill Recipe."""
+    step_id: str
+    intent: str  # e.g., "click_anchor", "navigate_to_landmark"
+    target_query: str  # VLM query or text anchor label
+    expected_delta: str = ""  # Expected post-action state delta
+    locator_policy: str = "affordance_then_vlm"
+    retry_policy: str = "resample_relocate_replan"
+
+
+@dataclass(frozen=True, slots=True)
+class SkillRecipe:
+    """A general compressed game-guide or action sequence."""
+    skill_id: str
+    title: str
+    goal_template: str
+    applicable_context: tuple[str, ...] = ()
+    preconditions: tuple[str, ...] = ()
+    steps: tuple[SkillStep, ...] = ()
+    verifiers: tuple[str, ...] = ()
+    recovery_policies: tuple[str, ...] = ()
+    risk_level: Literal["low", "medium", "high", "human_confirm"] = "low"
+    version: str = "1.0"
+
+
+# ===========================================================================
+# 4. Action & Safety Contract & Legacy Action Primitive Types (L0-L2)
+# ===========================================================================
 
 @dataclass(frozen=True, slots=True)
 class ActionPrimitive:
-    """A low-level execution primitive."""
+    """A low-level execution primitive (Legacy compatibility)."""
     primitive_type: str  # "click", "type", "key_press", "scroll", "wait", "drag", "hold"
     target: str          # VLM description or normalised "nx,ny" coords
     params: tuple[tuple[str, str], ...] = ()  # key-value pairs
@@ -82,8 +234,84 @@ class ActionPrimitive:
 
 
 @dataclass(frozen=True, slots=True)
+class SemanticAction:
+    """High-level coordinate-independent action."""
+    action_id: str
+    kind: Literal["ui", "navigation", "combat", "system"]
+    intent: str
+    target: str = ""
+    parameters: tuple[tuple[str, str], ...] = ()  # Immutable parameters
+    requires_physical_input: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class ActionContract:
+    """Authorized physical action lease bundle containing safety constraints."""
+    contract_id: str
+    semantic_action: SemanticAction
+    preconditions: tuple[str, ...] = ()
+    safety_policy: tuple[tuple[str, str], ...] = ()  # require_focus, input_lease_required, max_lease_ms
+    verifier_contract: tuple[tuple[str, str], ...] = ()  # verifier_id, success_criteria
+    fallback_policy: tuple[tuple[str, str], ...] = ()
+    timeout_ms: int = 1500
+    risk_level: Literal["low", "medium", "high", "human_confirm"] = "medium"
+
+
+@dataclass(frozen=True, slots=True)
+class ThreatSignal:
+    """Low-latency combat threat signal (YOLO/HSV)."""
+    threat_type: Literal["projectile", "telegraph_aoe", "boss_animation_charge", "low_hp"]
+    severity: float  # 0.0 ~ 1.0
+    direction_degrees: float = 0.0
+    time_to_impact_ms: int = 0
+    source: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class CombatCommand:
+    """Low-latency real-time combat trigger."""
+    reflex_action: Literal["dodge", "dash", "cast_skill_e", "cast_burst_q", "combo_normal_attack", "switch_character", "heal_emergency"]
+    target_character_index: int = 1
+    reason: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class PhysicalReceipt:
+    """Unforgeable proof of keyboard/mouse execution within active sandbox window."""
+    receipt_id: UUID = field(default_factory=uuid.uuid4)
+    lease_id: UUID = field(default_factory=uuid.uuid4)
+    issued_at: float = 0.0
+    expires_at: float = 0.0
+    action_type: Literal["click", "hover", "key_press", "drag", "scroll"] = "click"
+    execution_latency_ms: float = 0.0
+    focus_maintained: bool = False
+
+    # Legacy fields compat
+    action_id: str = ""
+    status: str = "pending"
+    submitted_at: float = 0.0
+    lease_accepted: bool = False
+    focus_ok: bool = False
+    duration_ms: float = 0.0
+    post_state_claim_id: str = ""
+    reason: str = ""
+
+    @property
+    def is_verified(self) -> bool:
+        return self.status == "verified"
+
+    @property
+    def success(self) -> bool:
+        return self.status in ("executed", "verified") and self.lease_accepted and self.focus_ok
+
+
+# ===========================================================================
+# 5. Claim Graph & Verification & Legacy StepResult Types
+# ===========================================================================
+
+@dataclass(frozen=True, slots=True)
 class StepResult:
-    """Outcome of executing a single step."""
+    """Outcome of executing a single step (Legacy compatibility)."""
     step_id: str
     success: bool
     observation_after: SemanticObservation | None = None
@@ -91,13 +319,9 @@ class StepResult:
     duration_sec: float = 0.0
 
 
-# ---------------------------------------------------------------------------
-# Memory types
-# ---------------------------------------------------------------------------
-
 @dataclass(frozen=True, slots=True)
 class Experience:
-    """A recorded experience for future reference."""
+    """A recorded experience for future reference (Legacy compatibility)."""
     goal_description: str
     scene_description: str
     action_taken: str
@@ -107,266 +331,119 @@ class Experience:
     timestamp: float = 0.0
 
 
-# ---------------------------------------------------------------------------
-# Scene understanding types (§5.3)
-# ---------------------------------------------------------------------------
-
 @dataclass(frozen=True, slots=True)
-class SceneObject:
-    """A named object detected in the current scene."""
-    object_id: str
-    kind: str                  # npc, enemy, button, waypoint, item, door, puzzle_part
-    label: str
-    bbox_norm: tuple[float, float, float, float] | None
-    spatial_hint: str = ""      # left, near, above, behind, far, unknown
-    confidence: float = 0.0
-    source: str = "unknown"     # ocr, template, vlm, heuristic
+class ObservationClaim:
+    """A claim about screen features or 3D landmarks backed by frame evidence."""
+    claim_id: str
+    verifier_id: str
+    claim_type: Literal["ui_element_detected", "text_matched", "landmark_visible", "hp_level_match"]
+    subject: str
+    is_true: bool
+    confidence: float
+    evidence_snapshot_id: str = ""  # Link to exact screenshot path or frame hash
 
-
-@dataclass(frozen=True, slots=True)
-class Affordance:
-    """An action that can be performed on a scene object."""
-    affordance_id: str
-    verb: str                   # talk, attack, open, select, teleport, follow, inspect
-    target_object_id: str
-    preconditions: tuple[str, ...] = ()
-    expected_delta: str = ""
-    risk_level: str = "low"
-
-
-@dataclass(frozen=True, slots=True)
-class SceneGraph:
-    """Structured representation of the current game scene."""
-    timestamp: float
-    scene_state: str
-    objects: tuple[SceneObject, ...] = ()
-    affordances: tuple[Affordance, ...] = ()
-    frame_id: int = 0
-    confidence: float = 0.0
-
-
-# ---------------------------------------------------------------------------
-# Skill recipe types (§8.1)
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True, slots=True)
-class SkillStep:
-    """One step inside a skill recipe."""
-    step_id: str
-    intent: str
-    target_query: str           # natural language or structured query
-    expected_delta: str = ""
-    locator_policy: str = "affordance_then_vlm"
-    retry_policy: str = "resample_relocate_replan"
-
-
-@dataclass(frozen=True, slots=True)
-class SkillRecipe:
-    """A reusable, verifiable skill definition."""
-    skill_id: str
-    title: str
-    goal_template: str
-    applicable_context: tuple[str, ...] = ()
-    preconditions: tuple[str, ...] = ()
-    steps: tuple[SkillStep, ...] = ()
-    verifiers: tuple[str, ...] = ()
-    recovery_policies: tuple[str, ...] = ()
-    risk_level: str = "low"
-    version: str = "1.0"
-
-
-# ---------------------------------------------------------------------------
-# Task specification
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True, slots=True)
-class TaskSpec:
-    """Top-level task specification submitted by the operator or planner."""
-    task_id: str
-    objective: str              # mainline_progress, character_level_up, etc.
-    dialog_policy: str = ""     # progress_main_story, skip_all, etc.
-    resource_policy: str = ""   # no_rare_consumables, etc.
-    uncertainty_policy: str = ""  # ask_user_after_120s, etc.
-    execution_mode: str = "dry_run"  # dry_run, safe_window, console
-    priority: int = 50
-    parent_task_id: str = ""
-
-
-# ---------------------------------------------------------------------------
-# Runtime override & capsule patch types
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True, slots=True)
-class RuntimeOverride:
-    """A runtime parameter override requested by user or system."""
-    override_id: str
-    target_parameter: str
-    new_value: str
-    reason: str = ""
-    source: str = "user"        # user, auto, system
-    scope: str = "session"      # session, permanent
-    confidence: float = 1.0
-
-
-@dataclass(frozen=True, slots=True)
-class CapsulePatchProposal:
-    """A proposed edit to a YAML skill capsule."""
-    proposal_id: str
-    capsule_id: str
-    yaml_path: str
-    patch_data: tuple[tuple[str, str], ...] = ()  # key-value pairs
-    reason: str = ""
-    verified: bool = False
-    user_confirmed: bool = False
-
-
-# ---------------------------------------------------------------------------
-# Operator command types (§10)
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True, slots=True)
-class OperatorCommand:
-    """A parsed command from the human operator."""
-    command_id: str
-    user_text: str
-    parsed_intent: str          # set_goal, adjust_policy, explain, confirm, abort
-    parameters: tuple[tuple[str, str], ...] = ()
-    confidence: float = 0.0
-
-
-# ---------------------------------------------------------------------------
-# Claim & evidence types (§5.4)
-# ---------------------------------------------------------------------------
 
 @dataclass(frozen=True, slots=True)
 class ClaimEvidence:
-    """Evidence backing a state claim."""
+    """A single piece of observation evidence (Legacy compatibility)."""
     claim_id: str
-    evidence_type: str          # ocr_text, screenshot_hash, vlm_description, state_change
-    value: str
+    evidence_type: str
+    value: Any = None
     confidence: float = 0.0
     source: str = ""
     timestamp: float = 0.0
+    evidence_id: str = ""
+    payload: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True, slots=True)
 class StateDeltaClaim:
-    """A claim that the game state has transitioned as expected."""
+    """A verified assertion that a state has shifted successfully."""
     claim_id: str
-    expected_state: str
-    observed_state: str
-    evidence: tuple[ClaimEvidence, ...] = ()
+    pre_frame_id: int = 0
+    post_frame_id: int = 0
+    delta_description: str = ""
     verified: bool = False
     confidence: float = 0.0
+    attributions: tuple[str, ...] = ()  # Linked ActionReceipts and ObservationClaims
+    # Legacy fields compat
+    expected_state: str = ""
+    observed_state: str = ""
+    evidence: tuple[ClaimEvidence, ...] = ()
     timestamp: float = 0.0
 
 
-# ---------------------------------------------------------------------------
-# Result types
-# ---------------------------------------------------------------------------
-
 @dataclass(frozen=True, slots=True)
 class GoalResult:
-    """Final result of pursuing a goal."""
+    """Ultimate result of pursuing a TaskSpec goal."""
     goal_id: str
     achieved: bool
     steps_total: int = 0
     steps_succeeded: int = 0
     total_duration_sec: float = 0.0
+    verified_claims: tuple[StateDeltaClaim, ...] = ()
     experiences: tuple[Experience, ...] = ()
     error: str = ""
 
 
-# ---------------------------------------------------------------------------
-# Execution contract types (ADR §4, 总纲 §5.6)
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True, slots=True)
-class ActionContract:
-    """Contract wrapping a semantic action with safety and execution policy.
-
-    This is the core execution unit — every physical action must flow through
-    an ActionContract. Referenced in 总纲 §1.1, §5.6, §13.1.
-    """
-    action_id: str
-    semantic_action: ActionPrimitive
-    safety_policy: tuple[tuple[str, str], ...] = ()  # key-value safety constraints
-    timeout_ms: int = 5000
-    risk_level: str = "low"       # low, medium, high, critical
-    requires_confirmation: bool = False
-    lease_id: str = ""
-
-
-@dataclass(frozen=True, slots=True)
-class PhysicalReceipt:
-    """Receipt from physical action execution.
-
-    Proves that an action was submitted, accepted, and either executed
-    or failed. Part of the Claim chain (总纲 §5.4).
-    """
-    action_id: str
-    success: bool
-    reason: str = ""
-    execution_latency_ms: float = 0.0
-    focus_maintained: bool = True
-    is_verified: bool = False
-    timestamp: float = 0.0
-
-
-# ---------------------------------------------------------------------------
-# ADR structured types (from AURORA_SPARKLE_AGENTS_CORE_ARCHITECTURE.md §4)
-# ---------------------------------------------------------------------------
-
-@dataclass(frozen=True, slots=True)
-class ThreatSignal:
-    """A detected threat from the combat reflex layer (L1-L2)."""
-    threat_type: str        # "projectile", "telegraph_aoe", "boss_animation_charge", "low_hp"
-    severity: float         # 0.0 ~ 1.0
-    direction_degrees: float = 0.0
-    time_to_impact_ms: int = 0
-    source: str = "unknown"
-
-
-@dataclass(frozen=True, slots=True)
-class CombatCommand:
-    """A combat reflex command (L1-L2)."""
-    reflex_action: str      # "dodge", "dash", "cast_skill_e", "cast_burst_q", "combo_normal_attack", "switch_character", "heal_emergency"
-    target_character_index: int = 1
-    reason: str = ""
-
-
-@dataclass(frozen=True, slots=True)
-class RouteSegment:
-    """A single segment of a navigation route (L3-L4)."""
-    segment_id: int
-    target_position: tuple[float, float, float]  # (x, y, z) in game world
-    movement_type: str = "run"  # "run", "glide", "climb", "swim"
-    speed_factor: float = 1.0
-
-
 @dataclass(frozen=True, slots=True)
 class MissionNode:
-    """A node in the mission graph (L7-L8)."""
+    """A node inside a mission graph DAG (Legacy compatibility)."""
     node_id: str
-    skill_intent: str
+    node_type: str = ""
+    parameters: dict[str, Any] = field(default_factory=dict)
+    dependencies: tuple[str, ...] = ()
+    risk_level: str = "medium"
+    # Legacy fields mapping
+    skill_intent: str = ""
     preconditions: tuple[str, ...] = ()
     expected_state: str = ""
-    risk_level: str = "low"
 
 
 @dataclass(frozen=True, slots=True)
 class MissionGraph:
-    """A directed acyclic graph of mission nodes (L7-L8)."""
+    """A DAG of mission nodes to be executed (Legacy compatibility)."""
     graph_id: str
     nodes: tuple[MissionNode, ...] = ()
-    edges: tuple[tuple[str, str], ...] = ()  # (from_id, to_id) pairs
+    edges: tuple[tuple[str, str], ...] = ()
     current_node_index: int = 0
 
 
 @dataclass(frozen=True, slots=True)
+class RouteSegment:
+    """A single segment in a navigation path (Legacy compatibility)."""
+    segment_id: int
+    start_coord: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    end_coord: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    movement_mode: str = "walk"
+    speed_factor: float = 1.0
+    # Legacy fields
+    target_position: tuple[float, float, float] = (0.0, 0.0, 0.0)
+    movement_type: str = "walk"
+
+
+@dataclass(frozen=True, slots=True)
+class CapsulePatchProposal:
+    """A proposed update to a Capsule's YAML rulebase after successful session repair."""
+    patch_id: str = ""
+    capsule_id: str = ""
+    target_yaml_file: str = ""
+    yaml_diff: str = ""
+    proposed_overrides: tuple[tuple[str, str], ...] = ()
+    schema_valid: bool = False
+    user_confirmed: bool = False
+    # legacy fields mapping for test compatibility
+    proposal_id: str = ""
+    yaml_path: str = ""
+    patch_data: tuple[tuple[str, str], ...] = ()
+    reason: str = ""
+    verified: bool = False
+
+
+@dataclass(frozen=True, slots=True)
 class RepairPatch:
-    """A repair/replan suggestion from the CerebrumAgent (L7-L8)."""
+    """Failure diagnosis repair patch (L7-L8 Cerebrum failure repair)."""
     replan_required: bool = False
     inject_skills: tuple[str, ...] = ()
-    runtime_overrides: tuple[tuple[str, str], ...] = ()  # key-value overrides
+    runtime_overrides: tuple[tuple[str, str], ...] = ()
     explanation: str = ""
