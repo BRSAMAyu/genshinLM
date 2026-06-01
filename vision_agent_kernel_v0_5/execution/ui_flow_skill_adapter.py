@@ -619,11 +619,9 @@ class UIFlowSkillAdapter:
 
         # Map semantic actions to real key presses
         if action in ("basic_attack", "attack", "combo_normal_attack"):
-            # Hold LMB for auto-attack
+            # Use hold_click for auto-attack (protocol-compliant)
             try:
-                backend.left_click_down(reason="combat_attack")
-                self._chunked_sleep(0.5)
-                backend.left_click_up(reason="combat_attack_done")
+                backend.hold_click(duration_sec=0.5, reason="combat_attack")
                 return True
             except Exception as exc:
                 log.warning("[UIFlowSkillAdapter] basic attack failed: %s", exc)
@@ -879,10 +877,22 @@ class UIFlowSkillAdapter:
         log.info("[UIFlowSkillAdapter] mainline quest: %s target=%s", action, target)
         return True
 
+    # Semantic actions that should be routed to combat handler
+    _COMBAT_ROUTING_ACTIONS: frozenset[str] = frozenset({
+        "attack", "basic_attack", "dodge", "dash", "jump", "sprint",
+        "cast_skill_e", "use_skill", "cast_burst_q", "use_burst", "use_ultimate",
+        "switch_char", "lock_target", "auto_attack", "combo_normal_attack",
+    })
+
     def _handle_action_intent(self, target: str, context: dict[str, Any]) -> bool:
         action = str(context.get("semantic_action") or context.get("action") or "action")
         if action == "action":
             action = str(context.get("node_type") or "action")
+
+        # G6 fix: route combat actions to _handle_combat for real key execution
+        if action in self._COMBAT_ROUTING_ACTIONS:
+            return self._handle_combat(target, context)
+
         if target:
             action = f"{action}:{target}"
 

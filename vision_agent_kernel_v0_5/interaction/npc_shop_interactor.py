@@ -44,23 +44,41 @@ class NpcShopInteractor:
         self._bus = state_bus
         self._items_per_page = 8
 
+    def _click_at_normalized(self, nx: float, ny: float, reason: str) -> bool:
+        """Click at normalized coordinates using available backend methods.
+
+        Tries click_at first (SafeWindowInputBackend), then falls back to
+        mouse_move_to + left_click (protocol-compliant).
+        """
+        try:
+            backend = self._backend
+            if hasattr(backend, "click_at"):
+                rect = backend.client_rect()
+                sx = int(rect.left + nx * rect.width)
+                sy = int(rect.top + ny * rect.height)
+                backend.click_at(sx, sy, reason=reason)
+            elif hasattr(backend, "mouse_move_to"):
+                rect = backend.client_rect()
+                sx = int(rect.left + nx * rect.width)
+                sy = int(rect.top + ny * rect.height)
+                backend.mouse_move_to(sx, sy, reason=reason)
+                backend.left_click(reason=reason)
+            else:
+                log.warning("[NpcShopInteractor] backend has no click_at or mouse_move_to")
+                return False
+            self._chunked_sleep(0.3)
+            return True
+        except Exception as exc:
+            log.warning("[NpcShopInteractor] click at (%.2f, %.2f) failed: %s", nx, ny, exc)
+            return False
+
     def select_item_by_index(self, index: int) -> bool:
         """Select item by grid index (0-based)."""
         if index < 0 or index >= self._items_per_page:
             log.warning("[NpcShopInteractor] item index %d out of range", index)
             return False
         nx, ny = self._GRID_SLOTS[index]
-        try:
-            self._backend.click_at(
-                int(nx * 1920),
-                int(ny * 1080),
-                reason=f"select_shop_item_{index}",
-            )
-            self._chunked_sleep(0.5)
-            return True
-        except Exception as exc:
-            log.warning("[NpcShopInteractor] click item %d failed: %s", index, exc)
-            return False
+        return self._click_at_normalized(nx, ny, reason=f"select_shop_item_{index}")
 
     def select_item_by_name(self, name: str, *, max_scrolls: int = 5) -> bool:
         """Select item by name (using VLM/OCR to find it).
@@ -74,19 +92,13 @@ class NpcShopInteractor:
 
     def buy_item(self, quantity: int = 1) -> bool:
         """Confirm purchase of selected item."""
-        backend = self._backend
-        rect = backend.client_rect()
-        # Click buy button
-        bx = int(rect.left + 0.65 * rect.width)
-        by = int(rect.top + 0.85 * rect.height)
-        backend.click_at(bx, by, reason="buy_item")
-        self._chunked_sleep(0.3)
-        # Confirm
-        cx = int(rect.left + 0.65 * rect.width)
-        cy = int(rect.top + 0.85 * rect.height)
-        backend.click_at(cx, cy, reason="confirm_purchase")
-        self._chunked_sleep(0.5)
-        return True
+        ok = self._click_at_normalized(0.65, 0.85, reason="buy_item")
+        if ok:
+            self._chunked_sleep(0.3)
+            ok2 = self._click_at_normalized(0.65, 0.85, reason="confirm_purchase")
+            self._chunked_sleep(0.5)
+            return ok2
+        return False
 
     def buy_item_by_index(self, index: int, quantity: int = 1) -> bool:
         """Select item and buy it."""

@@ -120,9 +120,15 @@ class AbyssChamberExecutor:
             if not result.success:
                 log.warning("[AbyssChamberExecutor] floor %d chamber %d failed", floor, chamber)
                 break
-        return (results[0], results[1], results[2]) if len(results) == 3 else (
-            results[0] if results else ChamberResult(floor=floor, chamber=1, success=False, stars_earned=0, duration_sec=0.0)
-        )
+        # Pad results to always return 3-tuple
+        while len(results) < 3:
+            last_chamber = len(results) + 1
+            results.append(ChamberResult(
+                floor=floor, chamber=last_chamber,
+                success=False, stars_earned=0, duration_sec=0.0,
+                error="skipped_due_to_prior_failure",
+            ))
+        return (results[0], results[1], results[2])
 
     def _run_combat_tick(self) -> None:
         """Run one tick of combat — basic auto-attack + skill."""
