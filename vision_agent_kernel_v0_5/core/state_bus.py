@@ -179,6 +179,7 @@ class StateBus:
         self.claim_graph_state: LatestSlot[ClaimGraphState] = LatestSlot()  # type: ignore[assignment]
         self.checkpoint_state: LatestSlot[MainlineCheckpoint] = LatestSlot()  # type: ignore[assignment]
         self.navigation_plan: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
+        self.runtime_overrides: LatestSlot[list[Any]] = LatestSlot()  # type: ignore[assignment]
         self.shutdown_flag = threading.Event()
         self.event_signal = threading.Event()
         self.mode_signal = threading.Event()
