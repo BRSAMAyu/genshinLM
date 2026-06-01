@@ -381,10 +381,14 @@ class SkillStore:
         self._skills_dir = root / "data" / "skills"
         self._versions_dir = self._skills_dir / "versions"
         self._index_path = self._skills_dir / "index.json"
+        self._index_cache: dict[str, Any] = {"skills": []}
+        self._index_cache_stale = False
         self._skills_dir.mkdir(parents=True, exist_ok=True)
         self._versions_dir.mkdir(parents=True, exist_ok=True)
         if not self._index_path.exists():
             self._write_index({"skills": []})
+        else:
+            self._index_cache = self._read_index()
 
     def list_skills(self) -> dict[str, Any]:
         index = self._read_index()
@@ -445,16 +449,41 @@ class SkillStore:
         return safe or "skill"
 
     def _read_index(self) -> dict[str, Any]:
+        if self._index_cache_stale:
+            return self._index_cache
         try:
             text = self._index_path.read_text(encoding="utf-8")
-            return json.loads(text) if text.strip() else {"skills": []}
-        except (FileNotFoundError, json.JSONDecodeError):
-            return {"skills": []}
+            parsed = json.loads(text) if text.strip() else {"skills": []}
+            if not isinstance(parsed, dict):
+                raise json.JSONDecodeError("index root must be an object", text, 0)
+            parsed.setdefault("skills", [])
+            self._index_cache = parsed
+            self._index_cache_stale = False
+            return parsed
+        except (FileNotFoundError, json.JSONDecodeError, PermissionError, OSError):
+            recovered = self._rebuild_index_from_skill_files()
+            if recovered.get("skills"):
+                self._index_cache = recovered
+                self._index_cache_stale = True
+                return recovered
+            return self._index_cache
 
     def _write_index(self, data: dict[str, Any]) -> None:
         tmp = self._index_path.with_suffix(".json.tmp")
-        tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
-        tmp.replace(self._index_path)
+        try:
+            tmp.write_text(json.dumps(data, indent=2), encoding="utf-8")
+            tmp.replace(self._index_path)
+            self._index_cache = data
+            self._index_cache_stale = False
+        except (PermissionError, OSError):
+            self._index_cache = data
+            self._index_cache_stale = True
+        finally:
+            try:
+                if tmp.exists():
+                    tmp.unlink()
+            except OSError:
+                pass
 
     def _update_index(self, skill: SkillDefinition) -> None:
         index = self._read_index()
@@ -471,6 +500,31 @@ class SkillStore:
         )
         index["skills"] = items
         self._write_index(index)
+
+    def _rebuild_index_from_skill_files(self) -> dict[str, Any]:
+        items: list[dict[str, Any]] = []
+        try:
+            for path in self._skills_dir.glob("*.json"):
+                if path == self._index_path:
+                    continue
+                try:
+                    payload = json.loads(path.read_text(encoding="utf-8"))
+                    skill = self._from_json(payload)
+                except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError):
+                    continue
+                items.append(
+                    {
+                        "skill_id": skill.skill_id,
+                        "name": skill.name,
+                        "type": skill.type,
+                        "version": skill.version,
+                        "archived": skill.archived,
+                        "updated_at": skill.updated_at,
+                    }
+                )
+        except OSError:
+            return self._index_cache
+        return {"skills": items}
 
     def _from_json(self, data: dict[str, Any]) -> SkillDefinition:
         steps = [

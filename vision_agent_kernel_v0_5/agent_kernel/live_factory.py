@@ -349,6 +349,10 @@ def create_live_genshin_loop(
     from agent_kernel.memory import FileMemoryStore
     memory = FileMemoryStore(path="logs/experiences.jsonl")
 
+    # --- Unknown scene handler (autonomous exploration) ---
+    from agent_kernel.unknown_scene_handler import UnknownSceneHandler
+    unknown_handler = UnknownSceneHandler(max_probe_attempts=6, confidence_threshold=0.45)
+
     # --- Assemble AgentLoop ---
     from agent_kernel.loop import AgentLoop
     agent_loop = AgentLoop(
@@ -367,6 +371,7 @@ def create_live_genshin_loop(
         memory=memory,
     )
     agent_loop._cerebrum_interval_sec = cerebrum_interval_sec
+    agent_loop._unknown_scene_handler = unknown_handler
 
     log.info(
         "[LiveFactory] AgentLoop assembled: goal='%s' window='%s' dry_run=%s",

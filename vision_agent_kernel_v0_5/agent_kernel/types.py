@@ -380,6 +380,17 @@ class StateDeltaClaim:
 
 
 @dataclass(frozen=True, slots=True)
+class NodeExecutionTrace:
+    """Per-node execution tracking for autonomous recovery and learning."""
+    node_id: str
+    retry_count: int = 0
+    replan_count: int = 0
+    recovery_trace_id: str = ""
+    learning_patch_ids: tuple[str, ...] = ()
+    exploration_depth: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class GoalResult:
     """Ultimate result of pursuing a TaskSpec goal."""
     goal_id: str
@@ -389,6 +400,7 @@ class GoalResult:
     total_duration_sec: float = 0.0
     verified_claims: tuple[StateDeltaClaim, ...] = ()
     experiences: tuple[Experience, ...] = ()
+    node_traces: tuple[NodeExecutionTrace, ...] = ()
     error: str = ""
 
 

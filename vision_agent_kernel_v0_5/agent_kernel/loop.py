@@ -95,6 +95,12 @@ class AgentLoop:
         # Claim type bridge: kernel claims ↔ runtime claims
         self._claim_bridge = KernelClaimBridge()
 
+        # Per-node execution tracking
+        self._node_trace_map: dict[str, dict[str, Any]] = {}
+
+        # Unknown scene handler (optional, for autonomous exploration)
+        self._unknown_scene_handler: Any = None
+
         # Thread safety & State bus
         self._state_bus: dict[str, Any] = {
             "active_overrides": {},
@@ -282,22 +288,75 @@ class AgentLoop:
                     
                     if receipt.focus_maintained:
                         steps_succeeded += 1
-                        
+
                         # E. Post-action verification (Claim Adjudication L5-L6)
                         post_frame_id = self._increment_frame_id()
                         post_frame = self._capture_frame()
                         post_obs = self._perception.observe(post_frame, post_frame_id)
-                        
+
                         claim = self._checker.adjudicate_delta(obs, post_obs, goal.success_criteria)
                         verified_claims.append(claim)
                         if claim.verified:
                             goal_achieved = True
-                        
+                            self._record_node_success(action.action_id)
+
+                        # Unknown-scene autonomous exploration
+                        if action.intent.startswith("unknown_scene_") and self._unknown_scene_handler is not None:
+                            learning_ids = self._run_unknown_probe(action, post_obs)
+                            if learning_ids:
+                                self._record_node_learning(action.action_id, learning_ids)
+
                         # Cache successful runtime override experiences
                         if active_overrides:
                             self._record_successful_overrides(active_overrides, claim)
                     else:
                         log.warning(f"[Kernel] Contract execution lost focus or lease expired: {contract.contract_id}")
+                        self._record_node_failure(action.action_id)
+
+                        # F. Recovery: call replan_on_failure for strategy change
+                        if hasattr(self._planner, "replan_on_failure"):
+                            try:
+                                post_frame_id = self._increment_frame_id()
+                                post_frame = self._capture_frame()
+                                post_obs = self._perception.observe(post_frame, post_frame_id) if post_frame is not None else obs
+                                recovery_actions = self._planner.replan_on_failure(
+                                    action, post_obs, receipt.status,
+                                )
+                                if recovery_actions:
+                                    recovery_id = f"recovery_{uuid.uuid4().hex[:8]}"
+                                    log.info(
+                                        "[Kernel] replan_on_failure produced %d recovery actions (trace=%s)",
+                                        len(recovery_actions), recovery_id,
+                                    )
+                                    self._record_node_recovery(action.action_id, recovery_id)
+                                    # Inject recovery actions (strategy change, not blind retry)
+                                    for ra in recovery_actions:
+                                        steps_total += 1
+                                        rc = ActionContract(
+                                            contract_id=f"contract_{uuid.uuid4().hex[:8]}",
+                                            semantic_action=ra,
+                                            preconditions=("authorized_window",),
+                                            safety_policy=(("require_focus", "True"), ("input_lease_required", "True")),
+                                            timeout_ms=1500,
+                                            risk_level="low",
+                                        )
+                                        rr = self._executor.execute_contract(rc)
+                                        if rr.focus_maintained:
+                                            steps_succeeded += 1
+                                            self._record_node_success(ra.action_id)
+                                            # Verify recovery action via claim adjudication
+                                            pf_id = self._increment_frame_id()
+                                            pf = self._capture_frame()
+                                            if pf is not None:
+                                                p_obs = self._perception.observe(pf, pf_id)
+                                                r_claim = self._checker.adjudicate_delta(obs, p_obs, goal.success_criteria)
+                                                verified_claims.append(r_claim)
+                                                if r_claim.verified:
+                                                    goal_achieved = True
+                                        else:
+                                            self._record_node_failure(ra.action_id)
+                            except Exception as exc:
+                                log.warning("[Kernel] replan_on_failure raised: %s", exc)
 
                 # Tick-rate governor: prevent CPU spin when no dialogue/combat
                 if goal_achieved:
@@ -316,6 +375,7 @@ class AgentLoop:
                 steps_succeeded=steps_succeeded,
                 total_duration_sec=time.perf_counter() - started_time,
                 verified_claims=tuple(verified_claims),
+                node_traces=tuple(self._build_node_traces()),
                 error="" if achieved else "goal_not_adjudicated"
             )
 
@@ -443,6 +503,87 @@ class AgentLoop:
             log.debug(f"[ClaimBridge] Kernel claim bridged to runtime: {runtime_claim.claim_id}")
         except Exception as exc:
             log.debug(f"[ClaimBridge] Runtime bridge skipped (runtime not available): {exc}")
+
+    def _record_node_success(self, node_id: str) -> None:
+        entry = self._node_trace_map.setdefault(node_id, {
+            "retry_count": 0, "replan_count": 0, "recovery_trace_id": "",
+            "learning_patch_ids": [], "exploration_depth": 0,
+        })
+
+    def _record_node_failure(self, node_id: str) -> None:
+        entry = self._node_trace_map.setdefault(node_id, {
+            "retry_count": 0, "replan_count": 0, "recovery_trace_id": "",
+            "learning_patch_ids": [], "exploration_depth": 0,
+        })
+        entry["retry_count"] += 1
+
+    def _record_node_recovery(self, node_id: str, recovery_id: str) -> None:
+        entry = self._node_trace_map.setdefault(node_id, {
+            "retry_count": 0, "replan_count": 0, "recovery_trace_id": "",
+            "learning_patch_ids": [], "exploration_depth": 0,
+        })
+        entry["replan_count"] += 1
+        entry["recovery_trace_id"] = recovery_id
+
+    def _record_node_learning(self, node_id: str, patch_ids: list[str]) -> None:
+        entry = self._node_trace_map.setdefault(node_id, {
+            "retry_count": 0, "replan_count": 0, "recovery_trace_id": "",
+            "learning_patch_ids": [], "exploration_depth": 0,
+        })
+        entry["learning_patch_ids"].extend(patch_ids)
+        entry["exploration_depth"] += 1
+
+    def _build_node_traces(self) -> list[Any]:
+        from agent_kernel.types import NodeExecutionTrace
+        traces: list[NodeExecutionTrace] = []
+        for node_id, data in self._node_trace_map.items():
+            traces.append(NodeExecutionTrace(
+                node_id=node_id,
+                retry_count=data.get("retry_count", 0),
+                replan_count=data.get("replan_count", 0),
+                recovery_trace_id=data.get("recovery_trace_id", ""),
+                learning_patch_ids=tuple(data.get("learning_patch_ids", [])),
+                exploration_depth=data.get("exploration_depth", 0),
+            ))
+        return traces
+
+    def _run_unknown_probe(self, action: Any, obs: Any) -> list[str]:
+        """Run UnknownScene 7-step pipeline for autonomous exploration."""
+        from agent_kernel.types import SceneGraph, SceneObject, Affordance
+        handler = self._unknown_scene_handler
+        if handler is None:
+            return []
+        object_id = f"obj_{uuid.uuid4().hex[:6]}"
+        scene = SceneGraph(
+            timestamp=time.perf_counter(),
+            scene_state="unknown_scene",
+            objects=(
+                SceneObject(
+                    object_id=object_id,
+                    kind="unknown",
+                    label=action.target or "unknown objective",
+                    bbox_norm=(0.3, 0.3, 0.7, 0.7),
+                    confidence=0.5,
+                ),
+            ),
+            affordances=(),
+            frame_id=getattr(obs, "frame_id", 0),
+            confidence=0.5,
+        )
+        hypotheses = handler.observe_and_hypothesize(scene)
+        if not hypotheses:
+            return []
+        patch_ids: list[str] = []
+        max_rounds = min(len(hypotheses), getattr(handler, "max_probe_attempts", 5))
+        for i in range(max_rounds):
+            result = handler.probe(scene, hypotheses[i])
+            if result.learned_override is not None:
+                patch_ids.append(f"patch_{uuid.uuid4().hex[:8]}")
+            if result.effective:
+                break
+            if handler.should_escalate(hypotheses) and i >= 2:
+                break
+        return patch_ids
 
     def _propose_permanent_capsule_patches(self) -> None:
         overrides = self.get_active_overrides()

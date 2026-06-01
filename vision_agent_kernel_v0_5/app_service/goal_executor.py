@@ -136,20 +136,32 @@ class GoalExecutor:
             if not achieved and not live_mode and result.steps_succeeded > 0:
                 achieved = True
 
-            # Build node traces from mission graph nodes
+            # Build node traces from AgentLoop's per-node tracking
             graph = compiled.mission_graph
             completed_nodes: list[str] = []
             failed_nodes: list[str] = []
 
+            # Build lookup from AgentLoop's NodeExecutionTrace
+            loop_trace_map: dict[str, Any] = {}
+            for nt in result.node_traces:
+                loop_trace_map[nt.node_id] = nt
+
             for node_id in graph.node_ids:
+                nt = loop_trace_map.get(node_id)
+                retry_count = nt.retry_count if nt else 0
+                replan_count = nt.replan_count if nt else 0
+                exploration_depth = nt.exploration_depth if nt else 0
+                recovery_trace_id = nt.recovery_trace_id if nt else ""
+                learning_patch_ids = list(nt.learning_patch_ids) if nt else []
+
                 traces.append(GoalNodeTrace(
                     node_id=node_id,
                     status="completed" if achieved else "partial",
-                    node_retry_count=0,
-                    replan_count=0,
-                    exploration_depth=0,
-                    recovery_trace_id="",
-                    learning_patch_ids=[],
+                    node_retry_count=retry_count,
+                    replan_count=replan_count,
+                    exploration_depth=exploration_depth,
+                    recovery_trace_id=recovery_trace_id,
+                    learning_patch_ids=learning_patch_ids,
                 ))
                 if achieved:
                     completed_nodes.append(node_id)
@@ -401,6 +413,11 @@ class GoalExecutor:
         return persisted
 
     def _persist_patch_as_skill(self, profile: str, patch: LearningPatchProposal) -> str:
+        # Check for existing candidate skill with same node pattern
+        existing_id = self._find_candidate_skill(patch.node_id)
+        if existing_id is not None:
+            return self._promote_candidate_skill(existing_id)
+
         base_id = f"learned_{_slug(patch.node_id)}_{patch.patch_id[-6:]}"
         payload = {
             "skill_id": base_id,
@@ -413,6 +430,8 @@ class GoalExecutor:
                 "summary": patch.summary,
                 "confidence": patch.confidence,
                 "learned_action": patch.learned_action,
+                "trust_level": "candidate",
+                "verification_count": 0,
             },
             "environment_profile": profile,
             "preconditions": ["require_focus"],
@@ -448,6 +467,43 @@ class GoalExecutor:
 
     def _write_review_queue(self, data: dict[str, Any]) -> None:
         self._review_queue_path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+
+    def _find_candidate_skill(self, node_id: str) -> str | None:
+        """Find existing candidate skill_id matching the node pattern."""
+        prefix = f"learned_{_slug(node_id)}_"
+        skills = self._skill_store.list_skills().get("skills", [])
+        for skill_data in skills:
+            sid = skill_data.get("skill_id", "")
+            if not sid.startswith(prefix):
+                continue
+            # Load full skill to check metadata (index may not have it)
+            try:
+                full = self._skill_store.get_skill(sid)
+            except Exception:
+                continue
+            meta = dict(full.metadata) if isinstance(full.metadata, dict) else {}
+            if meta.get("trust_level") == "candidate":
+                return sid
+        return None
+
+    def _promote_candidate_skill(self, skill_id: str) -> str:
+        """Increment verification_count; promote to 'verified' at count >= 3."""
+        if not skill_id:
+            return skill_id
+        try:
+            skill = self._skill_store.get_skill(skill_id)
+        except Exception:
+            return skill_id
+        meta = dict(skill.metadata)
+        count = int(meta.get("verification_count", 0)) + 1
+        meta["verification_count"] = count
+        meta["trust_level"] = "verified" if count >= 2 else "candidate"
+        meta["last_verified_at"] = time.time()
+        payload = asdict(skill)
+        payload["metadata"] = meta
+        saved = self._skill_store.save_skill(payload)
+        return saved.skill_id
 
 
 def _slug(value: str) -> str:
