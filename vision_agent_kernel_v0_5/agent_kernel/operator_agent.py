@@ -135,43 +135,9 @@ def _new_session() -> OperatorSession:
 # Intent parsing helpers
 # ---------------------------------------------------------------------------
 
-# Task intent keywords — longest-first matching
-_TASK_KEYWORDS: dict[str, str] = {
-    # Chinese
-    "升级": "character_level_up",
-    "突破": "character_ascend",
-    "强化": "enhance",
-    "精炼": "refine",
-    "祈愿": "wish_pull",
-    "天赋": "talent_upgrade",
-    "圣遗物": "artifact_manage",
-    "武器": "weapon_manage",
-    "打怪": "combat",
-    "战斗": "combat",
-    "探索": "explore",
-    "宝箱": "explore_chest",
-    "传送": "teleport",
-    "任务": "quest",
-    "日常": "daily",
-    "主线": "mainline",
-    # English
-    "level up": "character_level_up",
-    "ascend": "character_ascend",
-    "enhance": "enhance",
-    "refine": "refine",
-    "wish": "wish_pull",
-    "talent": "talent_upgrade",
-    "artifact": "artifact_manage",
-    "weapon": "weapon_manage",
-    "combat": "combat",
-    "fight": "combat",
-    "explore": "explore",
-    "chest": "explore_chest",
-    "teleport": "teleport",
-    "quest": "quest",
-    "daily": "daily",
-    "mainline": "mainline",
-}
+# Default task keywords — empty in Kernel; Capsule layer injects game-specific ones.
+# See the game-specific data module for each capsule's keyword mappings.
+_EMPTY_TASK_KEYWORDS: dict[str, str] = {}
 
 # Policy keywords
 _POLICY_KEYWORDS: dict[str, tuple[str, str]] = {
@@ -225,52 +191,6 @@ _CONFIRM_TRIGGERS = ("确认", "确定", "好的", "执行", "confirm", "yes", "
 _ABORT_TRIGGERS = ("取消", "放弃", "停止", "cancel", "abort", "no", "stop", "discard")
 
 
-def _parse_intent(text: str) -> str:
-    """Classify user text into one of: set_goal, adjust_policy, adjust_param, explain, confirm, abort, unknown."""
-    text_lower = text.lower().strip()
-
-    for trigger in _CONFIRM_TRIGGERS:
-        if text_lower == trigger or text_lower == trigger.strip():
-            return "confirm"
-
-    for trigger in _ABORT_TRIGGERS:
-        if text_lower == trigger or text_lower == trigger.strip():
-            return "abort"
-
-    for trigger in _EXPLANATION_TRIGGERS_CN:
-        if trigger in text_lower:
-            return "explain"
-    for trigger in _EXPLANATION_TRIGGERS_EN:
-        if trigger in text_lower:
-            return "explain"
-
-    # Check policy keywords before task keywords (policy phrases are more specific)
-    for keyword in _POLICY_KEYWORDS:
-        if keyword in text_lower:
-            return "adjust_policy"
-
-    # Check override patterns (try both original and lowered for Chinese)
-    for pattern, _ in _OVERRIDE_PATTERNS:
-        if re.search(pattern, text) or re.search(pattern, text_lower):
-            return "adjust_param"
-
-    # Check task keywords (longest first)
-    for keyword in sorted(_TASK_KEYWORDS, key=len, reverse=True):
-        if keyword in text_lower:
-            return "set_goal"
-
-    return "unknown"
-
-
-def _match_task_keyword(text: str) -> tuple[str, float]:
-    """Return (capability, confidence) from task keyword matching."""
-    text_lower = text.lower()
-    for keyword in sorted(_TASK_KEYWORDS, key=len, reverse=True):
-        if keyword in text_lower:
-            return _TASK_KEYWORDS[keyword], 0.8
-    return "unknown", 0.3
-
-
 def _match_policy(text: str) -> tuple[str, str] | None:
     """Return (policy_field, policy_value) or None."""
     text_lower = text.lower()
@@ -306,14 +226,61 @@ class OperatorAgent:
     Provides the public API; subclasses may override _parse methods.
     This class itself is concrete enough for testing via the keyword-based
     parsing defined above.
+
+    Args:
+        task_keywords: Injected by Capsule layer. Maps localized keyword →
+            capability string (e.g. {"升级": "character_level_up"}).
+            Kernel ships with an empty dict; Capsule provides game-specific terms.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, task_keywords: dict[str, str] | None = None) -> None:
         self._session: OperatorSession = _new_session()
+        self._task_keywords: dict[str, str] = task_keywords or dict(_EMPTY_TASK_KEYWORDS)
 
     @property
     def session(self) -> OperatorSession:
         return self._session
+
+    def _parse_intent(self, text: str) -> str:
+        """Classify user text into one of: set_goal, adjust_policy, adjust_param, explain, confirm, abort, unknown."""
+        text_lower = text.lower().strip()
+
+        for trigger in _CONFIRM_TRIGGERS:
+            if text_lower == trigger or text_lower == trigger.strip():
+                return "confirm"
+
+        for trigger in _ABORT_TRIGGERS:
+            if text_lower == trigger or text_lower == trigger.strip():
+                return "abort"
+
+        for trigger in _EXPLANATION_TRIGGERS_CN:
+            if trigger in text_lower:
+                return "explain"
+        for trigger in _EXPLANATION_TRIGGERS_EN:
+            if trigger in text_lower:
+                return "explain"
+
+        for keyword in _POLICY_KEYWORDS:
+            if keyword in text_lower:
+                return "adjust_policy"
+
+        for pattern, _ in _OVERRIDE_PATTERNS:
+            if re.search(pattern, text) or re.search(pattern, text_lower):
+                return "adjust_param"
+
+        for keyword in sorted(self._task_keywords, key=len, reverse=True):
+            if keyword in text_lower:
+                return "set_goal"
+
+        return "unknown"
+
+    def _match_task_keyword(self, text: str) -> tuple[str, float]:
+        """Return (capability, confidence) from task keyword matching."""
+        text_lower = text.lower()
+        for keyword in sorted(self._task_keywords, key=len, reverse=True):
+            if keyword in text_lower:
+                return self._task_keywords[keyword], 0.8
+        return "unknown", 0.3
 
     def handle_user_message(
         self,
@@ -327,7 +294,7 @@ class OperatorAgent:
           - technical_action: dict — structured action for the system
           - patch_draft: CapsulePatchProposal | None
         """
-        intent = _parse_intent(message)
+        intent = self._parse_intent(message)
         cmd = OperatorCommand(
             command_id=f"cmd_{uuid.uuid4().hex[:8]}",
             user_text=message,
@@ -432,7 +399,7 @@ class OperatorAgent:
     # ------------------------------------------------------------------
 
     def _handle_set_goal(self, message: str, cmd: OperatorCommand) -> dict[str, Any]:
-        capability, confidence = _match_task_keyword(message)
+        capability, confidence = self._match_task_keyword(message)
         task = TaskSpec(
             task_id=f"task_{uuid.uuid4().hex[:8]}",
             objective=capability,
@@ -582,7 +549,7 @@ class SimpleOperatorAgent(OperatorAgent):
 
     def _handle_set_goal(self, message: str, cmd: OperatorCommand) -> dict[str, Any]:
         """Extended set_goal handler with target extraction and priority inference."""
-        capability, confidence = _match_task_keyword(message)
+        capability, confidence = self._match_task_keyword(message)
         target = self._extract_target(message)
         priority = self._infer_priority(message)
 

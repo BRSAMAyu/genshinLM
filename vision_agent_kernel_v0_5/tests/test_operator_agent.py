@@ -13,9 +13,7 @@ from agent_kernel.operator_agent import (
     SimpleOperatorAgent,
     _match_override,
     _match_policy,
-    _match_task_keyword,
     _new_session,
-    _parse_intent,
 )
 from agent_kernel.types import (
     CapsulePatchProposal,
@@ -25,17 +23,57 @@ from agent_kernel.types import (
 
 
 # ---------------------------------------------------------------------------
+# Test keyword registry (mirrors Genshin Capsule data)
+# ---------------------------------------------------------------------------
+
+_TEST_TASK_KEYWORDS: dict[str, str] = {
+    "升级": "character_level_up",
+    "突破": "character_ascend",
+    "强化": "enhance",
+    "精炼": "refine",
+    "祈愿": "wish_pull",
+    "天赋": "talent_upgrade",
+    "圣遗物": "artifact_manage",
+    "武器": "weapon_manage",
+    "打怪": "combat",
+    "战斗": "combat",
+    "探索": "explore",
+    "宝箱": "explore_chest",
+    "传送": "teleport",
+    "任务": "quest",
+    "日常": "daily",
+    "主线": "mainline",
+    "level up": "character_level_up",
+    "ascend": "character_ascend",
+    "enhance": "enhance",
+    "refine": "refine",
+    "wish": "wish_pull",
+    "talent": "talent_upgrade",
+    "artifact": "artifact_manage",
+    "weapon": "weapon_manage",
+    "combat": "combat",
+    "fight": "combat",
+    "explore": "explore",
+    "chest": "explore_chest",
+    "teleport": "teleport",
+    "quest": "quest",
+    "daily": "daily",
+    "mainline": "mainline",
+}
+
+
+# ---------------------------------------------------------------------------
 # Fixtures
 # ---------------------------------------------------------------------------
 
 @pytest.fixture
 def agent() -> OperatorAgent:
-    return OperatorAgent()
+    return OperatorAgent(task_keywords=_TEST_TASK_KEYWORDS)
 
 
 @pytest.fixture
 def simple_agent() -> SimpleOperatorAgent:
-    return SimpleOperatorAgent()
+    return SimpleOperatorAgent(task_keywords=_TEST_TASK_KEYWORDS)
 
 
 @pytest.fixture
@@ -107,8 +145,8 @@ class TestIntentParsing:
         ("do daily quest", "set_goal"),
         ("advance mainline", "set_goal"),
     ])
-    def test_set_goal_intent(self, text: str, expected: str) -> None:
-        assert _parse_intent(text) == expected
+    def test_set_goal_intent(self, agent: OperatorAgent, text: str, expected: str) -> None:
+        assert agent._parse_intent(text) == expected
 
     @pytest.mark.parametrize("text,expected", [
         # Chinese policy changes
@@ -122,8 +160,8 @@ class TestIntentParsing:
         ("cautious mode", "adjust_policy"),
         ("dry run", "adjust_policy"),
     ])
-    def test_adjust_policy_intent(self, text: str, expected: str) -> None:
-        assert _parse_intent(text) == expected
+    def test_adjust_policy_intent(self, agent: OperatorAgent, text: str, expected: str) -> None:
+        assert agent._parse_intent(text) == expected
 
     @pytest.mark.parametrize("text,expected", [
         # Chinese override requests
@@ -135,8 +173,8 @@ class TestIntentParsing:
         ("set timeout to 10 sec", "adjust_param"),
         ("set retries to 5", "adjust_param"),
     ])
-    def test_adjust_param_intent(self, text: str, expected: str) -> None:
-        assert _parse_intent(text) == expected
+    def test_adjust_param_intent(self, agent: OperatorAgent, text: str, expected: str) -> None:
+        assert agent._parse_intent(text) == expected
 
     @pytest.mark.parametrize("text,expected", [
         # Chinese explanation
@@ -148,8 +186,8 @@ class TestIntentParsing:
         ("current state", "explain"),
         ("what's happening", "explain"),
     ])
-    def test_explain_intent(self, text: str, expected: str) -> None:
-        assert _parse_intent(text) == expected
+    def test_explain_intent(self, agent: OperatorAgent, text: str, expected: str) -> None:
+        assert agent._parse_intent(text) == expected
 
     @pytest.mark.parametrize("text,expected", [
         ("确认", "confirm"),
@@ -165,8 +203,8 @@ class TestIntentParsing:
         ("no", "abort"),
         ("abort", "abort"),
     ])
-    def test_confirm_abort_intent(self, text: str, expected: str) -> None:
-        assert _parse_intent(text) == expected
+    def test_confirm_abort_intent(self, agent: OperatorAgent, text: str, expected: str) -> None:
+        assert agent._parse_intent(text) == expected
 
     @pytest.mark.parametrize("text", [
         "随便吧",
@@ -175,8 +213,8 @@ class TestIntentParsing:
         "not sure",
         "",
     ])
-    def test_unknown_intent(self, text: str) -> None:
-        assert _parse_intent(text) == "unknown"
+    def test_unknown_intent(self, agent: OperatorAgent, text: str) -> None:
+        assert agent._parse_intent(text) == "unknown"
 
 
 # ---------------------------------------------------------------------------
@@ -185,18 +223,18 @@ class TestIntentParsing:
 
 class TestKeywordMatching:
 
-    def test_match_task_keyword_chinese(self) -> None:
-        capability, conf = _match_task_keyword("升级胡桃")
+    def test_match_task_keyword_chinese(self, agent: OperatorAgent) -> None:
+        capability, conf = agent._match_task_keyword("升级胡桃")
         assert capability == "character_level_up"
         assert conf == 0.8
 
-    def test_match_task_keyword_english(self) -> None:
-        capability, conf = _match_task_keyword("ascend zhongli")
+    def test_match_task_keyword_english(self, agent: OperatorAgent) -> None:
+        capability, conf = agent._match_task_keyword("ascend zhongli")
         assert capability == "character_ascend"
         assert conf == 0.8
 
-    def test_match_task_keyword_unknown(self) -> None:
-        capability, conf = _match_task_keyword("foobar")
+    def test_match_task_keyword_unknown(self, agent: OperatorAgent) -> None:
+        capability, conf = agent._match_task_keyword("foobar")
         assert capability == "unknown"
         assert conf == 0.3
 
@@ -606,3 +644,46 @@ class TestCompanionAgentProtocol:
         sig3 = inspect.signature(agent.explain_current_state)
         params3 = list(sig3.parameters.keys())
         assert "state" in params3
+
+
+# ---------------------------------------------------------------------------
+# Kernel/Capsule boundary: keyword injection
+# ---------------------------------------------------------------------------
+
+class TestKeywordInjection:
+
+    def test_kernel_agent_has_no_default_task_keywords(self) -> None:
+        """Kernel OperatorAgent ships with empty task keywords by default."""
+        bare_agent = OperatorAgent()
+        assert bare_agent._task_keywords == {}
+
+    def test_kernel_agent_ignores_game_specific_text(self) -> None:
+        """Without Capsule keywords, game-specific text yields 'unknown'."""
+        bare_agent = OperatorAgent()
+        cap, conf = bare_agent._match_task_keyword("升级胡桃")
+        assert cap == "unknown"
+        assert conf == 0.3
+
+    def test_injected_keywords_enable_matching(self) -> None:
+        """Capsule-injected keywords restore matching capability."""
+        capsule_kw = {"升级": "character_level_up", "战斗": "combat"}
+        agent_with_kw = OperatorAgent(task_keywords=capsule_kw)
+        cap, conf = agent_with_kw._match_task_keyword("升级胡桃")
+        assert cap == "character_level_up"
+        assert conf == 0.8
+
+    def test_genshin_capsule_keywords_loadable(self) -> None:
+        """Verify the Genshin Capsule keyword module loads and provides data."""
+        from data.genshin_operator_keywords import GENSHIN_TASK_KEYWORDS
+        assert len(GENSHIN_TASK_KEYWORDS) >= 20
+        assert "升级" in GENSHIN_TASK_KEYWORDS
+        assert GENSHIN_TASK_KEYWORDS["升级"] == "character_level_up"
+        assert "level up" in GENSHIN_TASK_KEYWORDS
+
+    def test_full_agent_with_genshin_capsule(self) -> None:
+        """End-to-end: Kernel agent + Genshin Capsule keywords = full matching."""
+        from data.genshin_operator_keywords import GENSHIN_TASK_KEYWORDS
+        full_agent = OperatorAgent(task_keywords=GENSHIN_TASK_KEYWORDS)
+        response = full_agent.handle_user_message("升级胡桃到90级", {})
+        assert response["technical_action"]["intent"] == "set_goal"
+        assert response["technical_action"]["task"].objective == "character_level_up"

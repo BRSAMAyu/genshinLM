@@ -4,6 +4,10 @@ Covers:
 - D-01/D-02: Basic dialog advance and selection
 - D-03: Conditional dialog responses (choice depends on quest state, items, prior dialog)
 - D-04: Affection-based dialog (NPC relationship level affects available options)
+
+Also provides a bridge from the Kernel DialogueController (agent_kernel) to
+the Capsule-level DialogDriver, enabling smart skip-rate control and branch
+interception with VLM fallback.
 """
 from __future__ import annotations
 
@@ -14,6 +18,8 @@ from dataclasses import dataclass, field
 from enum import IntEnum
 from typing import TYPE_CHECKING, Any
 
+from agent_kernel.dialogue_controller import DialogueController, OptionRegistry
+from agent_kernel.types import Affordance, SceneGraph, SceneObject
 from interaction.dialog_branch_analyzer import ConsequenceTracker, DialogBranchAnalyzer
 
 if TYPE_CHECKING:
@@ -211,7 +217,11 @@ class AffectionDialogManager:
 # ---------------------------------------------------------------------------
 
 class DialogDriver:
-    """Drive dialog to completion with auto-advance and choice selection."""
+    """Drive dialog to completion with auto-advance and choice selection.
+
+    Optionally integrates with the Kernel DialogueController for smart
+    skip-rate control and branch interception.
+    """
 
     def __init__(
         self,
@@ -219,11 +229,13 @@ class DialogDriver:
         classifier: GenshinScreenClassifier,
         analyzer: DialogBranchAnalyzer | None = None,
         conditional_selector: ConditionalDialogSelector | None = None,
+        dialogue_controller: DialogueController | None = None,
     ) -> None:
         self._backend = backend
         self._classifier = classifier
         self._analyzer = analyzer or DialogBranchAnalyzer()
         self._conditional = conditional_selector
+        self._controller = dialogue_controller
 
     def drive_dialog_to_completion(
         self,
@@ -231,7 +243,15 @@ class DialogDriver:
         max_clicks: int = 100,
         shutdown_event: threading.Event | None = None,
     ) -> bool:
-        """Advance dialog until it ends. Returns True if dialog completed."""
+        """Advance dialog until it ends. Returns True if dialog completed.
+
+        When a DialogueController is provided, uses its tick-based logic for
+        skip-rate control and branch interception. Otherwise falls back to
+        simple click-to-advance.
+        """
+        if self._controller is not None:
+            return self._drive_with_controller(frame_source, max_clicks, shutdown_event)
+
         clicks = 0
         consecutive_no_dialog = 0
 
@@ -270,3 +290,95 @@ class DialogDriver:
 
         log.warning("[DialogDriver] max_clicks (%d) reached", max_clicks)
         return False
+
+    def _drive_with_controller(
+        self,
+        frame_source,
+        max_clicks: int = 100,
+        shutdown_event: threading.Event | None = None,
+    ) -> bool:
+        """Drive dialog using the Kernel DialogueController for tick-based control."""
+        from agent_kernel.dialogue_controller import DialogueState
+
+        clicks = 0
+        consecutive_complete = 0
+
+        while clicks < max_clicks:
+            if shutdown_event and shutdown_event.is_set():
+                return False
+
+            frame = frame_source()
+            if frame is None:
+                time.sleep(0.1)
+                continue
+
+            state = self._classifier.classify(frame)
+
+            # Build a lightweight SceneGraph for the DialogueController
+            scene_graph = self._build_scene_graph(frame, state.state)
+            result = self._controller.tick(scene_graph)
+
+            if result.action == "complete":
+                consecutive_complete += 1
+                if consecutive_complete >= 2:
+                    log.info("[DialogDriver] controller reports dialog complete after %d clicks", clicks)
+                    self._controller.reset()
+                    return True
+
+            elif result.action == "skip":
+                try:
+                    self._backend.click_at(
+                        self._backend.client_rect().center[0],
+                        self._backend.client_rect().top + int(self._backend.client_rect().height * 0.85),
+                        reason=f"controller_skip_{result.reason}",
+                    )
+                except Exception as exc:
+                    log.debug("[DialogDriver] controller skip failed: %s", exc)
+                clicks += 1
+
+            elif result.action == "select_option" and result.selected_option is not None:
+                bbox = result.selected_option.bbox
+                if bbox is not None:
+                    rect = self._backend.client_rect()
+                    nx, ny = (bbox[0] + bbox[2]) / 2, (bbox[1] + bbox[3]) / 2
+                    px = rect.left + int(nx * rect.width)
+                    py = rect.top + int(ny * rect.height)
+                    try:
+                        self._backend.click_at(px, py, reason=f"select_option_{result.reason}")
+                    except Exception as exc:
+                        log.debug("[DialogDriver] option select failed: %s", exc)
+                clicks += 1
+
+            elif result.action == "wait":
+                time.sleep(0.05)
+
+            elif result.action == "pause":
+                log.info("[DialogDriver] controller paused: %s", result.reason)
+                if result.state == DialogueState.WAITING_SELECTION:
+                    # Need user escalation or VLM fallback — log and wait
+                    time.sleep(0.5)
+
+        self._controller.reset()
+        log.warning("[DialogDriver] max_clicks (%d) reached (controller mode)", max_clicks)
+        return False
+
+    def _build_scene_graph(self, frame: object, screen_state: str) -> SceneGraph:
+        """Build a lightweight SceneGraph from current frame for the DialogueController."""
+        import time as _time
+
+        # Attempt to detect dialog options from the classifier state
+        objects: list[SceneObject] = []
+        if screen_state == "dialog":
+            objects.append(SceneObject(
+                object_id="dialog_area",
+                kind="dialog_option",
+                label="dialog",
+                bbox_norm=None,
+                source="classifier",
+            ))
+
+        return SceneGraph(
+            timestamp=_time.perf_counter(),
+            scene_state=screen_state,
+            objects=tuple(objects),
+        )

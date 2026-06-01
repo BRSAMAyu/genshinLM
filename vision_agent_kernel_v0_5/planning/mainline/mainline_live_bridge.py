@@ -6,6 +6,7 @@ from typing import Any
 
 from core.state_bus import StateBus
 from execution.input_worker import InputWorker
+from execution.loading_waiter import LoadingWaiter
 from execution.safe_window_backend import SafeWindowInputBackend
 from execution.ui_flow_skill_adapter import UIFlowSkillAdapter
 from navigation.quest_marker_follower import QuestMarkerFollower
@@ -14,8 +15,16 @@ from control.sentinel.somatic_state_supervisor import SomaticStateSupervisor
 from control.sentinel.sentinel_runtime import SentinelRuntime
 from planning.mainline.mission_graph_v4 import MissionGraphV4
 from planning.mainline.mainline_runner import MainlineRunner, MissionRunResult
+from planning.mainline.mainline_runner import (
+    StateBusSnapshotProvider,
+    DefaultClaimVerifier,
+    MainlineCheckpointPublisher,
+)
 from planning.mainline.mainline_skill_executor import MainlineSkillExecutor
 from bagel.runtime import BagelRuntime
+from combat.boss_combat_bridge import BossCombatBridge
+from combat.team_capability import TeamProfile, TeamCombatPlan, CharacterCapability
+from planning.skill_registry import SkillRegistry
 
 log = logging.getLogger(__name__)
 
@@ -38,6 +47,7 @@ class MainlineLiveBridge:
         state_bus: StateBus | None = None,
         input_worker: InputWorker | None = None,
         bagel: BagelRuntime | None = None,
+        checkpoint_store: Any | None = None,
     ) -> None:
         self._window_title = window_title
         self._bus = state_bus or StateBus()
@@ -63,41 +73,94 @@ class MainlineLiveBridge:
         minimap_reader = MinimapQuestReader()
         self._quest_follower = QuestMarkerFollower(backend=self._backend, reader=minimap_reader)
 
+        # 3b. Initialize screen classifier (for loading detection, state monitoring)
+        from perception.genshin_screen_classifier import GenshinScreenClassifier
+        self._classifier = GenshinScreenClassifier()
+
         # 4. Initialize somatic state supervisor
         self._somatic_supervisor = SomaticStateSupervisor()
         self._sentinel = SentinelRuntime()
 
-        # 5. Initialize UI Flow Skill Adapter
+        # 5. Initialize SkillRegistry (enables composite combat/exploration/quest actions)
+        self._skill_registry = SkillRegistry(skill_executor=None, state_bus=self._bus)
+
+        # 6. Initialize UI Flow Skill Adapter with skill_registry
         self._skill_adapter = UIFlowSkillAdapter(
             state_bus=self._bus,
             input_worker=self._worker,
             quest_follower=self._quest_follower,
             somatic_supervisor=self._somatic_supervisor,
+            skill_registry=self._skill_registry,
         )
+        # Wire registry executor back to adapter so composite actions flow correctly
+        self._skill_registry._executor = self._skill_adapter
 
-        # 6. Initialize Mainline Skill Executor
+        # 7. Initialize Mainline Skill Executor
         self._skill_executor = MainlineSkillExecutor(
             action_executor=self._skill_adapter,
             bagel_runtime=self._bagel,
             raise_on_failure=False,
         )
 
-        # 7. Initialize MainlineRunner with the real skill executor
+        # 8. Initialize BossCombatBridge (combat_signal → BossCombatRuntime → InputWorker)
+        default_team = TeamProfile(
+            characters=[CharacterCapability(
+                character_id="traveler",
+                slot=1,
+                element="anemo",
+                role="on_field_dps",
+            )],
+        )
+        default_plan = TeamCombatPlan(
+            conservative_level=1,
+            main_chain=["anemo"],
+            survival_chain=["dodge"],
+            low_resource_chain=["normal_attack"],
+            fallback_chain=["safe_abort"],
+            reason="default_live_bridge",
+        )
+        self._boss_bridge = BossCombatBridge(
+            state_bus=self._bus,
+            input_worker=self._worker,
+            boss_profile=None,
+            team_profile=default_team,
+            team_plan=default_plan,
+        )
+
+        # 9. Initialize MainlineRunner with Phase 8 closure: snapshot, claims, checkpoint
+        snapshot_provider = StateBusSnapshotProvider(self._bus)
+        if checkpoint_store is None:
+            from runtime.session_checkpoint import CheckpointStore
+            checkpoint_store = CheckpointStore()
+        checkpoint_publisher = MainlineCheckpointPublisher(self._bus, disk_store=checkpoint_store)
         self._runner = MainlineRunner(
             sentinel=self._sentinel,
             skill_execute_fn=self._skill_executor.execute_node_skill,
+            snapshot_provider=snapshot_provider,
+            claim_verifier=DefaultClaimVerifier(),
+            checkpoint_publisher=checkpoint_publisher,
         )
 
     def execute_live_mission(self, graph: MissionGraphV4) -> MissionRunResult:
         """Locks window focus, monitors sentinel watchdogs, and executes the mission graph
 
-        against the live game.
+        against the live game. Pre-checks for loading screens before execution.
         """
         log.info("[MainlineLiveBridge] Preparing for live mission execution of graph: %s", graph.graph_id)
         self._ensure_foreground_focus()
 
-        # Run the mission runner against the live game!
-        result = self._runner.run(graph)
+        # Pre-mission loading check — wait if game is mid-transition
+        self._wait_if_loading()
+
+        # Start combat bridge to consume combat_signal from perception
+        self._boss_bridge.start()
+
+        try:
+            # Run the mission runner against the live game!
+            result = self._runner.run(graph)
+        finally:
+            # Always stop combat bridge when mission ends
+            self._boss_bridge.stop(timeout=2.0)
 
         log.info(
             "[MainlineLiveBridge] Live mission execution completed. Success: %s, duration: %.2fs",
@@ -105,6 +168,17 @@ class MainlineLiveBridge:
             result.duration_sec,
         )
         return result
+
+    def _wait_if_loading(self, timeout: float = 30.0) -> bool:
+        """Wait for any active loading screen to complete before proceeding."""
+        waiter = LoadingWaiter(classifier=self._classifier, max_wait=timeout)
+        try:
+            return waiter.wait_for_load_complete(
+                frame_source=self._backend.capture_frame,
+            )
+        except Exception as e:
+            log.warning("[MainlineLiveBridge] Loading check failed (non-fatal): %s", e)
+            return True
 
     def _ensure_foreground_focus(self) -> None:
         """Brings the target game window to the foreground."""
@@ -118,5 +192,6 @@ class MainlineLiveBridge:
             log.error("[MainlineLiveBridge] Error bringing window to foreground: %s", e)
 
     def stop(self) -> None:
+        self._boss_bridge.stop(timeout=2.0)
         if self._worker.is_alive:
             self._worker.stop()
