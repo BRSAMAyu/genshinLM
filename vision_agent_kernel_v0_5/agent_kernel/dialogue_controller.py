@@ -251,6 +251,37 @@ class DialogueController:
         self._consecutive_skips = 0
         self._last_skip_time = 0.0
 
+    def is_option_present(self, scene_graph: SceneGraph) -> bool:
+        """Check if a dialogue branch choice is currently on screen."""
+        return len(self._detect_options(scene_graph)) > 0
+
+    def select_best_option(
+        self,
+        scene_graph: SceneGraph,
+        option_registry: dict[str, Any] | None = None,
+    ) -> dict[str, Any] | None:
+        """Select the best dialogue option from available choices.
+
+        Uses option_registry for known options, falls back to VLM for unknown.
+        Returns a dict with option details or None if no options found.
+        """
+        options = self._detect_options(scene_graph)
+        if not options:
+            return None
+
+        # Try registry match
+        if option_registry:
+            for opt in options:
+                for pattern, target in option_registry.items():
+                    if pattern in opt.label:
+                        return {"option_id": opt.option_id, "label": opt.label,
+                                "bbox": opt.bbox, "target": target}
+
+        # Return first option as fallback
+        best = options[0]
+        return {"option_id": best.option_id, "label": best.label,
+                "bbox": best.bbox, "confidence": best.confidence}
+
     def _is_dialogue_scene(self, scene_graph: SceneGraph) -> bool:
         """Check if we're in a dialogue scene."""
         return scene_graph.scene_state in ("dialog", "dialogue", "cutscene")

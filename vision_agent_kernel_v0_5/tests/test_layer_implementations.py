@@ -211,6 +211,23 @@ class TestCerebellumControllerImpl:
         ctrl = CerebellumControllerImpl()
         assert ctrl.commit_yaml_patch("genshin", {"key": "value"})
 
+    def test_align_ui_anchor_match(self) -> None:
+        from agent_kernel.cerebellum_controller import CerebellumControllerImpl
+        from agent_kernel.types import SceneGraph, SceneObject
+        ctrl = CerebellumControllerImpl()
+        obj = SceneObject(object_id="o1", kind="button", label="Character Menu", bbox_norm=None)
+        sg = SceneGraph(timestamp=1.0, scene_state="menu", objects=(obj,))
+        found = ctrl.align_ui_anchor(sg, "Character")
+        assert found is not None
+        assert found.object_id == "o1"
+
+    def test_align_ui_anchor_no_match(self) -> None:
+        from agent_kernel.cerebellum_controller import CerebellumControllerImpl
+        from agent_kernel.types import SceneGraph
+        ctrl = CerebellumControllerImpl()
+        sg = SceneGraph(timestamp=1.0, scene_state="menu")
+        assert ctrl.align_ui_anchor(sg, "nonexistent") is None
+
 
 # ---------------------------------------------------------------------------
 # L7-L8 CerebrumAgentImpl
@@ -282,3 +299,58 @@ class TestCerebrumAgentImpl:
         actions = agent.solve_visual_puzzle(None, "A puzzle with levers")
         assert isinstance(actions, tuple)
         assert len(actions) > 0
+
+
+# ---------------------------------------------------------------------------
+# L3-L4 DialogueController
+# ---------------------------------------------------------------------------
+
+class TestDialogueControllerProtocol:
+
+    def test_protocol_conformance(self) -> None:
+        from agent_kernel.dialogue_controller import DialogueController
+        from agent_kernel.protocols import DialogueController as Protocol
+        dc = DialogueController()
+        assert isinstance(dc, Protocol)
+
+    def test_is_option_present_no_options(self) -> None:
+        from agent_kernel.dialogue_controller import DialogueController
+        from agent_kernel.types import SceneGraph
+        dc = DialogueController()
+        sg = SceneGraph(timestamp=1.0, scene_state="dialog")
+        assert not dc.is_option_present(sg)
+
+    def test_is_option_present_with_option(self) -> None:
+        from agent_kernel.dialogue_controller import DialogueController
+        from agent_kernel.types import SceneGraph, SceneObject
+        dc = DialogueController()
+        obj = SceneObject(object_id="o1", kind="dialog_option", label="选项", bbox_norm=None)
+        sg = SceneGraph(timestamp=1.0, scene_state="dialog", objects=(obj,))
+        assert dc.is_option_present(sg)
+
+    def test_select_best_option_none(self) -> None:
+        from agent_kernel.dialogue_controller import DialogueController
+        from agent_kernel.types import SceneGraph
+        dc = DialogueController()
+        sg = SceneGraph(timestamp=1.0, scene_state="dialog")
+        assert dc.select_best_option(sg) is None
+
+    def test_select_best_option_with_option(self) -> None:
+        from agent_kernel.dialogue_controller import DialogueController
+        from agent_kernel.types import SceneGraph, SceneObject
+        dc = DialogueController()
+        obj = SceneObject(object_id="o1", kind="dialog_option", label="选项: About Vision", bbox_norm=None)
+        sg = SceneGraph(timestamp=1.0, scene_state="dialog", objects=(obj,))
+        result = dc.select_best_option(sg)
+        assert result is not None
+        assert result["option_id"] == "o1"
+
+    def test_select_best_option_with_registry(self) -> None:
+        from agent_kernel.dialogue_controller import DialogueController
+        from agent_kernel.types import SceneGraph, SceneObject
+        dc = DialogueController()
+        obj = SceneObject(object_id="o1", kind="dialog_option", label="选项: About Vision", bbox_norm=None)
+        sg = SceneGraph(timestamp=1.0, scene_state="dialog", objects=(obj,))
+        result = dc.select_best_option(sg, option_registry={"Vision": "ask_about_vision"})
+        assert result is not None
+        assert result["target"] == "ask_about_vision"

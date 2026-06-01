@@ -237,3 +237,19 @@ class HSRGameCapsule:
 
     def risk_policy(self) -> dict[str, str]:
         return dict(HSR_RISK_POLICY)
+
+    def world_knowledge(self) -> dict[str, object]:
+        """Return HSR world knowledge (regions, paths, elements)."""
+        return {
+            "regions": ("herta_space_station", "jarilo_vi", "luofu", "penacony"),
+            "combat_types": ("physical", "fire", "ice", "lightning", "wind", "quantum", "imaginary"),
+            "paths": ("destruction", "hunt", "erudition", "harmony", "nihility", "preservation", "abundance"),
+        }
+
+    def verifier_bundle(self) -> dict[str, object]:
+        """Return HSR-specific verifier configurations."""
+        return {
+            "screen_state_confidence_threshold": 0.7,
+            "turn_timeout_sec": 15.0,
+            "combat_victory_check": "ui_element:BattleSettled",
+        }

@@ -145,8 +145,12 @@ class DialogueController(Protocol):
     When a branch choice appears, pauses and delegates selection.
     """
 
-    def tick_dialogue_skip(self, scene_graph: SceneGraph) -> None:
-        """Process one dialogue skip tick. Handles text advancement."""
+    def tick(self, scene_graph: SceneGraph) -> object:
+        """Process one dialogue controller tick.
+
+        Handles text advancement and branch detection.
+        Returns a DialogueActionResult indicating skip/select/wait.
+        """
         ...
 
     def is_option_present(self, scene_graph: SceneGraph) -> bool:
@@ -210,6 +214,18 @@ class CerebellumController(Protocol):
         patch_data: dict[str, Any],
     ) -> bool:
         """Write a permanent YAML patch to a capsule's config."""
+        ...
+
+    def align_ui_anchor(
+        self,
+        tree: SceneGraph,
+        target_label: str,
+        active_overrides: dict[str, Any] | None = None,
+    ) -> SceneObject | None:
+        """Find a UI anchor element using template label + overrides.
+
+        Used by SPARKLE 2.1 for template-anchored UI tree construction.
+        """
         ...
 
 
@@ -408,8 +424,21 @@ class SkillRecipeLookup(Protocol):
 class ClaimAdjudicator(Protocol):
     """Verify state delta claims against observation evidence."""
 
-    def adjudicate(self, claim: StateDeltaClaim) -> StateDeltaClaim:
-        """Verify a claim and return it with verified=True/False and confidence."""
+    def adjudicate(
+        self,
+        claim: StateDeltaClaim,
+        observations: list[object] = ...,
+        *,
+        dependency_health: float = 1.0,
+        drift_penalty: float = 1.0,
+        sample_sufficiency: float = 1.0,
+    ) -> object:
+        """Verify a claim and return adjudication result.
+
+        The simplified protocol signature allows claim-only calls
+        while supporting the full runtime signature with observations
+        and health parameters.
+        """
         ...
 
 
@@ -444,4 +473,20 @@ class GameCapsule(Protocol):
 
     def risk_policy(self) -> dict[str, str]:
         """Return risk level mappings for this game's actions."""
+        ...
+
+    def world_knowledge(self) -> dict[str, object]:
+        """Return game world knowledge (waypoints, regions, items).
+
+        Used by the Kernel's navigation and planning layers to access
+        Capsule-specific world structure without importing game code.
+        """
+        ...
+
+    def verifier_bundle(self) -> dict[str, object]:
+        """Return domain-specific verifier configurations.
+
+        Maps claim types to verifier parameters for this game's
+        unique UI patterns and state transitions.
+        """
         ...

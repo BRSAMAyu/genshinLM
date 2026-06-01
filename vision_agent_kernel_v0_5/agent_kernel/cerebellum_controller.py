@@ -111,3 +111,21 @@ class CerebellumControllerImpl(CerebellumControllerProtocol):
         log.info("[L5-L6] YAML patch commit for %s: %s", capsule_id, patch_data)
         # In production, this writes to the capsule's YAML file
         return True
+
+    def align_ui_anchor(
+        self,
+        tree: SceneGraph,
+        target_label: str,
+        active_overrides: dict[str, object] | None = None,
+    ) -> SceneObject | None:
+        """Find a UI anchor element by label match with override support."""
+        for obj in tree.objects:
+            if target_label in obj.label:
+                return obj
+        if active_overrides:
+            for label in active_overrides.values():
+                label_str = str(label)
+                for obj in tree.objects:
+                    if label_str in obj.label:
+                        return obj
+        return None

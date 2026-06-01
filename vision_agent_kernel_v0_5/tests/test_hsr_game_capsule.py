@@ -135,6 +135,17 @@ class TestHsrRiskPolicy:
         capsule = HSRGameCapsule()
         assert capsule.risk_policy() is not capsule.risk_policy()
 
+    def test_world_knowledge(self) -> None:
+        cap = HSRGameCapsule()
+        wk = cap.world_knowledge()
+        assert "regions" in wk
+        assert len(wk["regions"]) >= 2
+
+    def test_verifier_bundle(self) -> None:
+        cap = HSRGameCapsule()
+        vb = cap.verifier_bundle()
+        assert "screen_state_confidence_threshold" in vb
+
 
 class TestKernelNotModified:
 

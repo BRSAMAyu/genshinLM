@@ -188,6 +188,17 @@ class TestVocabularyConstants:
     def test_risk_policy_constant(self) -> None:
         assert len(GENSHIN_RISK_POLICY) >= 10
 
+    def test_world_knowledge(self) -> None:
+        cap = GenshinGameCapsule()
+        wk = cap.world_knowledge()
+        assert "regions" in wk
+        assert len(wk["regions"]) >= 3
+
+    def test_verifier_bundle(self) -> None:
+        cap = GenshinGameCapsule()
+        vb = cap.verifier_bundle()
+        assert "screen_state_confidence_threshold" in vb
+
 
 # ---------------------------------------------------------------------------
 # Integration: OperatorAgent + Capsule keywords

@@ -280,3 +280,20 @@ class GenshinGameCapsule:
     def risk_policy(self) -> dict[str, str]:
         """Return risk level mappings for Genshin actions."""
         return dict(GENSHIN_RISK_POLICY)
+
+    def world_knowledge(self) -> dict[str, object]:
+        """Return Genshin world knowledge (waypoints, regions, quests)."""
+        return {
+            "regions": ("mondstadt", "liyue", "inazuma", "sumeru", "fontaine", "natlan"),
+            "elemental_types": ("pyro", "hydro", "electro", "cryo", "anemo", "geo", "dendro"),
+            "weapon_types": ("sword", "claymore", "polearm", "bow", "catalyst"),
+        }
+
+    def verifier_bundle(self) -> dict[str, object]:
+        """Return Genshin-specific verifier configurations."""
+        return {
+            "screen_state_confidence_threshold": 0.7,
+            "ocr_match_threshold": 0.6,
+            "loading_screen_timeout_sec": 30.0,
+            "combat_victory_check": "ui_element:Victory",
+        }
