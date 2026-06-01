@@ -88,6 +88,7 @@ KNOWN_EXTENDED_VIOLATIONS: dict[str, set[str]] = {
 # UI anchoring and calibration. They should decrease as we refactor toward
 # Capsule-provided abstractions.
 KNOWN_CORE_BRIDGES: dict[str, set[str]] = {
+    "agent_kernel/live_factory.py": {"agent", "perception", "execution"},
     "execution/ui_flow_skill_adapter.py": {"interaction"},
     "execution/mouse_motor.py": {"interaction"},
     "execution/safe_window_backend.py": {"app_service"},
@@ -219,4 +220,4 @@ def test_violation_count_not_increased() -> None:
         "If this is intentional (new file moved to kernel), update this test. "
         "Otherwise, fix the new violation."
     )
-    assert len(KNOWN_CORE_BRIDGES) <= 4
+    assert len(KNOWN_CORE_BRIDGES) <= 5

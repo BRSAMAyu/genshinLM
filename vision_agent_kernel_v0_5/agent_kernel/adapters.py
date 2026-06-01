@@ -11,6 +11,7 @@ from agent_kernel.types import (
     Experience,
     PlannedStep,
     SemanticObservation,
+    StateDeltaClaim,
     StepResult,
 )
 from agent_kernel.protocols import (
@@ -53,6 +54,7 @@ class VLMPerceptionProvider:
 
     def observe(self, frame: np.ndarray, frame_id: int = 0) -> SemanticObservation:
         import time as _time
+        from agent_kernel.types import DesktopTree
 
         # Fast HSV-based classification
         screen_state = self._classifier.classify(frame)
@@ -66,10 +68,21 @@ class VLMPerceptionProvider:
             except Exception:
                 pass
 
+        # Build minimal DesktopTree for dialogue/scene detection
+        desktop_tree = DesktopTree(
+            timestamp=_time.perf_counter(),
+            screen_state=screen_state.state,
+            nodes=(),
+            is_modal_active=screen_state.state in (
+                "dialog", "dialogue", "menu", "inventory", "reward_screen", "npc_dialog",
+            ),
+        )
+
         return SemanticObservation(
             timestamp=_time.perf_counter(),
             frame_id=frame_id,
             scene_description=f"screen_state={screen_state.state}",
+            desktop_tree=desktop_tree,
             actionable_elements=(),
             screen_state=screen_state.state,
             raw_ocr_text=raw_ocr,
@@ -204,6 +217,29 @@ class VLMSuccessChecker:
             return False, 0.3
         except Exception:
             return False, 0.0
+
+    def adjudicate_delta(
+        self,
+        pre_obs: SemanticObservation,
+        post_obs: SemanticObservation,
+        criteria: str,
+    ) -> "StateDeltaClaim":
+        """Compare pre/post observations to produce a verified StateDeltaClaim."""
+        import time as _time
+        import uuid as _uuid
+        from agent_kernel.types import StateDeltaClaim
+
+        achieved, confidence = self.check(post_obs, criteria)
+        return StateDeltaClaim(
+            claim_id=f"claim_{_uuid.uuid4().hex[:8]}",
+            pre_frame_id=pre_obs.frame_id,
+            post_frame_id=post_obs.frame_id,
+            delta_description=f"criteria={criteria}",
+            verified=achieved,
+            confidence=confidence,
+            attributions=(f"vlm_adjudicate:{criteria}",),
+            timestamp=_time.perf_counter(),
+        )
 
 
 # ---------------------------------------------------------------------------
