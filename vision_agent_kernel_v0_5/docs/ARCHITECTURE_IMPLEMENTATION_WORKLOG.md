@@ -247,6 +247,24 @@ control/sentinel/somatic_state_supervisor.py → from interaction.ui_flows impor
 | 2026-06-01 | a66b25c | SkillRecipeLookup.find_applicable + cross-cutting protocol audit | — |
 | 2026-06-01 | d02a65e | Fix P0+P1 audit gaps: ClaimAdjudicator, DialogueController, GameCapsule, CerebellumController (97 tests) | #189-192 |
 | 2026-06-01 | 64e5045 | Merge Gemini architecture refactor with backward compat fixes (3961 tests) | merge |
+| 2026-06-01 | 74191fa | Gemini embodied runtime + audit fixes: Cerebrum throttle, DialogueController types, VLMPerception frame_id, MockExecutionProvider (3966 tests) | #197 |
+
+---
+
+### 补充 M+: Phase 2-7 集成验证 + 缺口补齐（Post-merge Integration）
+**状态**: 🟢 完成
+**完成项**:
+- [x] Phase 2 验证: ExecutionRuntime + BackendFactory 已存在 (execution/execution_runtime.py, execution/backend_factory.py)
+- [x] Phase 3 验证: MainlineRunner 已集成 StateBus 5 slots (screen_claim, combat_signal, navigation_signal, frame_quality, checkpoint_state)
+- [x] Phase 4 验证: MapNavigationRuntime 已存在 (navigation/map_navigation_runtime.py)
+- [x] Phase 5 补齐: NPC affection persistence (planning/npc_affection_persistence.py, 10 tests)
+- [x] Phase 6 验证: Boss combat gauntlet E2E (tests/test_boss_combat_gauntlet.py, 11 tests)
+- [x] Phase 7 验证: Long horizon + mainline tests 已全面
+- [x] EmbodiedRuntime wired into AgentLoop: tick_embodied() fast-path for overworld (L3-L6)
+- [x] KernelSkillRecipeLookup → GameCapsule.skill_library() integration (4 tests)
+- [x] KernelClaimBridge wired into AgentLoop for kernel↔runtime claim bridging
+- [x] SkillRecipeLookup.__len__() added for capsule integration
+**验收**: Phase 2-7 全部组件已实现并通过集成测试 ✅
 
 ---
 

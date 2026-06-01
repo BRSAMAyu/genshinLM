@@ -352,6 +352,67 @@ class DailyCommissionDryRunRuntime:
         self.combat_policy = combat_policy or RealTimeCombatPolicy()
         self.mode_detector = CombatModeDetector()
 
+    def tick_embodied(self, obs: Any) -> EmbodiedAction | None:
+        """Integration hook for AgentLoop: produce one EmbodiedAction from a SemanticObservation.
+
+        Returns None if the observation is not suitable for embodied handling
+        (e.g., dialogue, menus, loading screens).
+        """
+        screen_state = getattr(obs, "screen_state", "unknown")
+        if screen_state in ("loading", "black_screen", "dialog", "dialogue", "menu", "inventory"):
+            return None
+
+        frame = self._obs_to_nav_frame(obs)
+        action = self.navigator.decide(frame)
+        mode = self.mode_detector.detect(frame)
+        if mode == "combat":
+            threats = frame.threats
+            team = TeamCombatRuntime(
+                active_slot=1,
+                members=(TeamMemberRuntime(slot=1, role="driver"),),
+            )
+            return self.combat_policy.decide(threats, team, enemy_visible=frame.target_kind == "enemy")
+        return action
+
+    def _obs_to_nav_frame(self, obs: Any) -> NavigationFrame:
+        """Convert a SemanticObservation into a NavigationFrame."""
+        dt = getattr(obs, "desktop_tree", None)
+        ws = getattr(obs, "world_state", None)
+        target_label = ""
+        target_bbox = None
+        target_conf = 0.0
+        target_kind = "unknown"
+        distance = None
+
+        if dt is not None:
+            for node in getattr(dt, "nodes", ()):
+                if node.role in ("button", "icon") and node.confidence > target_conf:
+                    target_label = node.label
+                    target_bbox = node.bbox
+                    target_conf = node.confidence
+
+        if ws is not None:
+            targets = getattr(ws, "targets", ())
+            if targets:
+                t = targets[0]
+                target_label = target_label or t.label
+                target_kind = t.kind
+                if t.bbox_norm is not None:
+                    # Estimate distance from bbox size: larger bbox = closer
+                    bw = abs(t.bbox_norm[2] - t.bbox_norm[0])
+                    bh = abs(t.bbox_norm[3] - t.bbox_norm[1])
+                    area = bw * bh
+                    distance = max(1.0, min(100.0, 25.0 / max(area, 0.001)))
+
+        return NavigationFrame(
+            screen_state=getattr(obs, "screen_state", "overworld"),
+            target_label=target_label,
+            target_bbox_norm=target_bbox,
+            target_confidence=target_conf,
+            target_kind=target_kind,
+            distance_m=distance,
+        )
+
     def run(
         self,
         objectives: tuple[DailyCommissionObjective, ...],

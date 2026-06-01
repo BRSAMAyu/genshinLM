@@ -35,6 +35,9 @@ class KernelSkillRecipeLookup(SkillRecipeLookupProtocol):
             if ctx:
                 self._capability_index.setdefault(ctx.lower(), recipe.skill_id)
 
+    def __len__(self) -> int:
+        return len(self._recipes)
+
     def lookup(self, capability: str) -> SkillRecipe:
         """Return the best recipe for a capability.
 

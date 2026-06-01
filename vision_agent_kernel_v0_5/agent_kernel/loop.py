@@ -38,6 +38,7 @@ from agent_kernel.protocols import (
     ExecutionProvider,
     CompanionAgent,
 )
+from agent_kernel.claim_bridge import KernelClaimBridge
 
 log = logging.getLogger("SparkleKernel.Loop")
 
@@ -61,6 +62,7 @@ class AgentLoop:
         lease_manager: Any | None = None,
         combat_agent: Any | None = None,
         dialogue_controller: Any | None = None,
+        embodied_runtime: Any | None = None,
         max_plan_iterations: int = 20,
         max_step_retries: int = 2,
         confirm_fn: Callable[[Any], bool] | None = None,
@@ -72,11 +74,12 @@ class AgentLoop:
         self._checker = checker
         self._companion = companion
         self._capture_frame = capture_frame
-        
+
         # Extended neurological hooks
         self._lease_manager = lease_manager
         self._combat_agent = combat_agent
         self._dialogue_controller = dialogue_controller
+        self._embodied_runtime = embodied_runtime
         self._max_plan_iterations = max_plan_iterations
         self._max_step_retries = max_step_retries
         self._confirm_fn = confirm_fn
@@ -88,6 +91,9 @@ class AgentLoop:
         # Cerebrum throttle: per ADR, L7-L8 should run at 0.1-0.2Hz (5-10s interval)
         self._last_cerebrum_time: float = 0.0
         self._cerebrum_interval_sec: float = 5.0  # minimum 5s between Cerebrum calls
+
+        # Claim type bridge: kernel claims ↔ runtime claims
+        self._claim_bridge = KernelClaimBridge()
 
         # Thread safety & State bus
         self._state_bus: dict[str, Any] = {
@@ -169,6 +175,47 @@ class AgentLoop:
                         log.info("[Brainstem] Dialogue state detected. Advancing conversation...")
                         self._dialogue_controller.tick_dialogue_skip(obs.desktop_tree)
                         time.sleep(0.2)
+                        continue
+
+                # B2. Embodied runtime fast-path (L3-L6 local reflex for overworld)
+                # When an embodied runtime is wired, use it for local navigation/combat
+                # decisions instead of waiting for the slow Cerebrum cloud planner.
+                if self._embodied_runtime is not None and obs.screen_state in ("overworld", "exploration", "combat", "boss_fight"):
+                    with self._lock:
+                        if not self._state_bus["running"]:
+                            break
+                    embodied_action = self._embodied_runtime.tick_embodied(obs)
+                    if embodied_action is not None:
+                        # Map EmbodiedAction.kind → SemanticAction.kind (narrower vocabulary)
+                        kind_map = {
+                            "navigation": "navigation", "combat": "combat",
+                            "interaction": "ui", "dialogue": "ui", "puzzle": "ui",
+                            "loot": "ui", "reward": "ui", "system": "system",
+                        }
+                        sa = SemanticAction(
+                            action_id=f"embodied_{uuid.uuid4().hex[:8]}",
+                            kind=kind_map.get(embodied_action.kind, "ui"),
+                            intent=embodied_action.intent,
+                            target=embodied_action.param("target", ""),
+                            parameters=embodied_action.params,
+                            requires_physical_input=True,
+                        )
+                        contract = ActionContract(
+                            contract_id=f"ec_{uuid.uuid4().hex[:8]}",
+                            semantic_action=sa,
+                            safety_policy=(
+                                ("require_focus", "True"),
+                                ("input_lease_required", "True"),
+                                ("max_lease_ms", "250"),
+                            ),
+                            timeout_ms=1000,
+                            risk_level="low",
+                        )
+                        receipt = self._executor.execute_contract(contract)
+                        steps_total += 1
+                        if receipt.focus_maintained:
+                            steps_succeeded += 1
+                        time.sleep(0.05)
                         continue
 
                 # C. Strategic compilation (Cerebrum L8 Cloud-First Planner)
@@ -385,6 +432,17 @@ class AgentLoop:
 
     def _record_successful_overrides(self, overrides: dict[str, Any], claim: StateDeltaClaim) -> None:
         log.info(f"[Memory] Caching successful override rules for end-of-session persistence: {overrides}")
+        # Bridge kernel claim to runtime format for long-term storage
+        try:
+            runtime_claim = self._claim_bridge.to_runtime_state_delta(
+                claim,
+                mission_id="session",
+                node_id="override_patch",
+                skill_id="runtime_override",
+            )
+            log.debug(f"[ClaimBridge] Kernel claim bridged to runtime: {runtime_claim.claim_id}")
+        except Exception as exc:
+            log.debug(f"[ClaimBridge] Runtime bridge skipped (runtime not available): {exc}")
 
     def _propose_permanent_capsule_patches(self) -> None:
         overrides = self.get_active_overrides()
