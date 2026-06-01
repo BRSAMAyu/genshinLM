@@ -181,6 +181,24 @@ control/sentinel/somatic_state_supervisor.py → from interaction.ui_flows impor
 
 ---
 
+### 补充 M: L0-L9 具体实现补齐（Post-M7）
+**状态**: 🟢 完成 (commits c606e31 + c698ee3 + 1401011)
+**完成项**:
+- [x] InputLeaseManagerImpl (L0) — 13 tests
+- [x] SpinalReflexAgentImpl (L1-L2) — 11 tests
+- [x] BrainstemNavigatorImpl (L3-L4) — 7 tests (from c606e31)
+- [x] CerebellumControllerImpl (L5-L6) — 6 tests (from c606e31)
+- [x] CerebrumAgentImpl (L7-L8) — 8 tests (from c606e31)
+- [x] FileMemoryStore → MemoryStore protocol conformance verified — 4 tests
+- [x] RuntimeOverride StateBus slot wired (runtime_overrides: LatestSlot[list])
+- [x] UnknownSceneHandler (§11 safe exploration) — 14 tests
+  - 7-step pipeline: Observe→Hypothesize→Probe→Verify→Attribute→Learn→Escalate
+  - Probe history + learned scene→action mappings
+  - User escalation when confidence exhausted
+**验收**: 3914 total tests pass, all L0-L8 layers have concrete implementations ✅
+
+---
+
 ## 六、独立审查记录
 
 ### 审查 #1: Opus Audit — UI Flow OCR Verification
@@ -223,6 +241,9 @@ control/sentinel/somatic_state_supervisor.py → from interaction.ui_flows impor
 | 2026-06-01 | f513e10 | M5: HSR Capsule — HSRGameCapsule (23 tests) | #178 |
 | 2026-06-01 | 8292c0a | M6: SkillInductor with promotion/demotion (23 tests) | #179 |
 | 2026-06-01 | 9d6feb7 | M7: RegressionRunner 5 types (18 tests) | #180 |
+| 2026-06-01 | c606e31 | L0-L8 concrete layer implementations (34 tests, 3914 total) | #181-184 |
+| 2026-06-01 | c698ee3 | RuntimeOverride StateBus slot + UnknownSceneHandler (14 tests) | #185-186 |
+| 2026-06-01 | 1401011 | SpinalReflexAgentImpl (L1-L2) + MemoryStore conformance (15 tests) | #187-188 |
 
 ---
 
