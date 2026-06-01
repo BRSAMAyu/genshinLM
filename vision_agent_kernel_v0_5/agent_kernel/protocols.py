@@ -29,7 +29,13 @@ from agent_kernel.types import (
     ActionPrimitive,
     AgentGoal,
     CapsulePatchProposal,
+    CombatCommand,
     Experience,
+    MissionGraph,
+    MissionNode,
+    PhysicalReceipt,
+    RepairPatch,
+    RouteSegment,
     RuntimeOverride,
     SceneGraph,
     SemanticObservation,
@@ -37,6 +43,7 @@ from agent_kernel.types import (
     StateDeltaClaim,
     StepResult,
     TaskSpec,
+    ThreatSignal,
 )
 
 
@@ -85,19 +92,16 @@ class SpinalReflexAgent(Protocol):
     Uses lightweight YOLO detection + combo state machine.
     """
 
-    def evaluate_threats(self, latest_frame: object) -> list[dict[str, Any]]:
-        """Evaluate current frame for threats. Returns threat dicts."""
+    def evaluate_threats(self, latest_frame: object) -> list[ThreatSignal]:
+        """Evaluate current frame for threats. Returns threat signals."""
         ...
 
     def tick_combat_reflex(
         self,
-        threats: list[dict[str, Any]],
+        threats: list[ThreatSignal],
         current_combo_step: int,
-    ) -> dict[str, Any] | None:
-        """Generate a combat command based on current threats and combo state.
-
-        Returns a command dict with 'action', 'target', 'reason' keys, or None.
-        """
+    ) -> CombatCommand | None:
+        """Generate a combat command based on current threats and combo state."""
         ...
 
 
@@ -115,7 +119,7 @@ class BrainstemNavigator(Protocol):
     def update_heading_servo(
         self,
         current_yaw: float,
-        target_segment: dict[str, Any],
+        target_segment: RouteSegment,
     ) -> None:
         """Update the heading servo to face the next route segment."""
         ...
@@ -193,7 +197,7 @@ class CerebellumController(Protocol):
         self,
         current_pos: tuple[float, float, float],
         destination: tuple[float, float, float],
-    ) -> list[dict[str, Any]]:
+    ) -> list[RouteSegment]:
         """Compile a navigation route from current position to destination.
 
         Returns a list of route segment dicts.
@@ -221,24 +225,17 @@ class CerebrumAgent(Protocol):
     and replanning. Cloud-first but must support offline fallback.
     """
 
-    def compile_mission(self, goal: AgentGoal) -> dict[str, Any]:
-        """Compile a goal into a MissionGraph (plan DAG).
-
-        Returns a mission dict with nodes, edges, and current_node_index.
-        """
+    def compile_mission(self, goal: AgentGoal) -> MissionGraph:
+        """Compile a goal into a MissionGraph (plan DAG)."""
         ...
 
     def diagnose_failure(
         self,
-        failed_node: dict[str, Any],
+        failed_node: MissionNode,
         screenshot: object,
         error_trace: str,
-    ) -> dict[str, Any]:
-        """Diagnose why a mission node failed.
-
-        Returns a repair patch dict with replan_required, inject_skills,
-        runtime_overrides, and explanation.
-        """
+    ) -> RepairPatch:
+        """Diagnose why a mission node failed. Returns a repair patch."""
         ...
 
     def solve_visual_puzzle(
@@ -413,4 +410,38 @@ class ClaimAdjudicator(Protocol):
 
     def adjudicate(self, claim: StateDeltaClaim) -> StateDeltaClaim:
         """Verify a claim and return it with verified=True/False and confidence."""
+        ...
+
+
+# ===========================================================================
+# Game Capsule Protocol (§6 in SPARKLE_AGENT_KERNEL_DESIGN.md)
+# ===========================================================================
+
+@runtime_checkable
+class GameCapsule(Protocol):
+    """Protocol for game-specific capsule integration.
+
+    Each game must implement this protocol to plug into the Kernel.
+    The Kernel never imports game-specific code; it only uses this interface.
+    """
+
+    @property
+    def game_id(self) -> str:
+        """Unique identifier for this game capsule (e.g., 'genshin', 'hsr')."""
+        ...
+
+    def screen_vocabulary(self) -> tuple[str, ...]:
+        """Return known screen state names for this game."""
+        ...
+
+    def action_vocabulary(self) -> tuple[str, ...]:
+        """Return known action types for this game."""
+        ...
+
+    def skill_library(self) -> dict[str, SkillRecipe]:
+        """Return all skills provided by this capsule."""
+        ...
+
+    def risk_policy(self) -> dict[str, str]:
+        """Return risk level mappings for this game's actions."""
         ...

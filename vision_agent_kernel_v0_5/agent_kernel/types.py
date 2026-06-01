@@ -275,3 +275,98 @@ class GoalResult:
     total_duration_sec: float = 0.0
     experiences: tuple[Experience, ...] = ()
     error: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Execution contract types (ADR §4, 总纲 §5.6)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True, slots=True)
+class ActionContract:
+    """Contract wrapping a semantic action with safety and execution policy.
+
+    This is the core execution unit — every physical action must flow through
+    an ActionContract. Referenced in 总纲 §1.1, §5.6, §13.1.
+    """
+    action_id: str
+    semantic_action: ActionPrimitive
+    safety_policy: tuple[tuple[str, str], ...] = ()  # key-value safety constraints
+    timeout_ms: int = 5000
+    risk_level: str = "low"       # low, medium, high, critical
+    requires_confirmation: bool = False
+    lease_id: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class PhysicalReceipt:
+    """Receipt from physical action execution.
+
+    Proves that an action was submitted, accepted, and either executed
+    or failed. Part of the Claim chain (总纲 §5.4).
+    """
+    action_id: str
+    success: bool
+    reason: str = ""
+    execution_latency_ms: float = 0.0
+    focus_maintained: bool = True
+    is_verified: bool = False
+    timestamp: float = 0.0
+
+
+# ---------------------------------------------------------------------------
+# ADR structured types (from AURORA_SPARKLE_AGENTS_CORE_ARCHITECTURE.md §4)
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True, slots=True)
+class ThreatSignal:
+    """A detected threat from the combat reflex layer (L1-L2)."""
+    threat_type: str        # "projectile", "telegraph_aoe", "boss_animation_charge", "low_hp"
+    severity: float         # 0.0 ~ 1.0
+    direction_degrees: float = 0.0
+    time_to_impact_ms: int = 0
+    source: str = "unknown"
+
+
+@dataclass(frozen=True, slots=True)
+class CombatCommand:
+    """A combat reflex command (L1-L2)."""
+    reflex_action: str      # "dodge", "dash", "cast_skill_e", "cast_burst_q", "combo_normal_attack", "switch_character", "heal_emergency"
+    target_character_index: int = 1
+    reason: str = ""
+
+
+@dataclass(frozen=True, slots=True)
+class RouteSegment:
+    """A single segment of a navigation route (L3-L4)."""
+    segment_id: int
+    target_position: tuple[float, float, float]  # (x, y, z) in game world
+    movement_type: str = "run"  # "run", "glide", "climb", "swim"
+    speed_factor: float = 1.0
+
+
+@dataclass(frozen=True, slots=True)
+class MissionNode:
+    """A node in the mission graph (L7-L8)."""
+    node_id: str
+    skill_intent: str
+    preconditions: tuple[str, ...] = ()
+    expected_state: str = ""
+    risk_level: str = "low"
+
+
+@dataclass(frozen=True, slots=True)
+class MissionGraph:
+    """A directed acyclic graph of mission nodes (L7-L8)."""
+    graph_id: str
+    nodes: tuple[MissionNode, ...] = ()
+    edges: tuple[tuple[str, str], ...] = ()  # (from_id, to_id) pairs
+    current_node_index: int = 0
+
+
+@dataclass(frozen=True, slots=True)
+class RepairPatch:
+    """A repair/replan suggestion from the CerebrumAgent (L7-L8)."""
+    replan_required: bool = False
+    inject_skills: tuple[str, ...] = ()
+    runtime_overrides: tuple[tuple[str, str], ...] = ()  # key-value overrides
+    explanation: str = ""
