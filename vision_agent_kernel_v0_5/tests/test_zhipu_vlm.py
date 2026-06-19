@@ -144,8 +144,13 @@ class TestZeroShotAgentInit:
         )
         assert agent._input.target_window_title == "Aurora QA Safe Window"
 
-    def test_agent_rejects_non_authorized_nondry_window(self):
+    def test_agent_rejects_non_authorized_nondry_window(self, monkeypatch):
         import pytest
+
+        # This test asserts the DEFAULT (no override) reject behavior. Several
+        # entry-point modules call os.environ.setdefault(...,"1") on import, which
+        # can leak into a full-suite run, so clear it explicitly for isolation.
+        monkeypatch.delenv("AURORA_ENABLE_AUTHORIZED_SAFE_WINDOW", raising=False)
 
         with pytest.raises(ValueError):
             ZeroShotAgent(
