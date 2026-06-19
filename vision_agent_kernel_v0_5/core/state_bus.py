@@ -7,11 +7,11 @@ from dataclasses import dataclass, field
 from typing import Generic, TypeVar, Any, Callable, TYPE_CHECKING
 
 from core.events import Interrupt, ModeRequest
-from core.types import Observation, ProgressState
-from planning.screen_state_claim import ScreenStateClaim
+from core.types import Observation, PoseEstimate, ProgressState
 
 if TYPE_CHECKING:
     from perception.fusion_runtime import FrameQuality
+    from planning.screen_state_claim import ScreenStateClaim
     from planning.mainline.mission_graph_v4 import MissionGraphV4
     from planning.mainline.mainline_runner import MainlineCheckpoint
     from runtime.claim_events import ClaimGraphState
@@ -174,12 +174,17 @@ class StateBus:
         self.frame_quality: LatestSlot[FrameQuality] = LatestSlot()  # type: ignore[assignment]
         self.navigation_signal: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
         self.combat_signal: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
+        # Spatial substrate: fused pose belief, written by the localization layer
+        # and read by control (steering/arrival/stuck), orchestration (skill
+        # pre/post conditions) and strategy (route planning).
+        self.latest_pose: LatestSlot[PoseEstimate] = LatestSlot()
         # Phase 2+ slots (AUTONOMY_RUNTIME_CONTRACT.md §3)
         self.mission_graph: LatestSlot[MissionGraphV4] = LatestSlot()  # type: ignore[assignment]
         self.claim_graph_state: LatestSlot[ClaimGraphState] = LatestSlot()  # type: ignore[assignment]
         self.checkpoint_state: LatestSlot[MainlineCheckpoint] = LatestSlot()  # type: ignore[assignment]
         self.navigation_plan: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
         self.runtime_overrides: LatestSlot[list[Any]] = LatestSlot()  # type: ignore[assignment]
+        self.quest_state: LatestSlot[Any] = LatestSlot()  # type: ignore[assignment]
         self.shutdown_flag = threading.Event()
         self.event_signal = threading.Event()
         self.mode_signal = threading.Event()
@@ -202,6 +207,12 @@ class StateBus:
 
     def publish_progress(self, progress: ProgressState) -> None:
         self.progress_ring.append(progress)
+
+    def publish_pose(self, pose: PoseEstimate) -> int:
+        return self.latest_pose.put(pose)
+
+    def latest_pose_snapshot(self) -> SlotSnapshot[PoseEstimate]:
+        return self.latest_pose.snapshot()
 
     def publish_interrupt(self, interrupt: Interrupt) -> bool:
         accepted = self.event_queue.put(interrupt, priority=interrupt.priority)

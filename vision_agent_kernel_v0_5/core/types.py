@@ -38,6 +38,7 @@ class Observation:
     ui_state: UIStateEstimate | None
     visual_triggers: dict[str, bool]
     os_focus: FocusState
+    image: Any = None  # np.ndarray | None — raw frame for VLM/UI adapters
     stale: bool = False
     extensions: dict[str, object] = field(default_factory=dict)
 
@@ -133,6 +134,11 @@ class InputLease:
     created_at: float
     expires_at: float
     reason: str
+    # Optional atomic actions for human-complete computer-use coverage.
+    # Examples:
+    # {"type":"left_click"}, {"type":"mouse_scroll","delta":-1},
+    # {"type":"type_text","text":"hello"}, {"type":"execute_combo","keys":["ctrl","c"]}.
+    actions: list[dict[str, Any]] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -158,3 +164,88 @@ class SkillResult:
     verifier_result: VerifierResult | None = None
     claim_id: str = ""
     claim_status: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Spatial substrate (sensor-agnostic localization)
+#
+# These three types form the seam between sensors and the pose belief:
+#   LocalizationReading  — raw per-frame measurements from a LocalizationProvider
+#   MotionCommand        — the body-frame motion the executor actually commanded
+#   PoseEstimate         — the fused belief consumed by every plane via StateBus
+#
+# The fusion engine (`perception.pose_fusion.PoseFusion`) is game-agnostic. A
+# minimap is just one source of readings; a game without a minimap supplies the
+# same readings from visual odometry / VLM landmark fixes, and falls back to
+# dead-reckoning from MotionCommand when no measurement is available.
+#
+# Conventions (documented once, relied on everywhere):
+#   - position is 2D ground-plane (x=east/+X, y=north/+Y) in *world units*.
+#     Each provider converts its sensor frame (e.g. minimap pixels) into these
+#     units; the fusion engine never assumes pixels.
+#   - heading_deg is clockwise from north: 0=+Y, 90=+X, range [0, 360).
+# ---------------------------------------------------------------------------
+
+
+@dataclass(slots=True)
+class LocalizationReading:
+    """Raw localization measurements from one frame, before fusion.
+
+    Every measurement is optional — a provider supplies whatever it could read
+    this frame and leaves the rest ``None``. Displacement fields are *incremental*
+    world-frame deltas since the previous reading (e.g. minimap optical flow,
+    already rotated into world frame and scaled to world units).
+    """
+
+    timestamp: float
+    frame_id: int
+    heading_deg: float | None = None
+    heading_confidence: float = 0.0
+    flow_dx: float | None = None
+    flow_dy: float | None = None
+    flow_confidence: float = 0.0
+    absolute_position: tuple[float, float] | None = None
+    absolute_confidence: float = 0.0
+    minimap_visible: bool = True
+    source: str = "unknown"
+    metadata: JsonDict = field(default_factory=dict)
+
+
+@dataclass(slots=True)
+class MotionCommand:
+    """Body-frame motion the executor commanded this step (dead-reckoning input).
+
+    ``forward``/``right`` are normalized analog axes in [-1, 1] mirroring
+    :class:`MovementIntent`. ``speed_world_units_per_sec`` is the calibrated
+    nominal walking speed; ``yaw_rate_deg_per_sec`` integrates camera turning.
+    """
+
+    timestamp: float
+    forward: float = 0.0
+    right: float = 0.0
+    speed_world_units_per_sec: float = 0.0
+    yaw_rate_deg_per_sec: float = 0.0
+    is_moving: bool = False
+
+
+@dataclass(slots=True)
+class PoseEstimate:
+    """Fused belief about where the agent is and which way it faces.
+
+    ``confidence`` is the overall trust [0, 1]. ``position_uncertainty`` grows
+    (in world units) while dead-reckoning and shrinks on an absolute fix —
+    consumers compare it against a threshold to decide whether to trust the pose
+    or hand off to last-mile visual reacquisition. ``has_absolute_fix`` is False
+    while the position is purely relative/dead-reckoned.
+    """
+
+    frame_id: int
+    timestamp: float
+    position: tuple[float, float]
+    heading_deg: float
+    velocity: tuple[float, float] = (0.0, 0.0)
+    confidence: float = 0.0
+    position_uncertainty: float = 0.0
+    heading_uncertainty_deg: float = 0.0
+    has_absolute_fix: bool = False
+    source: str = "init"

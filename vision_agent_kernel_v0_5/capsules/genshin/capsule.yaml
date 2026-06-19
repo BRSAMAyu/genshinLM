@@ -6,11 +6,13 @@ runtime_package: "capsules.genshin"
 entrypoint: "capsule_entry:GenshinCapsule"
 providers:
   screen_classifier: capsules.genshin.providers:GenshinScreenClassifierProvider
+  combat_detector: capsules.genshin.providers:GenshinCombatDetectorProvider
   combat_planner: capsules.genshin.providers:GenshinCombatPlannerProvider
   navigator: capsules.genshin.providers:GenshinNavigatorProvider
   dialog_handler: capsules.genshin.providers:GenshinDialogHandlerProvider
   knowledge: capsules.genshin.providers:GenshinKnowledgeProvider
   verifier: capsules.genshin.providers:GenshinVerifierProvider
+  localization: capsules.genshin.minimap_localization:GenshinMinimapLocalizationProvider
 capabilities:
   - arpg_navigation
   - arpg_combat
@@ -71,6 +73,22 @@ skills:
     planner_tags:
       - long_horizon
       - navigation
+  - skill_id: genshin_daily_commission
+    kind: declarative_skill_pack
+    capabilities:
+      - daily_commission_loop
+      - platform_glide_control
+      - balloon_escort_defense
+      - reward_reclamation
+    resources:
+      - commission_skill_yaml
+      - world_graph
+    verifiers:
+      - commission_completed
+      - reward_claimed
+    planner_tags:
+      - daily_commission
+      - quest_loop
 transitions:
   - from: GENSHIN_COMBAT
     to: GENSHIN_DODGE
@@ -161,6 +179,10 @@ resources:
     kind: world_graph
     path: ../../knowledge/genshin_world_graph.yaml
     description: Genshin world graph and route hints.
+  - resource_id: commission_skill_yaml
+    kind: skill_yaml
+    path: ../../data/skills/genshin_commission_skills.yaml
+    description: Declarative daily commission skills (glide, balloon escort, Katheryne rewards).
 profiles:
   - genshin_1920x1080
 failure_bridge: app_service.apps.genshin_failure_bridge:GenshinFailureBridge

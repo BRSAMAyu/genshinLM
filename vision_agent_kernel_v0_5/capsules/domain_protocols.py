@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Protocol
 
+from core.types import LocalizationReading
+
 
 def _default_empty_dict() -> Dict[str, Any]:
     return {}
@@ -146,6 +148,29 @@ class KnowledgeProviderProtocol(Protocol):
 class VerifierProviderProtocol(Protocol):
     """Protocol for dynamically resolving verifiers by ID."""
     def get(self, verifier_id: str) -> Any:
+        ...
+
+    def health(self) -> ProviderHealth:
+        ...
+
+
+class LocalizationProviderProtocol(Protocol):
+    """Protocol for reading per-frame localization cues from a game.
+
+    A capsule implements this to convert whatever spatial signals the game
+    exposes (minimap optical flow, a compass needle, an opened world map, visual
+    odometry, VLM landmark fixes) into a game-agnostic
+    :class:`~core.types.LocalizationReading`. The reading is then fused with
+    dead-reckoning by :class:`~perception.pose_fusion.PoseFusion`, so a game
+    without a minimap supplies the same reading from other sources and the rest
+    of the stack is unaffected.
+
+    Implementations must convert sensor-frame quantities (e.g. minimap pixels)
+    into the world-unit / clockwise-from-north conventions documented on
+    :class:`~core.types.PoseEstimate`.
+    """
+
+    def read(self, frame: Any, frame_id: int, timestamp: float) -> LocalizationReading:
         ...
 
     def health(self) -> ProviderHealth:
