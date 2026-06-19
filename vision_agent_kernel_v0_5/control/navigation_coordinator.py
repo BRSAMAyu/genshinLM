@@ -59,10 +59,14 @@ class NavigationCoordinator:
         nav: PoseNavigationController | None = None,
         reacquire: VisualReacquireController | None = None,
         recovery: RecoveryStrategy | None = None,
+        *,
+        max_recoveries: int = 3,
     ) -> None:
         self._nav = nav or PoseNavigationController()
         self._reacquire = reacquire or VisualReacquireController()
         self._recovery = recovery
+        self._max_recoveries = max_recoveries
+        self._recover_count = 0
         self._mode: CoordMode = "navigate"
 
     @property
@@ -73,6 +77,7 @@ class NavigationCoordinator:
         self._nav.reset()
         self._reacquire.reset()
         self._mode = "navigate"
+        self._recover_count = 0
 
     def step(
         self,
@@ -87,10 +92,6 @@ class NavigationCoordinator:
         if self._mode == "reacquire":
             return self._run_reacquire(pose, target, track)
 
-        if self._mode == "recover":
-            # Try one recovery tick; if resolved, resume navigation next call.
-            return self._run_recovery("recover_continue", pose, target)
-
         # mode == "navigate"
         decision = self._nav.step(pose, target, now)
         if decision.status == "arrived":
@@ -101,9 +102,13 @@ class NavigationCoordinator:
             self._reacquire.reset()
             return self._run_reacquire(pose, target, track)
         if decision.status in ("lost", "stuck"):
-            self._mode = "recover"
+            # Recovery is a *bounded single nudge*, then control returns to nav so
+            # it re-evaluates from the new position. Unbounded recovery (never
+            # ceding back) is what walked the agent off the map — see Phase 1
+            # dogfood out_of_bounds cluster.
             return self._run_recovery(decision.status, pose, target)
-        # steer
+        # steer — making progress, clear the recovery counter
+        self._recover_count = 0
         return self._passthrough_nav(decision)
 
     # -- internals ----------------------------------------------------------
@@ -116,8 +121,9 @@ class NavigationCoordinator:
             self._mode = "arrived"
             return CoordinatedDecision("arrived", "arrived", "visual reacquire arrived")
         if rd.status == "not_found":
-            self._mode = "recover"
+            self._mode = "navigate"  # give up the visual search, hand back to nav via recovery
             return self._run_recovery("reacquire_not_found", pose, target)
+        self._recover_count = 0
         return CoordinatedDecision(
             "reacquire", rd.status, rd.reason, movement=rd.movement, camera=rd.camera,
         )
@@ -125,12 +131,19 @@ class NavigationCoordinator:
     def _run_recovery(
         self, reason: str, pose: PoseEstimate, target: PoseNavTarget,
     ) -> CoordinatedDecision:
+        self._recover_count += 1
+        if self._recover_count > self._max_recoveries:
+            # Bounded out — stop nudging; surface escalation (caller relocalizes).
+            return CoordinatedDecision(
+                "recover", "escalate",
+                f"{reason} unresolved after {self._max_recoveries} recoveries",
+            )
         if self._recovery is None:
             # No strategy wired — surface the condition; caller decides.
             return CoordinatedDecision("recover", reason, f"recovery needed: {reason} (no strategy wired)")
         out = self._recovery.recover(reason, pose, target)
         if out.resolved:
-            self._mode = "navigate"
+            self._recover_count = 0
         return CoordinatedDecision(
             "recover", reason, out.reason or f"recovering: {reason}",
             movement=out.movement, camera=out.camera,

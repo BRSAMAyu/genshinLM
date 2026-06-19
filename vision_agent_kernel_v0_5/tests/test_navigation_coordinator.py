@@ -111,6 +111,26 @@ def test_recover_resolved_returns_to_navigate() -> None:
     assert co.mode == "navigate"
 
 
+class _AlwaysStuckNav:
+    def reset(self) -> None: ...
+
+    def step(self, pose, target, now):
+        from control.pose_navigation import PoseNavDecision
+        return PoseNavDecision("stuck", "blocked", distance=10.0)
+
+
+def test_recovery_is_bounded_and_escalates() -> None:
+    rec = _StubRecovery()
+    co = NavigationCoordinator(nav=_AlwaysStuckNav(), recovery=rec, max_recoveries=2)
+    target = PoseNavTarget((0.0, 100.0))
+    d1 = co.step(_pose(), target, now=0.0)  # count 1 -> recover
+    d2 = co.step(_pose(), target, now=1.0)  # count 2 -> recover
+    d3 = co.step(_pose(), target, now=2.0)  # count 3 > 2 -> escalate
+    assert d1.mode == "recover" and d2.mode == "recover"
+    assert d3.status == "escalate"
+    assert len(rec.calls) == 2  # no nudge issued on the escalating tick
+
+
 def test_recovery_unwired_surfaces_condition() -> None:
     co = NavigationCoordinator(nav=PoseNavigationController(PoseNavConfig(min_confidence=0.25)))
     d = co.step(_pose((0.0, 0.0), confidence=0.05), PoseNavTarget((100.0, 0.0)), now=0.0)

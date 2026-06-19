@@ -153,11 +153,19 @@ class NavWorldEnv:
 
 
 class _SimRecovery:
-    """Minimal recovery: back off and turn to escape, let nav retry."""
+    """Lateral go-around: ease back and strafe sideways, alternating sides, then
+    let nav re-aim. Bounded by the coordinator's recovery cap."""
+
+    def __init__(self) -> None:
+        self._side = 1.0
 
     def recover(self, reason: str, pose: Any, target: Any) -> RecoveryOutput:
+        self._side *= -1.0
         return RecoveryOutput(
-            movement=MovementIntent(move_forward=-0.6, move_right=0.0, reason=f"recover_{reason}"),
+            movement=MovementIntent(
+                move_forward=-0.3, move_right=0.9 * self._side,
+                duration_ms=200, reason=f"goaround_{reason}",
+            ),
             resolved=False,
             reason=f"recovering:{reason}",
         )
