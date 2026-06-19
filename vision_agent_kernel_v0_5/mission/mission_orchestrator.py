@@ -56,8 +56,19 @@ class MissionOrchestrator:
         return self._graph
 
     def run(self, max_total_steps: int = 4000) -> MissionStatus:
-        """Drive the graph to completion or a blocked failure."""
+        """Drive the graph to completion or a blocked failure.
+
+        Validates structure first — an invalid graph (dangling deps / cycles)
+        fails fast with a diagnostic instead of stalling or KeyError-ing mid-walk.
+        """
         graph = self._graph
+        errors = graph.validate()
+        if errors:
+            return MissionStatus(
+                completed=0, total=len(graph.nodes),
+                current_node=graph.objective, finished=True, success=False,
+                last_failure=f"invalid_graph: {errors[0]}",
+            )
         steps = 0
         while not graph.is_complete() and steps < max_total_steps:
             node = graph.next_runnable()

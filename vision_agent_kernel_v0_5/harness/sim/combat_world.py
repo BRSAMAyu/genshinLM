@@ -53,6 +53,11 @@ class SimEnemy:
     attack_interval: int
     telegraph_lead: int
     aoe: bool = False  # AoE hits the whole team; dodge only spares the active char
+    weaknesses: tuple[str, ...] = ()  # elements this enemy takes extra damage from
+
+
+# Damage multiplier when a hit's element is in the enemy's weaknesses.
+_WEAKNESS_MULT = 1.5
 
 
 class CombatWorldEnv:
@@ -85,6 +90,7 @@ class CombatWorldEnv:
             max_hp=e["hp"], hp=e["hp"], aura=e.get("aura", ""), atk=e["atk"],
             attack_interval=e.get("attack_interval", 5), telegraph_lead=e.get("telegraph_lead", 1),
             aoe=e.get("aoe", False),
+            weaknesses=tuple(str(w).lower() for w in e.get("weaknesses", [])),
         )
         self._active = 0
         self._tick = 0
@@ -188,6 +194,9 @@ class CombatWorldEnv:
                 enemy.aura = ""        # reaction consumes the aura
             else:
                 enemy.aura = char.element  # apply element
+            # Curated weakness bonus: hitting a known-weak element does more.
+            if char.element.lower() in enemy.weaknesses:
+                dmg *= _WEAKNESS_MULT
         enemy.hp -= dmg
 
     def _observe(self) -> JsonDict:
@@ -211,6 +220,7 @@ class CombatWorldEnv:
             "enemy_aura": enemy.aura,
             "incoming_attack": incoming,
             "can_dodge": self._dodge_cd <= 0,
+            "enemy_weaknesses": list(enemy.weaknesses),
         }
 
 
@@ -236,6 +246,7 @@ class CombatPolicy:
             ),
             enemy_hp_ratio=obs["enemy_hp_ratio"], enemy_aura=obs["enemy_aura"],
             incoming_attack=obs["incoming_attack"], can_dodge=obs["can_dodge"],
+            enemy_weaknesses=tuple(obs.get("enemy_weaknesses", ())),
         )
         action: CombatAction = self._controller.decide(view)
         return {"kind": action.kind, "switch_to": action.switch_to}

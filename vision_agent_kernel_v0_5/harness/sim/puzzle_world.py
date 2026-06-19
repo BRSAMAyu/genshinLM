@@ -34,6 +34,7 @@ class PuzzleWorldEnv:
         self._target: tuple[float, float] | None = None
         self._tolerance = 2.0
         self._noise = 1.0
+        self._bias = (0.0, 0.0)
         self._rng = random.Random(0)
         self._proposed = False
         self._attempts = 0
@@ -45,6 +46,11 @@ class PuzzleWorldEnv:
         self._target = (float(s["target"][0]), float(s["target"][1]))
         self._tolerance = float(s.get("tolerance", 2.0))
         self._noise = float(s.get("noise", 1.0))
+        # Systematic measurement bias (constant offset): the realistic failure
+        # mode the controller must survive — a fixed mis-read, not just zero-mean
+        # jitter. e.g. a VLM that consistently localizes a few px off.
+        bias = s.get("bias", (0.0, 0.0))
+        self._bias = (float(bias[0]), float(bias[1]))
         self._rng = random.Random(int(s.get("seed", 0)))
         self._proposed = False
         self._attempts = 0
@@ -88,8 +94,8 @@ class PuzzleWorldEnv:
             return {"stage": "explore", "current": tuple(self._pos), "target": None,
                     "tolerance": self._tolerance, "error": None, "attempts": self._attempts}
         assert self._target is not None
-        nx = self._rng.gauss(0.0, self._noise)
-        ny = self._rng.gauss(0.0, self._noise)
+        nx = self._rng.gauss(0.0, self._noise) + self._bias[0]
+        ny = self._rng.gauss(0.0, self._noise) + self._bias[1]
         err = (self._target[0] - self._pos[0] + nx, self._target[1] - self._pos[1] + ny)
         return {
             "stage": "refine", "current": tuple(self._pos), "target": self._target,

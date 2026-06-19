@@ -43,6 +43,34 @@ def test_is_complete_only_when_all_done() -> None:
     assert g.is_complete()
 
 
+def test_validate_passes_on_clean_dag() -> None:
+    assert _linear_graph().validate() == []
+
+
+def test_validate_detects_dangling_dependency() -> None:
+    g = MissionGraph(objective="dangle")
+    g.add(MissionNode(node_id="a", kind="system", dependencies=("ghost",)))
+    errors = g.validate()
+    assert any("unknown node 'ghost'" in e for e in errors)
+
+
+def test_validate_detects_cycle() -> None:
+    g = MissionGraph(objective="cycle")
+    g.add(MissionNode(node_id="a", kind="system", dependencies=("b",)))
+    g.add(MissionNode(node_id="b", kind="system", dependencies=("a",)))
+    errors = g.validate()
+    assert any("cycle" in e for e in errors)
+
+
+def test_run_fails_fast_on_invalid_graph() -> None:
+    # Dangling dep must NOT KeyError mid-walk — fail fast with a diagnostic.
+    g = MissionGraph(objective="bad")
+    g.add(MissionNode(node_id="a", kind="system", dependencies=("ghost",)))
+    status = MissionOrchestrator(g, _ScriptedExecutor({})).run()
+    assert not status.success
+    assert status.last_failure.startswith("invalid_graph")
+
+
 # --- orchestrator: claim-gating, retries, attribution ----------------------
 
 

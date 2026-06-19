@@ -21,10 +21,12 @@ def _char(i, role="dps", hp=1.0, energy=0.0, skill=True, burst=False, element="p
     )
 
 
-def _view(chars, active=0, enemy_hp=1.0, aura="", incoming=False, can_dodge=True) -> CombatView:
+def _view(chars, active=0, enemy_hp=1.0, aura="", incoming=False, can_dodge=True,
+          weaknesses=()) -> CombatView:
     return CombatView(
         active_index=active, chars=tuple(chars), enemy_hp_ratio=enemy_hp,
         enemy_aura=aura, incoming_attack=incoming, can_dodge=can_dodge,
+        enemy_weaknesses=tuple(weaknesses),
     )
 
 
@@ -80,6 +82,63 @@ def test_rotates_to_offfield_ready_skill() -> None:
     chars = [_char(0, role="dps", skill=False), _char(1, role="sub", skill=True)]
     act = c.decide(_view(chars, active=0))
     assert act.kind == "switch" and act.switch_to == 1
+
+
+# --- weakness/reaction-aware rotation (curated data is load-bearing) --------
+
+
+def test_rotation_picks_weakness_element_over_field_order() -> None:
+    # Two ready off-field subs; index 1 is anemo (no weakness), index 2 is cryo
+    # (a weakness). Without weakness data, field order would pick index 1; the
+    # curated weakness must flip the choice to index 2.
+    c = ReactiveCombatController()
+    chars = [
+        _char(0, role="dps", skill=False),
+        _char(1, role="sub", skill=True, element="anemo"),
+        _char(2, role="sub", skill=True, element="cryo"),
+    ]
+    no_data = c.decide(_view(chars, active=0))
+    with_weak = c.decide(_view(chars, active=0, weaknesses=("cryo",)))
+    assert no_data.switch_to == 1                  # field order without data
+    assert with_weak.switch_to == 2                # weakness flips the target
+    assert "weakness" in with_weak.reason
+
+
+def test_rotation_prefers_reaction_trigger_with_aura() -> None:
+    # Enemy has a hydro aura; pyro triggers vaporize. Pick the pyro char even if
+    # it's later in field order than an inert (matching-aura) option.
+    c = ReactiveCombatController()
+    chars = [
+        _char(0, role="dps", skill=False),
+        _char(1, role="sub", skill=True, element="hydro"),   # same as aura -> no reaction
+        _char(2, role="sub", skill=True, element="pyro"),    # triggers reaction
+    ]
+    act = c.decide(_view(chars, active=0, aura="hydro"))
+    assert act.switch_to == 2
+    assert "reaction" in act.reason
+
+
+def test_weakness_bonus_speeds_clear_in_sim() -> None:
+    # A team whose element matches the enemy weakness should clear faster (fewer
+    # steps) than one that doesn't — proves the sim models the weakness bonus.
+    base_team = [{"name": "dps", "element": "cryo", "role": "dps", "hp": 1000.0, "atk": 70.0,
+                  "skill_cd": 6, "skill_mult": 3.5, "burst_cost": 30.0, "burst_mult": 7.0}]
+
+    def run(weaknesses):
+        s = Scenario(
+            scenario_id="wk", objective="clear", tags=("combat", "mob"),
+            setup={"team": base_team,
+                   "enemy": {"hp": 1200.0, "atk": 30.0, "aura": "", "attack_interval": 8,
+                             "telegraph_lead": 1, "weaknesses": weaknesses},
+                   "max_ticks": 300},
+            max_steps=300,
+        )
+        return ScenarioRunner(CombatWorldEnv(), CombatPolicy()).run(s)
+
+    weak = run(["cryo"])    # enemy weak to our element
+    tough = run(["pyro"])   # enemy weak to a different element
+    assert weak.passed and tough.passed
+    assert weak.steps < tough.steps, f"weak={weak.steps} tough={tough.steps}"
 
 
 # --- dogfood: real controller in the combat sim ----------------------------

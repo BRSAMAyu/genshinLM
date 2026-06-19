@@ -56,6 +56,41 @@ class MissionGraph:
     def add(self, node: MissionNode) -> None:
         self.nodes[node.node_id] = node
 
+    def validate(self) -> list[str]:
+        """Return a list of structural errors (empty == valid).
+
+        Catches the two failure modes that otherwise corrupt a run silently:
+        dangling dependencies (a dep id with no node — would KeyError mid-walk)
+        and dependency cycles (would stall with no runnable node and no diagnosis).
+        Call after construction, before running.
+        """
+        errors: list[str] = []
+        # Dangling dependencies.
+        for nid, node in self.nodes.items():
+            for dep in node.dependencies:
+                if dep not in self.nodes:
+                    errors.append(f"node '{nid}' depends on unknown node '{dep}'")
+        # Cycle detection (DFS over the dependency edges).
+        WHITE, GRAY, BLACK = 0, 1, 2
+        color = {nid: WHITE for nid in self.nodes}
+
+        def visit(nid: str, stack: list[str]) -> None:
+            color[nid] = GRAY
+            for dep in self.nodes[nid].dependencies:
+                if dep not in self.nodes:
+                    continue  # already reported as dangling
+                if color[dep] == GRAY:
+                    cycle = " -> ".join([*stack, nid, dep])
+                    errors.append(f"dependency cycle: {cycle}")
+                elif color[dep] == WHITE:
+                    visit(dep, [*stack, nid])
+            color[nid] = BLACK
+
+        for nid in self.nodes:
+            if color[nid] == WHITE:
+                visit(nid, [])
+        return errors
+
     def is_complete(self) -> bool:
         return all(n.status == "completed" for n in self.nodes.values())
 
@@ -71,7 +106,12 @@ class MissionGraph:
             if node.status == "failed" and node.attempts > node.max_retries:
                 # Budget exhausted — terminal. Caller marks it blocked + propagates.
                 continue
-            if not all(self.nodes[d].status == "completed" for d in node.dependencies):
+            # A dangling dep (unknown id) can never be "completed", so the node is
+            # never runnable — surfaced as a stall, not a KeyError.
+            if not all(
+                d in self.nodes and self.nodes[d].status == "completed"
+                for d in node.dependencies
+            ):
                 continue
             # Claim-gate: a node only becomes runnable once its precondition holds
             # over the (flowing) quest context.
