@@ -32,3 +32,5 @@ checkpoints/
 .bagel/
 .claude/
 data/bagel_events/
+*.db
+data/decision_memory.db
