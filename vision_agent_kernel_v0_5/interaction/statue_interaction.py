@@ -2,11 +2,10 @@ from __future__ import annotations
 
 import logging
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from execution.safe_window_backend import SafeWindowInputBackend
-    from perception.genshin_screen_classifier import GenshinScreenClassifier
 
 log = logging.getLogger(__name__)
 
@@ -17,7 +16,7 @@ class StatueInteraction:
     def heal_at_statue(
         self,
         backend: SafeWindowInputBackend,
-        classifier: GenshinScreenClassifier | None = None,
+        classifier: Any | None = None,
     ) -> bool:
         """Interact with statue to heal party. Returns True if interaction completed."""
         try:

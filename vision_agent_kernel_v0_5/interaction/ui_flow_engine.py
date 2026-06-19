@@ -22,7 +22,6 @@ from core.state_bus import StateBus
 from core.timebase import Timebase
 from core.types import InputLease, Observation, SkillResult
 from execution.input_worker import InputWorker
-from perception.genshin_screen_classifier import GenshinScreenClassifier
 
 log = logging.getLogger(__name__)
 
@@ -280,7 +279,7 @@ class UIFlowExecutor:
         self,
         state_bus: StateBus,
         input_worker: InputWorker,
-        classifier: GenshinScreenClassifier | None = None,
+        classifier: Any | None = None,
         timebase: Timebase | None = None,
         wait_chunk_ms: int = 50,
         telemetry_sink: TelemetrySink | None = None,

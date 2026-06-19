@@ -5,6 +5,7 @@ import time
 from typing import Any
 
 from core.state_bus import StateBus
+from execution.crash_recovery import CrashCheckpoint, CrashRecoveryOrchestrator
 from execution.input_worker import InputWorker
 from execution.loading_waiter import LoadingWaiter
 from execution.safe_window_backend import SafeWindowInputBackend
@@ -25,6 +26,7 @@ from bagel.runtime import BagelRuntime
 from combat.boss_combat_bridge import BossCombatBridge
 from combat.team_capability import TeamProfile, TeamCombatPlan, CharacterCapability
 from planning.skill_registry import SkillRegistry
+from planning.quest_state_machine import QuestStateMachine
 
 log = logging.getLogger(__name__)
 
@@ -47,11 +49,13 @@ class MainlineLiveBridge:
         state_bus: StateBus | None = None,
         input_worker: InputWorker | None = None,
         bagel: BagelRuntime | None = None,
+        enable_bagel_experimental: bool = False,
         checkpoint_store: Any | None = None,
     ) -> None:
         self._window_title = window_title
         self._bus = state_bus or StateBus()
-        self._bagel = bagel or BagelRuntime()
+        self._enable_bagel_experimental = bool(enable_bagel_experimental or bagel is not None)
+        self._bagel = bagel if bagel is not None else (BagelRuntime() if self._enable_bagel_experimental else None)
 
         # 1. Initialize physical window backend
         self._backend = SafeWindowInputBackend(
@@ -74,8 +78,13 @@ class MainlineLiveBridge:
         self._quest_follower = QuestMarkerFollower(backend=self._backend, reader=minimap_reader)
 
         # 3b. Initialize screen classifier (for loading detection, state monitoring)
-        from perception.genshin_screen_classifier import GenshinScreenClassifier
-        self._classifier = GenshinScreenClassifier()
+        #     Prefer capsule provider; fall back to direct import if capsule not installed.
+        from capsules.detector_resolver import get_screen_classifier
+        self._classifier = get_screen_classifier()
+
+        # 3c. Initialize QuestStateMachine and publish initial state to StateBus
+        self._quest_sm = QuestStateMachine()
+        self._publish_quest_state()
 
         # 4. Initialize somatic state supervisor
         self._somatic_supervisor = SomaticStateSupervisor()
@@ -83,6 +92,10 @@ class MainlineLiveBridge:
 
         # 5. Initialize SkillRegistry (enables composite combat/exploration/quest actions)
         self._skill_registry = SkillRegistry(skill_executor=None, state_bus=self._bus)
+
+        # 5b. Initialize DecisionMemory for strategy learning
+        from learning.decision_memory import DecisionMemory
+        self._decision_memory = DecisionMemory()
 
         # 6. Initialize UI Flow Skill Adapter with skill_registry
         self._skill_adapter = UIFlowSkillAdapter(
@@ -93,12 +106,13 @@ class MainlineLiveBridge:
             skill_registry=self._skill_registry,
         )
         # Wire registry executor back to adapter so composite actions flow correctly
-        self._skill_registry._executor = self._skill_adapter
+        self._skill_registry.set_executor(self._skill_adapter)
 
         # 7. Initialize Mainline Skill Executor
         self._skill_executor = MainlineSkillExecutor(
             action_executor=self._skill_adapter,
             bagel_runtime=self._bagel,
+            enable_bagel_attribution=self._enable_bagel_experimental,
             raise_on_failure=False,
         )
 
@@ -139,12 +153,19 @@ class MainlineLiveBridge:
             snapshot_provider=snapshot_provider,
             claim_verifier=DefaultClaimVerifier(),
             checkpoint_publisher=checkpoint_publisher,
+            enable_bagel_jit_router=self._enable_bagel_experimental,
+            decision_memory=self._decision_memory,
         )
+
+        # 10. Initialize crash recovery orchestrator and wire to runner (Issue #7)
+        self._crash_recovery = CrashRecoveryOrchestrator(state_bus=self._bus)
+        self._runner.set_crash_recovery_orchestrator(self._crash_recovery)
 
     def execute_live_mission(self, graph: MissionGraphV4) -> MissionRunResult:
         """Locks window focus, monitors sentinel watchdogs, and executes the mission graph
 
         against the live game. Pre-checks for loading screens before execution.
+        On crash detection, delegates to CrashRecoveryOrchestrator before final failure.
         """
         log.info("[MainlineLiveBridge] Preparing for live mission execution of graph: %s", graph.graph_id)
         self._ensure_foreground_focus()
@@ -161,6 +182,25 @@ class MainlineLiveBridge:
         finally:
             # Always stop combat bridge when mission ends
             self._boss_bridge.stop(timeout=2.0)
+
+        # If runner failed due to crash, attempt recovery via CrashRecoveryOrchestrator
+        if not result.success and self._crash_recovery.current_phase.value != "detect":
+            log.warning(
+                "[MainlineLiveBridge] Mission failed with crash in phase %s — "
+                "running CrashRecoveryOrchestrator",
+                self._crash_recovery.current_phase.value,
+            )
+            recovery_result = self._crash_recovery.execute_recovery_loop()
+            log.info(
+                "[MainlineLiveBridge] Crash recovery completed: success=%s, time=%.1fs",
+                recovery_result.get("success", False),
+                recovery_result.get("total_time_sec", 0.0),
+            )
+
+        # On success, advance quest state machine and publish updated state
+        if result.success:
+            self._quest_sm.advance(evidence="live_success")
+            self._publish_quest_state()
 
         log.info(
             "[MainlineLiveBridge] Live mission execution completed. Success: %s, duration: %.2fs",
@@ -190,6 +230,22 @@ class MainlineLiveBridge:
                 log.warning("[MainlineLiveBridge] Target window %r could not be focused", self._window_title)
         except Exception as e:
             log.error("[MainlineLiveBridge] Error bringing window to foreground: %s", e)
+
+    def _publish_quest_state(self) -> None:
+        """Publish current quest state to StateBus.quest_state for other components."""
+        try:
+            step = self._quest_sm.current_step
+            state_data = {
+                "quest_idx": self._quest_sm._current_quest_idx,
+                "step_idx": self._quest_sm._current_step_idx,
+                "current_step_id": step.step_id if step else None,
+                "progress": self._quest_sm.progress,
+                "mainline_complete": self._quest_sm.is_mainline_complete(),
+            }
+            self._bus.quest_state.put(state_data)
+            log.debug("[MainlineLiveBridge] Published quest state: %s", state_data)
+        except Exception:
+            pass
 
     def stop(self) -> None:
         self._boss_bridge.stop(timeout=2.0)

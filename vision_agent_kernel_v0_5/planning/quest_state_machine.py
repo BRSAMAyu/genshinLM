@@ -12,8 +12,8 @@ log = logging.getLogger(__name__)
 class QuestStateMachine:
     """Manage mainline quest chain progression state."""
 
-    def __init__(self, quest_chain: list[ArchonQuest]) -> None:
-        self._chain = quest_chain
+    def __init__(self, quest_chain: list[ArchonQuest] | None = None) -> None:
+        self._chain: list[ArchonQuest] = quest_chain or []
         self._current_quest_idx: int = 0
         self._current_step_idx: int = 0
         self._completed: set[str] = set()

@@ -58,7 +58,7 @@ class InputLeaseStore:
             expired_ids = [
                 lease_id
                 for lease_id, lease in self._leases.items()
-                if lease.expires_at <= now and self._has_down_key(lease)
+                if lease.expires_at <= now
             ]
             if not expired_ids:
                 return LeaseExpiryResult()

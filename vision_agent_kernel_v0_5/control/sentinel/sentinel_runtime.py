@@ -51,9 +51,11 @@ class SentinelRuntime:
         self,
         recipes: list[RecoveryRecipe] | None = None,
         max_global_budget: int = 10,
+        executor: Any = None,
     ) -> None:
         self._recipes = recipes or default_recipes()
         self._max_global_budget = max_global_budget
+        self._executor = executor
         self._global_budget_used = 0
         self._recipe_budget_used: dict[str, int] = {}
         self._history: list[SentinelEvent] = []
@@ -119,7 +121,7 @@ class SentinelRuntime:
             budget_used = self._global_budget_used
 
         # Phase 2: execute recovery OUTSIDE lock (may do I/O)
-        result = recipe.execute_recovery()
+        result = recipe.execute_recovery(executor=self._executor)
         if result.status == "success":
             recipe.verify_restabilized()
 

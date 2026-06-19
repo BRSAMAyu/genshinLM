@@ -237,6 +237,7 @@ class ExecutionRuntime:
 
         key_states: dict[str, str] = {}
         mouse_delta: tuple[float, float] | None = None
+        actions: list[dict[str, Any]] = []
 
         params = semantic_action.parameters
         if "key" in params:
@@ -246,9 +247,28 @@ class ExecutionRuntime:
                 key_states[k] = "DOWN"
         if "mouse_dx" in params and "mouse_dy" in params:
             mouse_delta = (float(params["mouse_dx"]), float(params["mouse_dy"]))
-
-        if not key_states and mouse_delta is None:
-            key_states["left"] = "DOWN"
+        if bool(params.get("left_click")) or params.get("click") == "left":
+            actions.append({"type": "left_click"})
+        if bool(params.get("right_click")) or params.get("click") == "right":
+            actions.append({"type": "right_click"})
+        if "scroll_delta" in params:
+            actions.append({"type": "mouse_scroll", "delta": int(params["scroll_delta"])})
+        if "type_text" in params:
+            actions.append(
+                {
+                    "type": "type_text",
+                    "text": str(params["type_text"]),
+                    "delay_between_keys_ms": int(params.get("typing_delay_ms", 50)),
+                }
+            )
+        if "combo_keys" in params:
+            actions.append(
+                {
+                    "type": "execute_combo",
+                    "keys": list(params["combo_keys"]),
+                    "hold_time_ms": int(params.get("combo_hold_ms", 100)),
+                }
+            )
 
         lease = InputLease(
             lease_id=f"lease:{action_id}",
@@ -259,6 +279,7 @@ class ExecutionRuntime:
             created_at=start_time,
             expires_at=expires_at,
             reason=semantic_action.parameters.get("reason", semantic_action.intent),
+            actions=actions,
         )
 
         validation = self._lease_store.validate(lease, now)
@@ -278,13 +299,18 @@ class ExecutionRuntime:
         timeout_sec = 5.0
         chunk = 0.05
         elapsed = 0.0
+        lease_keys = {
+            key
+            for key, state in lease.key_states.items()
+            if state == "DOWN"
+        }
 
         while elapsed < timeout_sec:
             time.sleep(chunk)
             elapsed += chunk
 
             active = self._worker.active_keys_snapshot()
-            if not active:
+            if not lease_keys or not (lease_keys & active):
                 duration_ms = elapsed * 1000
                 return PhysicalReceipt(
                     action_id=action_id,
@@ -299,10 +325,10 @@ class ExecutionRuntime:
 
         return self._make_receipt(
             action_id=action_id,
-            status="executed",
+            status="failed",
             submitted_at=start_time,
             lease_accepted=True,
-            focus_ok=True,
+            focus_ok=False,
             duration_ms=elapsed * 1000,
             reason="timeout_waiting_for_release",
             backend_type=self._backend.__class__.__name__,
@@ -322,8 +348,13 @@ class ExecutionRuntime:
             claim = self._claim_builder.build(post_frame, obs)
 
             if verifier_fn is not None:
+                claim_data: dict[str, Any] = {}
+                if claim is not None:
+                    claim_data["screen_state"] = getattr(claim, "screen_state", "")
+                    claim_data["confidence"] = getattr(claim, "confidence", 0.0)
+                    claim_data["ui_elements"] = getattr(claim, "ui_elements", ())
                 ctx = VerifierContext(
-                    state={},
+                    state=claim_data,
                     observation=obs,
                     frame=post_frame,
                 )

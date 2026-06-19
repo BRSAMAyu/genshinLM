@@ -77,7 +77,7 @@ def test_perception_pipeline_publishes_latest_observation() -> None:
     assert observation is not None
     assert observation.viewport_size == (1280, 720)
     assert observation.frame_id >= 1
-    assert not hasattr(observation, "image")
+    assert observation.image is None
 
 
 def test_perception_pipeline_capture_error_publishes_interrupt() -> None:

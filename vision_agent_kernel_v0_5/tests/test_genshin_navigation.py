@@ -191,12 +191,22 @@ class TestDialogEnd:
     def test_detect_dialog_end_transition(self, dialog_handler: GenshinDialogHandler) -> None:
         """Dialog end detected when transitioning from dialog state."""
         frame = np.random.randint(0, 255, (1080, 1920, 3), dtype=np.uint8)
-        assert dialog_handler.detect_dialog_end(frame, "dialog") is True
+        assert dialog_handler.detect_dialog_end(frame, "dialog", "world_hud") is True
 
     def test_detect_dialog_not_ended(self, dialog_handler: GenshinDialogHandler) -> None:
         """No dialog end when not previously in dialog."""
         frame = np.random.randint(0, 255, (1080, 1920, 3), dtype=np.uint8)
         assert dialog_handler.detect_dialog_end(frame, "world_hud") is False
+
+    def test_detect_dialog_still_active(self, dialog_handler: GenshinDialogHandler) -> None:
+        """Dialog not ended when current state is still dialog."""
+        frame = np.random.randint(0, 255, (1080, 1920, 3), dtype=np.uint8)
+        assert dialog_handler.detect_dialog_end(frame, "dialog", "dialog") is False
+
+    def test_detect_dialog_fallback_no_current(self, dialog_handler: GenshinDialogHandler) -> None:
+        """Fallback: without current state, returns True if prev was dialog."""
+        frame = np.random.randint(0, 255, (1080, 1920, 3), dtype=np.uint8)
+        assert dialog_handler.detect_dialog_end(frame, "dialog") is True
 
 
 # ---------------------------------------------------------------------------

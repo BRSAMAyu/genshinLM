@@ -276,20 +276,23 @@ class AutonomousTaskBrain:
                             best = self._memory.best_strategy_for(
                                 goal, self._config.capsule_id, self._current_claim.screen_state,
                             )
+                            learned_steps = best.steps if best else None
                             plan_result = self._planner.plan(
                                 goal=goal,
                                 capsule_id=self._config.capsule_id,
                                 current_state=self._current_claim,
                                 available_actions=[a.semantic_action for a in affordances],
+                                learned_strategy=learned_steps,
                             )
                             self._current_graph = plan_result.graph
                             last_plan_time = now
                             log.info(
-                                "[TaskBrain] Planned: %d nodes, confidence=%.2f, complexity=%s",
+                                "[TaskBrain] Planned: %d nodes, confidence=%.2f, complexity=%s%s",
                                 len(self._current_graph.nodes), plan_result.confidence, plan_result.complexity,
+                                f", learned={len(learned_steps)} steps" if learned_steps else "",
                             )
                             if best:
-                                log.info("[TaskBrain] Historical best: confidence=%.2f", best.confidence)
+                                log.info("[TaskBrain] Injected historical best: confidence=%.2f", best.confidence)
 
                     # 5. Execute next mission node
                     node = self._current_graph.next_pending() if self._current_graph else None

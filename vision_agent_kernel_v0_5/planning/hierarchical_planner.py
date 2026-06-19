@@ -22,7 +22,7 @@ Game: {game_id}
 Current goal: {goal}
 Current screen state: {screen_state}
 Available actions in current state: {available_actions}
-
+{strategy_hint}
 Decompose the goal into steps. Return strict JSON only:
 {{
   "reasoning": "why this decomposition",
@@ -99,16 +99,27 @@ class HierarchicalPlanner:
         capsule_id: str,
         current_state: ScreenStateClaim,
         available_actions: list[str] | None = None,
+        learned_strategy: list[dict[str, Any]] | None = None,
     ) -> PlanResult:
         started = time.perf_counter()
         if not self._api_key:
             return self._fallback_plan(goal, capsule_id, current_state, started)
         actions_str = ", ".join(available_actions) if available_actions else "unknown"
+        strategy_hint = ""
+        if learned_strategy:
+            steps_desc = "; ".join(
+                s.get("action", s.get("step", str(s))) for s in learned_strategy[:5]
+            )
+            strategy_hint = (
+                f"\nPreviously successful strategy for similar goals: [{steps_desc}]. "
+                "Prefer these actions but adapt to current context."
+            )
         prompt = _DECOMPOSITION_PROMPT.format(
             game_id=current_state.game_id,
             goal=goal,
             screen_state=current_state.screen_state,
             available_actions=actions_str,
+            strategy_hint=strategy_hint,
         )
         for attempt in range(self._max_retries + 1):
             try:

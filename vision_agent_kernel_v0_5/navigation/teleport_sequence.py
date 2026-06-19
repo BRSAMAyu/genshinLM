@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from agent.genshin_game_agent import GenshinActionExecutor
-    from perception.genshin_screen_classifier import GenshinScreenClassifier
     from interaction.ui_flow_engine import UIFlowExecutor
     from core.state_bus import StateBus
 

@@ -10,6 +10,7 @@ import time
 from typing import TYPE_CHECKING
 
 from combat.boss_combat_runtime import BossCombatDecision, BossCombatInput, BossCombatRuntime
+from combat.genshin_combat_planner import CombatAction
 from core.types import InputLease
 
 if TYPE_CHECKING:
@@ -37,6 +38,44 @@ def combat_signal_to_boss_input(
         hp_ratios=[getattr(signal, "player_hp_ratio", 1.0)] * 4,
         combo_broken=getattr(signal, "combo_broken", False),
         combat_ended=False,
+    )
+
+
+# --- CombatAction -> InputLease adapter (Issue #10) ---
+
+_ACTION_KEY_MAP: dict[str, str] = {
+    "normal_attack": "mouse_left",
+    "e_skill": "E",
+    "q_burst": "Q",
+    "switch": "",
+    "dodge": "Shift",
+    "heal": "Q",
+    "shield": "E",
+    "retreat": "S",
+    "re_acquire_target": "Tab",
+    "stop_sprint": "",
+}
+
+
+def combat_action_to_lease(action: CombatAction, now: float, owner: str = "boss_combat") -> InputLease:
+    """Convert a CombatAction from the playbook executor into an InputLease.
+
+    This is the public adapter bridging the planner/executor layer (which emits
+    CombatAction) to the bridge/input layer (which consumes InputLease).
+    """
+    key = _ACTION_KEY_MAP.get(action.action, "mouse_left")
+    # For switch actions the key is the character slot number (1-4).
+    if action.action == "switch":
+        key = str(action.character)
+    return InputLease(
+        lease_id=f"{owner}:{action.action}:{int(now * 1000)}",
+        owner=owner,
+        priority=40 if action.action != "normal_attack" else 20,
+        key_states={key: "DOWN"} if key else {},
+        mouse_delta=None,
+        created_at=now,
+        expires_at=now + 0.18,
+        reason=f"combat_action:{action.action}:char{action.character}",
     )
 
 

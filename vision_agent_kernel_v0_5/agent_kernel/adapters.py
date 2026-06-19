@@ -487,7 +487,7 @@ class GenshinExecutionProvider:
 
     def execute_contract(self, contract: ActionContract) -> PhysicalReceipt:
         import uuid
-        import time
+        import time as _time
         from agent_kernel.types import ActionPrimitive
         prim = ActionPrimitive(
             primitive_type=contract.semantic_action.intent,
@@ -495,17 +495,18 @@ class GenshinExecutionProvider:
             params=contract.semantic_action.parameters,
         )
         res = self.execute(prim)
+        now = _time.perf_counter()
         return PhysicalReceipt(
             receipt_id=uuid.uuid4(),
             lease_id=uuid.uuid4(),
-            issued_at=time.time(),
-            expires_at=time.time() + 0.25,
+            issued_at=now,
+            expires_at=now + 0.25,
             action_type="click",
             execution_latency_ms=res.duration_sec * 1000.0,
             focus_maintained=True,
             action_id=contract.semantic_action.action_id,
             status="verified" if res.success else "failed",
-            submitted_at=time.time(),
+            submitted_at=now,
             lease_accepted=True,
             focus_ok=True,
             duration_ms=res.duration_sec * 1000.0,

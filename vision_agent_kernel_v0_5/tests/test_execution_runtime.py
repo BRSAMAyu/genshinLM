@@ -8,6 +8,7 @@ import pytest
 
 from core.state_bus import StateBus
 from core.timebase import Timebase
+from core.types import InputLease
 from execution.backend_factory import BackendFactory
 from execution.console_backend import ConsoleInputBackend
 from execution.execution_runtime import ExecutionRuntime, PhysicalReceipt
@@ -192,6 +193,50 @@ class TestExecutionRuntime:
                 )
                 receipt = runtime.submit(action, contract)
                 assert receipt.status in ("executed", "verified")
+        finally:
+            runtime.stop()
+
+    def test_waits_only_for_current_lease_keys_not_global_active_keys(self):
+        runtime, bus = self._make_runtime()
+        runtime.start()
+        try:
+            # Inject a long-lived unrelated key hold (W) into InputWorker.
+            now = runtime.input_worker.lease_store.active_leases_snapshot()
+            _ = now  # keep static checkers quiet
+            long_hold = InputLease(
+                lease_id="unrelated_w_hold",
+                owner="test",
+                priority=10,
+                key_states={"W": "DOWN"},
+                mouse_delta=None,
+                created_at=time.perf_counter(),
+                expires_at=time.perf_counter() + 2.0,
+                reason="unrelated hold",
+            )
+            assert runtime.input_worker.submit_lease(long_hold)
+
+            # Submit action that uses E. Runtime should finish when E is released,
+            # without waiting for unrelated W to clear.
+            action = SemanticAction(
+                action_id="specific_lease_wait",
+                kind="system",
+                intent="press_e",
+                parameters={"key": "E", "reason": "specific key"},
+            )
+            contract = ActionContract(
+                action_id="specific_lease_wait",
+                semantic_action=action,
+                timeout_ms=50,
+                safety_policy={
+                    "require_focus": True,
+                    "input_lease_required": True,
+                    "max_lease_ms": 180,
+                },
+                verifier_contract={"verifier_id": "test_specific_wait"},
+            )
+            receipt = runtime.submit(action, contract)
+            assert receipt.status in ("executed", "verified")
+            assert receipt.duration_ms < 1000.0
         finally:
             runtime.stop()
 

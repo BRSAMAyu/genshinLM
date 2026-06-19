@@ -22,6 +22,7 @@ from bagel.fig_schema import BeliefIdentity, BeliefNode
 from bagel.runtime import BagelRuntime
 from control.sentinel.sentinel_runtime import SentinelRuntime
 from control.sentinel.somatic_state import SomaticState
+from execution.crash_recovery import CrashDetector, CrashIndicator, CrashRecoveryOrchestrator
 from planning.mainline.active_quest_context import ActiveQuestContext
 from planning.mainline.mission_graph_v4 import MissionGraphV4, MissionNodeV4
 from planning.mainline.mission_graph_validator_v4 import MissionGraphValidatorV4
@@ -304,6 +305,8 @@ class MainlineRunner:
         checkpoint_publisher: CheckpointPublisher | None = None,
         type_handlers: dict[str, Any] | None = None,
         state_bus: Any = None,
+        enable_bagel_jit_router: bool = False,
+        decision_memory: Any = None,
     ) -> None:
         self._sentinel = sentinel or SentinelRuntime()
         self._claim_check = claim_check_fn
@@ -319,6 +322,15 @@ class MainlineRunner:
         self._type_handlers: dict[str, Any] = type_handlers or {}
         # StateBus integration for Orchestrator coordination
         self._state_bus = state_bus
+        self._enable_bagel_jit_router = enable_bagel_jit_router
+        # DecisionMemory integration for learned strategy injection
+        self._decision_memory = decision_memory
+        # Crash detection state
+        self._crash_detector = CrashDetector()
+        self._last_state_change_time: float = 0.0
+        self._last_input_response_time: float = 0.0
+        self._last_known_screen_state: str = ""
+        self._crash_recovery_orchestrator: CrashRecoveryOrchestrator | None = None
 
     def _take_snapshot(self) -> RuntimeSnapshot:
         if self._snapshot_provider is not None:
@@ -332,6 +344,39 @@ class MainlineRunner:
         Matching uses longest-prefix: "combat_boss" beats "combat" beats "".
         """
         self._type_handlers[node_type_prefix] = handler
+
+    def set_crash_recovery_orchestrator(self, orchestrator: CrashRecoveryOrchestrator) -> None:
+        """Inject a CrashRecoveryOrchestrator for crash-triggered recovery."""
+        self._crash_recovery_orchestrator = orchestrator
+
+    def _check_for_crash(self) -> CrashIndicator | None:
+        """Run CrashDetector.detect() against current tracked state.
+
+        Called each tick in the main execution loop. Returns CrashIndicator
+        if a crash condition is detected, None otherwise.
+        """
+        snapshot = self._take_snapshot()
+        screen_state = snapshot.screen_state
+
+        # Track state changes — update timestamp when screen changes
+        if screen_state != self._last_known_screen_state:
+            self._last_state_change_time = time.perf_counter()
+            self._last_known_screen_state = screen_state
+
+        indicator = self._crash_detector.detect(
+            current_state=screen_state,
+            last_state_change=self._last_state_change_time,
+            last_input_response=self._last_input_response_time,
+            process_alive=True,  # process liveness checked by bridge layer
+        )
+
+        if indicator is not None:
+            log.warning(
+                "[MainlineRunner] Crash detected: type=%s severity=%s desc=%s",
+                indicator.indicator_type, indicator.severity, indicator.description,
+            )
+
+        return indicator
 
     def _resolve_type_handler(self, node: MissionNodeV4) -> Any | None:
         """Find the best-matching type handler for a node.
@@ -347,6 +392,43 @@ class MainlineRunner:
                 best_prefix = prefix
                 best_handler = handler
         return best_handler
+
+    def _inject_learned_strategy(self, node: MissionNodeV4) -> dict[str, Any] | None:
+        """Query DecisionMemory for a successful strategy matching this node.
+
+        Returns the learned plan steps if a high-confidence match is found,
+        otherwise None. The caller can inject these as node metadata.
+        """
+        if self._decision_memory is None:
+            return None
+        try:
+            goal = node.metadata.get("skill_intent", node.node_type)
+            capsule_id = node.metadata.get("capsule_id", "genshin")
+            snapshot = self._take_snapshot()
+            # Try exact screen_state first, then without screen_state filter
+            record = self._decision_memory.best_strategy_for(
+                goal=goal,
+                capsule_id=capsule_id,
+                screen_state=snapshot.screen_state,
+            )
+            if record is None:
+                record = self._decision_memory.best_strategy_for(
+                    goal=goal,
+                    capsule_id=capsule_id,
+                    screen_state="",
+                )
+            if record is not None and record.confidence >= 0.6:
+                steps = record.plan_steps()
+                if steps:
+                    log.info(
+                        "[MainlineRunner] Injecting learned strategy for %r "
+                        "(confidence=%.2f, %d steps from %s)",
+                        node.node_id, record.confidence, len(steps), record.strategy_id,
+                    )
+                    return {"learned_steps": steps, "source_strategy": record.strategy_id}
+        except Exception as exc:
+            log.debug("[MainlineRunner] DecisionMemory lookup failed: %s", exc)
+        return None
 
     def _should_pause_for_orchestrator(self) -> bool:
         """Check if Orchestrator has issued a pause/emergency interrupt."""
@@ -377,6 +459,10 @@ class MainlineRunner:
 
         result = MissionRunResult(success=False)
         start = time.perf_counter()
+        # Initialize crash detection timestamps for this run
+        self._last_state_change_time = start
+        self._last_input_response_time = start
+        self._last_known_screen_state = ""
         order = graph.topological_order()
         if order is None:
             log.error("[MainlineRunner] Graph has cycle, cannot execute")
@@ -396,6 +482,17 @@ class MainlineRunner:
             # Check Orchestrator coordination interrupts
             if self._should_pause_for_orchestrator():
                 result.success = False
+                break
+
+            # Check for crash conditions (Issue #6: CrashDetector.detect() integration)
+            crash_indicator = self._check_for_crash()
+            if crash_indicator is not None:
+                log.error(
+                    "[MainlineRunner] Crash detected (%s), aborting mission. indicator=%s",
+                    crash_indicator.indicator_type, crash_indicator.description,
+                )
+                result.failed_nodes.append(execution_queue[idx])
+                self._publish_checkpoint("failed", graph, completed, failed, skipped)
                 break
 
             node_id = execution_queue[idx]
@@ -423,24 +520,32 @@ class MainlineRunner:
             node_result = self._execute_node(node, completed)
             result.node_results.append(node_result)
 
+            # Track input responsiveness for crash detection
+            self._last_input_response_time = time.perf_counter()
+
             if node_result.status == "completed":
                 completed.add(node_id)
                 result.completed_nodes.append(node_id)
                 self._publish_checkpoint("checkpoint", graph, completed, failed, skipped)
+                # Record successful execution to DecisionMemory
+                self._record_to_decision_memory(node, node_result, success=True)
             else:
-                from planning.mainline.bagel_jit_router import BagelJitRouter
-                router = BagelJitRouter(graph)
-                mutated = router.handle_belief_falsification(
-                    falsified_belief_id=f"{node_id}_belief_0",
-                    failed_node_id=node_id,
-                )
-                if mutated:
-                    log.info("[MainlineRunner] Graph healed by JIT router. Recalculating topological order.")
-                    new_order = graph.topological_order()
-                    if new_order:
-                        execution_queue = [nid for nid in new_order if nid not in completed]
-                        idx = 0
-                        continue
+                # Record failed execution to DecisionMemory
+                self._record_to_decision_memory(node, node_result, success=False)
+                if self._enable_bagel_jit_router:
+                    from planning.mainline.bagel_jit_router import BagelJitRouter
+                    router = BagelJitRouter(graph)
+                    mutated = router.handle_belief_falsification(
+                        falsified_belief_id=f"{node_id}_belief_0",
+                        failed_node_id=node_id,
+                    )
+                    if mutated:
+                        log.info("[MainlineRunner] Graph healed by JIT router. Recalculating topological order.")
+                        new_order = graph.topological_order()
+                        if new_order:
+                            execution_queue = [nid for nid in new_order if nid not in completed]
+                            idx = 0
+                            continue
 
                 failed.add(node_id)
                 result.failed_nodes.append(node_id)
@@ -471,6 +576,11 @@ class MainlineRunner:
         if not input_ok:
             log.warning("[MainlineRunner] Node %r input claims not satisfied: %s", node.node_id, input_reason)
             return NodeResult(node.node_id, "blocked", error=f"input_claim_failed: {input_reason}")
+
+        # --- DECISION MEMORY: inject learned strategy if available ---
+        learned_meta = self._inject_learned_strategy(node)
+        if learned_meta is not None:
+            node.metadata.update(learned_meta)
 
         # --- EXECUTE with retries ---
         last_error = ""
@@ -622,8 +732,10 @@ class MainlineRunner:
         )
         self._checkpoint_publisher.publish(cp)
 
-    def commit_node_beliefs(self, node: MissionNodeV4, bagel: BagelRuntime) -> list[str]:
+    def commit_node_beliefs(self, node: MissionNodeV4, bagel: BagelRuntime | None) -> list[str]:
         """Commit BAGEL nominal beliefs required by a node."""
+        if bagel is None:
+            return []
         committed: list[str] = []
         for idx, template in enumerate(node.belief_templates):
             belief_id = f"{node.node_id}_belief_{idx}"
@@ -649,6 +761,30 @@ class MainlineRunner:
         )
         self._sentinel.update_snapshot(self._somatic)
 
+    def _record_to_decision_memory(self, node: MissionNodeV4, result: NodeResult, success: bool) -> None:
+        """Record node execution outcome to DecisionMemory for future strategy learning."""
+        if self._decision_memory is None:
+            return
+        try:
+            goal = node.metadata.get("skill_intent", node.node_type)
+            capsule_id = node.metadata.get("capsule_id", "genshin")
+            snapshot = self._take_snapshot()
+            plan = [
+                {"node_type": node.node_type, "target": node.metadata.get("target", "")},
+            ]
+            confidence = 0.7 if success else 0.3
+            self._decision_memory.record(
+                goal=goal,
+                capsule_id=capsule_id,
+                screen_state=snapshot.screen_state,
+                plan=plan,
+                success=success,
+                duration_sec=result.duration_sec or 0.0,
+                confidence=confidence,
+            )
+        except Exception as exc:
+            log.debug("[MainlineRunner] DecisionMemory record failed: %s", exc)
+
 
 class MainlineAutonomyLoop:
     """Phase runtime for Genshin-like mainline autonomy in safe environments."""
@@ -658,12 +794,14 @@ class MainlineAutonomyLoop:
         *,
         runner: MainlineRunner | None = None,
         bagel: BagelRuntime | None = None,
+        enable_bagel_attribution: bool = False,
         observe_fn: Callable[[], Any] | None = None,
         context_update_fn: Callable[[Any], ActiveQuestContext] | None = None,
         graph_select_fn: Callable[[ActiveQuestContext], MissionGraphV4] | None = None,
     ) -> None:
         self.runner = runner or MainlineRunner()
-        self.bagel = bagel or BagelRuntime()
+        self._bagel_enabled = bool(bagel is not None or enable_bagel_attribution)
+        self.bagel = bagel if bagel is not None else (BagelRuntime() if self._bagel_enabled else None)
         self.observe_fn = observe_fn
         self.context_update_fn = context_update_fn
         self.graph_select_fn = graph_select_fn
@@ -696,28 +834,30 @@ class MainlineAutonomyLoop:
             return MainlineLoopResult(False, self.phase, self._checkpoint(context, selected_graph, run_result), run_result, context)
 
         self.phase = "commit_beliefs"
-        for node_id in selected_graph.node_ids:
-            node = selected_graph.get_node(node_id)
-            if node is not None:
-                self.runner.commit_node_beliefs(node, self.bagel)
+        if self._bagel_enabled:
+            for node_id in selected_graph.node_ids:
+                node = selected_graph.get_node(node_id)
+                if node is not None:
+                    self.runner.commit_node_beliefs(node, self.bagel)
 
         self.phase = "execute"
         run_result = self.runner.run(selected_graph)
 
         self.phase = "verify" if run_result.success else "attribute_recover"
-        if not run_result.success:
+        if not run_result.success and self._bagel_enabled and self.bagel is not None:
             self.bagel.run_attribution_cycle(trace_id=selected_graph.graph_id)
 
         self.phase = "checkpoint"
         checkpoint = self._checkpoint(context, selected_graph, run_result)
 
         self.phase = "condense"
-        stable_ids = tuple(
-            b.belief_id for b in self.bagel.fig.snapshot()["beliefs"].values()
-            if b.lifecycle in ("confirmed", "survived")
-        )
-        if stable_ids:
-            self.bagel.condense_stable_subgraph(stable_ids, {"summary": "mainline stable frontier"})
+        if self._bagel_enabled and self.bagel is not None:
+            stable_ids = tuple(
+                b.belief_id for b in self.bagel.fig.snapshot()["beliefs"].values()
+                if b.lifecycle in ("confirmed", "survived")
+            )
+            if stable_ids:
+                self.bagel.condense_stable_subgraph(stable_ids, {"summary": "mainline stable frontier"})
 
         self.phase = "completed" if run_result.success else "failed"
         return MainlineLoopResult(run_result.success, self.phase, checkpoint, run_result, context)
@@ -735,5 +875,5 @@ class MainlineAutonomyLoop:
             graph_id=graph.graph_id,
             completed_nodes=tuple(run_result.completed_nodes),
             failed_nodes=tuple(run_result.failed_nodes),
-            bagel_graph_version=self.bagel.fig.version,
+            bagel_graph_version=self.bagel.fig.version if self.bagel is not None else 0,
         )

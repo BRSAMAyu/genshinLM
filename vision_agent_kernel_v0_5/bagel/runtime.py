@@ -508,6 +508,9 @@ class BagelRuntime:
         scores = self.matrix.score_all()
         belief_scores = {bid: s.score for bid, s in scores.items()}
 
+        # Step 5: Extract omitted beliefs from trace events
+        omitted_count = self._extract_omitted_beliefs(trace_id)
+
         # Publish to StateBus
         result_obj = AttributionCycleResult(
             cycle_id=cycle_id,
@@ -564,6 +567,35 @@ class BagelRuntime:
     def _append_event(self, event: BagelEvent) -> None:
         if not self.event_store.append(event):
             log.error("[BAGEL] Event store write failed for %s", event.event_type)
+
+    def _extract_omitted_beliefs(self, trace_id: str) -> int:
+        """Extract omitted beliefs from trace events and inject into FIG."""
+        try:
+            from bagel.omitted_belief import ConstrainedVerbalizer, ExtractInvariantSym
+            events = self.event_store.query(trace_id=trace_id, limit=20)
+            records = [
+                {"source": e.payload.get("source", ""),
+                 "anchor": e.payload.get("anchor", e.event_type),
+                 "symbol": e.payload.get("symbol", ""),
+                 "constraint": e.payload.get("constraint", ""),
+                 "operator": e.payload.get("operator", "requires"),
+                 "graph_distance": e.payload.get("graph_distance", 0)}
+                for e in events
+            ]
+            extractor = ExtractInvariantSym()
+            verbalizer = ConstrainedVerbalizer()
+            invariants = extractor.extract(records)
+            count = 0
+            for inv in invariants:
+                candidate = verbalizer.verbalize(inv)
+                self.fig.add_belief(candidate.belief)
+                count += 1
+            if count:
+                log.info("[BAGEL] Extracted %d omitted beliefs from trace %s", count, trace_id)
+            return count
+        except Exception as exc:
+            log.debug("[BAGEL] Omitted belief extraction failed: %s", exc)
+            return 0
 
     def get_suspect_summary(self) -> dict[str, Any]:
         """Get a summary of current suspect/falsified beliefs."""

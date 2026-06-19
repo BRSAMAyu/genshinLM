@@ -112,8 +112,8 @@ class GenshinPerceptionProvider:
             self._capturer = DxcamCapturer(CaptureConfig(target_fps=15.0), timebase=self._timebase)
             self._owns_capturer = True
 
-        from perception.genshin_screen_classifier import GenshinScreenClassifier
-        self._classifier = GenshinScreenClassifier()
+        from capsules.detector_resolver import get_screen_classifier
+        self._classifier = get_screen_classifier()
 
         # VLM async infrastructure
         self._vlm_url = "https://open.bigmodel.cn/api/paas/v4/chat/completions"

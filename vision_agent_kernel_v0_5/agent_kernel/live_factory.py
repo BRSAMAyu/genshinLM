@@ -276,10 +276,10 @@ def create_live_genshin_loop(
         return packet.image
 
     # --- Perception ---
-    from perception.genshin_screen_classifier import GenshinScreenClassifier
+    from capsules.detector_resolver import get_screen_classifier, get_combat_detector
     from agent_kernel.adapters import VLMPerceptionProvider
 
-    classifier = GenshinScreenClassifier()
+    classifier = get_screen_classifier()
 
     if dry_run:
         vlm = _DryRunVLM()
@@ -291,6 +291,17 @@ def create_live_genshin_loop(
         screen_classifier=classifier,
         vlm_provider=vlm,
     )
+
+    # Wire combat detector to perception pipeline (if not dry-run)
+    if not dry_run:
+        try:
+            _combat_detector = get_combat_detector()
+            if _combat_detector is not None:
+                # Register with perception pipeline's fusion runtime if available
+                if hasattr(perception, '_fusion') and perception._fusion is not None:
+                    perception._fusion.set_combat_detector(_combat_detector.detect)
+        except Exception as exc:
+            log.debug("[LiveFactory] Combat detector wiring skipped: %s", exc)
 
     # --- Planner (Cerebrum L7-L8) ---
     from agent_kernel.cerebrum_agent import CerebrumAgentImpl
@@ -353,6 +364,27 @@ def create_live_genshin_loop(
     from agent_kernel.unknown_scene_handler import UnknownSceneHandler
     unknown_handler = UnknownSceneHandler(max_probe_attempts=6, confidence_threshold=0.45)
 
+    # --- Meta-learning bridge (exploration→BAGEL→skill chain) ---
+    from bagel.fig_schema import FalsifiableInterventionGraph
+    from bagel.belief_proposer import BeliefProposer
+    from learning.decision_memory import DecisionMemory
+    from learning.meta_learning_bridge import MetaLearningBridge
+    from learning.parameterized_skill_induction import ParameterizedSkillInductor
+
+    fig = FalsifiableInterventionGraph()
+    decision_memory = DecisionMemory(db_path="data/decision_memory.db")
+    belief_proposer = BeliefProposer(fig=fig, decision_memory=decision_memory)
+    skill_inductor = ParameterizedSkillInductor()
+    meta_bridge = MetaLearningBridge(
+        fig=fig,
+        decision_memory=decision_memory,
+        belief_proposer=belief_proposer,
+        skill_inductor=skill_inductor,
+    )
+
+    # Wire UnknownSceneHandler → MetaLearningBridge (gap 4 closure)
+    unknown_handler.set_meta_learning_bridge(meta_bridge)
+
     # --- Assemble AgentLoop ---
     from agent_kernel.loop import AgentLoop
     agent_loop = AgentLoop(
@@ -372,6 +404,7 @@ def create_live_genshin_loop(
     )
     agent_loop._cerebrum_interval_sec = cerebrum_interval_sec
     agent_loop._unknown_scene_handler = unknown_handler
+    agent_loop._meta_learning_bridge = meta_bridge
 
     log.info(
         "[LiveFactory] AgentLoop assembled: goal='%s' window='%s' dry_run=%s",

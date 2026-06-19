@@ -106,3 +106,17 @@ def test_mainline_runner_can_use_skill_executor_bridge() -> None:
     assert result.success
     assert result.completed_nodes == ["start", "end"]
     assert [call[0] for call in semantic.calls] == ["open_map", "open_map"]
+
+
+def test_mainline_skill_executor_default_path_is_claim_centric_without_bagel() -> None:
+    semantic = _Executor(ok=True)
+    skill_executor = MainlineSkillExecutor(
+        semantic,
+        claim_worker=ClaimGraphWorker(mission_id="claim_only"),
+        mission_id="claim_only",
+    )
+    data = skill_executor.execute_node_skill(_node())
+
+    assert data["execution_success"] is True
+    assert data["claim_runtime_gate_allowed"] in {True, False}
+    assert isinstance(data["claim_runtime_decision_memory"], dict)

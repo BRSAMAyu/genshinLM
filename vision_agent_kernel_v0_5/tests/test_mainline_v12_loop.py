@@ -57,12 +57,21 @@ def test_required_bagel_belief_template_validation() -> None:
 
 def test_mainline_autonomy_loop_commits_beliefs_and_checkpoints() -> None:
     runner = MainlineRunner(skill_execute_fn=lambda node: {"quest_objective_changed": "ok"})
-    loop = MainlineAutonomyLoop(runner=runner)
+    loop = MainlineAutonomyLoop(runner=runner, enable_bagel_attribution=True)
     result = loop.run_once(initial_context=_context(), graph=_graph())
     assert result.success
     assert result.phase == "completed"
     assert result.checkpoint.completed_nodes == ("talk",)
     assert "talk_belief_0" in loop.bagel.fig.snapshot()["beliefs"]
+
+
+def test_mainline_autonomy_loop_default_path_runs_without_bagel() -> None:
+    runner = MainlineRunner(skill_execute_fn=lambda node: {"quest_objective_changed": "ok"})
+    loop = MainlineAutonomyLoop(runner=runner)
+    result = loop.run_once(initial_context=_context(), graph=_graph())
+    assert result.success
+    assert loop.bagel is None
+    assert result.checkpoint.bagel_graph_version == 0
 
 
 def test_reliability_gate_degrades_low_wilson_bound() -> None:

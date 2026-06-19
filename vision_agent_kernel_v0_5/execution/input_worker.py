@@ -3,6 +3,7 @@ from __future__ import annotations
 import queue
 import threading
 from dataclasses import dataclass
+from typing import Any
 from typing import Literal
 
 from core.events import Interrupt
@@ -43,6 +44,7 @@ class InputWorker:
         self._stop_event = threading.Event()
         self._started = threading.Event()
         self._focus_lost_published = False
+        self._focus_lock = threading.Lock()
         self._log_lock = threading.RLock()
         self._state_bus = state_bus
         self._target_window_title = target_window_title
@@ -97,10 +99,54 @@ class InputWorker:
         try:
             self._commands.put_nowait(command)
         except queue.Full:
+            if command.kind in {"interrupt", "stop"}:
+                # Critical commands must not be dropped. Try to evict one lease.
+                if self._evict_one_lease_command():
+                    try:
+                        self._commands.put_nowait(command)
+                        self._log(f"queue full; evicted one lease to enqueue critical {command.kind}")
+                        return True
+                    except queue.Full:
+                        pass
+                try:
+                    self._commands.put(command, timeout=self._tick_seconds)
+                    self._log(f"queue full; blocked briefly to enqueue critical {command.kind}")
+                    return True
+                except queue.Full:
+                    self._log(f"critical command dropped after retries: {command.kind}")
+                    return False
             self._log(f"command queue full; dropped {command.kind}")
             return False
         self._log(f"queued command kind={command.kind}")
         return True
+
+    def _evict_one_lease_command(self) -> bool:
+        with self._lease_lock:
+            evicted_lease_id: str | None = None
+            try:
+                buffered: list[InputWorkerCommand] = []
+                evicted = False
+                while True:
+                    item = self._commands.get_nowait()
+                    if not evicted and item.kind == "lease":
+                        evicted = True
+                        evicted_lease_id = getattr(item.payload, "lease_id", None) if hasattr(item, "payload") else None
+                        continue
+                    buffered.append(item)
+            except queue.Empty:
+                pass
+            for item in buffered:
+                try:
+                    self._commands.put_nowait(item)
+                except queue.Full:
+                    break
+            # Remove evicted lease from store to prevent stale active state
+            if evicted and evicted_lease_id is not None:
+                try:
+                    self._lease_store.remove(evicted_lease_id)
+                except Exception:
+                    pass
+            return evicted
 
     def _run_loop(self) -> None:
         self._started.set()
@@ -167,9 +213,39 @@ class InputWorker:
             dx, dy = lease.mouse_delta
             self._backend.mouse_move(dx, dy, reason=lease.reason)
 
+        # Execute optional atomic actions (click/scroll/type/combo/etc).
+        for action in lease.actions:
+            self._apply_atomic_action(action, lease.reason)
+
         if any(state == DOWN for state in lease.key_states.values()):
             self._lease_store.add(lease)
             self._log(f"lease_id={lease.lease_id} registered for deadman supervision")
+
+    def _apply_atomic_action(self, action: dict[str, Any], reason: str) -> None:
+        action_type = str(action.get("type", "")).lower()
+        if not action_type:
+            return
+        if action_type == "left_click" and hasattr(self._backend, "left_click"):
+            self._backend.left_click(reason=reason)
+            return
+        if action_type == "right_click" and hasattr(self._backend, "right_click"):
+            self._backend.right_click(reason=reason)
+            return
+        if action_type == "mouse_scroll" and hasattr(self._backend, "mouse_scroll"):
+            delta = int(action.get("delta", -1))
+            self._backend.mouse_scroll(delta=delta, reason=reason)
+            return
+        if action_type == "type_text" and hasattr(self._backend, "type_text"):
+            text = str(action.get("text", ""))
+            delay_ms = int(action.get("delay_between_keys_ms", 50))
+            self._backend.type_text(text=text, delay_between_keys_ms=delay_ms, reason=reason)
+            return
+        if action_type == "execute_combo" and hasattr(self._backend, "execute_combo"):
+            keys = [str(k) for k in action.get("keys", [])]
+            hold_ms = int(action.get("hold_time_ms", 100))
+            self._backend.execute_combo(keys=keys, hold_time_ms=hold_ms, reason=reason)
+            return
+        self._log(f"unsupported atomic action ignored: {action_type}")
 
     def _handle_interrupt(self, interrupt: Interrupt) -> None:
         self._log(
@@ -212,28 +288,41 @@ class InputWorker:
                 self._log(f"Error checking window focus: {e}")
                 focused = False
 
-            if not focused and not self._focus_lost_published:
-                self._log("Target window focus lost! Activating physical deadman safety switch.")
-                cleared = self._lease_store.clear()
-                for lease in cleared:
-                    for key, state in lease.key_states.items():
-                        if state == DOWN:
-                            self._backend.key_up(key, reason="focus_lost")
-                self._backend.release_all(reason="focus_lost")
-                self._focus_lost_published = True
-                if self._state_bus is not None:
-                    self._state_bus.publish_interrupt(
-                        Interrupt(
-                            priority=0,
-                            timestamp=self._timebase.now(),
-                            code="FOCUS_LOST",
-                            source="InputWorker",
-                            recoverable=True,
-                            requires_input_release=True,
+            with self._focus_lock:
+                if not focused and not self._focus_lost_published:
+                    self._log("Target window focus lost! Activating physical deadman safety switch.")
+                    cleared = self._lease_store.clear()
+                    for lease in cleared:
+                        for key, state in lease.key_states.items():
+                            if state == DOWN:
+                                self._backend.key_up(key, reason="focus_lost")
+                    self._backend.release_all(reason="focus_lost")
+                    self._focus_lost_published = True
+                    if self._state_bus is not None:
+                        self._state_bus.publish_interrupt(
+                            Interrupt(
+                                priority=0,
+                                timestamp=self._timebase.now(),
+                                code="FOCUS_LOST",
+                                source="InputWorker",
+                                recoverable=True,
+                                requires_input_release=True,
+                            )
                         )
-                    )
-            elif focused and self._focus_lost_published:
-                self._focus_lost_published = False
+                elif focused and self._focus_lost_published:
+                    self._focus_lost_published = False
+                    self._log("Target window focus recovered. Resuming normal operation.")
+                    if self._state_bus is not None:
+                        self._state_bus.publish_interrupt(
+                            Interrupt(
+                                priority=50,
+                                timestamp=self._timebase.now(),
+                                code="FOCUS_RECOVERED",
+                                source="InputWorker",
+                                recoverable=True,
+                                requires_input_release=False,
+                            )
+                        )
 
     def _log(self, message: str) -> None:
         with self._log_lock:

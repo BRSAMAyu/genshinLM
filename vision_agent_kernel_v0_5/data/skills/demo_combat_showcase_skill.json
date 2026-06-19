@@ -2,7 +2,7 @@
   "skill_id": "demo_combat_showcase_skill",
   "name": "Demo Combat Showcase Skill",
   "type": "combat",
-  "version": 7,
+  "version": 9,
   "metadata": {
     "source": "showcase_demo",
     "smart_authoring": [
@@ -104,5 +104,5 @@
   "profile_compatibility": {},
   "benchmark_stats": {},
   "archived": false,
-  "updated_at": 1780279281.353658
+  "updated_at": 1780284170.919809
 }

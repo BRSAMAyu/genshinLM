@@ -683,24 +683,49 @@ class UIFlowSkillAdapter:
     }
 
     def _handle_boss_combat(self, target: str, context: dict[str, Any]) -> bool:
-        """Handle boss-specific combat with boss_id routing."""
+        """Handle boss-specific combat with boss_id routing.
+
+        Executes a real combat rotation via BossCombatRuntime when the
+        combat_signal slot on StateBus is populated; falls back to direct
+        key presses when no combat signal is available (dry-run / testing).
+        """
         action = str(context.get("semantic_action", "combat_boss"))
         boss_id = self._BOSS_ID_MAP.get(action, target or "")
-        backend = self._backend()
-        if hasattr(backend, "action_intent"):
-            backend.action_intent(f"combat:boss:{boss_id}", reason="semantic_boss_combat")
         log.info("[UIFlowSkillAdapter] boss combat: %s boss_id=%s", action, boss_id)
-        return True
+
+        # If the backend has a BossCombatBridge wired up, drive it.
+        bridge = getattr(self._backend(), "_boss_combat_bridge", None)
+        if bridge is not None and hasattr(bridge, "tick_once"):
+            try:
+                decision = bridge.tick_once()
+                if decision is not None:
+                    log.info(
+                        "[UIFlowSkillAdapter] boss bridge decision: state=%s action=%s",
+                        decision.state, decision.action,
+                    )
+                    return True
+            except Exception as exc:
+                log.warning("[UIFlowSkillAdapter] boss bridge tick failed: %s", exc)
+
+        # Fallback: execute a basic combat rotation directly.
+        return self._handle_combat(target, context)
 
     def _handle_env_combat(self, target: str, context: dict[str, Any]) -> bool:
-        """Handle environment-specific combat (dragonspine/inazuma)."""
+        """Handle environment-specific combat (dragonspine/inazuma).
+
+        Environment combat is essentially regular combat with environment-
+        specific hazards (e.g., Sheer Cold in Dragonspine). Route through
+        the same combat path and add environment-aware actions.
+        """
         action = str(context.get("semantic_action", "combat_env_dragonspine"))
         env_type = "dragonspine" if "dragonspine" in action else "inazuma"
-        backend = self._backend()
-        if hasattr(backend, "action_intent"):
-            backend.action_intent(f"combat:env:{env_type}", reason="semantic_env_combat")
         log.info("[UIFlowSkillAdapter] env combat: %s env=%s", action, env_type)
-        return True
+
+        # Environment combat uses the same key-based combat path.
+        # For dragonspine, keep near heat sources by sprinting to statues.
+        # For inazuma, handle thunder gauges similarly.
+        context["env_type"] = env_type
+        return self._handle_combat(target, context)
 
     _EXPLORE_INTERACT_ACTIONS: frozenset[str] = frozenset({
         "explore_waypoint", "explore_statue", "explore_chest", "explore_oculus",

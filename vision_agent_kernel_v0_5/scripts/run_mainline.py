@@ -74,6 +74,12 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Aurora Mainline Progression")
     parser.add_argument("--dry-run", action="store_true", default=True, help="Use console backend (default)")
     parser.add_argument("--window-title", type=str, default="", help="Target window title for real input")
+    parser.add_argument(
+        "--enable-bagel-experimental",
+        action="store_true",
+        default=False,
+        help="Enable BAGEL experimental attribution path (disabled by default).",
+    )
     parser.add_argument("--save-path", type=str, default="mainline_progress.json", help="Progress save file")
     args = parser.parse_args()
 
@@ -110,17 +116,28 @@ def main() -> None:
 
             log.info("Starting live execution via MainlineLiveBridge")
             from planning.mainline.mainline_live_bridge import MainlineLiveBridge
-            from planning.mainline.mission_graph_v4 import MissionGraphV4, MissionNodeV4
+            from planning.mainline.mission_graph_v4 import MissionGraphV4, MissionNodeV4, ClaimContract
 
             graph = MissionGraphV4(mission_id=step.step_id)
             node = MissionNodeV4(
                 node_id=step.step_id,
                 node_type="navigate_walk" if "walk" in step.objective.lower() else "interact",
                 skill_candidates=("quest_follow",) if "walk" in step.objective.lower() else ("interact",),
+                output_claims=(
+                    ClaimContract(
+                        claim_type="objective_complete",
+                        target=step.objective,
+                        required_status="verified",
+                        claim_role="terminal",
+                    ),
+                ),
             )
             graph.add_node(node)
 
-            bridge = MainlineLiveBridge(window_title=args.window_title)
+            bridge = MainlineLiveBridge(
+                window_title=args.window_title,
+                enable_bagel_experimental=args.enable_bagel_experimental,
+            )
             try:
                 res = bridge.execute_live_mission(graph)
                 if res.success:

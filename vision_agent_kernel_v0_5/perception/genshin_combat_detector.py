@@ -70,6 +70,8 @@ class GenshinCombatDetector:
     def detect(self, frame: np.ndarray) -> CombatSignal:
         """Analyse frame and return enriched CombatSignal."""
         if cv2 is None:
+            log.warning("[CombatDetector] cv2 not available — combat detection disabled. "
+                        "Install opencv-python to enable.")
             return CombatSignal()
 
         h, w = frame.shape[:2]

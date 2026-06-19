@@ -174,12 +174,13 @@ class CrashRecoveryOrchestrator:
     RECONNECT_TIME_SEC = 30.0    # Time to reconnect
     RESTORE_TIME_SEC = 15.0      # Time to restore state
 
-    def __init__(self) -> None:
+    def __init__(self, state_bus: Any | None = None) -> None:
         self._detector = CrashDetector()
         self._current_phase: RecoveryPhase = RecoveryPhase.DETECT
         self._recovery_start: float = 0.0
         self._checkpoint: CrashCheckpoint | None = None
         self._recovery_history: list[CrashReport] = []
+        self._state_bus = state_bus
 
     @property
     def current_phase(self) -> RecoveryPhase:
@@ -203,10 +204,12 @@ class CrashRecoveryOrchestrator:
 
         if self._current_phase == RecoveryPhase.DETECT:
             self._current_phase = RecoveryPhase.ASSESS
+            self._publish_recovery_state("assessing")
             return RecoveryPhase.ASSESS, "Crash detected, assessing damage"
 
         if self._current_phase == RecoveryPhase.ASSESS:
             self._current_phase = RecoveryPhase.LAUNCH
+            self._publish_recovery_state("launching")
             return RecoveryPhase.LAUNCH, "Assessment complete, launching recovery"
 
         if self._current_phase == RecoveryPhase.LAUNCH:
@@ -268,6 +271,20 @@ class CrashRecoveryOrchestrator:
         """Set/checkpoint for recovery."""
         self._checkpoint = checkpoint
         log.info("[CrashRecovery] checkpoint saved at t=%.1f", checkpoint.timestamp)
+
+    def _publish_recovery_state(self, action: str) -> None:
+        """Publish recovery state to StateBus if available."""
+        if self._state_bus is not None:
+            try:
+                from core.events import Interrupt
+                self._state_bus.publish_interrupt(Interrupt(
+                    priority=40,  # P4 recovery
+                    code="crash_recovery",
+                    source="CrashRecoveryOrchestrator",
+                    data={"phase": self._current_phase.value, "action": action},
+                ))
+            except Exception as exc:
+                log.debug("[CrashRecovery] StateBus publish failed: %s", exc)
 
 
 # ---------------------------------------------------------------------------

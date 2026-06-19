@@ -24,7 +24,6 @@ from interaction.dialog_branch_analyzer import ConsequenceTracker, DialogBranchA
 
 if TYPE_CHECKING:
     from execution.safe_window_backend import SafeWindowInputBackend
-    from perception.genshin_screen_classifier import GenshinScreenClassifier
 
 log = logging.getLogger(__name__)
 
@@ -226,7 +225,7 @@ class DialogDriver:
     def __init__(
         self,
         backend: SafeWindowInputBackend,
-        classifier: GenshinScreenClassifier,
+        classifier: Any,
         analyzer: DialogBranchAnalyzer | None = None,
         conditional_selector: ConditionalDialogSelector | None = None,
         dialogue_controller: DialogueController | None = None,

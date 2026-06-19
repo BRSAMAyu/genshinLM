@@ -1,0 +1,7 @@
+capsule_id: my_game
+version: 0.1.0
+display_name: my game!
+description: Auto-generated capsule for my game!.
+keymap_file: keymap.yaml
+detectors: []
+skills_file: skills/index.json

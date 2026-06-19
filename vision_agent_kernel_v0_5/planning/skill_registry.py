@@ -7,11 +7,16 @@ here and delegated to the appropriate adapter method.
 
 Lazy instantiation: adapters are created on first use so the registry is cheap
 to construct and only pulls in heavy dependencies when actually needed.
+
+Persistence: learned skills are saved to JSON and reloaded on construction.
 """
 from __future__ import annotations
 
+import json
 import logging
+import os
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any, Protocol
 
 log = logging.getLogger(__name__)
@@ -90,6 +95,21 @@ _COMPOSITE_ROUTES: dict[str, tuple[str, str]] = {
     "quest_execute_mechanism": ("quest_mechanism", "route"),
 }
 
+
+@dataclass(frozen=True, slots=True)
+class LearnedSkill:
+    """A skill induced from experience, persisted across restarts."""
+    skill_id: str
+    action: str
+    steps: tuple[dict[str, Any], ...]
+    confidence: float = 0.5
+    verification_count: int = 0
+    trust_level: str = "candidate"  # candidate | verified
+    capsule_id: str = ""
+    created_at: float = 0.0
+    version: int = 1
+
+
 _ADAPTER_METHOD_EXTRA_ARGS: dict[str, list[str]] = {
     "combat.execute_combat": ["team_elements", "team_characters"],
     "combat.execute_boss_combat": ["team_elements", "team_characters"],
@@ -165,9 +185,10 @@ class SkillRegistry:
     def __init__(
         self,
         *,
-        skill_executor: SemanticExecutor,
+        skill_executor: SemanticExecutor | None = None,
         state_bus: Any | None = None,
         config: SkillRegistryConfig | None = None,
+        persist_path: str | None = None,
     ) -> None:
         self._executor = skill_executor
         self._bus = state_bus
@@ -177,6 +198,12 @@ class SkillRegistry:
         self._collaboration: Any | None = None
         self._recovery: Any | None = None
         self._checkpoint_mgr: Any | None = None
+        # Learned skills persistence
+        self._learned_skills: dict[str, LearnedSkill] = {}
+        self._persist_path = persist_path or os.path.join(
+            os.getenv("AURORA_DATA_DIR", "data"), "learned_skills.json",
+        )
+        self._load_learned_skills()
 
     # ------------------------------------------------------------------
     # Public API
@@ -262,6 +289,119 @@ class SkillRegistry:
     @property
     def composite_actions(self) -> tuple[str, ...]:
         return tuple(sorted(_COMPOSITE_ROUTES))
+
+    # ------------------------------------------------------------------
+    # Learned skill persistence
+    # ------------------------------------------------------------------
+
+    def _load_learned_skills(self) -> None:
+        """Load learned skills from JSON file."""
+        path = Path(self._persist_path)
+        if not path.exists():
+            return
+        try:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            for entry in data:
+                skill = LearnedSkill(
+                    skill_id=entry["skill_id"],
+                    action=entry["action"],
+                    steps=tuple(entry.get("steps", [])),
+                    confidence=entry.get("confidence", 0.5),
+                    verification_count=entry.get("verification_count", 0),
+                    trust_level=entry.get("trust_level", "candidate"),
+                    capsule_id=entry.get("capsule_id", ""),
+                    created_at=entry.get("created_at", 0.0),
+                    version=entry.get("version", 1),
+                )
+                self._learned_skills[skill.skill_id] = skill
+            log.info("[SkillRegistry] Loaded %d learned skills from %s", len(self._learned_skills), path)
+        except Exception as exc:
+            log.debug("[SkillRegistry] Failed to load learned skills: %s", exc)
+
+    def _save_learned_skills(self) -> None:
+        """Persist learned skills to JSON file."""
+        path = Path(self._persist_path)
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            data = []
+            for skill in self._learned_skills.values():
+                data.append({
+                    "skill_id": skill.skill_id,
+                    "action": skill.action,
+                    "steps": list(skill.steps),
+                    "confidence": skill.confidence,
+                    "verification_count": skill.verification_count,
+                    "trust_level": skill.trust_level,
+                    "capsule_id": skill.capsule_id,
+                    "created_at": skill.created_at,
+                    "version": skill.version,
+                })
+            path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
+        except Exception as exc:
+            log.debug("[SkillRegistry] Failed to save learned skills: %s", exc)
+
+    def register_learned_skill(self, skill: LearnedSkill) -> None:
+        """Register a learned skill and persist it."""
+        existing = self._learned_skills.get(skill.skill_id)
+        if existing is not None:
+            # Increment verification count for re-learned skills
+            updated = LearnedSkill(
+                skill_id=skill.skill_id,
+                action=skill.action,
+                steps=skill.steps,
+                confidence=min(skill.confidence + 0.1, 1.0),
+                verification_count=existing.verification_count + 1,
+                trust_level="verified" if existing.verification_count + 1 >= 2 else existing.trust_level,
+                capsule_id=skill.capsule_id,
+                created_at=existing.created_at or skill.created_at,
+                version=existing.version + 1,
+            )
+            self._learned_skills[skill.skill_id] = updated
+        else:
+            self._learned_skills[skill.skill_id] = skill
+        self._save_learned_skills()
+
+    def get_learned_skill(self, skill_id: str) -> LearnedSkill | None:
+        return self._learned_skills.get(skill_id)
+
+    def find_learned_skills(self, action: str) -> list[LearnedSkill]:
+        """Find all learned skills matching an action pattern."""
+        return [s for s in self._learned_skills.values() if action in s.action]
+
+    @property
+    def learned_skills(self) -> tuple[LearnedSkill, ...]:
+        return tuple(self._learned_skills.values())
+
+    def hot_reload_skills(self) -> int:
+        """Reload learned skills from disk if the file has changed.
+
+        Returns the number of skills reloaded.
+        """
+        path = Path(self._persist_path)
+        if not path.exists():
+            return 0
+        try:
+            mtime = path.stat().st_mtime
+            if not hasattr(self, "_last_load_mtime") or mtime != self._last_load_mtime:
+                old_count = len(self._learned_skills)
+                self._learned_skills.clear()
+                self._load_learned_skills()
+                self._last_load_mtime = mtime
+                new_count = len(self._learned_skills)
+                if old_count != new_count:
+                    log.info(
+                        "[SkillRegistry] Hot reload: %d → %d skills",
+                        old_count, new_count,
+                    )
+                return new_count
+        except Exception as exc:
+            log.debug("[SkillRegistry] Hot reload failed: %s", exc)
+        return 0
+
+    def get_skill_version(self, skill_id: str) -> int:
+        """Get the version number of a learned skill."""
+        skill = self._learned_skills.get(skill_id)
+        return skill.version if skill else 0
 
     # ------------------------------------------------------------------
     # Adapter lazy instantiation
@@ -495,6 +635,10 @@ class SkillRegistry:
     def collaboration(self) -> Any:
         """Access the CollaborationController for external level management."""
         return self._get_collaboration()
+
+    def set_executor(self, executor: SemanticExecutor) -> None:
+        """Set or replace the skill executor."""
+        self._executor = executor
 
     @property
     def recovery_orchestrator(self) -> Any:

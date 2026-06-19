@@ -22,6 +22,7 @@ from agent_kernel.types import (
     SceneGraph,
     SceneObject,
 )
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -67,6 +68,11 @@ class UnknownSceneHandler:
     risk_escalation_threshold: str = "high"
     _probe_history: list[ProbeResult] = field(default_factory=list)
     _scene_memory: dict[str, str] = field(default_factory=dict)
+    _meta_learning_bridge: Any = field(default=None, repr=False)
+
+    def set_meta_learning_bridge(self, bridge: Any) -> None:
+        """Set the MetaLearningBridge for feeding exploration results into the learning loop."""
+        self._meta_learning_bridge = bridge
 
     def observe_and_hypothesize(
         self,
@@ -170,6 +176,23 @@ class UnknownSceneHandler:
         if learned_override is not None:
             self._scene_memory[state_before] = hypothesis.test_action
             log.info("[UnknownScene] Learned: %s → %s", state_before, hypothesis.test_action)
+
+            # Feed exploration result into MetaLearningBridge
+            if self._meta_learning_bridge is not None:
+                try:
+                    self._meta_learning_bridge.on_exploration_result(
+                        exploration_target=f"unknown_scene:{state_before}",
+                        success=effective,
+                        actions_taken=[{
+                            "action": hypothesis.test_action,
+                            "risk": hypothesis.risk_level,
+                            "confidence": hypothesis.confidence,
+                        }],
+                        scene_description=state_before,
+                    )
+                    log.debug("[UnknownScene] Fed result to MetaLearningBridge")
+                except Exception as exc:
+                    log.warning("[UnknownScene] MetaLearningBridge feed failed: %s", exc)
 
         return result
 

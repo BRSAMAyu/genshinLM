@@ -434,6 +434,8 @@ class PerceptionFusionRuntime:
         state_bus.affordances.put(affordances)
 
         # Combat signal
+        prev_state = self._pending_screen_state
+        claim_state = claim.screen_state if isinstance(claim.screen_state, str) else claim.screen_state.value
         if self._combat_detect_fn is not None:
             try:
                 cs = self._combat_detect_fn(frame)
@@ -445,6 +447,18 @@ class PerceptionFusionRuntime:
                 state_bus.combat_signal.put(self._default_combat_signal(claim, frame_id, timestamp))
         else:
             state_bus.combat_signal.put(self._default_combat_signal(claim, frame_id, timestamp))
+
+        # Combat ended detection: transition from combat → non-combat
+        if prev_state == "combat" and claim_state not in ("combat", "unknown"):
+            log.info("[Fusion] combat_ended detected: %s → %s", prev_state, claim_state)
+            state_bus.combat_signal.put(CombatSignal(
+                enemy_visible=False,
+                enemy_count=0,
+                frame_id=frame_id,
+                timestamp=timestamp,
+            ))
+
+        self._pending_screen_state = claim_state
 
         # Navigation signal
         if self._navigation_detect_fn is not None:
@@ -524,7 +538,49 @@ class PerceptionFusionRuntime:
             frame_id=frame_id,
             timestamp=timestamp,
             raw_ocr_texts=tuple(ocr_texts),
+            ui_elements=self._extract_ui_elements(kind_str, ocr_texts, frame_id),
         )
+
+    @staticmethod
+    def _extract_ui_elements(
+        screen_state: str,
+        ocr_texts: list[str],
+        frame_id: int,
+    ) -> tuple[Any, ...]:
+        """Derive UIElementClaim entries from OCR text and screen state."""
+        from planning.screen_state_claim import UIElementClaim
+        elements: list[UIElementClaim] = []
+
+        if screen_state == "dialog" and ocr_texts:
+            for idx, text in enumerate(ocr_texts[:8]):
+                text_s = text.strip()
+                if not text_s or len(text_s) < 2:
+                    continue
+                elements.append(UIElementClaim(
+                    element_id=f"dialog_opt_{frame_id}_{idx}",
+                    role="dialog_option",
+                    text=text_s,
+                    bbox_norm=(0.1, 0.5 + idx * 0.06, 0.9, 0.5 + idx * 0.06 + 0.05),
+                    confidence=0.6,
+                    source="ocr",
+                    clickable=True,
+                ))
+        elif screen_state == "menu" and ocr_texts:
+            for idx, text in enumerate(ocr_texts[:10]):
+                text_s = text.strip()
+                if not text_s or len(text_s) < 2:
+                    continue
+                elements.append(UIElementClaim(
+                    element_id=f"menu_item_{frame_id}_{idx}",
+                    role="menu_item",
+                    text=text_s,
+                    bbox_norm=(0.05, 0.1 + idx * 0.08, 0.95, 0.1 + idx * 0.08 + 0.06),
+                    confidence=0.5,
+                    source="ocr",
+                    clickable=True,
+                ))
+
+        return tuple(elements)
 
     def _derive_affordances(
         self,

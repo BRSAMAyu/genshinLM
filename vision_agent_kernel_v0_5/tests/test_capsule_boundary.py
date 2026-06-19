@@ -281,8 +281,13 @@ class TestNoGenshinReferences:
         if not capsules_dir.exists():
             pytest.skip("capsules/ directory not found")
 
+        # Files that are allowed to reference 'genshin' by design
+        allowed_files = {"detector_resolver.py"}
+
         for py_file in capsules_dir.rglob("*.py"):
             if "genshin" in py_file.parts:
+                continue
+            if py_file.name in allowed_files:
                 continue
             content = py_file.read_text(encoding="utf-8")
             # Non-Genshin capsules must not couple to Genshin-specific imports.

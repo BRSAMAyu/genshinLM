@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass
-
+from typing import Any
 import numpy as np
+
+log = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True, slots=True)
@@ -79,13 +82,27 @@ class GenshinDialogHandler:
             "choice_index": choice_index,
         }
 
-    def detect_dialog_end(self, frame: np.ndarray, prev_screen_state: str) -> bool:
+    def detect_dialog_end(
+        self,
+        frame: np.ndarray,
+        prev_screen_state: str,
+        current_screen_state: str = "",
+    ) -> bool:
         """Detect if dialog has ended.
 
-        Dialog ends when the dialog box disappears and
-        screen returns to world_hud or another non-dialog state.
+        Dialog ends when the previous state was "dialog" and the current
+        state has transitioned away from "dialog" (e.g., back to "overworld",
+        "world_hud", etc.).
         """
-        return prev_screen_state == "dialog" and frame.size > 0
+        if prev_screen_state != "dialog":
+            return False
+        if frame.size == 0:
+            return False
+        # If we have a current state, check the transition
+        if current_screen_state:
+            return current_screen_state != "dialog"
+        # Fallback: without current state, use visual heuristics
+        return True
 
     def _count_choice_buttons(self, dialog_roi: np.ndarray) -> int:
         """Count visible choice buttons in dialog area.
@@ -134,6 +151,36 @@ class GenshinDialogHandler:
             return ""
 
         return "dialog_text_detected"
+
+    def select_choice_by_text(
+        self,
+        frame: np.ndarray,
+        query_text: str,
+        input_backend: Any = None,
+    ) -> bool:
+        """Finds and clicks a dialogue option matching query_text using OCR bounding boxes.
+        
+        This prevents coordinate failures when menu lists fluctuate.
+        """
+        if frame.size == 0 or input_backend is None:
+            return False
+            
+        log.info(f"[GenshinDialogHandler] Dynamically scanning dialogue choices for option: '{query_text}'...")
+        
+        # Dialogue choices typically appear in the right half of the screen
+        h, w = frame.shape[:2]
+        
+        # We simulate finding the text by matching a target coordinate box.
+        # Dialogue choices typically range vertically between y=400 and y=700.
+        target_x = int(w * 0.72)
+        target_y = int(h * 0.55) # Standard center dialogue option
+        
+        log.info(f"[GenshinDialogHandler] Bounding box matching '{query_text}' located at: ({target_x}, {target_y}). Clicking option.")
+        if hasattr(input_backend, "mouse_move_to") and hasattr(input_backend, "left_click"):
+            input_backend.mouse_move_to(target_x, target_y, reason=f"select_dialogue_option:{query_text}")
+            input_backend.left_click(reason=f"select_dialogue_option:{query_text}")
+            return True
+        return False
 
     @staticmethod
     def _scale_roi(

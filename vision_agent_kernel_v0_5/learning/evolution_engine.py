@@ -375,8 +375,22 @@ class EvolutionEngine:
             if isinstance(timeout, (int, float)) and timeout <= 0:
                 patch["replay_result"] = {"passed": False, "reason": "step_has_invalid_timeout"}
                 return False
-        # Induced skills pass structural validation without pytest
+        # Induced skills: run sandbox validation if code present, otherwise structural check
         if skill_id.startswith("induced_"):
+            code = patch.get("code", "")
+            if code and isinstance(code, str) and len(code) > 20:
+                try:
+                    from app_service.code_sandbox_executor import CodeSandboxExecutor
+                    sandbox = CodeSandboxExecutor()
+                    result = sandbox.execute(code)
+                    patch["replay_result"] = {
+                        "passed": result.success,
+                        "validation": "sandbox_execution",
+                        "error": result.error if not result.success else None,
+                    }
+                    return result.success
+                except ImportError:
+                    pass  # Sandbox not available, fall through to structural check
             patch["replay_result"] = {"passed": True, "validation": "structural_check"}
             return True
         test_marker = skill_id.replace("_", " and ")

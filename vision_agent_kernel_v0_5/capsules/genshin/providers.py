@@ -46,6 +46,23 @@ class GenshinScreenClassifierProvider:
         return ProviderHealth("degraded", "GenshinScreenClassifier failed to load")
 
 
+class GenshinCombatDetectorProvider:
+    """Wraps perception.genshin_combat_detector.GenshinCombatDetector."""
+
+    def __init__(self) -> None:
+        self._detector = None
+        try:
+            from perception.genshin_combat_detector import GenshinCombatDetector
+            self._detector = GenshinCombatDetector()
+        except Exception:
+            pass
+
+    def health(self) -> ProviderHealth:
+        if self._detector is not None:
+            return ProviderHealth("ok", "GenshinCombatDetector loaded successfully")
+        return ProviderHealth("degraded", "GenshinCombatDetector failed to load")
+
+
 class GenshinCombatPlannerProvider:
     """Wraps Genshin combat planning routines."""
 

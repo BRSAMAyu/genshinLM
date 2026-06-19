@@ -7,6 +7,7 @@ from core.types import InputLease
 from execution.console_backend import ConsoleInputBackend
 from execution.input_lease import DOWN, UP, InputLeaseStore
 from execution.input_worker import InputWorker
+from core.events import Interrupt
 
 
 def _lease(lease_id: str, key: str, expires_at: float, state: str = DOWN) -> InputLease:
@@ -55,3 +56,62 @@ def test_input_worker_applies_up_without_registering_deadman_lease() -> None:
         assert worker.active_keys_snapshot() == set()
     finally:
         worker.stop()
+
+
+def test_input_worker_atomic_actions_execute() -> None:
+    timebase = Timebase()
+    backend = ConsoleInputBackend(timebase)
+    worker = InputWorker(backend=backend, timebase=timebase, tick_seconds=0.005)
+    now = timebase.now()
+
+    worker.start()
+    try:
+        lease = InputLease(
+            lease_id="atomic-actions",
+            owner="test",
+            priority=10,
+            key_states={},
+            mouse_delta=None,
+            created_at=time.perf_counter(),
+            expires_at=now + 1.0,
+            reason="atomic actions",
+            actions=[
+                {"type": "left_click"},
+                {"type": "mouse_scroll", "delta": -1},
+                {"type": "type_text", "text": "abc", "delay_between_keys_ms": 1},
+                {"type": "execute_combo", "keys": ["ctrl", "c"], "hold_time_ms": 1},
+            ],
+        )
+        assert worker.submit_lease(lease)
+        _wait_for(
+            lambda: {"left_click", "mouse_scroll", "type_text", "execute_combo"}.issubset(
+                {e.action for e in backend.events_snapshot()}
+            )
+        )
+    finally:
+        worker.stop()
+
+
+def test_input_worker_critical_interrupt_not_dropped_when_queue_full() -> None:
+    timebase = Timebase()
+    backend = ConsoleInputBackend(timebase)
+    worker = InputWorker(
+        backend=backend,
+        timebase=timebase,
+        tick_seconds=0.05,
+        command_queue_size=1,
+    )
+    now = timebase.now()
+
+    # Fill queue with a lease first, then ensure interrupt still accepted.
+    assert worker.submit_lease(_lease("queued-lease", "W", expires_at=now + 1.0))
+    accepted = worker.submit_interrupt(
+        Interrupt(
+            priority=0,
+            timestamp=now,
+            code="QUEUE_PRESSURE_INTERRUPT",
+            source="unit_test",
+            requires_input_release=True,
+        )
+    )
+    assert accepted is True

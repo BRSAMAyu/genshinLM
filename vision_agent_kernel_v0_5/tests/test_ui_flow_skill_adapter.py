@@ -332,8 +332,10 @@ def test_adapter_boss_combat_all_bosses() -> None:
         assert adapter.can_handle(action)
         assert adapter.execute_semantic(action, "", {})
 
-    combat_calls = [c for c in backend.calls if c[0] == "action_intent" and "combat:boss" in c[1]]
-    assert len(combat_calls) >= 6
+    # Boss combat now routes through _handle_combat which produces real key events
+    # (not just action_intent logs). Verify that combat key_down calls were made.
+    combat_calls = [c for c in backend.calls if c[0] in ("key_down", "hold_click", "action_intent")]
+    assert len(combat_calls) >= 6, f"expected >=6 combat calls, got {combat_calls}"
 
 
 def test_adapter_env_combat_routes_environment() -> None:
@@ -342,11 +344,16 @@ def test_adapter_env_combat_routes_environment() -> None:
 
     assert adapter.can_handle("combat_env_dragonspine")
     assert adapter.execute_semantic("combat_env_dragonspine", "", {})
-    assert any(c[0] == "action_intent" and "dragonspine" in c[1] for c in backend.calls)
+    # Env combat now routes through _handle_combat producing real key events.
+    # Verify at least some combat action was taken.
+    combat_calls = [c for c in backend.calls if c[0] in ("key_down", "hold_click", "action_intent")]
+    assert len(combat_calls) > 0
 
+    backend.calls.clear()
     assert adapter.can_handle("combat_env_inazuma")
     assert adapter.execute_semantic("combat_env_inazuma", "", {})
-    assert any(c[0] == "action_intent" and "inazuma" in c[1] for c in backend.calls)
+    combat_calls = [c for c in backend.calls if c[0] in ("key_down", "hold_click", "action_intent")]
+    assert len(combat_calls) > 0
 
 
 def test_adapter_abyss_and_multiwave_route_to_combat() -> None:

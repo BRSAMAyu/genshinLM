@@ -49,8 +49,12 @@ class HazardLevel(str, Enum):
 
 
 @dataclass(frozen=True, slots=True)
-class SomaticState:
-    """Current somatic state of the character."""
+class VitalSigns:
+    """Current physical vital signs of the character (stamina/health/hazard).
+
+    Renamed from VitalSigns to avoid confusion with the mission-level
+    VitalSigns in somatic_state.py (which tracks quests, positions, team).
+    """
     stamina_ratio: float           # 0.0-1.0
     stamina_zone: StaminaZone
     health_ratio: float            # 0.0-1.0
@@ -123,20 +127,24 @@ class SomaticStateSupervisor:
         self,
         config: SomaticConfig | None = None,
         now_fn=None,
+        state_bus: Any | None = None,
+        input_worker: Any | None = None,
     ) -> None:
         self._config = config or SomaticConfig()
         self._now_fn = now_fn or time.perf_counter
+        self._state_bus = state_bus
+        self._input_worker = input_worker
 
         self._recovery_mode = False
         self._last_eat_time = 0.0
-        self._last_state: SomaticState | None = None
+        self._last_state: VitalSigns | None = None
         self._stamina_history: list[float] = []
         self._health_history: list[float] = []
         self._frame_count = 0
         self._food_count = 5  # default food inventory buffer
 
     @property
-    def last_state(self) -> SomaticState | None:
+    def last_state(self) -> VitalSigns | None:
         return self._last_state
 
     @property
@@ -153,7 +161,7 @@ class SomaticStateSupervisor:
         self,
         frame,
         frame_id: int = 0,
-    ) -> SomaticState:
+    ) -> VitalSigns:
         """Analyze a frame and return the current somatic state.
 
         Args:
@@ -161,7 +169,7 @@ class SomaticStateSupervisor:
             frame_id: Current frame ID (for timestamping)
 
         Returns:
-            SomaticState with current character status and recommended action
+            VitalSigns with current character status and recommended action
         """
         self._frame_count = frame_id
         now = self._now_fn()
@@ -206,7 +214,7 @@ class SomaticStateSupervisor:
             hazard_level, stamina_recovering,
         )
 
-        state = SomaticState(
+        state = VitalSigns(
             stamina_ratio=stamina_ratio,
             stamina_zone=stamina_zone,
             health_ratio=health_ratio,
@@ -243,7 +251,7 @@ class SomaticStateSupervisor:
         backend,
         frame,
         frame_id: int = 0,
-    ) -> tuple[SomaticState, bool]:
+    ) -> tuple[VitalSigns, bool]:
         """Full monitoring loop: check frame and intercept if needed.
 
         Returns (state, intercepted) where intercepted=True means we already
@@ -334,12 +342,17 @@ class SomaticStateSupervisor:
         try:
             from interaction.ui_flows import get_flow
             from interaction.ui_flow_engine import UIFlowExecutor
-            from execution.input_worker import InputWorker
-            from core.state_bus import StateBus
 
             flow = get_flow("food_use_from_backpack")
-            worker = InputWorker(backend=backend, state_bus=StateBus())
-            executor = UIFlowExecutor(state_bus=worker._state_bus, input_worker=worker)
+            # Use shared StateBus and InputWorker from initialization, not independent ones
+            if self._state_bus is not None and self._input_worker is not None:
+                executor = UIFlowExecutor(state_bus=self._state_bus, input_worker=self._input_worker)
+            else:
+                from execution.input_worker import InputWorker
+                from core.state_bus import StateBus
+                fallback_bus = StateBus()
+                worker = InputWorker(backend=backend, state_bus=fallback_bus)
+                executor = UIFlowExecutor(state_bus=fallback_bus, input_worker=worker)
             result = executor.execute(flow)
             log.info("[Somatic] food flow result: %s", result.status)
             if result.status == "FAILED" or result.failure_code == "RESOURCE_DEPLETED":
@@ -542,8 +555,8 @@ class SomaticStateSupervisor:
         # Scale to ratio (bubbles typically fill up to 15% of ROI pixels max, scale accordingly)
         return min(max(ratio / 0.15, 0.0), 1.0)
 
-    def _default_state(self, now: float) -> SomaticState:
-        return SomaticState(
+    def _default_state(self, now: float) -> VitalSigns:
+        return VitalSigns(
             stamina_ratio=0.8,
             stamina_zone=StaminaZone.FULL,
             health_ratio=0.75,

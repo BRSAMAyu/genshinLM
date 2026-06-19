@@ -27,6 +27,34 @@ from control.sentinel.somatic_state import SomaticState
 log = logging.getLogger(__name__)
 
 
+def _verify_screen_stable(perception: Any, claim_runtime: Any, expected_states: tuple[str, ...] | None = None) -> bool:
+    """Check whether screen state has restabilized after recovery.
+
+    Uses claim_runtime first (most authoritative), then perception observation.
+    Falls back to True when no verification tools are available.
+    """
+    _STABLE_STATES = ("world_hud", "overworld", "dialog", "menu", "combat", "world_viewport")
+    target_states = expected_states or _STABLE_STATES
+
+    if claim_runtime is not None:
+        try:
+            claim = claim_runtime.latest_claim()
+            if claim is not None:
+                state = getattr(claim, "screen_state", "")
+                return state in target_states
+        except Exception:
+            pass
+    if perception is not None:
+        try:
+            obs = getattr(perception, "latest_observation", None)
+            if obs is not None:
+                state = getattr(obs, "screen_state", "")
+                return state in target_states
+        except Exception:
+            pass
+    return True  # Fallback: no verification tools available
+
+
 def _publish(executor: Any, recipe_id: str, actions: list[dict]) -> None:
     """Publish a sentinel action request via StateBus if executor is available."""
     if executor is None:
@@ -71,7 +99,7 @@ class UILostRecovery(RecoveryRecipe):
         )
 
     def verify_restabilized(self, perception: Any = None, claim_runtime: Any = None) -> bool:
-        return True
+        return _verify_screen_stable(perception, claim_runtime)
 
     @property
     def failure_policy(self) -> RecoveryPolicy:
@@ -120,7 +148,7 @@ class StuckRecovery(RecoveryRecipe):
         )
 
     def verify_restabilized(self, perception: Any = None, claim_runtime: Any = None) -> bool:
-        return True
+        return _verify_screen_stable(perception, claim_runtime)
 
     @property
     def failure_policy(self) -> RecoveryPolicy:
@@ -153,7 +181,7 @@ class TargetLostRecovery(RecoveryRecipe):
         )
 
     def verify_restabilized(self, perception: Any = None, claim_runtime: Any = None) -> bool:
-        return True
+        return _verify_screen_stable(perception, claim_runtime)
 
     @property
     def failure_policy(self) -> RecoveryPolicy:
@@ -183,7 +211,7 @@ class LoadingTimeoutRecovery(RecoveryRecipe):
         )
 
     def verify_restabilized(self, perception: Any = None, claim_runtime: Any = None) -> bool:
-        return True
+        return _verify_screen_stable(perception, claim_runtime)
 
     @property
     def failure_policy(self) -> RecoveryPolicy:
@@ -216,7 +244,7 @@ class CombatDefeatRecovery(RecoveryRecipe):
         )
 
     def verify_restabilized(self, perception: Any = None, claim_runtime: Any = None) -> bool:
-        return True
+        return _verify_screen_stable(perception, claim_runtime)
 
     @property
     def failure_policy(self) -> RecoveryPolicy:
@@ -250,7 +278,7 @@ class LowHealthRecovery(RecoveryRecipe):
         )
 
     def verify_restabilized(self, perception: Any = None, claim_runtime: Any = None) -> bool:
-        return True
+        return _verify_screen_stable(perception, claim_runtime)
 
     @property
     def failure_policy(self) -> RecoveryPolicy:
@@ -286,7 +314,7 @@ class DriftRecovery(RecoveryRecipe):
         )
 
     def verify_restabilized(self, perception: Any = None, claim_runtime: Any = None) -> bool:
-        return True
+        return _verify_screen_stable(perception, claim_runtime)
 
     @property
     def failure_policy(self) -> RecoveryPolicy:
@@ -317,7 +345,7 @@ class ModelProviderFailureRecovery(RecoveryRecipe):
         )
 
     def verify_restabilized(self, perception: Any = None, claim_runtime: Any = None) -> bool:
-        return True
+        return _verify_screen_stable(perception, claim_runtime)
 
     @property
     def failure_policy(self) -> RecoveryPolicy:

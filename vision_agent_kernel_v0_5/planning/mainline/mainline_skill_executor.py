@@ -3,12 +3,20 @@ from __future__ import annotations
 import logging
 import time
 import uuid
+from dataclasses import asdict
 from dataclasses import dataclass
 from typing import Any, Protocol
 
 from bagel.fig_schema import ActionNode, BeliefIdentity, BeliefNode, FeedbackNode
 from bagel.runtime import BagelRuntime
 from planning.mainline.mission_graph_v4 import MissionNodeV4
+from planning.recovery_orchestrator import (
+    RecoveryCategory,
+    RecoveryEvent,
+    RecoveryOrchestrator,
+    RecoverySeverity,
+)
+from runtime.claim_runtime import ClaimProducingExecutor
 from runtime.claim_runtime import ObservationClaim, StateDeltaClaim
 from runtime.claim_worker import ClaimGraphCommand, ClaimGraphWorker
 
@@ -58,18 +66,37 @@ class MainlineSkillExecutor:
         *,
         claim_worker: ClaimGraphWorker | None = None,
         bagel_runtime: BagelRuntime | None = None,
+        claim_runtime: ClaimProducingExecutor | None = None,
+        recovery_orchestrator: RecoveryOrchestrator | None = None,
+        enable_bagel_attribution: bool = False,
         mission_id: str = "mainline",
         raise_on_failure: bool = True,
     ) -> None:
         self._executor = action_executor
         self._claim_worker = claim_worker or ClaimGraphWorker(mission_id=mission_id)
-        self._bagel = bagel_runtime or BagelRuntime()
+        self._bagel_enabled = bool(bagel_runtime is not None or enable_bagel_attribution)
+        self._bagel = bagel_runtime if bagel_runtime is not None else (BagelRuntime() if self._bagel_enabled else None)
+        self._claim_runtime = claim_runtime or ClaimProducingExecutor()
+        self._recovery = recovery_orchestrator or RecoveryOrchestrator(executor=action_executor)
         self._mission_id = mission_id
         self._raise_on_failure = raise_on_failure
 
     def execute_node_skill(self, node: MissionNodeV4) -> dict[str, Any]:
         semantic_action = self._semantic_action_for(node)
         target = self._target_for(node)
+        risk_level = self._risk_level(node.risk_level)
+        claim_context = {
+            "node_type": node.node_type,
+            "target": target or "unknown",
+            "semantic_action": semantic_action,
+            "risk_level": risk_level,
+        }
+        gate_decision, uncertainty_decision = self._claim_runtime.pre_flight(
+            skill_id=semantic_action,
+            context=claim_context,
+            risk_level=risk_level,
+            node_id=node.node_id,
+        )
         context = {
             "node_id": node.node_id,
             "node_type": node.node_type,
@@ -88,16 +115,17 @@ class MainlineSkillExecutor:
         belief_ids = self._commit_missing_beliefs(node)
         action_id = f"act_{node.node_id}_{uuid.uuid4().hex[:8]}"
         claim_id = f"claim_{node.node_id}_{uuid.uuid4().hex[:8]}"
-        action = ActionNode(
-            action_id=action_id,
-            belief_ids=tuple(belief_ids),
-            action_type=semantic_action,
-            params={"target": target, "node_type": node.node_type},
-            status="proposed",
-            risk_level=node.risk_level,
-            metadata={"node_id": node.node_id},
-        )
-        self._bagel.propose_action(action, trace_id=node.node_id)
+        if self._bagel is not None:
+            action = ActionNode(
+                action_id=action_id,
+                belief_ids=tuple(belief_ids),
+                action_type=semantic_action,
+                params={"target": target, "node_type": node.node_type},
+                status="proposed",
+                risk_level=node.risk_level,
+                metadata={"node_id": node.node_id},
+            )
+            self._bagel.propose_action(action, trace_id=node.node_id)
 
         focused = True
         try:
@@ -108,35 +136,74 @@ class MainlineSkillExecutor:
         started = time.perf_counter()
         success = False
         error = ""
-        if focused:
+        if gate_decision.requires_human_confirm:
+            error = f"claim_gate_blocked:{gate_decision.reason}"
+        elif focused:
             try:
                 success = bool(self._executor.execute_semantic(semantic_action, target, context))
             except Exception as exc:
                 error = f"{exc.__class__.__name__}: {exc}"
         else:
             error = "target_not_focused"
+
+        if not success and not error:
+            error = "semantic_execution_failed"
+
+        if (not success and uncertainty_decision.action in {"local_recovery", "resample_observation", "alternate_verifier", "safe_probe"}):
+            recovery_result = self._recovery.recover(self._build_recovery_event(node, error))
+            if recovery_result.success:
+                try:
+                    success = bool(self._executor.execute_semantic(semantic_action, target, context))
+                    if success:
+                        error = ""
+                except Exception as exc:
+                    error = f"{exc.__class__.__name__}: {exc}"
+
         duration_sec = time.perf_counter() - started
 
         fingerprint = (
             f"node={node.node_id};action={semantic_action};target={target};"
             f"success={success};duration={duration_sec:.6f}"
         )
-        self._bagel.materialize_action(action_id, fingerprint=fingerprint, claim_id=claim_id)
-        self._bagel.receive_feedback(
-            FeedbackNode(
-                feedback_id=f"fb_{action_id}",
-                action_id=action_id,
-                polarity="positive" if success else "negative",
-                signal_quality=1.0 if success else 0.8,
-                claim_refs=(claim_id,),
-                description="semantic execution succeeded" if success else (error or "semantic execution failed"),
-                metadata={"node_id": node.node_id, "duration_sec": duration_sec},
+        if self._bagel is not None:
+            self._bagel.materialize_action(action_id, fingerprint=fingerprint, claim_id=claim_id)
+            self._bagel.receive_feedback(
+                FeedbackNode(
+                    feedback_id=f"fb_{action_id}",
+                    action_id=action_id,
+                    polarity="positive" if success else "negative",
+                    signal_quality=1.0 if success else 0.8,
+                    claim_refs=(claim_id,),
+                    description="semantic execution succeeded" if success else (error or "semantic execution failed"),
+                    metadata={"node_id": node.node_id, "duration_sec": duration_sec},
+                )
             )
-        )
         self._record_claim(node, claim_id, semantic_action, target, success, action_id, duration_sec, error)
+        claim_execution = self._claim_runtime.produce_claim(
+            claim_id=f"cc_{claim_id}",
+            mission_id=self._mission_id,
+            node_id=node.node_id,
+            skill_id=semantic_action,
+            claim_type=node.output_claims[0].claim_type if node.output_claims else "semantic_action_executed",
+            claimed_delta={
+                "goal": node.node_type,
+                "semantic_action": semantic_action,
+                "target": target,
+                "success": success,
+            },
+            risk_level=risk_level,
+            context=claim_context,
+        )
+        self._claim_runtime.verify_claim(
+            claim_execution.claim.claim_id,
+            ok=success,
+            actual_delta={"success": success, "error": error},
+            context=claim_context,
+        )
+        decision_memory = self._claim_runtime.summarize_for_llm(node.node_type)
 
         attribution_triggered = False
-        if not success:
+        if not success and self._bagel is not None:
             attribution_triggered = True
             self._bagel.run_attribution_cycle(trace_id=node.node_id)
 
@@ -151,9 +218,18 @@ class MainlineSkillExecutor:
         )
         if not success and self._raise_on_failure:
             raise RuntimeError(error or f"semantic action failed: {semantic_action}")
-        return execution.to_claim_data()
+        return {
+            **execution.to_claim_data(),
+            "claim_runtime_gate_allowed": gate_decision.allowed,
+            "claim_runtime_gate_reason": gate_decision.reason,
+            "claim_runtime_uncertainty_action": uncertainty_decision.action,
+            "claim_runtime_uncertainty_reason": uncertainty_decision.reason,
+            "claim_runtime_decision_memory": asdict(decision_memory),
+        }
 
     def _commit_missing_beliefs(self, node: MissionNodeV4) -> list[str]:
+        if self._bagel is None:
+            return []
         belief_ids: list[str] = []
         if node.belief_templates:
             for idx, template in enumerate(node.belief_templates):
@@ -187,6 +263,34 @@ class MainlineSkillExecutor:
         )
         self._bagel.commit_belief(belief, trace_id=node.node_id)
         return [belief_id]
+
+    @staticmethod
+    def _risk_level(value: str | None) -> str:
+        if value in {"low", "medium", "high", "critical"}:
+            return value
+        return "medium"
+
+    @staticmethod
+    def _build_recovery_event(node: MissionNodeV4, error: str) -> RecoveryEvent:
+        node_type = (node.node_type or "").lower()
+        if "combat" in node_type:
+            category = RecoveryCategory.COMBAT
+        elif "nav" in node_type or "move" in node_type or "teleport" in node_type:
+            category = RecoveryCategory.NAVIGATION
+        elif "dialog" in node_type or "ui" in node_type or "menu" in node_type:
+            category = RecoveryCategory.UI
+        elif "quest" in node_type or "talk" in node_type:
+            category = RecoveryCategory.QUEST
+        else:
+            category = RecoveryCategory.SYSTEM
+        severity = RecoverySeverity.MODERATE if node.risk_level in {"high", "critical"} else RecoverySeverity.MINOR
+        return RecoveryEvent(
+            category=category,
+            severity=severity,
+            description=error or "semantic_execution_failed",
+            context={"failure_type": "stuck"},
+            source=f"mainline_skill_executor:{node.node_id}",
+        )
 
     def _record_claim(
         self,

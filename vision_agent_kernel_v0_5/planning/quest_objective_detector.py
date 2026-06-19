@@ -1,10 +1,9 @@
 from __future__ import annotations
 
 import logging
+from typing import Any
 
 import numpy as np
-
-from perception.genshin_screen_classifier import GenshinScreenClassifier
 
 log = logging.getLogger(__name__)
 
@@ -12,7 +11,7 @@ log = logging.getLogger(__name__)
 class QuestObjectiveDetector:
     """Detect quest objective completion from screen frames."""
 
-    def __init__(self, classifier: GenshinScreenClassifier) -> None:
+    def __init__(self, classifier: Any) -> None:
         self._classifier = classifier
 
     def detect_objective_status(self, frame: np.ndarray, objective: str) -> str:

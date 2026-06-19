@@ -70,7 +70,7 @@ class GenshinSkillLoader:
                 data = yaml.safe_load(fh)
             if not data or "skills" not in data:
                 continue
-            for skill_key, skill_data in data["skills"].items():
+            for skill_key, skill_data in self._iter_skill_items(data["skills"]):
                 if skill_key != skill_id:
                     continue
                 resolved = self._resolve_inheritance(skill_data, data["skills"])
@@ -90,15 +90,18 @@ class GenshinSkillLoader:
             if not data or "skills" not in data:
                 continue
             all_skills_data = data["skills"]
-            for skill_key, skill_data in all_skills_data.items():
+            all_skill_items = dict(self._iter_skill_items(all_skills_data))
+            for skill_key, skill_data in all_skill_items.items():
                 if skill_key in results:
+                    continue
+                if not self._has_required_skill_shape(skill_data):
                     continue
                 resolved = self._resolve_inheritance(skill_data, all_skills_data)
                 results[skill_key] = self._build_skill(resolved)
         self._cache.update(results)
         return results
 
-    def _resolve_inheritance(self, skill_data: dict[str, Any], all_skills: dict[str, Any], visited: set[str] | None = None) -> dict[str, Any]:
+    def _resolve_inheritance(self, skill_data: dict[str, Any], all_skills: Any, visited: set[str] | None = None) -> dict[str, Any]:
         extends_id = skill_data.get("extends")
         if not extends_id:
             return skill_data
@@ -110,7 +113,7 @@ class GenshinSkillLoader:
             raise SkillInheritanceError(f"Circular inheritance: {skill_id}")
         visited.add(skill_id)
 
-        parent_data = all_skills.get(extends_id)
+        parent_data = dict(self._iter_skill_items(all_skills)).get(extends_id)
         if parent_data is None:
             raise SkillInheritanceError(
                 f"Skill '{skill_data.get('skill_id')}' extends '{extends_id}', but parent not found"
@@ -136,6 +139,28 @@ class GenshinSkillLoader:
         merged.pop("extends", None)
 
         return merged
+
+    def _iter_skill_items(self, raw_skills: Any) -> list[tuple[str, dict[str, Any]]]:
+        """Yield `(skill_id, skill_data)` from dict or list YAML formats."""
+        if isinstance(raw_skills, dict):
+            return [
+                (str(skill_key), skill_data)
+                for skill_key, skill_data in raw_skills.items()
+                if isinstance(skill_data, dict)
+            ]
+        if isinstance(raw_skills, list):
+            items: list[tuple[str, dict[str, Any]]] = []
+            for index, skill_data in enumerate(raw_skills):
+                if not isinstance(skill_data, dict):
+                    continue
+                skill_id = str(skill_data.get("skill_id", f"skill_{index}"))
+                items.append((skill_id, skill_data))
+            return items
+        return []
+
+    @staticmethod
+    def _has_required_skill_shape(skill_data: dict[str, Any]) -> bool:
+        return all(field in skill_data for field in _REQUIRED_SKILL_FIELDS)
 
     def _build_skill(self, data: dict[str, Any]) -> GenshinSkill:
         self._validate_required(data, _REQUIRED_SKILL_FIELDS, context="skill")

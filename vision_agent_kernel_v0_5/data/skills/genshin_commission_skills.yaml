@@ -1,0 +1,42 @@
+skills:
+  - skill_id: commission_platform_glide
+    description: "Navigate vertical/aerial platform glides (Dash + Space jump-glide toggle)."
+    actions:
+      - action: "press_key"
+        params: {key: "shift", reason: "initial_sprint_boost"}
+        delay_ms: 300
+      - action: "press_key"
+        params: {key: "space", reason: "initiate_jump"}
+        delay_ms: 150
+      - action: "press_key"
+        params: {key: "space", reason: "deploy_glider_wind_current"}
+        delay_ms: 800
+      - action: "navigate_walk"
+        params: {movement: "w", duration_ms: 3000, reason: "glide_forward"}
+        delay_ms: 3100
+
+  - skill_id: commission_balloon_escort
+    description: "Timed escort of transport balloons, defending from nearby enemy clusters."
+    actions:
+      - action: "navigate_walk"
+        params: {movement: "w", duration_ms: 1500, reason: "stay_near_balloon"}
+        delay_ms: 1600
+      - action: "genshin_combat"
+        params: {intensity: "high", target_priority: "nearby_mobs"}
+        delay_ms: 5000
+
+  - skill_id: reclaim_katheryne_rewards
+    description: "Approach Katheryne, trigger dialogue, bypass popups, and claim daily rewards."
+    actions:
+      - action: "press_key"
+        params: {key: "f", reason: "interact_katheryne"}
+        delay_ms: 1000
+      - action: "select_dialogue"
+        params: {option_query: "Claim Daily Commission Rewards", reason: "click_rewards_option"}
+        delay_ms: 1200
+      - action: "press_key"
+        params: {key: "escape", reason: "dismiss_guild_rewards_popup"}
+        delay_ms: 800
+      - action: "select_dialogue"
+        params: {option_query: "Dispatch Expedition", reason: "open_expeditions_panel"}
+        delay_ms: 1000

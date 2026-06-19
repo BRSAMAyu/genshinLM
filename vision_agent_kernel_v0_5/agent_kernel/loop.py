@@ -63,7 +63,7 @@ class AgentLoop:
         combat_agent: Any | None = None,
         dialogue_controller: Any | None = None,
         embodied_runtime: Any | None = None,
-        max_plan_iterations: int = 20,
+        max_plan_iterations: int = 100,
         max_step_retries: int = 2,
         confirm_fn: Callable[[Any], bool] | None = None,
         memory: Any | None = None,
@@ -100,6 +100,9 @@ class AgentLoop:
 
         # Unknown scene handler (optional, for autonomous exploration)
         self._unknown_scene_handler: Any = None
+
+        # Meta-learning bridge (optional, connects exploration→BAGEL→skill)
+        self._meta_learning_bridge: Any = None
 
         # Thread safety & State bus
         self._state_bus: dict[str, Any] = {
@@ -312,6 +315,24 @@ class AgentLoop:
                     else:
                         log.warning(f"[Kernel] Contract execution lost focus or lease expired: {contract.contract_id}")
                         self._record_node_failure(action.action_id)
+
+                        # F2. Feed failure to meta-learning bridge (BAGEL→learning chain)
+                        if self._meta_learning_bridge is not None:
+                            try:
+                                from bagel.belief_proposer import classify_failure_mode
+                                mode = classify_failure_mode(receipt.status)
+                                self._meta_learning_bridge.on_exploration_result(
+                                    exploration_target=action.intent,
+                                    success=False,
+                                    actions_taken=[{
+                                        "action_id": action.action_id,
+                                        "intent": action.intent,
+                                        "failure_mode": mode,
+                                    }],
+                                    scene_description=getattr(obs, "scene_description", ""),
+                                )
+                            except Exception as exc:
+                                log.debug("[Kernel] Meta-learning bridge failure report: %s", exc)
 
                         # F. Recovery: call replan_on_failure for strategy change
                         if hasattr(self._planner, "replan_on_failure"):
@@ -574,15 +595,36 @@ class AgentLoop:
         if not hypotheses:
             return []
         patch_ids: list[str] = []
+        probed_actions: list[dict[str, Any]] = []
+        any_effective = False
         max_rounds = min(len(hypotheses), getattr(handler, "max_probe_attempts", 5))
         for i in range(max_rounds):
             result = handler.probe(scene, hypotheses[i])
+            probed_actions.append({
+                "hypothesis": str(hypotheses[i]),
+                "effective": getattr(result, "effective", False),
+                "learned": result.learned_override is not None,
+            })
             if result.learned_override is not None:
                 patch_ids.append(f"patch_{uuid.uuid4().hex[:8]}")
             if result.effective:
+                any_effective = True
                 break
             if handler.should_escalate(hypotheses) and i >= 2:
                 break
+
+        # Report exploration result to meta-learning bridge (exploration→belief→skill chain)
+        if self._meta_learning_bridge is not None:
+            try:
+                self._meta_learning_bridge.on_exploration_result(
+                    exploration_target=action.target or "unknown",
+                    success=any_effective,
+                    actions_taken=probed_actions,
+                    scene_description=getattr(obs, "scene_description", "unknown"),
+                )
+            except Exception as exc:
+                log.debug("[Kernel] Meta-learning bridge exploration report failed: %s", exc)
+
         return patch_ids
 
     def _propose_permanent_capsule_patches(self) -> None:

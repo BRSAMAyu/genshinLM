@@ -404,6 +404,10 @@ class SafeWindowInputBackend:
 
     def hold_click(self, duration_sec: float = 0.5, reason: str = "") -> bool:
         """Hold left mouse button for a duration (charged attacks), with interruptible focus checks."""
+        _MAX_HOLD_SEC = 5.0
+        if duration_sec > _MAX_HOLD_SEC:
+            log.warning("[SafeWindow] hold_click clamped %.1fs → %.1fs", duration_sec, _MAX_HOLD_SEC)
+            duration_sec = _MAX_HOLD_SEC
         self._ensure_target_focused()
         down = INPUT(
             type=INPUT_MOUSE,

@@ -9,7 +9,7 @@ from control.sentinel.somatic_state_supervisor import (
     StaminaZone,
     HealthZone,
     HazardLevel,
-    SomaticState,
+    VitalSigns,
 )
 
 
@@ -71,7 +71,7 @@ class TestSomaticStateSupervisor:
     def test_check_frame_returns_somatic_state(self) -> None:
         sup = SomaticStateSupervisor()
         state = sup.check_frame(None)
-        assert isinstance(state, SomaticState)
+        assert isinstance(state, VitalSigns)
         assert state.timestamp > 0
         assert state.recommended_action != ""
 

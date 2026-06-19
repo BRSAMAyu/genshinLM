@@ -3,6 +3,10 @@
 Writes a versioned JSON snapshot at each checkpoint so that a crash or restart
 can restore the agent to its last known quest state rather than starting blind.
 
+NOTE: This is the *quest narrative* checkpoint. MainlineCheckpoint (in
+mainline_runner.py) tracks *execution graph* state (node IDs, phases). They
+complement each other — neither subsumes the other. Sync both on recovery.
+
 Usage:
     persistence = QuestContextPersistence(runs_dir=Path("runs"))
     persistence.save(context)
