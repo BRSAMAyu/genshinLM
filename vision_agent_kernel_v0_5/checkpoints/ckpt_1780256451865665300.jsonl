@@ -1,2 +1,0 @@
-{"checkpoint_id": "ckpt_1780256451865665300", "phase": "checkpoint", "graph_id": "lg1", "completed_nodes": ["start"], "failed_nodes": [], "skipped_nodes": []}
-{"checkpoint_id": "ckpt_1780256451865665300", "phase": "checkpoint", "graph_id": "lg1", "completed_nodes": ["middle", "start"], "failed_nodes": [], "skipped_nodes": []}

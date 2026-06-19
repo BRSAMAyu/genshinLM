@@ -28,3 +28,7 @@ htmlcov/
 .vscode/
 .idea/
 *.swp
+checkpoints/
+.bagel/
+.claude/
+data/bagel_events/
