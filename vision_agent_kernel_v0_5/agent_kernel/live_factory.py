@@ -385,6 +385,20 @@ def create_live_genshin_loop(
     # Wire UnknownSceneHandler → MetaLearningBridge (gap 4 closure)
     unknown_handler.set_meta_learning_bridge(meta_bridge)
 
+    # --- Pose substrate (spatial localization → StateBus.latest_pose) ---
+    # Pure perception: publishes a fused PoseEstimate each cycle; drives no
+    # input, so it is safe in dry-run and live alike. Defensive: a failure to
+    # build the pose layer must never block loop construction.
+    from core.state_bus import StateBus
+    state_bus_core = StateBus()
+    pose_wiring = None
+    try:
+        from perception.live_pose_wiring import wire_genshin_pose
+        pose_wiring = wire_genshin_pose(state_bus_core, profile="genshin_1920x1080")
+        log.info("[LiveFactory] Pose substrate wired (publishes StateBus.latest_pose).")
+    except Exception as exc:  # pragma: no cover - defensive
+        log.warning("[LiveFactory] Pose substrate wiring skipped: %s", exc)
+
     # --- Assemble AgentLoop ---
     from agent_kernel.loop import AgentLoop
     agent_loop = AgentLoop(
@@ -398,6 +412,7 @@ def create_live_genshin_loop(
         combat_agent=combat_agent,
         dialogue_controller=dialogue_controller,
         embodied_runtime=embodied_runtime,
+        pose_wiring=pose_wiring,
         max_plan_iterations=max_plan_iterations,
         max_step_retries=max_step_retries,
         memory=memory,
@@ -405,6 +420,8 @@ def create_live_genshin_loop(
     agent_loop._cerebrum_interval_sec = cerebrum_interval_sec
     agent_loop._unknown_scene_handler = unknown_handler
     agent_loop._meta_learning_bridge = meta_bridge
+    # Expose the real StateBus so navigation/recovery consumers can read pose.
+    agent_loop._state_bus_core = state_bus_core
 
     log.info(
         "[LiveFactory] AgentLoop assembled: goal='%s' window='%s' dry_run=%s",

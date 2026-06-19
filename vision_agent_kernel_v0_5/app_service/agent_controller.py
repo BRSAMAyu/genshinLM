@@ -29,6 +29,7 @@ from app_service.calibration import CalibrationProfile, CalibrationStore, RoiDef
 from app_service.model_manager import ModelManager
 from app_service.product_e2e import ProductE2ERunner
 from app_service.goal_executor import GoalExecutor
+from app_service.universal_entry_agent import UniversalEntryAgent
 from app_service.skill_manager import SkillDryRunRuntime, SkillRecorder, SkillReplayRuntime, SkillStore, SkillValidationError, SkillValidator
 from app_service.window_selector import WindowInfo, WindowSelector
 from combat.danger_detector import DangerDetector
@@ -119,6 +120,7 @@ class AgentController:
         self._planner = Planner(self._root, self._skill_store)
         self._sandbox_validator = SandboxValidator(self._root, self._skill_store)
         self._goal_executor = GoalExecutor(self._root, self._skill_store)
+        self._entry_agent = UniversalEntryAgent()
         self._combat_runtime = CombatPlaybookRuntime()
         self._danger_detector = DangerDetector()
         self._dodge_policy = DodgePolicy()
@@ -599,6 +601,139 @@ class AgentController:
             exploration_profile=exploration_profile,
         )
         return result.to_dict()
+
+    def dispatch_command(
+        self,
+        text: str,
+        game_id: str = "",
+        live_mode: bool = False,
+    ) -> dict[str, Any]:
+        """Player → agent natural-language command channel.
+
+        Parses ``text`` through UniversalEntryAgent to obtain a structured
+        intent, then dispatches it via ``execute_goal``. Honours the dry-run
+        default: ``live_mode`` is False and ``mode`` is forced to ``"dry-run"``
+        unless a live session is explicitly requested. A live game is never
+        required — if execution cannot start, a clear status is returned
+        instead of raising.
+        """
+        text = (text or "").strip()
+        if not text:
+            empty_intent = self._entry_agent._parse_intent("", game_id or "genshin")
+            return {
+                "accepted": False,
+                "intent": self._intent_to_dict(empty_intent),
+                "goal_type": empty_intent.goal_type,
+                "reply": "我没有听清指令，可以再说一次吗？",
+                "dispatched": False,
+                "execution": None,
+                "message": "empty command text",
+            }
+
+        plan = self._entry_agent.process(text, game_id=game_id)
+        # process() does not expose the intermediate ParsedIntent; re-parse for
+        # the structured intent the UI confirms back to the player.
+        intent = self._entry_agent._parse_intent(text, game_id or "genshin")
+        intent_dict = self._intent_to_dict(intent)
+
+        execution: dict[str, Any] | None = None
+        dispatched = False
+        message = "command accepted"
+        try:
+            execution = self.execute_goal(
+                goal_text=text,
+                live_mode=live_mode,
+                mode="safe-window" if live_mode else "dry-run",
+            )
+            dispatched = True
+            if not execution.get("ok", False) and execution.get("error"):
+                message = f"dispatched with errors: {execution['error']}"
+        except Exception as exc:  # noqa: BLE001 - surface as status, never crash channel
+            message = f"command parsed but execution unavailable: {exc}"
+
+        reply = (
+            f"收到，正在以「{intent.goal_type}」模式处理：{text}。"
+            f"（{'已派发执行' if dispatched else '当前仅解析，执行未启动'}，"
+            f"共 {len(plan.steps)} 步，{'演练模式' if not live_mode else '实机模式'}）"
+        )
+        return {
+            "accepted": True,
+            "intent": intent_dict,
+            "goal_type": intent.goal_type,
+            "reply": reply,
+            "dispatched": dispatched,
+            "execution": execution,
+            "message": message,
+        }
+
+    def human_interrupt(self, kind: str = "override", text: str = "") -> dict[str, Any]:
+        """Player interrupt channel.
+
+        ``kind == "stop"`` raises a P0 emergency stop (requires input release);
+        any other kind raises a P2 human-override that the running loop reacts
+        to. Reuses the existing emergency-stop plumbing for the stop path so
+        safety is not weakened.
+        """
+        reason = (text or "").strip() or "player_interrupt"
+        with self._lock:
+            if kind == "stop":
+                interrupt = Interrupt(
+                    priority=0,
+                    timestamp=self._timebase.now(),
+                    code="EMERGENCY_STOP",
+                    source="player_interrupt",
+                    payload={"reason": reason},
+                    recoverable=False,
+                    requires_input_release=True,
+                )
+                self._active_interrupt = interrupt
+                self._state_bus.publish_interrupt(interrupt)
+                if self._worker is not None and self._worker.is_alive:
+                    self._worker.submit_interrupt(interrupt)
+                    self._worker.stop()
+                else:
+                    self._backend.release_all(reason="player_emergency_stop")
+                self._release_all_called = True
+                self._mode = "EMERGENCY_STOPPED"
+                self._current_skill = None
+                self._target_state = "INTERRUPTED"
+                self._stop_event.set()
+            else:
+                interrupt = Interrupt(
+                    priority=20,  # P2_HUMAN_OVERRIDE
+                    timestamp=self._timebase.now(),
+                    code="HUMAN_OVERRIDE",
+                    source="player_interrupt",
+                    payload={"reason": reason},
+                    recoverable=True,
+                    requires_input_release=False,
+                )
+                self._active_interrupt = interrupt
+                self._state_bus.publish_interrupt(interrupt)
+                if self._worker is not None and self._worker.is_alive:
+                    self._worker.submit_interrupt(interrupt)
+            return {
+                "accepted": True,
+                "kind": kind,
+                "code": interrupt.code,
+                "priority": interrupt.priority,
+                "interrupt": asdict(interrupt),
+                "message": (
+                    "emergency stop issued — input released"
+                    if kind == "stop"
+                    else "human override queued (P2)"
+                ),
+            }
+
+    @staticmethod
+    def _intent_to_dict(intent: Any) -> dict[str, Any]:
+        return {
+            "goal_type": intent.goal_type,
+            "game_id": intent.game_id,
+            "raw_text": intent.raw_text,
+            "parameters": {key: value for key, value in intent.parameters},
+            "confidence": intent.confidence,
+        }
 
     def list_learning_review_queue(self) -> dict[str, Any]:
         return {"items": self._goal_executor.list_learning_review_queue()}

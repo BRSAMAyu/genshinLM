@@ -63,6 +63,7 @@ class AgentLoop:
         combat_agent: Any | None = None,
         dialogue_controller: Any | None = None,
         embodied_runtime: Any | None = None,
+        pose_wiring: Any | None = None,
         max_plan_iterations: int = 100,
         max_step_retries: int = 2,
         confirm_fn: Callable[[Any], bool] | None = None,
@@ -80,6 +81,10 @@ class AgentLoop:
         self._combat_agent = combat_agent
         self._dialogue_controller = dialogue_controller
         self._embodied_runtime = embodied_runtime
+        # Pose substrate (optional): publishes a fused PoseEstimate to the real
+        # StateBus each cycle. Pure perception — drives no input, so it is safe
+        # to run in dry-run and live alike. None == disabled (no behavior change).
+        self._pose_wiring = pose_wiring
         self._max_plan_iterations = max_plan_iterations
         self._max_step_retries = max_step_retries
         self._confirm_fn = confirm_fn
@@ -177,7 +182,16 @@ class AgentLoop:
                     continue
 
                 obs = self._perception.observe(frame, frame_id)
-                
+
+                # A2. Pose substrate tick (publish fused PoseEstimate → StateBus).
+                # Game-agnostic, perception-only; never touches input. Failures
+                # here must never break the executive cycle.
+                if self._pose_wiring is not None:
+                    try:
+                        self._pose_wiring.tick(frame, frame_id)
+                    except Exception as exc:  # pragma: no cover - defensive
+                        log.debug("[Pose] pose tick failed (non-fatal): %s", exc)
+
                 # B. Dialogue skipping intercept (Brainstem L3-L4)
                 if self._dialogue_controller is not None and obs.desktop_tree is not None:
                     if obs.desktop_tree.is_modal_active:

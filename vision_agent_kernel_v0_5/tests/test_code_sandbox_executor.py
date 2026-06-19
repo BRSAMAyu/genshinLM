@@ -56,3 +56,24 @@ class TestCodeSandboxExecutor:
         sandbox = CodeSandboxExecutor()
         result = sandbox.execute("x = 1 + 1")
         assert result.execution_time_ms >= 0
+
+    def test_infinite_loop_killed_within_timeout(self) -> None:
+        import time as _time
+
+        timeout = 1.0
+        sandbox = CodeSandboxExecutor(config=SandboxConfig(timeout_sec=timeout))
+        start = _time.perf_counter()
+        result = sandbox.execute("while True:\n    pass")
+        wall = _time.perf_counter() - start
+        # Must actually return (not hang) and report a timeout.
+        assert not result.success
+        assert result.timed_out
+        # Proven not to hang: returns well under 3x the configured timeout.
+        assert wall < timeout * 3, f"sandbox hung for {wall:.2f}s (timeout={timeout}s)"
+
+    def test_timeout_does_not_fire_for_fast_code(self) -> None:
+        sandbox = CodeSandboxExecutor(config=SandboxConfig(timeout_sec=5.0))
+        result = sandbox.execute("print('quick')")
+        assert result.success
+        assert not result.timed_out
+        assert "quick" in result.output

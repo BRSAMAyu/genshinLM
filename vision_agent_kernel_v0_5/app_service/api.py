@@ -17,8 +17,12 @@ from app_service.schemas import (
     CalibrationTestResponse,
     CombatPlaybookRequest,
     CombatPlaybookResponse,
+    CommandRequest,
+    CommandResponse,
     DiagnosticsResponse,
     HealthResponse,
+    InterruptRequest,
+    InterruptResponse,
     DangerEventRequest,
     DangerEventResponse,
     FailureExplanationRequest,
@@ -306,6 +310,22 @@ def create_api_router(controller: AgentController) -> APIRouter:
                 exploration_profile=request.exploration_profile,
                 persona_id=request.persona_id,
             )
+        )
+
+    @router.post("/command", response_model=CommandResponse)
+    def command(request: CommandRequest) -> CommandResponse:
+        return CommandResponse(
+            **controller.dispatch_command(
+                text=request.text,
+                game_id=request.game_id,
+                live_mode=request.live_mode,
+            )
+        )
+
+    @router.post("/interrupt", response_model=InterruptResponse)
+    def interrupt(request: InterruptRequest) -> InterruptResponse:
+        return InterruptResponse(
+            **controller.human_interrupt(kind=request.kind, text=request.text)
         )
 
     @router.get("/goals/learning_review", response_model=LearningReviewQueueResponse)

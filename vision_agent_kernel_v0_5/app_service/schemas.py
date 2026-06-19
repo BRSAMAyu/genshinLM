@@ -533,3 +533,47 @@ class LearningPatchCommandResponse(BaseModel):
     patch_id: str
     skill_id: str
     status: str
+
+
+class ParsedIntentModel(BaseModel):
+    goal_type: str
+    game_id: str
+    raw_text: str
+    parameters: dict[str, str] = Field(default_factory=dict)
+    confidence: float
+
+
+class CommandRequest(BaseModel):
+    """Player → agent natural-language command channel."""
+
+    text: str
+    game_id: str = ""
+    live_mode: bool = False
+
+
+class CommandResponse(BaseModel):
+    """Acceptance status the UI confirms back in the companion's voice."""
+
+    accepted: bool
+    intent: ParsedIntentModel
+    goal_type: str
+    reply: str
+    dispatched: bool
+    execution: dict[str, Any] | None = None
+    message: str
+
+
+class InterruptRequest(BaseModel):
+    """Player interrupt channel: 'stop' (P0 emergency) or 'override' (P2)."""
+
+    kind: Literal["stop", "override"] = "override"
+    text: str = ""
+
+
+class InterruptResponse(BaseModel):
+    accepted: bool
+    kind: str
+    code: str
+    priority: int
+    interrupt: dict[str, Any]
+    message: str

@@ -829,8 +829,38 @@ function CompanionOverlay({ showToast }: { showToast: (m: string, t: Toast["type
   const [history, setHistory] = useState<Array<{ time: string; event: string; message: string }>>([]);
   const [typing, setTyping] = useState(false);
   const [confirmEmergency, setConfirmEmergency] = useState(false);
+  const [commandText, setCommandText] = useState("");
+  const [commandReply, setCommandReply] = useState<Record<string, unknown> | null>(null);
+  const [sending, setSending] = useState(false);
 
   useEffect(() => { fetch(`${API}/persona/profiles`).then((r) => r.json()).then((d) => setPersonas(d.personas ?? [])).catch((e) => showToast(String(e), "error")); }, [showToast]);
+
+  const sendCommand = async () => {
+    if (!commandText.trim() || sending) return;
+    setSending(true);
+    try {
+      const d = await fetch(`${API}/command`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: commandText, live_mode: false }),
+      }).then((r) => r.json());
+      setCommandReply(d);
+      setHistory((h) => [{ time: new Date().toLocaleTimeString(), event: `CMD:${d.goal_type ?? "?"}`, message: String(d.reply ?? "") }, ...h].slice(0, 20));
+      setCommandText("");
+    } catch (e) { showToast(String(e), "error"); }
+    finally { setSending(false); }
+  };
+
+  const sendInterrupt = async (kind: "stop" | "override") => {
+    try {
+      const d = await fetch(`${API}/interrupt`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kind, text: commandText }),
+      }).then((r) => r.json());
+      showToast(String(d.message ?? "interrupt sent"), kind === "stop" ? "warn" : "ok");
+    } catch (e) { showToast(String(e), "error"); }
+  };
 
   const trigger = async () => {
     setTyping(true);
@@ -859,6 +889,36 @@ function CompanionOverlay({ showToast }: { showToast: (m: string, t: Toast["type
             <p>{typing ? "" : (line?.message ?? "我会把底层事件翻译成用户能理解的反馈，并保留安全边界。")}</p>
           </div>
         </div>
+      </div>
+
+      <div className="card">
+        <div className="card-header"><h2>{t.companion_command_title ?? "Talk to your companion"}</h2></div>
+        <div className="flex gap-2 flex-wrap flex-center">
+          <input
+            type="text"
+            style={{ flex: 1, minWidth: 220 }}
+            aria-label={t.companion_command_placeholder ?? "Tell the agent what to do"}
+            placeholder={t.companion_command_placeholder ?? "做每日委托 / explore the area..."}
+            value={commandText}
+            onChange={(e) => setCommandText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") sendCommand(); }}
+            disabled={sending}
+          />
+          <button className="btn btn-primary" onClick={sendCommand} disabled={sending || !commandText.trim()}>
+            {sending ? <PixelSpinner /> : (t.btn_send ?? "Send")}
+          </button>
+          <button className="btn btn-danger" onClick={() => sendInterrupt("stop")} aria-label={t.btn_stop ?? "Stop"}>
+            <Square size={15} />{t.btn_stop ?? "Stop"}
+          </button>
+        </div>
+        {commandReply && (
+          <div className="bubble" style={{ marginTop: 12 }}>
+            <p>{String(commandReply.reply ?? "")}</p>
+            <pre style={{ marginTop: 8, opacity: 0.75 }}>
+              {JSON.stringify(commandReply.intent ?? {}, null, 2)}
+            </pre>
+          </div>
+        )}
       </div>
 
       <div className="card flex-wrap gap-2 flex-center">
