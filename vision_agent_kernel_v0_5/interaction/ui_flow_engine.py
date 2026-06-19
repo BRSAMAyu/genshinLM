@@ -518,11 +518,16 @@ class UIFlowExecutor:
         rect = backend.client_rect()
         sx = int(rect.left + step.nx * rect.width)
         sy = int(rect.top + step.ny * rect.height)
-        # Safe cursor gliding to prevent anti-cheat coordinate leaps
-        if hasattr(backend, "move_cursor"):
-            backend.move_cursor(sx, sy, reason=step.reason or "ui_flow:hold_click_move")
-        else:
-            backend._user32.SetCursorPos(sx, sy)
+        # Cursor motion MUST go through the lease-safe move_cursor() path. The old
+        # `else: backend._user32.SetCursorPos(...)` fallback wrote the OS cursor
+        # directly, bypassing the input-lease / safety layer — removed per SAFETY.md
+        # (no direct OS input; every motion is lease-gated and deadman-protected).
+        if not hasattr(backend, "move_cursor"):
+            raise RuntimeError(
+                "hold_click requires a backend exposing lease-safe move_cursor(); "
+                "refusing to bypass the safety layer with a raw OS cursor write"
+            )
+        backend.move_cursor(sx, sy, reason=step.reason or "ui_flow:hold_click_move")
         self._sleep(0.02)
         duration = step.hold_ms / 1000.0 if step.hold_ms > 0 else 0.5
         backend.hold_click(duration_sec=duration, reason=step.reason or "ui_flow:hold_click")
