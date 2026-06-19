@@ -37,3 +37,29 @@ def test_arc_goaround_reset() -> None:
     rec.reset()
     out = rec.recover("s", _pose(), None)
     assert out.movement.move_right > 0  # back to initial side after reset
+
+
+def test_knowledge_aware_recovery_closes_the_loop(tmp_path) -> None:
+    # The learning loop's READ side: a stored failure_pattern fact must drive a
+    # different maneuver than the no-knowledge fallback.
+    from control.recovery_strategies import KnowledgeAwareRecovery
+    from learning.game_knowledge_store import GameKnowledgeStore
+
+    store = GameKnowledgeStore(db_path=str(tmp_path / "kb.sqlite"))
+    # No knowledge yet -> falls back to arc go-around (forward_bias 0.2).
+    kr = KnowledgeAwareRecovery(store)
+    before = kr.recover("stuck", _pose(), None)
+    assert kr.consulted_count == 0
+    assert before.movement.move_forward == pytest.approx(0.2)  # fallback
+
+    # Simulate the learning bridge having persisted a learned fix for stuck_state.
+    store.store(category="failure_pattern", subject="stuck_state",
+                attribute="suggested_fix", value="backstep then strafe",
+                source="exploration", confidence=0.8, game_id="genshin")
+
+    after = kr.recover("stuck", _pose(), None)
+    assert kr.consulted_count == 1            # the stored fact was consulted
+    assert "learned:" in after.movement.reason
+    assert after.movement.move_forward != pytest.approx(0.2)  # different maneuver
+    store.close()
+    store.close()

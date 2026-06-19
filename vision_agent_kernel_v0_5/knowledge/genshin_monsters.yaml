@@ -1107,7 +1107,7 @@ monsters:
 
   - monster_id: ruin_drake_earthguard
     name: 遗迹龙兽·地巡
-    name_en: Ruin Drake: Earthguard
+    name_en: "Ruin Drake: Earthguard"
     class_id: monster_elite
     element: none
     hp_segments: 3
@@ -1120,7 +1120,7 @@ monsters:
 
   - monster_id: ruin_drake_skywatch
     name: 遗迹龙兽·空巡
-    name_en: Ruin Drake: Skywatch
+    name_en: "Ruin Drake: Skywatch"
     class_id: monster_elite
     element: none
     hp_segments: 3
@@ -1184,7 +1184,7 @@ monsters:
 
   - monster_id: shadowy_husk_standard_bearer
     name: 黑蛇骑士·执旗手
-    name_en: Shadowy Husk: Standard Bearer
+    name_en: "Shadowy Husk: Standard Bearer"
     class_id: monster_normal
     element: pyro
     hp_segments: 1
@@ -1196,7 +1196,7 @@ monsters:
 
   - monster_id: shadowy_husk_linebreaker
     name: 黑蛇骑士·破阵者
-    name_en: Shadowy Husk: Line Breaker
+    name_en: "Shadowy Husk: Line Breaker"
     class_id: monster_normal
     element: hydro
     hp_segments: 1
@@ -1208,7 +1208,7 @@ monsters:
 
   - monster_id: shadowy_husk_defender
     name: 黑蛇骑士·守望者
-    name_en: Shadowy Husk: Defender
+    name_en: "Shadowy Husk: Defender"
     class_id: monster_normal
     element: cryo
     hp_segments: 1
@@ -1220,7 +1220,7 @@ monsters:
 
   - monster_id: black_serpent_knight_windcutter
     name: 黑蛇骑士·风之斩者
-    name_en: Black Serpent Knight: Windcutter
+    name_en: "Black Serpent Knight: Windcutter"
     class_id: monster_elite
     element: anemo
     hp_segments: 2
@@ -1232,7 +1232,7 @@ monsters:
 
   - monster_id: black_serpent_knight_rockbreaker
     name: 黑蛇骑士·碎岩者
-    name_en: Black Serpent Knight: Rockbreaker Ax
+    name_en: "Black Serpent Knight: Rockbreaker Ax"
     class_id: monster_elite
     element: geo
     hp_segments: 2
@@ -1689,7 +1689,7 @@ monsters:
   # Natlan Saurian Warriors (Elite)
   - monster_id: natlan_warrior_tepetlisaurus_shard_striker
     name: 鳞甲龙武士·碎岩之刃
-    name_en: Tepetlisaurus Warrior: Shard Striker
+    name_en: "Tepetlisaurus Warrior: Shard Striker"
     class_id: monster_elite
     element: geo
     hp_segments: 2
@@ -1701,7 +1701,7 @@ monsters:
 
   - monster_id: natlan_warrior_yumkasaurus_skyfire
     name: 棘冠龙武士·流焰
-    name_en: Yumkasaurus Warrior: Flowing Skyfire
+    name_en: "Yumkasaurus Warrior: Flowing Skyfire"
     class_id: monster_elite
     element: dendro
     hp_segments: 2
@@ -1713,7 +1713,7 @@ monsters:
 
   - monster_id: natlan_warrior_koholasaurus_waveshuttler
     name: 棘冠龙武士·渡浪
-    name_en: Koholasaurus Warrior: Waveshuttler
+    name_en: "Koholasaurus Warrior: Waveshuttler"
     class_id: monster_elite
     element: cryo
     hp_segments: 2
@@ -1725,7 +1725,7 @@ monsters:
 
   - monster_id: natlan_warrior_qucusaurus_blazing_sky
     name: 绒翼龙武士·烈焰天翔
-    name_en: Qucusaurus Warrior: Blazing Sky
+    name_en: "Qucusaurus Warrior: Blazing Sky"
     class_id: monster_elite
     element: pyro
     hp_segments: 2
@@ -1737,7 +1737,7 @@ monsters:
 
   - monster_id: natlan_warrior_iktomisaurus_cryocrystal
     name: 灵翼龙武士·冰晶炮
-    name_en: Iktomisaurus Warrior: Cryocrystal Cannon
+    name_en: "Iktomisaurus Warrior: Cryocrystal Cannon"
     class_id: monster_elite
     element: cryo
     hp_segments: 2
@@ -1749,7 +1749,7 @@ monsters:
 
   - monster_id: natlan_warrior_tatankasaurus_skybreaker
     name: 雷角龙武士·碎天
-    name_en: Tatankasaurus Warrior: Skybreaker
+    name_en: "Tatankasaurus Warrior: Skybreaker"
     class_id: monster_elite
     element: electro
     hp_segments: 2
@@ -2026,7 +2026,7 @@ monsters:
   # =====================================================================
   - monster_id: primal_construct_repulsor
     name: 元能构装体·力场发生器
-    name_en: Primal Construct: Repulsor
+    name_en: "Primal Construct: Repulsor"
     class_id: monster_normal
     element: none
     hp_segments: 1
@@ -2038,7 +2038,7 @@ monsters:
 
   - monster_id: primal_construct_reshaper
     name: 元能构装体·重塑仪
-    name_en: Primal Construct: Reshaper
+    name_en: "Primal Construct: Reshaper"
     class_id: monster_normal
     element: none
     hp_segments: 1
@@ -2050,7 +2050,7 @@ monsters:
 
   - monster_id: primal_construct_prospector
     name: 元能构装体·勘探器
-    name_en: Primal Construct: Prospector
+    name_en: "Primal Construct: Prospector"
     class_id: monster_normal
     element: none
     hp_segments: 1

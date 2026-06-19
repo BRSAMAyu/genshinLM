@@ -73,23 +73,58 @@ Phase 0–6 的**离线可建部分已全部落地**：空间地基、pose 闭�
 - Phase 4/5：2 位审查者（架构/复用 + 正确性/测试），已返回并修复了上述 P0/P1。
 - Phase 6 + 全项目：4 位审查者（架构集成 / 正确性与测试 / 数据利用 / 安全与北极星对齐），**已在后台运行**。其结论返回后我会**逐条对照真实代码核验**（不盲信），有效的即修，然后补入本文件 §5。
 
-## 5. 待 4 位全项目审查返回后填充
-（核验后的有效发现 + 修复记录将写在此处。）
+## 5. 四位全项目独立审查结论（已逐条核验，非盲信）
+
+派遣了 4 位独立审查者（架构集成 / 正确性与测试 / 数据利用 / 安全与北极星对齐），给足自由度、客观批判。**四人独立收敛于同一核心判断，与我自查一致**：
+
+> Phase 0–6 是一个**测试良好、但完全仿真自洽的参考实现栈**，没有接入任何 live 运行路径，提交标题用"complete / closure"**过度宣称**了。
+
+### 5.1 已核验并修复的有效发现
+
+| 发现 | 来源 | 核验 | 处置 |
+|---|---|---|---|
+| **`genshin_monsters.yaml` 解析失败丢掉 208→0 全部怪物**（ScannerError 中断整文件，非丢 1 行） | 数据审查 P0 | 已核验：文件 208 个 monster_id，16 行 `name_en: X: Y` 未加引号冒号 | **已修**：精确引号那 16 行，恢复全部 208 怪物 |
+| **学习闭环 write-only**：`learning_bridge` 存了 `failure_pattern` fact，但全项目无任何读取者，自改进回路未闭合 | 数据 P0 / 架构 P1 | 已核验：grep 读取者为零 | **已修**：新增 `control/recovery_strategies.KnowledgeAwareRecovery`，恢复时查询知识库并按学到的 suggested_fix 选机动；测试证明写入→读取→行为变化 |
+| **puzzle escalate 永久锁存**：一旦 stall，`_best_error_mag` 不重置，之后每帧 escalate 直到超时 | 正确性 P2 | 已核验：恒定误差输入序列确为 act×6→escalate×∞ | **已修**：escalate 时重置 stall 计数，使条件改善后可恢复迭代 |
+
+### 5.2 已核验但未在本轮处置的发现（需 live 集成战役，见 §6）
+
+这些是真实的，但**修复属于"真实游戏集成"阶段**，不在本轮"离线可建"范畴：
+
+- **新导航/任务栈未接 live**（架构 P0）：`pose_navigation`/`navigation_coordinator`/`mission/` 仅被 `harness/sim/*` 与测试引用；live 仍跑旧的 `navigation_runtime`（经 `brainstem_navigator`）与 `MissionGraphV4`/`mainline_runner`。`attach_pose_estimation` 全仓库仅被 1 个测试调用，从未进 `live_factory` 或任何 capsule install()。
+- **新控制器未实现 `domain_protocols`**（架构 P0）：`CombatView/InteractionView/PuzzleView` 与 `CombatPlannerProtocol/NavigatorProtocol/DialogHandlerProtocol` 类型不兼容，无适配层，真实胶囊无法直接喂。
+- **`DualModelCoordinator`（M3 感知 + GLM-5.2 推理）未接 live**（安全审查 P1）：仅 `model_team.py` + 测试引用；从未用真实 API key 验证。
+- **战斗弱点未驱动反应瞄准**（数据 P1）：`GenshinCombatPlanner` 有能力，但 live 调用方传假 enemy_id（`world_boss`/`commission_enemy`），胶囊 provider 是返回 `["LMB","E","Q"]` 的硬编码 stub。
+- **世界图 edges/routes 未进寻路**（数据 P0）：live `RouteSelector` 跑 demo 数据（3 航点），非真实 230+ 航点。
+- **技能 YAML 未进 runtime**（数据 P1）：`GenshinSkillLoader` 无 live 引用者；HSR 数据大部分未加载。
+
+### 5.3 安全结论（审查 4）
+**新代码安全洁净**：所有新控制器是纯决策策略（`decide(view)→action`），不触 OS 输入、不发网络、只用 `time.perf_counter()`——正因为没进执行平面，所以不可能违反 InputLease/deadman/时钟规则。LLM 网络路径（截图上传）受显式 key + `LLMRequestGuard` 限流 + 默认 mock 保护，符合 dry-run 默认姿态。GLM-5.2 经核验为真实（2026-06-13 发布，端点匹配）。
+
+**一处预存（非本轮）InputLease 旁路**：`interaction/ui_flow_engine.py:525` `backend._user32.SetCursorPos(...)` 在 backend 缺 `move_cursor` 时直接 ctypes 伸入。属快照提交的旧代码，不是本轮回归，已登记待修。
+
+### 5.4 指标诚实度（审查 2）
+审查者独立复测了各批次率，与我引用值基本一致（微小差异源于种子/规模）。**关键诚实点**：测试断言门槛远低于宣传值（战斗 `>=0.55` vs 0.92、解谜 `>=0.7` vs 0.94）——测试证明"能跑通"，不等于"达到宣传率"。复测实测值：nav 0.95、combat 0.956、puzzle 0.925、commission 1.00、chapter 0.95、asset-combat 0.75。引用时应附实测值。
+
+### 5.5 关于"过度宣称"
+审查 4 指出：内部 `STATUS.md`/`state.yaml` 本来诚实（标 Phase 6 "blocked on real game"），但**提交标题**（`Phase 5 complete`、`Phase 6 … closure`）与 ROADMAP 的真实 exit gate（真实章节通关）不符。我不会重写已推送的历史（破坏性、违反安全规则），但本文件与 STATUS.md 已据实修正为"离线参考实现，未接 live"。后续提交将用"offline reference / sim-only"措辞。
 
 ---
 
 ## 6. 与北极星的诚实差距
 
-北极星：无需专门训练的通用 agent，自主通关原神主线。当前离 Phase 6 的"收口/规模化"定义尚远。诚实差距清单（按优先级）：
+（原 §6 内容保留并强化）北极星：无需训练、自主通关原神主线。当前诚实差距，按优先级（这些就是真实游戏集成阶段的任务清单）：
 
-1. **Live 接线（最高优先级）**：全部新控制器是 sim-only。需把 `pose_estimation_processor` 接进 `live_factory`/capsule install()、把 `NavigationCoordinator` 接进 `brainstem_navigator`（或合并掉旧的 `navigation_runtime.py`）、让 `mission/` 复用或并入 `planning/mainline/`。
-2. **协议合规**：新控制器的 `View/Action` 类型未实现 `capsules/domain_protocols.py`（`CombatPlannerProtocol`/`NavigatorProtocol`/`DialogHandlerProtocol`/`LocalizationProviderProtocol`）。真实胶囊当前无法直接喂数据。需写适配层。
-3. **真实标定**：pose 的 minimap 光流符号/尺度、相机伺服增益，必须在真实游戏里标定（离线给的是有据猜测值）。
-4. **真实视觉闭环**：解谜/场景理解的 `propose` 步要真正接 `VisionLLMProvider`（现已统一的 MiniMax-M3）。
-5. **双模型团队接线**：`model_team.DualModelCoordinator`（M3 感知 + GLM-5.2 推理）尚未接入 live Planner/loop；模型 id/端点需用 key 对真实 API 验证。
-6. **学习闭环读侧**：`learning_bridge` 目前是 write-only（存知识，无控制器读取以改进行为）。需让规划器/恢复策略查询 `GameKnowledgeStore` 的 failure_pattern。
+1. **Live 接线（最高）**：pose 处理器进 `live_factory`/capsule install；导航协调器接 `brainstem_navigator`（或合并旧 `navigation_runtime`）；`mission/` 并入或复用 `planning/mainline/`。
+2. **协议合规 + 适配层**：让参考控制器实现/适配 `domain_protocols`，真实胶囊可喂数据。
+3. **真实标定**：minimap 光流符号/尺度、相机伺服增益——必须在真实游戏标定。
+4. **真实视觉闭环**：解谜/场景 `propose` 步接真实 `VisionLLMProvider`（MiniMax-M3）。
+5. **双模型接线**：`DualModelCoordinator` 接 live 感知→规划节点，并用 key 验真实 API。
+6. **战斗弱点驱动**：传真实 monster_id（从感知）进 `GenshinCombatPlanner`，胶囊 provider 委托给它。
+7. **学习读侧 live 化**：`KnowledgeAwareRecovery` 已证明闭环可行，需接 live 恢复路径。
+8. **修预存 InputLease 旁路**：`ui_flow_engine.py:525`。
 
-**结论**：本阶段把"可离线建的部分 + 可复用范式 + 真实数据底座"打牢了；从仿真到真实通关是一场需要真实游戏在场的集成战役，已在本文件如实标注。
+**结论（诚实）**：本轮把"可离线建的部分 + 可复用范式 + 真实数据底座（208 怪物/110 角色/36 队伍/230 航点已可加载）+ 闭环学习（读侧已通）"打牢了。从仿真到真实通关是一场需要真实游戏在场的集成战役；提交标题此前的"complete/closure"措辞过度，已在本文件据实修正。
 
 ---
 

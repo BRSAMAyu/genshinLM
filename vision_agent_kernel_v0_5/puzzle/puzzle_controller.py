@@ -99,6 +99,11 @@ class PuzzleController:
         else:
             self._no_progress += 1
         if self._no_progress >= cfg.stuck_no_progress_threshold or view.attempts_this_phase >= cfg.max_attempts:
+            # Reset stall tracking on escalate so that if the caller re-runs
+            # PROPOSE (or the measurement improves) the controller can resume
+            # iterating instead of latching on escalate forever.
+            self._no_progress = 0
+            self._best_error_mag = float("inf")
             return PuzzleAction("escalate", reason="stalled — re-propose / recover")
 
         # Close the error loop with an under-shooting step. Clamp to <= mag so a
