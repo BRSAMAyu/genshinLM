@@ -79,16 +79,59 @@ def test_orchestrator_retries_recoverable_failure_then_succeeds() -> None:
     assert g.nodes["x"].attempts == 2  # failed once, retried, succeeded
 
 
-def test_orchestrator_blocks_after_retry_budget_exhausted() -> None:
-    g = MissionGraph(objective="block")
-    g.add(MissionNode(node_id="x", kind="system", max_retries=1))
+def test_orchestrator_execution_is_bounded_by_retry_budget() -> None:
+    # The headline P0 guard: an always-failing node must execute EXACTLY
+    # max_retries+1 times, then block — never spin until max_total_steps.
+    for max_retries, expected_executions in [(0, 1), (1, 2), (2, 3)]:
+        g = MissionGraph(objective="bound")
+        g.add(MissionNode(node_id="x", kind="system", max_retries=max_retries))
+        exec_ = _ScriptedExecutor({
+            "x": [NodeOutcome(success=False, failure_code="hard_fail")],
+        })
+        status = MissionOrchestrator(g, exec_).run(max_total_steps=50)
+        assert not status.success
+        assert g.nodes["x"].status == "blocked"
+        assert g.nodes["x"].attempts == expected_executions, (
+            f"max_retries={max_retries}: expected {expected_executions} executions, "
+            f"got {g.nodes['x'].attempts}"
+        )
+        assert exec_.calls.count("x") == expected_executions
+
+
+def test_postcondition_rollback_restores_preexisting_context() -> None:
+    # P1 guard: rolling back a failed claim must restore prior values, not delete them.
+    g = MissionGraph(objective="rollback", context={"shared": "ORIGINAL"})
+    g.add(MissionNode(
+        node_id="x", kind="system", max_retries=0,
+        postcondition=lambda ctx: ctx.get("shared") == "MAGIC",  # never holds
+    ))
+
+    class _OverwriteExec:
+        def execute(self, node, ctx):
+            # Claims to overwrite a pre-existing key, but the claim won't verify.
+            return NodeOutcome(success=True, context_updates={"shared": "OVERWRITTEN"})
+
+    MissionOrchestrator(g, _OverwriteExec()).run()
+    assert g.context["shared"] == "ORIGINAL"  # restored, not lost
+
+
+def test_failed_node_blocks_descendants() -> None:
+    # P1 guard: a hard-failed node must cascade 'blocked' to its dependents,
+    # not leave them silently 'pending' with finished=True.
+    g = MissionGraph(objective="diamond")
+    g.add(MissionNode(node_id="root", kind="system", max_retries=0))
+    g.add(MissionNode(node_id="left", kind="system", dependencies=("root",), max_retries=0))
+    g.add(MissionNode(node_id="right", kind="system", dependencies=("root",)))
+    g.add(MissionNode(node_id="join", kind="system", dependencies=("left", "right")))
     exec_ = _ScriptedExecutor({
-        "x": [NodeOutcome(success=False, failure_code="hard_fail")],  # always fails
+        "root": [NodeOutcome(success=True)],
+        "left": [NodeOutcome(success=False, failure_code="hard")],  # blocks join
+        "right": [NodeOutcome(success=True)],
     })
     status = MissionOrchestrator(g, exec_).run()
     assert not status.success
-    assert g.nodes["x"].status == "failed"
-    assert status.last_failure == "hard_fail"
+    assert g.nodes["left"].status == "blocked"
+    assert g.nodes["join"].status == "blocked"  # cascaded from left
 
 
 def test_postcondition_unmet_is_recoverable() -> None:

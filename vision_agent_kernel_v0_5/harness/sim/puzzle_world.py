@@ -7,11 +7,12 @@ one-shot the target — it must iterate the propose→refine→act→verify loop
 undershooting each step and re-measuring, exactly the precision regime puzzles
 live in.
 
-The PROPOSE step is abstracted behind a deterministic stand-in here; in the live
-capsule the same controller step triggers the cloud multimodal model (via the
-VisionLLMProvider protocol the M3 fork made concrete) to name the target from the
-real image. So the offline loop tests convergence; the live loop swaps in real
-vision without changing this controller.
+The PROPOSE step is abstracted behind a deterministic stand-in here. This sim is
+a *reference oracle* for the controller's convergence behaviour, not the live
+stack: the controller is not yet wired to VisionLLMProvider or any capsule, and
+the measured solve rate is offline-sim-only (not live-game performance). Wiring
+the PROPOSE step to the cloud multimodal model + a real capsule is the separate
+integration step that makes the live loop work.
 """
 from __future__ import annotations
 

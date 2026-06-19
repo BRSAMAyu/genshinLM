@@ -60,14 +60,53 @@ class MissionGraph:
         return all(n.status == "completed" for n in self.nodes.values())
 
     def next_runnable(self) -> MissionNode | None:
-        """A pending node whose dependencies are all completed."""
+        """A node ready to execute: pending, or failed-but-still-within-retry-budget,
+        whose dependencies are all completed. A node whose retry budget is
+        exhausted is terminal (not returned) — it must be marked ``blocked`` so
+        its dependents don't stall silently.
+        """
         for node in self.nodes.values():
-            if node.status not in ("pending", "failed"):
+            if node.status in ("completed", "running", "blocked"):
+                continue
+            if node.status == "failed" and node.attempts > node.max_retries:
+                # Budget exhausted — terminal. Caller marks it blocked + propagates.
                 continue
             if not all(self.nodes[d].status == "completed" for d in node.dependencies):
                 continue
+            # Claim-gate: a node only becomes runnable once its precondition holds
+            # over the (flowing) quest context.
+            if node.precondition is not None and not node.precondition(self.context):
+                continue
             return node
         return None
+
+    def mark_blocked_descendants(self, node_id: str) -> list[str]:
+        """Cascade ``blocked`` to every transitive dependent of ``node_id``.
+
+        Returns the ids of all nodes newly marked blocked. Use when a node
+        exhausts its retry budget so successors reflect that they can't run.
+        """
+        newly_blocked: list[str] = []
+        # BFS over the dependents graph (reverse of dependencies).
+        queue = [node_id]
+        seen: set[str] = {node_id}
+        dependents: dict[str, list[str]] = {nid: [] for nid in self.nodes}
+        for nid, n in self.nodes.items():
+            for dep in n.dependencies:
+                dependents.setdefault(dep, []).append(nid)
+        while queue:
+            current = queue.pop()
+            for child in dependents.get(current, []):
+                if child in seen:
+                    continue
+                seen.add(child)
+                child_node = self.nodes.get(child)
+                if child_node is not None and child_node.status not in ("completed",):
+                    if child_node.status != "blocked":
+                        child_node.status = "blocked"
+                        newly_blocked.append(child)
+                    queue.append(child)
+        return newly_blocked
 
     def any_recoverable(self) -> bool:
         return any(n.status == "failed" and n.attempts <= n.max_retries for n in self.nodes.values())

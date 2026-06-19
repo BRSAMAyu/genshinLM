@@ -49,11 +49,17 @@ class PuzzleAction:
 class PuzzleControllerConfig:
     # When closing the error loop, step a fraction of the remaining error each
     # tick (under-shoot) so imprecision doesn't overshoot, then snap in tolerance.
+    # The step is clamped to <= the remaining error magnitude, so ``min_step``
+    # can never cause an overshoot when tolerance is sub-min_step.
     step_gain: float = 0.6
     min_step: float = 0.5
-    max_attempts_per_phase: int = 25
+    # Total iteration cap (the sim feeds its global attempt counter here).
+    max_attempts: int = 25
     # If we've made many micro-steps without converging, escalate (hand to
-    # recovery / relocalize / ask the VLM to re-propose).
+    # recovery / relocalize / ask the VLM to re-propose). Escalate is terminal
+    # for this controller: the CALLER must ``reset()`` and re-run PROPOSE
+    # (e.g. ask the cloud VLM to re-name the target) — on its own, escalate
+    # just re-observes and will escalate again until max_attempts times out.
     stuck_no_progress_threshold: int = 6
 
 
@@ -92,10 +98,11 @@ class PuzzleController:
             self._no_progress = 0
         else:
             self._no_progress += 1
-        if self._no_progress >= cfg.stuck_no_progress_threshold or view.attempts_this_phase >= cfg.max_attempts_per_phase:
+        if self._no_progress >= cfg.stuck_no_progress_threshold or view.attempts_this_phase >= cfg.max_attempts:
             return PuzzleAction("escalate", reason="stalled — re-propose / recover")
 
-        # Close the error loop with an under-shooting step.
-        step = max(cfg.step_gain * mag, cfg.min_step)
+        # Close the error loop with an under-shooting step. Clamp to <= mag so a
+        # large min_step can never overshoot the residual when tolerance is tiny.
+        step = min(max(cfg.step_gain * mag, cfg.min_step), mag)
         scale = step / mag
         return PuzzleAction("act", delta=(err_x * scale, err_y * scale), reason="iterate toward target")

@@ -18,6 +18,8 @@ from typing import Protocol
 
 from mission.mission_graph import MissionGraph, MissionNode, QuestContext
 
+_MISSING = object()
+
 
 @dataclass(frozen=True, slots=True)
 class NodeOutcome:
@@ -77,19 +79,24 @@ class MissionOrchestrator:
 
     def _advance(self, node: MissionNode) -> None:
         graph = self._graph
+        # Enforce the retry budget BEFORE executing: a node over budget is
+        # terminal-blocked, not re-executed. (Without this, run() would loop.)
+        if node.attempts > node.max_retries:
+            self._block(node)
+            return
         node.status = "running"
         node.attempts += 1
         outcome = self._executor.execute(node, graph.context)
 
         if outcome.success:
-            # The node claims its post-state via context_updates; apply them, then
-            # verify the claim (postcondition) holds over the updated context.
+            # The node claims its post-state via context_updates; snapshot prior
+            # values, apply them, then verify the claim (postcondition) holds.
+            prior = {k: graph.context.get(k, _MISSING) for k in outcome.context_updates}
             graph.context.update(outcome.context_updates)
             if node.postcondition is not None and not node.postcondition(graph.context):
-                # Claim doesn't verify — roll back the claimed updates and treat
-                # as a recoverable failure (re-run).
-                for key in outcome.context_updates:
-                    graph.context.pop(key, None)
+                # Claim doesn't verify — roll back to prior values (restore
+                # pre-existing keys, don't delete them) and retry/recover.
+                self._restore(graph.context, prior)
                 node.status = "failed"
                 node.last_failure = "postcondition_unmet"
                 self._maybe_retry(node)
@@ -105,7 +112,21 @@ class MissionOrchestrator:
         # Recoverable within budget: reset to pending so next_runnable picks it up.
         if node.attempts <= node.max_retries:
             node.status = "pending"
-        # else: leave as failed — next_runnable skips it, mission stalls (blocked).
+        else:
+            # Budget exhausted — terminal. Block it and cascade to dependents.
+            self._block(node)
+
+    def _block(self, node: MissionNode) -> None:
+        node.status = "blocked"
+        self._graph.mark_blocked_descendants(node.node_id)
+
+    @staticmethod
+    def _restore(ctx: dict[str, object], prior: dict[str, object]) -> None:
+        for key, value in prior.items():
+            if value is _MISSING:
+                ctx.pop(key, None)
+            else:
+                ctx[key] = value
 
     def _last_failure(self) -> str:
         failed = [n for n in self._graph.nodes.values() if n.status == "failed"]
