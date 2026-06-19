@@ -12,15 +12,12 @@ from __future__ import annotations
 
 import math
 import random
-from typing import Any
 
-from control.navigation_coordinator import (
-    NavigationCoordinator,
-    RecoveryOutput,
-)
+from control.navigation_coordinator import NavigationCoordinator
 from control.pose_navigation import PoseNavConfig, PoseNavigationController, PoseNavTarget
+from control.recovery_strategies import ArcGoAroundRecovery
 from control.visual_reacquire import VisualReacquireController
-from core.types import LocalizationReading, MotionCommand, MovementIntent, TargetTrack
+from core.types import LocalizationReading, MotionCommand, TargetTrack
 from harness.core import JsonDict, Scenario
 from perception.pose_fusion import PoseFusion, PoseFusionConfig, bearing_to, shortest_arc_deg
 
@@ -152,25 +149,6 @@ class NavWorldEnv:
         }
 
 
-class _SimRecovery:
-    """Lateral go-around: ease back and strafe sideways, alternating sides, then
-    let nav re-aim. Bounded by the coordinator's recovery cap."""
-
-    def __init__(self) -> None:
-        self._side = 1.0
-
-    def recover(self, reason: str, pose: Any, target: Any) -> RecoveryOutput:
-        self._side *= -1.0
-        return RecoveryOutput(
-            movement=MovementIntent(
-                move_forward=-0.3, move_right=0.9 * self._side,
-                duration_ms=200, reason=f"goaround_{reason}",
-            ),
-            resolved=False,
-            reason=f"recovering:{reason}",
-        )
-
-
 class NavStackPolicy:
     """Drives the real pose+nav stack from NavWorldEnv observations."""
 
@@ -204,7 +182,8 @@ class NavStackPolicy:
         self._coord = NavigationCoordinator(
             PoseNavigationController(self._nav_config),
             VisualReacquireController(),
-            recovery=_SimRecovery(),
+            recovery=ArcGoAroundRecovery(),
+            max_recoveries=40,  # let the arc complete around a blockage before escalating
         )
         self._last_cmd = None
 

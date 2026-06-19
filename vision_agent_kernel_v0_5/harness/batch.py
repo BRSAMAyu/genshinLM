@@ -40,14 +40,25 @@ def run_batch(
     run_one: Callable[[Scenario], ScenarioResult],
     *,
     baseline: dict[str, bool] | None = None,
+    max_workers: int = 1,
 ) -> BatchReport:
     """Run every scenario via ``run_one`` and aggregate.
 
-    ``run_one`` is a factory-bound closure (fresh env+policy per scenario) so a
-    later parallel executor can map it concurrently without shared state.
+    ``run_one`` is a factory-bound closure (fresh env+policy per scenario) so it
+    can be mapped concurrently without shared state. ``max_workers > 1`` runs the
+    batch on a thread pool (results stay in scenario order for the baseline diff);
+    threads suit the live-game case where steps block on the screen, while the
+    deterministic default (``max_workers=1``) keeps offline runs reproducible.
     ``baseline`` maps scenario_id → passed for regression/fixed deltas.
     """
-    results = [run_one(s) for s in scenarios]
+    scenario_list = list(scenarios)
+    if max_workers > 1 and len(scenario_list) > 1:
+        from concurrent.futures import ThreadPoolExecutor
+
+        with ThreadPoolExecutor(max_workers=max_workers) as pool:
+            results = list(pool.map(run_one, scenario_list))
+    else:
+        results = [run_one(s) for s in scenario_list]
     passed = sum(1 for r in results if r.passed)
     total = len(results)
     failed = total - passed

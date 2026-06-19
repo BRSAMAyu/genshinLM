@@ -102,3 +102,30 @@ def test_navigation_batch_reaches_target_majority() -> None:
     assert report.pass_rate >= 0.7, (
         f"pass_rate={report.pass_rate:.2f}; clusters={[(c.signature, c.count) for c in report.clusters]}"
     )
+
+
+def test_navigation_with_obstacles_arcs_around() -> None:
+    # After the arc-go-around fix, obstacle scenarios should mostly succeed
+    # (previously they timed out / wandered off-map).
+    scenarios = make_nav_scenarios(30, seed=11, flow_noise=0.03, with_obstacles=True)
+
+    def run_one(s: Scenario) -> ScenarioResult:
+        return ScenarioRunner(NavWorldEnv(), NavStackPolicy()).run(s)
+
+    report = run_batch(scenarios, run_one)
+    assert report.pass_rate >= 0.8, (
+        f"pass_rate={report.pass_rate:.2f}; clusters={[(c.signature, c.count) for c in report.clusters]}"
+    )
+
+
+def test_parallel_batch_matches_sequential() -> None:
+    scenarios = make_nav_scenarios(12, seed=3, flow_noise=0.02)
+
+    def run_one(s: Scenario) -> ScenarioResult:
+        return ScenarioRunner(NavWorldEnv(), NavStackPolicy()).run(s)
+
+    seq = run_batch(scenarios, run_one)
+    par = run_batch(scenarios, run_one, max_workers=4)
+    # deterministic env+policy → identical outcomes and order regardless of workers
+    assert [r.scenario_id for r in seq.results] == [r.scenario_id for r in par.results]
+    assert [r.passed for r in seq.results] == [r.passed for r in par.results]
