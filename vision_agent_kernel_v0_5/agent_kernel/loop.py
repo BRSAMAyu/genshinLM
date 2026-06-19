@@ -109,6 +109,13 @@ class AgentLoop:
         # Meta-learning bridge (optional, connects exploration→BAGEL→skill)
         self._meta_learning_bridge: Any = None
 
+        # Gated self-modification (optional). HotReloadManager.tick() swaps in any
+        # module a human has APPROVED via the coordinator; until approval nothing
+        # changes, so ticking here is a safe no-op. The coordinator itself never
+        # applies code without explicit approval (gate is structural).
+        self._hot_reload_manager: Any = None
+        self._self_mod_coordinator: Any = None
+
         # Thread safety & State bus
         self._state_bus: dict[str, Any] = {
             "active_overrides": {},
@@ -250,6 +257,15 @@ class AgentLoop:
                     continue
                 self._last_cerebrum_time = now_mono
                 plan_iterations += 1
+
+                # Hot-reload tick (~0.2Hz): pull in any human-APPROVED self-mod
+                # patch. No-op until a proposal is approved. Never applies code on
+                # its own — approval happens out-of-band via the coordinator/UI.
+                if self._hot_reload_manager is not None:
+                    try:
+                        self._hot_reload_manager.tick()
+                    except Exception as exc:  # pragma: no cover - defensive
+                        log.debug("[HotReload] tick failed (non-fatal): %s", exc)
 
                 # Fetch currently active overrides from StateBus
                 active_overrides = self.get_active_overrides()

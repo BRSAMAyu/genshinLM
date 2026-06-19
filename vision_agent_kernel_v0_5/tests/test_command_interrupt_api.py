@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from unittest.mock import MagicMock
 
@@ -67,14 +68,31 @@ def test_command_parses_intent_and_invokes_execute_goal(tmp_path: Path) -> None:
     assert data["intent"]["raw_text"] == "做每日委托"
     assert data["intent"]["confidence"] > 0.0
 
-    # execute_goal was invoked, in dry-run (never live, honouring the default).
+    # The command is dispatched to a background worker: immediate response is
+    # QUEUED with a job id and no execution payload yet.
+    assert data["dispatched"] is True
+    assert data["status"] == "QUEUED"
+    assert data["job_id"]
+    assert data["execution"] is None
+
+    # The worker eventually invokes execute_goal in dry-run (never live).
+    job_id = data["job_id"]
+    deadline = time.perf_counter() + 5.0
+    status = None
+    while time.perf_counter() < deadline:
+        status = client.get(f"/command/status/{job_id}").json()
+        if status["status"] in {"SUCCEEDED", "FAILED"}:
+            break
+        time.sleep(0.02)
+    assert status is not None
+    assert status["status"] == "SUCCEEDED"
     assert mock_execute.called
     call_kwargs = mock_execute.call_args.kwargs
     assert call_kwargs["goal_text"] == "做每日委托"
     assert call_kwargs["live_mode"] is False
     assert call_kwargs["mode"] == "dry-run"
-    assert data["dispatched"] is True
-    assert data["execution"]["mission_id"] == "mission_stub"
+    assert status["dispatched"] is True
+    assert status["execution"]["mission_id"] == "mission_stub"
 
 
 def test_command_empty_text_is_rejected_without_dispatch(tmp_path: Path) -> None:

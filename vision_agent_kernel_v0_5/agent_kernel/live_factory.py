@@ -385,6 +385,26 @@ def create_live_genshin_loop(
     # Wire UnknownSceneHandler → MetaLearningBridge (gap 4 closure)
     unknown_handler.set_meta_learning_bridge(meta_bridge)
 
+    # --- Gated self-modification ("Claude Code inside", human-approved) ---
+    # The coordinator synthesizes + sandbox-validates + PROPOSES patches; nothing
+    # is applied without an explicit human approve() (gate is structural). The
+    # loop ticks HotReloadManager to swap in approved modules. Defensive: failure
+    # to build this layer must never block loop construction.
+    hot_reload_manager = None
+    self_mod_coordinator = None
+    try:
+        from runtime.hot_reload_manager import HotReloadManager
+        from learning.self_modification_coordinator import SelfModificationCoordinator
+        from app_service.coding_agent import CodingAgent
+        hot_reload_manager = HotReloadManager()
+        self_mod_coordinator = SelfModificationCoordinator(
+            coding_agent=CodingAgent(llm=None),  # LLM wiring is a follow-up slice
+            hot_reload_manager=hot_reload_manager,
+        )
+        log.info("[LiveFactory] Gated self-modification coordinator wired.")
+    except Exception as exc:  # pragma: no cover - defensive
+        log.warning("[LiveFactory] Self-modification wiring skipped: %s", exc)
+
     # --- Pose substrate (spatial localization → StateBus.latest_pose) ---
     # Pure perception: publishes a fused PoseEstimate each cycle; drives no
     # input, so it is safe in dry-run and live alike. Defensive: a failure to
@@ -422,6 +442,9 @@ def create_live_genshin_loop(
     agent_loop._meta_learning_bridge = meta_bridge
     # Expose the real StateBus so navigation/recovery consumers can read pose.
     agent_loop._state_bus_core = state_bus_core
+    # Expose the gated self-modification machinery on the loop.
+    agent_loop._hot_reload_manager = hot_reload_manager
+    agent_loop._self_mod_coordinator = self_mod_coordinator
 
     log.info(
         "[LiveFactory] AgentLoop assembled: goal='%s' window='%s' dry_run=%s",

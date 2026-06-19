@@ -13,6 +13,19 @@ class RuntimeHealthSummary(BaseModel):
     updated_at: float = 0.0
 
 
+class CompanionMessageSummary(BaseModel):
+    """Latest companion utterance translated from a live kernel event."""
+
+    event_code: str
+    message: str
+    emotion: str = "normal"
+    overlay_state: str = "观察中"
+    source: str = "kernel"
+    persona_id: str = "default_companion"
+    timestamp: float = 0.0
+    sequence: int = 0
+
+
 class AgentStateSummary(BaseModel):
     mode: Literal["STOPPED", "RUNNING", "PAUSED", "EMERGENCY_STOPPED"]
     current_node: str
@@ -28,6 +41,7 @@ class AgentStateSummary(BaseModel):
     telemetry_ok: bool
     latest_run_id: str | None = None
     updated_at: float
+    companion_message: CompanionMessageSummary | None = None
 
 
 class CommandResult(BaseModel):
@@ -552,15 +566,38 @@ class CommandRequest(BaseModel):
 
 
 class CommandResponse(BaseModel):
-    """Acceptance status the UI confirms back in the companion's voice."""
+    """Acceptance status the UI confirms back in the companion's voice.
+
+    The command runs on a background worker; ``execution`` is None on the
+    immediate response. Poll ``/command/status/{job_id}`` (or watch the ws
+    ``companion_message`` field) for progress.
+    """
 
     accepted: bool
+    job_id: str | None = None
     intent: ParsedIntentModel
     goal_type: str
     reply: str
     dispatched: bool
+    status: str = "QUEUED"
     execution: dict[str, Any] | None = None
     message: str
+
+
+class CommandStatusResponse(BaseModel):
+    """Observable status of a dispatched background command job."""
+
+    job_id: str
+    text: str
+    goal_type: str
+    live_mode: bool
+    status: Literal["QUEUED", "RUNNING", "SUCCEEDED", "FAILED"]
+    created_at: float
+    updated_at: float = 0.0
+    dispatched: bool = False
+    execution: dict[str, Any] | None = None
+    error: str | None = None
+    intent: ParsedIntentModel
 
 
 class InterruptRequest(BaseModel):

@@ -32,6 +32,18 @@ type AgentState = {
   telemetry_ok: boolean;
   latest_run_id: string | null;
   updated_at: number;
+  companion_message: CompanionMessage | null;
+};
+
+type CompanionMessage = {
+  event_code: string;
+  message: string;
+  emotion: string;
+  overlay_state: string;
+  source: string;
+  persona_id: string;
+  timestamp: number;
+  sequence: number;
 };
 
 type Page = "dashboard" | "monitor" | "reports" | "settings" | "calibration" | "skills" | "planner" | "companion" | "combat" | "checklist";
@@ -68,6 +80,7 @@ const fallbackState: AgentState = {
   active_interrupt: null,
   runtime_health: { healthy: true, input_worker_alive: false, telemetry_ok: true, release_all_called: true, updated_at: 0 },
   input_released: true, telemetry_ok: true, latest_run_id: null, updated_at: 0,
+  companion_message: null,
 };
 
 // ─── Toast hook ───
@@ -253,7 +266,7 @@ function App() {
               {page === "calibration" && <CalibrationWizard showToast={showToast} />}
               {page === "skills" && <SkillLibrary showToast={showToast} />}
               {page === "planner" && <TaskPlanner showToast={showToast} />}
-              {page === "companion" && <CompanionOverlay showToast={showToast} />}
+              {page === "companion" && <CompanionOverlay showToast={showToast} state={state} />}
               {page === "combat" && <CombatPanel showToast={showToast} />}
               {page === "checklist" && <ProductChecklist showToast={showToast} />}
             </div>
@@ -819,7 +832,7 @@ function TaskPlanner({ showToast }: { showToast: (m: string, t: Toast["type"]) =
 
 // ─── Companion ───
 
-function CompanionOverlay({ showToast }: { showToast: (m: string, t: Toast["type"]) => void }) {
+function CompanionOverlay({ showToast, state }: { showToast: (m: string, t: Toast["type"]) => void; state: AgentState }) {
   const t = useI18n();
   const [eventCode, setEventCode] = useState("TARGET_LOST");
   const [personaId, setPersonaId] = useState("default_companion");
@@ -834,6 +847,20 @@ function CompanionOverlay({ showToast }: { showToast: (m: string, t: Toast["type
   const [sending, setSending] = useState(false);
 
   useEffect(() => { fetch(`${API}/persona/profiles`).then((r) => r.json()).then((d) => setPersonas(d.personas ?? [])).catch((e) => showToast(String(e), "error")); }, [showToast]);
+
+  // Live companion voice from the ws AgentState stream. New utterances (tracked
+  // by their monotonic sequence) flow into the history log automatically.
+  const live = state.companion_message;
+  const lastLiveSeq = useRef<number>(0);
+  useEffect(() => {
+    if (live && live.sequence > lastLiveSeq.current) {
+      lastLiveSeq.current = live.sequence;
+      setHistory((h) => [
+        { time: new Date().toLocaleTimeString(), event: `LIVE:${live.event_code}`, message: live.message },
+        ...h,
+      ].slice(0, 20));
+    }
+  }, [live]);
 
   const sendCommand = async () => {
     if (!commandText.trim() || sending) return;
@@ -872,7 +899,11 @@ function CompanionOverlay({ showToast }: { showToast: (m: string, t: Toast["type
     finally { setTyping(false); }
   };
 
-  const emotion = line?.emotion ?? "normal";
+  // The hero bubble prefers the live ws utterance, then a demo-triggered line.
+  const heroEmotion = live?.emotion ?? line?.emotion ?? "normal";
+  const heroOverlay = live?.overlay_state ?? line?.overlay_state ?? "观察中";
+  const heroMessage = live?.message ?? line?.message ?? "我会把底层事件翻译成用户能理解的反馈，并保留安全边界。";
+  const emotion = heroEmotion;
   const personaName = personas.find((p) => p.persona_id === personaId)?.name ?? "Aurora";
 
   return (
@@ -881,12 +912,13 @@ function CompanionOverlay({ showToast }: { showToast: (m: string, t: Toast["type
         <div className={`companion-avatar ${typing ? "thinking" : emotion}`}>A</div>
         <div className="companion-content">
           <div className="companion-header">
-            <span className="eyebrow">{line?.overlay_state ?? "观察中"}</span>
+            <span className="eyebrow">{heroOverlay}</span>
             <span className={`emotion-pill ${emotion}`}>{emotion}</span>
+            {live && <span className="emotion-pill">{t.companion_live ?? "LIVE"} · {live.event_code}</span>}
           </div>
           <h2 className="title-section">{t.header_companion.replace("{name}", personaName)}</h2>
           <div className={`bubble${typing ? " bubble-typing" : ""}`}>
-            <p>{typing ? "" : (line?.message ?? "我会把底层事件翻译成用户能理解的反馈，并保留安全边界。")}</p>
+            <p>{typing ? "" : heroMessage}</p>
           </div>
         </div>
       </div>
@@ -913,6 +945,15 @@ function CompanionOverlay({ showToast }: { showToast: (m: string, t: Toast["type
         </div>
         {commandReply && (
           <div className="bubble" style={{ marginTop: 12 }}>
+            <div className="companion-header" style={{ marginBottom: 6 }}>
+              <span className="emotion-pill">
+                {String(commandReply.status ?? "QUEUED")}
+                {commandReply.job_id ? ` · ${String(commandReply.job_id).slice(0, 8)}` : ""}
+              </span>
+              {commandReply.accepted
+                ? <span className="eyebrow">{t.companion_cmd_queued ?? "Queued on background worker"}</span>
+                : <span className="eyebrow">{t.companion_cmd_rejected ?? "Not accepted"}</span>}
+            </div>
             <p>{String(commandReply.reply ?? "")}</p>
             <pre style={{ marginTop: 8, opacity: 0.75 }}>
               {JSON.stringify(commandReply.intent ?? {}, null, 2)}

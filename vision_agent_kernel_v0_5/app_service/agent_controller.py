@@ -5,6 +5,7 @@ import subprocess
 import sys
 import threading
 import time
+import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Literal
@@ -43,12 +44,14 @@ from planning.intent_parser import IntentParser
 from planning.mission_queue import mission_to_dict
 from planning.plan_validator import PlanValidator
 from planning.task_spec_builder import TaskSpecBuilder
+from persona.companion_feed import CompanionFeed
 from persona.dialogue_generator import DialogueGenerator
 from persona.event_translator import EventTranslator
 from persona.persona_profile import PersonaRegistry
 
 
 AgentMode = Literal["STOPPED", "RUNNING", "PAUSED", "EMERGENCY_STOPPED"]
+CommandJobStatus = Literal["QUEUED", "RUNNING", "SUCCEEDED", "FAILED"]
 
 
 @dataclass(frozen=True, slots=True)
@@ -76,6 +79,41 @@ class AgentStateView:
     telemetry_ok: bool
     latest_run_id: str | None
     updated_at: float
+    # Latest companion utterance translated from a live kernel event, or None
+    # when nothing has been said yet. Bounded by the CompanionFeed buffer.
+    companion_message: dict[str, Any] | None = None
+
+
+@dataclass(slots=True)
+class CommandJob:
+    """A dispatched natural-language command running on a background worker."""
+
+    job_id: str
+    text: str
+    goal_type: str
+    live_mode: bool
+    status: CommandJobStatus
+    created_at: float
+    intent: dict[str, Any]
+    updated_at: float = 0.0
+    dispatched: bool = False
+    execution: dict[str, Any] | None = None
+    error: str | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "job_id": self.job_id,
+            "text": self.text,
+            "goal_type": self.goal_type,
+            "live_mode": self.live_mode,
+            "status": self.status,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "dispatched": self.dispatched,
+            "execution": self.execution,
+            "error": self.error,
+            "intent": self.intent,
+        }
 
 
 class AgentController:
@@ -117,10 +155,32 @@ class AgentController:
         self._persona_registry = PersonaRegistry(self._root)
         self._event_translator = EventTranslator(self._persona_registry)
         self._dialogue_generator = DialogueGenerator(self._event_translator)
+        # Companion voice: live kernel interrupts → DialogueGenerator utterances.
+        self._companion_feed = CompanionFeed(
+            self._dialogue_generator,
+            clock=self._timebase.now,
+        )
+        # Subscribe to StateBus interrupt fan-out so anything the kernel publishes
+        # (here or in the running loop) surfaces as companion speech.
+        self._state_bus.subscribe("interrupt", self._companion_feed.ingest_interrupt)
+        # Background command jobs (non-blocking /command channel).
+        self._command_jobs: dict[str, CommandJob] = {}
+        self._command_jobs_lock = threading.RLock()
+        self._command_threads: list[threading.Thread] = []
+        self._max_command_jobs = 64
         self._planner = Planner(self._root, self._skill_store)
         self._sandbox_validator = SandboxValidator(self._root, self._skill_store)
         self._goal_executor = GoalExecutor(self._root, self._skill_store)
         self._entry_agent = UniversalEntryAgent()
+        # Gated self-modification review backend. Shares the on-disk proposal queue
+        # with the loop's coordinator: the learning tier enqueues PENDING proposals,
+        # a human reviews/approves them here. approve() is the ONLY apply path.
+        from learning.self_modification_coordinator import SelfModificationCoordinator
+        from runtime.hot_reload_manager import HotReloadManager
+        self._self_mod = SelfModificationCoordinator(
+            hot_reload_manager=HotReloadManager(),
+            module_root=self._root,
+        )
         self._combat_runtime = CombatPlaybookRuntime()
         self._danger_detector = DangerDetector()
         self._dodge_policy = DodgePolicy()
@@ -256,6 +316,7 @@ class AgentController:
                 telemetry_ok=True,
                 latest_run_id=self._latest_run_id,
                 updated_at=now,
+                companion_message=self._companion_feed.latest_dict(),
             )
 
     def current_config(self) -> dict[str, Any]:
@@ -482,6 +543,11 @@ class AgentController:
 
     def persona_event(self, event_code: str, payload: dict[str, Any], persona_id: str) -> dict[str, Any]:
         line = self._dialogue_generator.generate(event_code, payload=payload, persona_id=persona_id)
+        # Surface explicitly-triggered persona events as companion speech too, so
+        # the ws payload reflects them even when no StateBus interrupt was raised.
+        self._companion_feed.ingest_event(
+            event_code, source="persona_event", payload=payload, persona_id=persona_id
+        )
         return {
             "persona_id": persona_id,
             "event_code": event_code,
@@ -489,6 +555,43 @@ class AgentController:
             "overlay_state": line.overlay_state,
             "emotion": line.emotion,
         }
+
+    def companion_feed_latest(self) -> dict[str, Any] | None:
+        """Expose the latest companion utterance for direct polling/tests."""
+        return self._companion_feed.latest_dict()
+
+    # -- Gated self-modification review (the "Claude Code inside" human gate) ----
+
+    def list_self_modifications(self) -> dict[str, Any]:
+        """Pending self-generated patches awaiting human approval."""
+        self._self_mod.reload()
+        return {"items": [p.to_dict() for p in self._self_mod.list_pending()]}
+
+    def get_self_modification(self, proposal_id: str) -> dict[str, Any] | None:
+        self._self_mod.reload()
+        proposal = self._self_mod.get(proposal_id)
+        return proposal.to_dict() if proposal is not None else None
+
+    def approve_self_modification(self, proposal_id: str) -> dict[str, Any]:
+        """Human approval — the ONLY path that writes + hot-loads self-generated code."""
+        self._self_mod.reload()
+        signal = self._self_mod.approve(proposal_id)
+        if signal is None:
+            return {"ok": False, "message": "proposal not found or not pending"}
+        return {
+            "ok": signal.reloaded,
+            "reloaded": signal.reloaded,
+            "retry_signal": {
+                "proposal_id": signal.proposal_id,
+                "skill_id": signal.skill_id,
+                "failing_action": signal.failing_action,
+                "module_path": signal.module_path,
+            },
+        }
+
+    def reject_self_modification(self, proposal_id: str, reason: str = "") -> dict[str, Any]:
+        self._self_mod.reload()
+        return {"ok": self._self_mod.reject(proposal_id, reason)}
 
     def plan_task(self, goal: str, provider: str = "mock", persona_id: str = "default_companion") -> dict[str, Any]:
         proposal = self._planner.plan(goal=goal, provider=provider, persona_id=persona_id)
@@ -608,24 +711,30 @@ class AgentController:
         game_id: str = "",
         live_mode: bool = False,
     ) -> dict[str, Any]:
-        """Player → agent natural-language command channel.
+        """Player → agent natural-language command channel (non-blocking).
 
         Parses ``text`` through UniversalEntryAgent to obtain a structured
-        intent, then dispatches it via ``execute_goal``. Honours the dry-run
-        default: ``live_mode`` is False and ``mode`` is forced to ``"dry-run"``
-        unless a live session is explicitly requested. A live game is never
-        required — if execution cannot start, a clear status is returned
-        instead of raising.
+        intent, then dispatches ``execute_goal`` on a background worker thread
+        and returns *immediately* with ``accepted`` + a ``job_id`` so the
+        request thread never blocks on loop construction. Progress is observable
+        via :meth:`command_status` (or the ws stream's ``companion_message``).
+
+        Honours the dry-run default: ``live_mode`` is False and ``mode`` is
+        forced to ``"dry-run"`` unless a live session is explicitly requested.
+        The companion confirmation reply is routed through DialogueGenerator so
+        it carries the persona's tone rather than a flat string.
         """
         text = (text or "").strip()
         if not text:
             empty_intent = self._entry_agent._parse_intent("", game_id or "genshin")
             return {
                 "accepted": False,
+                "job_id": None,
                 "intent": self._intent_to_dict(empty_intent),
                 "goal_type": empty_intent.goal_type,
                 "reply": "我没有听清指令，可以再说一次吗？",
                 "dispatched": False,
+                "status": "REJECTED",
                 "execution": None,
                 "message": "empty command text",
             }
@@ -636,35 +745,94 @@ class AgentController:
         intent = self._entry_agent._parse_intent(text, game_id or "genshin")
         intent_dict = self._intent_to_dict(intent)
 
-        execution: dict[str, Any] | None = None
-        dispatched = False
-        message = "command accepted"
+        job_id = uuid.uuid4().hex
+        now = self._timebase.now()
+        job = CommandJob(
+            job_id=job_id,
+            text=text,
+            goal_type=intent.goal_type,
+            live_mode=live_mode,
+            status="QUEUED",
+            created_at=now,
+            updated_at=now,
+            intent=intent_dict,
+        )
+        with self._command_jobs_lock:
+            self._command_jobs[job_id] = job
+            self._prune_command_jobs_locked()
+
+        worker = threading.Thread(
+            target=self._run_command_job,
+            args=(job_id, text, live_mode),
+            name=f"app-service-command-{job_id[:8]}",
+            daemon=True,
+        )
+        with self._command_jobs_lock:
+            self._command_threads = [t for t in self._command_threads if t.is_alive()]
+            self._command_threads.append(worker)
+        worker.start()
+
+        # Companion-voiced acceptance reply (persona tone, not a flat string).
+        accept_line = self._dialogue_generator.generate(
+            "RECOVERY_STARTED", payload={"goal": text}, persona_id="default_companion"
+        )
+        reply = (
+            f"{accept_line.message} 收到，正在以「{intent.goal_type}」模式处理：{text}。"
+            f"（已加入后台执行队列，共 {len(plan.steps)} 步，"
+            f"{'演练模式' if not live_mode else '实机模式'}）"
+        )
+        return {
+            "accepted": True,
+            "job_id": job_id,
+            "intent": intent_dict,
+            "goal_type": intent.goal_type,
+            "reply": reply,
+            "dispatched": True,
+            "status": "QUEUED",
+            "execution": None,
+            "message": "command queued on background worker",
+        }
+
+    def command_status(self, job_id: str) -> dict[str, Any] | None:
+        """Return the current status of a dispatched command job, or None."""
+        with self._command_jobs_lock:
+            job = self._command_jobs.get(job_id)
+            return job.to_dict() if job is not None else None
+
+    def _run_command_job(self, job_id: str, text: str, live_mode: bool) -> None:
+        with self._command_jobs_lock:
+            job = self._command_jobs.get(job_id)
+            if job is not None:
+                job.status = "RUNNING"
+                job.updated_at = self._timebase.now()
         try:
             execution = self.execute_goal(
                 goal_text=text,
                 live_mode=live_mode,
                 mode="safe-window" if live_mode else "dry-run",
             )
-            dispatched = True
-            if not execution.get("ok", False) and execution.get("error"):
-                message = f"dispatched with errors: {execution['error']}"
+            error = None if execution.get("ok", False) else execution.get("error")
+            status: CommandJobStatus = "SUCCEEDED" if error is None else "FAILED"
         except Exception as exc:  # noqa: BLE001 - surface as status, never crash channel
-            message = f"command parsed but execution unavailable: {exc}"
+            execution = None
+            error = f"execution unavailable: {exc}"
+            status = "FAILED"
+        with self._command_jobs_lock:
+            job = self._command_jobs.get(job_id)
+            if job is not None:
+                job.status = status
+                job.dispatched = True
+                job.execution = execution
+                job.error = error
+                job.updated_at = self._timebase.now()
 
-        reply = (
-            f"收到，正在以「{intent.goal_type}」模式处理：{text}。"
-            f"（{'已派发执行' if dispatched else '当前仅解析，执行未启动'}，"
-            f"共 {len(plan.steps)} 步，{'演练模式' if not live_mode else '实机模式'}）"
-        )
-        return {
-            "accepted": True,
-            "intent": intent_dict,
-            "goal_type": intent.goal_type,
-            "reply": reply,
-            "dispatched": dispatched,
-            "execution": execution,
-            "message": message,
-        }
+    def _prune_command_jobs_locked(self) -> None:
+        """Keep the job registry bounded (call under _command_jobs_lock)."""
+        if len(self._command_jobs) <= self._max_command_jobs:
+            return
+        ordered = sorted(self._command_jobs.values(), key=lambda j: j.created_at)
+        for stale in ordered[: len(self._command_jobs) - self._max_command_jobs]:
+            self._command_jobs.pop(stale.job_id, None)
 
     def human_interrupt(self, kind: str = "override", text: str = "") -> dict[str, Any]:
         """Player interrupt channel.

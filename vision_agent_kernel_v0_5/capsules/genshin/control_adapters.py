@@ -136,14 +136,26 @@ def build_combat_view(
       Empty defaults degrade rotation to "first ready other", per the
       controller's own documented fall-through. Both are read from
       ``observation.extensions`` when a capsule provider populates them.
-    * ``chars`` — TODO(perception): needs a party-state reader (HP bars, energy
-      orbs, skill-cooldown icons). With none, the caller MUST pass ``chars``
-      explicitly (e.g. from a capsule combat provider / team profile). If absent
-      we synthesize a single conservative DPS char with skills/burst *not* ready,
-      so the controller falls through to a plain ``attack`` — never a phantom
-      burst/heal/switch.
+    * ``chars`` — supplied by :class:`capsules.genshin.party_state_reader.\
+GenshinPartyStateReader`, which reads per-character HP / energy / skill-cooldown /
+      burst-ring from the HUD and injects the result into
+      ``observation.extensions["party_state"]`` (plus ``"party_active_index"``).
+      When ``chars`` is not passed explicitly, we read it from there — so the live
+      tick can drive a real multi-char rotation (burst/skill/switch/heal), not just
+      ``attack``. An explicit ``chars`` arg still wins (backward-compatible). If
+      neither is present we synthesize a single conservative DPS char with
+      skills/burst *not* ready, so the controller falls through to a plain
+      ``attack`` — never a phantom burst/heal/switch.
     """
     track = getattr(observation, "target_track", None)
+
+    # Backward-compatible: explicit ``chars`` wins; otherwise pick up a party-state
+    # reading injected by the GenshinPartyStateReader. Absent => conservative default.
+    if chars is None:
+        injected = _ext(observation, "party_state", None)
+        if injected:
+            chars = tuple(injected)
+            active_index = int(_ext(observation, "party_active_index", active_index) or 0)
 
     enemy_present = (
         screen_state in _COMBAT_SCREEN_STATES
@@ -472,7 +484,10 @@ COMBAT_RESIDUALS: tuple[str, ...] = (
     "can_dodge (player dodge-cooldown tracker)",
     "enemy_aura (enemy elemental-aura detector)",
     "enemy_weaknesses (monster-DB lookup keyed on tracked class_id)",
-    "chars (party state: per-character hp/energy/skill_ready/burst_ready)",
+    # chars: now supplied by GenshinPartyStateReader (active char read from HUD;
+    # off-field chars conservative). Residual is exact-threshold calibration +
+    # off-field energy — see party_state_reader.CALIBRATION_RESIDUALS.
+    "chars exact thresholds (party_state_reader needs real-game ring/cooldown/HP calibration)",
 )
 
 INTERACTION_RESIDUALS: tuple[str, ...] = (

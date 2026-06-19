@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from typing import Any
 
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import Response
@@ -19,6 +20,7 @@ from app_service.schemas import (
     CombatPlaybookResponse,
     CommandRequest,
     CommandResponse,
+    CommandStatusResponse,
     DiagnosticsResponse,
     HealthResponse,
     InterruptRequest,
@@ -322,11 +324,39 @@ def create_api_router(controller: AgentController) -> APIRouter:
             )
         )
 
+    @router.get("/command/status/{job_id}", response_model=CommandStatusResponse)
+    def command_status(job_id: str) -> CommandStatusResponse:
+        status = controller.command_status(job_id)
+        if status is None:
+            raise HTTPException(status_code=404, detail=f"unknown command job: {job_id}")
+        return CommandStatusResponse(**status)
+
     @router.post("/interrupt", response_model=InterruptResponse)
     def interrupt(request: InterruptRequest) -> InterruptResponse:
         return InterruptResponse(
             **controller.human_interrupt(kind=request.kind, text=request.text)
         )
+
+    @router.get("/self_modifications")
+    def list_self_modifications() -> dict[str, Any]:
+        """Pending self-generated patches awaiting human approval (gated self-mod)."""
+        return controller.list_self_modifications()
+
+    @router.get("/self_modifications/{proposal_id}")
+    def get_self_modification(proposal_id: str) -> dict[str, Any]:
+        result = controller.get_self_modification(proposal_id)
+        if result is None:
+            raise HTTPException(status_code=404, detail="proposal not found")
+        return result
+
+    @router.post("/self_modifications/{proposal_id}/approve")
+    def approve_self_modification(proposal_id: str) -> dict[str, Any]:
+        """The ONLY path that writes + hot-loads self-generated code. Human-gated."""
+        return controller.approve_self_modification(proposal_id)
+
+    @router.post("/self_modifications/{proposal_id}/reject")
+    def reject_self_modification(proposal_id: str) -> dict[str, Any]:
+        return controller.reject_self_modification(proposal_id)
 
     @router.get("/goals/learning_review", response_model=LearningReviewQueueResponse)
     def learning_review_queue() -> LearningReviewQueueResponse:
