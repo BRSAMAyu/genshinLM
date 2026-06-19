@@ -1,0 +1,104 @@
+# Phase 4 收尾 / Phase 5 / Phase 6 对齐文档
+
+> 范围：本文件汇报 Phase 4 收尾、Phase 5（任务编排）、Phase 6（试错→学习闭环 + 真实数据资产整合）的实际工作、独立审查结论、以及与北极星（自主通关原神主线）之间的诚实差距。
+> 视角：以 coding agent 的执行节奏编写。所有"清关率/到达率"均为**离线确定性仿真**下测得，**不是真实游戏表现**——这是本阶段最重要的诚实声明。
+
+---
+
+## 0. 一句话现状
+
+Phase 0–6 的**离线可建部分已全部落地**：空间地基、pose 闭环导航、试错引擎、战斗/交互/解谜/任务四类参考控制器、学习闭环、真实数据资产接入。每个阶段独立提交、推送、带测试、零回归（本轮 117 个测试全绿；全量套件此前 4391 passed/0 failed）。
+
+**但必须诚实说明**：这些控制器目前是**参考实现 + 仿真 oracle**，尚未接入 live 执行栈（`live_factory` / `brainstem_navigator` / `MainlineRunner`），也未实现 `capsules/domain_protocols.py` 的协议契约。从"离线仿真通过"到"真实游戏通关"之间仍有明确的、巨大的集成工作量（见 §6）。两位独立审查者已确认这一判断。
+
+---
+
+## 1. Phase 4 收尾（解谜）
+
+### 1.1 已交付
+- `puzzle/puzzle_controller.py`：游戏无关 `PuzzleController`，实现精度迭代闭环 `propose → refine → act → verify → escalate`。核心原则——**精度来自迭代而非一次到位**：每步欠激（under-shoot）剩余误差、重测、在容差内 snap。
+- `harness/sim/puzzle_world.py`：确定性对齐/放置类解谜仿真，带高斯测量噪声；`propose` 步是确定性替身（live 时替换为云端多模态调用）。
+- 测得解谜率 **0.94（48 场）**：noise≤3 时 100%，noise=5 时 9/12，残留一个真实的高噪声 `timeout` 簇（3 个）。
+
+### 1.2 独立审查驱动的收尾修复（commit 95cd9ba）
+审查者发现的真实问题，已修：
+- **P2 `min_step` 过冲**：`step = max(step_gain*mag, min_step)` 在容差 < 0.83 时会让步长 > 剩余误差（反而过冲）。改为 `min(max(...), mag)` 钳位。
+- **P2 命名误导**：`max_attempts_per_phase` 实为全局计数（无 phase 概念），更名为 `max_attempts`。
+- **P1 `escalate` 契约未文档化**：escalate 是终态，调用方必须 `reset()` 并重新 propose（如让云端 VLM 重新命名目标）——已写入 docstring。
+- **过度宣称的 docstring**：`puzzle_world` 原宣称"live 环可无缝替换为真实视觉"，实际控制器尚未接 `VisionLLMProvider`。已改为诚实表述：本仿真是参考 oracle，live 接线是独立工作项。
+
+---
+
+## 2. Phase 5（任务编排）
+
+### 2.1 已交付
+- `mission/mission_graph.py`：`MissionNode` + `MissionGraph` DAG，带依赖、前置/后置 claim 条件、重试预算、跨节点 quest 上下文。
+- `mission/mission_orchestrator.py`：图遍历器——选下一个可运行节点 → claim-gate 执行 → 应用 claimed 上下文 → 验证 postcondition；失败则归因并在预算内重试，否则阻断。是 `MainlineRunner + BAGEL` 的离线预演。
+- `harness/sim/mission_world.py`：`ChapterNodeExecutor` 把每个节点派发给 Phase 0–4 真实子栈（nav/combat/interaction/puzzle），`make_chapter_graph` 生成主线章节 DAG（对话→行进→清剿→解谜→行进→boss→交付→领奖），注入一次瞬态故障以验证重试/恢复路径。
+- 测得**章节端到端完成率 1.00（15/15）**，含从注入的 boss 瞬态故障中恢复。
+
+### 2.2 独立审查驱动的修复（关键——审查者发现了严重 bug）
+**P0（阻断级）`run()` 在任何持续失败时死循环**：`next_runnable()` 无条件返回 `failed` 节点，导致超出重试预算的节点被无限重新执行，只有 `max_total_steps` 能终止。而"预算耗尽即阻断"的测试只检查了最终状态、没检查执行次数，**所以测试通过却掩盖了死循环**。
+- 修复：`next_runnable` 跳过超预算节点（terminal）；`_advance` 在执行**前**强制预算；超预算 → `blocked` 并级联到所有后代（`mark_blocked_descendants`）。
+- 补强测试：断言执行**有界**——always-fail 节点对 max_retries=0/1/2 恰好执行 1/2/3 次。
+
+**P1 postcondition 回滚丢数据**：回滚直接 `pop(key)`，若该 key 节点运行前就已存在，会删掉原值而非恢复。改为快照 prior 值 + 恢复。
+
+**P1 失败节点的后代静默 stall**：硬失败节点本应让依赖者变 `blocked`，原来留在 `pending` 且 `finished=True`。现级联 `blocked`。
+
+**P1 precondition 未在选择时强制**：`next_runnable` 原本不检查 precondition。已补上 claim-gate。
+
+---
+
+## 3. Phase 6（试错→学习闭环 + 真实数据整合）
+
+### 3.1 学习闭环（失败 → 可复用知识）
+- `harness/learning_bridge.py`：把 harness 的失败簇分类为通用 `FailureCategory`（party_wipe→HP_DEPLETED、timeout 按标签→COMBAT_TIMEOUT/NAVIGATION_FAILED/PUZZLE_FAILED 等）→ 喂给现有的 `GenericFailureAnalyzer` 检测重复 `FailurePattern` → 持久化进 `GameKnowledgeStore` 作为可查询 fact。失败不再是丢弃的遥测，而是结构化知识。`CampaignReport` 汇总失败类别分布 + 检测到的模式。
+
+### 3.2 真实数据资产整合（充分利用增强包）
+项目此前花了大量精力采集的原神/崩铁数据，此前**几乎没被代码读取**。现已接入：
+- `data/game_assets.py`：加载真实 `character_profiles.yaml`（**110 角色**）、`team_profiles.yaml`（**36 队伍**）、怪物库、世界图。Loader 对那一个解析失败的文件（`genshin_monsters.yaml` 第 1110 行 `name_en: Ruin Drake: Earthguard` 未加引号冒号）**健壮跳过**，不影响其余加载。
+- `harness/sim/asset_scenarios.py`：用**真实队伍**（国家队、雷神国家队…）生成战斗场景，用**真实世界图航点坐标**（数千单位级真实地理坐标）生成导航场景。
+- `team_comp_to_sim`：把轮换首发提升为 dps（因 meta 队多为后台角色），让真实队伍可在战斗仿真中跑。
+
+### 3.3 诚实的数据利用现状
+- 已用：角色元素/冷却/能量、队伍成员构成、世界图航点坐标。
+- 未用（高价值待接）：怪物 `weaknesses`（本可用于反应瞄准）、队伍 `recommended_rotation`、`data/skills/*_skills.yaml`、HSR 全部数据、`guides/*_combat_guide.yaml`、世界图 `edges/routes`。
+
+---
+
+## 4. 独立审查机制（本阶段过程）
+
+按用户要求，每个阶段完成后派遣独立 agent 审查：
+- Phase 4/5：2 位审查者（架构/复用 + 正确性/测试），已返回并修复了上述 P0/P1。
+- Phase 6 + 全项目：4 位审查者（架构集成 / 正确性与测试 / 数据利用 / 安全与北极星对齐），**已在后台运行**。其结论返回后我会**逐条对照真实代码核验**（不盲信），有效的即修，然后补入本文件 §5。
+
+## 5. 待 4 位全项目审查返回后填充
+（核验后的有效发现 + 修复记录将写在此处。）
+
+---
+
+## 6. 与北极星的诚实差距
+
+北极星：无需专门训练的通用 agent，自主通关原神主线。当前离 Phase 6 的"收口/规模化"定义尚远。诚实差距清单（按优先级）：
+
+1. **Live 接线（最高优先级）**：全部新控制器是 sim-only。需把 `pose_estimation_processor` 接进 `live_factory`/capsule install()、把 `NavigationCoordinator` 接进 `brainstem_navigator`（或合并掉旧的 `navigation_runtime.py`）、让 `mission/` 复用或并入 `planning/mainline/`。
+2. **协议合规**：新控制器的 `View/Action` 类型未实现 `capsules/domain_protocols.py`（`CombatPlannerProtocol`/`NavigatorProtocol`/`DialogHandlerProtocol`/`LocalizationProviderProtocol`）。真实胶囊当前无法直接喂数据。需写适配层。
+3. **真实标定**：pose 的 minimap 光流符号/尺度、相机伺服增益，必须在真实游戏里标定（离线给的是有据猜测值）。
+4. **真实视觉闭环**：解谜/场景理解的 `propose` 步要真正接 `VisionLLMProvider`（现已统一的 MiniMax-M3）。
+5. **双模型团队接线**：`model_team.DualModelCoordinator`（M3 感知 + GLM-5.2 推理）尚未接入 live Planner/loop；模型 id/端点需用 key 对真实 API 验证。
+6. **学习闭环读侧**：`learning_bridge` 目前是 write-only（存知识，无控制器读取以改进行为）。需让规划器/恢复策略查询 `GameKnowledgeStore` 的 failure_pattern。
+
+**结论**：本阶段把"可离线建的部分 + 可复用范式 + 真实数据底座"打牢了；从仿真到真实通关是一场需要真实游戏在场的集成战役，已在本文件如实标注。
+
+---
+
+## 7. 提交与可追溯性
+
+本阶段提交（分支 `codex/pre-realworld-closure`，全部已推送）：
+- `676503a` Phase 4 start: puzzle controller
+- `ac9ba4c` Phase 5 complete: claim-gated mission orchestration
+- `95cd9ba` fix: Phase 4/5 review findings（P0 死循环 + P1 回滚/阻断）
+- `95cd9ba`(cont) Phase 6: trial-and-error→learning closure + real-asset integration
+
+工作区干净，117 个本轮测试全绿。
