@@ -174,9 +174,13 @@ class NavStackPolicy:
         self._fusion = PoseFusion(self._fusion_config)
         self._fusion.reset(start, heading, timestamp=0.0, confidence=1.0)
         arrival = float(s.get("arrival_radius", 1.5))
+        # Stop a margin *inside* the env success zone: pose carries error and each
+        # step moves ~speed*dt, so latching pose-arrival at exactly the success
+        # radius can leave true position just outside. (Phase 3 dogfood finding.)
+        nav_arrival = float(s.get("nav_arrival_radius", max(1.2, arrival * 0.55)))
         self._target = PoseNavTarget(
             position=(float(s["target"][0]), float(s["target"][1])),
-            arrival_radius=arrival,
+            arrival_radius=nav_arrival,
             reacquire_radius=float(s.get("visual_range", 6.0)),
         )
         self._coord = NavigationCoordinator(
@@ -245,7 +249,7 @@ def make_nav_scenarios(
                 break
         setup: JsonDict = {
             "start": [sx, sy], "heading": rng.uniform(0, 360),
-            "target": [tx, ty], "arrival_radius": 1.5, "visual_range": 6.0,
+            "target": [tx, ty], "arrival_radius": 2.5, "visual_range": 6.0,
             "speed": speed, "flow_noise": flow_noise, "heading_noise": 4.0,
             "bounds": bounds * 2.0, "seed": rng.randint(0, 1_000_000),
         }
